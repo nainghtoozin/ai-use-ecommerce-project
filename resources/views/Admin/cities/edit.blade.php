@@ -1,0 +1,36 @@
+@extends('Admin.layouts.admin')
+
+@section('title', 'Edit City')
+@section('page-title', 'Edit City')
+
+@section('content')
+<div class="max-w-2xl mx-auto bg-white p-6 rounded-md shadow-md">
+    <h3 class="text-xl font-semibold text-gray-800 mb-4">Edit City</h3>
+
+    @if ($errors->any())
+        <div class="bg-red-100 text-red-600 px-4 py-2 rounded mb-4">
+            <ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+        </div>
+    @endif
+
+    <form action="{{ route('admin.cities.update', $city->id) }}" method="POST" class="space-y-4">
+        @csrf @method('PUT')
+        <div>
+            <label class="block text-gray-700 font-medium">City Name</label>
+            <input type="text" name="name" value="{{ old('name', $city->name) }}" class="w-full border rounded-md px-3 py-2 focus:ring focus:border-blue-400" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-medium">Delivery Fee</label>
+            <input type="number" name="delivery_fee" value="{{ old('delivery_fee', $city->delivery_fee) }}" step="0.01" min="0" class="w-full border rounded-md px-3 py-2 focus:ring focus:border-blue-400" required>
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $city->is_active) ? 'checked' : '' }} class="w-4 h-4">
+            <label for="is_active">Active</label>
+        </div>
+        <div class="flex gap-3 pt-4">
+            <a href="{{ route('admin.cities.index') }}" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Cancel</a>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Update</button>
+        </div>
+    </form>
+</div>
+@endsection
