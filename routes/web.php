@@ -4,13 +4,12 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCityController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminOrderController;
-// Client
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminPromotionController;
-// Admin
 use App\Http\Controllers\Admin\AdminTownshipController;
 use App\Http\Controllers\Admin\AdminWebsiteInfoController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\ClientOrderController;
 use App\Http\Controllers\Client\StaticPagesController;
@@ -34,11 +33,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+    // Chat Routes
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/messages/{userId}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
+    Route::post('/chat/read/{userId}', [ChatController::class, 'markAsRead'])->name('chat.read');
+    Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
 });
 
 // Admin routes (only accessible by users with role 'admin')
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+
+    // Chat Routes
+    Route::get('/chat/users', [ChatController::class, 'getAdminUsers'])->name('chat.users');
+    Route::get('/chat/messages/{userId}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
+    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/read/{userId}', [ChatController::class, 'markAsRead'])->name('chat.read');
 
     // Search Routes
     Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');

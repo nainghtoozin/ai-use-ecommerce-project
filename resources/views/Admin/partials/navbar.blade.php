@@ -10,6 +10,10 @@
             </div>
 
             <div class="flex items-center space-x-4 relative">
+                <a href="{{ route('admin.chat.users') }}" class="text-gray-600 hover:text-gray-900" title="Chat">
+                    <i class="fas fa-comments text-lg"></i>
+                </a>
+                
                 @include('Admin.partials.notifications')
 
                 <!-- Profile Dropdown -->

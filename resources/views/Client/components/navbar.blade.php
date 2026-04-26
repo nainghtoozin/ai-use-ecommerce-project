@@ -55,6 +55,12 @@
             @auth
             @include('Client.components.notifications')
 
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="{{ route('chat.index') }}">
+                    <i class="bi bi-chat-dots-fill me-1"></i> Chat
+                </a>
+            </li>
+
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-person-circle me-1"></i> {{ Auth::user()->name }}
