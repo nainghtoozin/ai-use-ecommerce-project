@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\WebsiteInfo;
+use App\Notifications\PaymentRejectedNotification;
+use App\Notifications\PaymentVerifiedNotification;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class AdminOrderController extends Controller
 {
@@ -184,14 +187,21 @@ class AdminOrderController extends Controller
     public function verifyPayment(string $id)
     {
         try {
-            $order = Order::findOrFail($id);
+            $order = Order::with('user')->findOrFail($id);
 
-            if (!$order->canVerifyPayment()) {
+            if (!$order->canApprovePayment()) {
                 return redirect()->route('admin.orders.show', $id)
                     ->with('error', 'This payment cannot be verified.');
             }
 
-            $this->orderService->updatePaymentStatus($order, Order::PAYMENT_STATUS_VERIFIED);
+            $order->update([
+                'order_status' => Order::ORDER_STATUS_VERIFIED,
+                'payment_status' => Order::PAYMENT_STATUS_VERIFIED,
+            ]);
+
+            if ($order->user) {
+                $order->user->notify(new PaymentVerifiedNotification($order));
+            }
 
             return redirect()->route('admin.orders.show', $id)
                 ->with('success', 'Payment verified successfully.');
@@ -206,14 +216,21 @@ class AdminOrderController extends Controller
     public function rejectPayment(string $id)
     {
         try {
-            $order = Order::findOrFail($id);
+            $order = Order::with('user')->findOrFail($id);
 
-            if (!$order->canVerifyPayment()) {
+            if (!$order->canRejectPayment()) {
                 return redirect()->route('admin.orders.show', $id)
                     ->with('error', 'This payment cannot be rejected.');
             }
 
-            $this->orderService->updatePaymentStatus($order, Order::PAYMENT_STATUS_REJECTED);
+            $order->update([
+                'order_status' => Order::ORDER_STATUS_REJECTED,
+                'payment_status' => Order::PAYMENT_STATUS_REJECTED,
+            ]);
+
+            if ($order->user) {
+                $order->user->notify(new PaymentRejectedNotification($order));
+            }
 
             return redirect()->route('admin.orders.show', $id)
                 ->with('success', 'Payment rejected.');

@@ -15,6 +15,8 @@ class Order extends Model
     const PAYMENT_STATUS_REJECTED = 'rejected';
 
     const ORDER_STATUS_PENDING = 'pending';
+    const ORDER_STATUS_VERIFIED = 'verified';
+    const ORDER_STATUS_REJECTED = 'rejected';
     const ORDER_STATUS_CONFIRMED = 'confirmed';
     const ORDER_STATUS_SHIPPED = 'shipped';
     const ORDER_STATUS_DELIVERED = 'delivered';
@@ -87,7 +89,7 @@ class Order extends Model
 
     public function canConfirm(): bool
     {
-        return $this->order_status === self::ORDER_STATUS_PENDING;
+        return in_array($this->order_status, [self::ORDER_STATUS_PENDING, self::ORDER_STATUS_VERIFIED]);
     }
 
     public function canShip(): bool
@@ -105,9 +107,28 @@ class Order extends Model
         return in_array($this->payment_status, [self::PAYMENT_STATUS_PAID]);
     }
 
+    public function canApprovePayment(): bool
+    {
+        return in_array($this->payment_status, [self::PAYMENT_STATUS_PAID]);
+    }
+
+    public function canRejectPayment(): bool
+    {
+        return in_array($this->payment_status, [self::PAYMENT_STATUS_PAID]);
+    }
+
     public function canMarkAsPaid(): bool
     {
         return $this->payment_status === self::PAYMENT_STATUS_UNPAID;
+    }
+
+    public function isPaymentAmountCorrect(): bool
+    {
+        if ($this->paid_amount === null) {
+            return false;
+        }
+
+        return (float) $this->paid_amount >= $this->total_payable;
     }
 
     public function getTotalPayableAttribute(): float

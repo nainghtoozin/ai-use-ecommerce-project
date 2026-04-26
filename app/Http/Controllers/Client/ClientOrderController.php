@@ -5,23 +5,29 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Product;
 use App\Models\WebsiteInfo;
+use App\Services\OrderNotificationService;
 use App\Services\OrderService;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class ClientOrderController extends Controller
 {
     protected $orderService;
+
     protected $telegramService;
 
-    public function __construct(OrderService $orderService, TelegramService $telegramService)
-    {
+    protected $orderNotificationService;
+
+    public function __construct(
+        OrderService $orderService,
+        TelegramService $telegramService,
+        OrderNotificationService $orderNotificationService
+    ) {
         $this->orderService = $orderService;
         $this->telegramService = $telegramService;
+        $this->orderNotificationService = $orderNotificationService;
     }
 
     /**
@@ -36,6 +42,7 @@ class ClientOrderController extends Controller
             ->simplePaginate(10);
 
         $websiteInfo = WebsiteInfo::first();
+
         return view('client.orders.index', compact('orders', 'websiteInfo'));
     }
 
@@ -87,11 +94,13 @@ class ClientOrderController extends Controller
         // Basic validation
         if (empty($customerData)) {
             Log::error('Customer data is empty');
+
             return response()->json(['message' => 'Customer data is required'], 422);
         }
 
-        if (empty($itemsData) || !is_array($itemsData)) {
+        if (empty($itemsData) || ! is_array($itemsData)) {
             Log::error('Items data is empty or invalid');
+
             return response()->json(['message' => 'Cart items are required'], 422);
         }
 
@@ -105,15 +114,16 @@ class ClientOrderController extends Controller
         $notes = $customerData['notes'] ?? null;
 
         // Validate required fields
-        if (!$firstName || !$lastName || !$phone || !$address) {
+        if (! $firstName || ! $lastName || ! $phone || ! $address) {
             Log::error('Missing required customer fields', [
                 'firstName' => $firstName,
                 'lastName' => $lastName,
                 'phone' => $phone,
-                'address' => $address
+                'address' => $address,
             ]);
+
             return response()->json([
-                'message' => 'Missing required customer information: firstName, lastName, phone, address'
+                'message' => 'Missing required customer information: firstName, lastName, phone, address',
             ], 422);
         }
 
@@ -129,10 +139,11 @@ class ClientOrderController extends Controller
 
         // Validate items
         foreach ($items as $index => $item) {
-            if (!$item['product_id']) {
+            if (! $item['product_id']) {
                 Log::error("Item $index missing product_id");
+
                 return response()->json([
-                    'message' => "Item $index is missing product ID"
+                    'message' => "Item $index is missing product ID",
                 ], 422);
             }
         }
@@ -146,6 +157,7 @@ class ClientOrderController extends Controller
             $this->orderService->validateStock($items);
         } catch (\InvalidArgumentException $e) {
             Log::warning('Stock validation failed:', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
@@ -170,7 +182,7 @@ class ClientOrderController extends Controller
         ];
 
         // Validate payment method
-        if (!$orderData['payment_method_id']) {
+        if (! $orderData['payment_method_id']) {
             return response()->json(['message' => 'Payment method is required'], 422);
         }
 
@@ -188,20 +200,20 @@ class ClientOrderController extends Controller
         // ============================================
         try {
             $order = $this->orderService->createOrder($orderData, $items);
-            
+
             Log::info('========== ORDER CREATED SUCCESS ==========');
             Log::info('Order ID:', ['order_id' => $order->id]);
-            
+
             // Verify order exists in database
             $verifyOrder = Order::find($order->id);
             $verifyItems = OrderItem::where('order_id', $order->id)->get();
-            
+
             Log::info('Verification:', [
                 'order_exists' => $verifyOrder ? 'YES' : 'NO',
                 'items_count' => $verifyItems->count(),
             ]);
 
-            if (!$verifyOrder) {
+            if (! $verifyOrder) {
                 throw new \Exception('Order not found in database after creation!');
             }
 
@@ -211,6 +223,7 @@ class ClientOrderController extends Controller
 
             // Telegram failures are logged and should never roll back a successful order.
             $this->telegramService->sendOrderNotification($order);
+            $this->orderNotificationService->notifyOrderPlaced($order);
 
             return response()->json([
                 'message' => 'Order placed successfully!',
@@ -221,9 +234,9 @@ class ClientOrderController extends Controller
         } catch (\Exception $e) {
             Log::error('========== ORDER CREATION FAILED ==========');
             Log::error('Error:', ['message' => $e->getMessage()]);
-            
+
             return response()->json([
-                'message' => 'Failed to create order: ' . $e->getMessage(),
+                'message' => 'Failed to create order: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -237,9 +250,9 @@ class ClientOrderController extends Controller
             ->with(['items.product', 'paymentMethod', 'city', 'township'])
             ->where('user_id', auth()->id())
             ->findOrFail($id);
-        
+
         $websiteInfo = WebsiteInfo::first();
-        
+
         return view('client.orders.show', compact('order', 'websiteInfo'));
     }
 
@@ -263,7 +276,7 @@ class ClientOrderController extends Controller
 
         if ($request->hasFile('payment_proof')) {
             $path = $request->file('payment_proof')->store('payment-proofs', 'public');
-            
+
             $order->update([
                 'payment_proof' => $path,
                 'payment_status' => 'paid',
@@ -283,7 +296,7 @@ class ClientOrderController extends Controller
             ->where('user_id', auth()->id())
             ->findOrFail($id);
 
-        if (!$order->canCancel()) {
+        if (! $order->canCancel()) {
             return redirect()->back()->with('error', 'You cannot cancel this order.');
         }
 

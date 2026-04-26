@@ -1,25 +1,23 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\OrderController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminCityController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminOrderController;
 // Client
+use App\Http\Controllers\Admin\AdminPaymentMethodController;
+use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminPromotionController;
+// Admin
+use App\Http\Controllers\Admin\AdminTownshipController;
+use App\Http\Controllers\Admin\AdminWebsiteInfoController;
 use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\ClientOrderController;
 use App\Http\Controllers\Client\StaticPagesController;
-
-// Admin
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\AdminOrderController;
-use App\Http\Controllers\Admin\AdminCategoryController;
-use App\Http\Controllers\Admin\AdminProductController;
-use App\Http\Controllers\Admin\AdminPromotionController;
-use App\Http\Controllers\Admin\AdminWebsiteInfoController;
-use App\Http\Controllers\Admin\AdminPaymentMethodController;
-use App\Http\Controllers\Admin\AdminCityController;
-use App\Http\Controllers\Admin\AdminTownshipController;
-
-use App\Http\Middleware\RoleMiddleware;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
 
 // Default route → Client page (no auth required)
 Route::get('/', [ClientController::class, 'index'])->name('client.home');
@@ -33,13 +31,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 });
 
 // Admin routes (only accessible by users with role 'admin')
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
-    
-     // Search Routes
+
+    // Search Routes
     Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');
     Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
     Route::get('/orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
@@ -53,7 +54,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit');
     Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
-   
+
     // Products CRUD Management
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [AdminProductController::class, 'create'])->name('products.create');
@@ -66,18 +67,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
     Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-    
+
     // Order Status Actions
     Route::post('orders/{order}/confirm', [AdminOrderController::class, 'confirmOrder'])->name('orders.confirm');
     Route::post('orders/{order}/ship', [AdminOrderController::class, 'shipOrder'])->name('orders.ship');
     Route::post('orders/{order}/deliver', [AdminOrderController::class, 'deliverOrder'])->name('orders.deliver');
     Route::post('orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');
-    
+
     // Payment Verification
     Route::post('orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment');
+    Route::post('orders/{order}/approve-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.approve-payment');
     Route::post('orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment');
     Route::post('orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
-    
+
     // Legacy routes (kept for backward compatibility)
     Route::get('orders/{order}/edit', [AdminOrderController::class, 'edit'])->name('orders.edit');
     Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
@@ -95,7 +97,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Website Information CRUDs
     Route::get('website-info/edit', [AdminWebsiteInfoController::class, 'edit'])->name('website-info.edit');
     Route::post('website-info/update', [AdminWebsiteInfoController::class, 'update'])->name('website-info.update');
-   
+
     // Payment Methods CRUD Management
     Route::resource('payment-methods', AdminPaymentMethodController::class);
     Route::post('payment-methods/{paymentMethod}/toggle', [AdminPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
@@ -109,7 +111,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
 
 });
-
 
 // Client routes (private routes / need login)
 Route::prefix('client')->name('client.')->middleware(['auth'])->group(function () {
@@ -128,12 +129,12 @@ Route::prefix('client')->name('client.')->group(function () {
     Route::get('/dashboard', [ClientController::class, 'index'])->name('dashboard');
     // Product show page
     Route::get('/product/{product}', [ClientController::class, 'show_product'])->name('product.show');
-     // Cart page
+    // Cart page
     Route::get('/cart', [ClientController::class, 'cart'])->name('cart');
     Route::get('/search', [ClientController::class, 'search_product'])->name('search');
     Route::get('/products/category/{id}', [ClientController::class, 'getByCategory'])->name('products.byCategory');
 
-        // ===== Static pages =====
+    // ===== Static pages =====
     Route::get('/about', [StaticPagesController::class, 'about'])->name('pages.about');
     Route::get('/contact', [StaticPagesController::class, 'contact'])->name('pages.contact');
     Route::get('/faq', [StaticPagesController::class, 'faq'])->name('pages.faq');

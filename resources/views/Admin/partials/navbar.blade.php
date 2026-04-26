@@ -10,7 +10,7 @@
             </div>
 
             <div class="flex items-center space-x-4 relative">
-              
+                @include('Admin.partials.notifications')
 
                 <!-- Profile Dropdown -->
                 <div class="relative">
@@ -45,6 +45,8 @@
         const overlay = document.getElementById('overlay');
         const profileButton = document.getElementById('profileButton');
         const profileDropdown = document.getElementById('profileDropdown');
+        const adminNotificationButton = document.getElementById('adminNotificationButton');
+        const adminNotificationDropdown = document.getElementById('adminNotificationDropdown');
 
         // Toggle sidebar
         function toggleSidebar() {
@@ -58,12 +60,22 @@
         // Toggle profile dropdown
         profileButton?.addEventListener('click', () => {
             profileDropdown.classList.toggle('hidden');
+            adminNotificationDropdown?.classList.add('hidden');
+        });
+
+        adminNotificationButton?.addEventListener('click', () => {
+            adminNotificationDropdown.classList.toggle('hidden');
+            profileDropdown?.classList.add('hidden');
         });
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+            if (profileButton && profileDropdown && !profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
                 profileDropdown.classList.add('hidden');
+            }
+
+            if (adminNotificationButton && adminNotificationDropdown && !adminNotificationButton.contains(e.target) && !adminNotificationDropdown.contains(e.target)) {
+                adminNotificationDropdown.classList.add('hidden');
             }
         });
 

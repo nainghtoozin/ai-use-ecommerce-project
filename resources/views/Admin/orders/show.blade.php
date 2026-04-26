@@ -235,8 +235,8 @@
                         </form>
                     @endif
 
-                    @if($order->canVerifyPayment())
-                        <form action="{{ route('admin.orders.verify-payment', $order->id) }}" method="POST">
+                    @if($order->canVerifyPayment() || $order->canApprovePayment())
+                        <form action="{{ route('admin.orders.approve-payment', $order->id) }}" method="POST">
                             @csrf
                             <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
                                 <i class="fa-solid fa-check"></i> Approve Payment

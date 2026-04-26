@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\OrderNotificationService;
 use App\Services\TelegramService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,9 +12,9 @@ use Illuminate\View\View;
 class OrderController extends Controller
 {
     public function __construct(
-        private readonly TelegramService $telegramService
-    ) {
-    }
+        private readonly TelegramService $telegramService,
+        private readonly OrderNotificationService $orderNotificationService
+    ) {}
 
     public function create(): View
     {
@@ -45,6 +46,7 @@ class OrderController extends Controller
 
         // Telegram failures are logged inside the service and never block order creation.
         $this->telegramService->sendOrderNotification($order);
+        $this->orderNotificationService->notifyOrderPlaced($order);
 
         return redirect()
             ->route('orders.create')
