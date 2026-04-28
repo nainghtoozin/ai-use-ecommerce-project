@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat</title>
+    <title>Live Chat Support</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -28,15 +28,19 @@
         .chat-input:focus { border-color: #0d6efd; }
         .chat-send-btn { background: #0d6efd; color: white; border: none; padding: 12px 24px; border-radius: 25px; cursor: pointer; }
         .chat-send-btn:hover { background: #0b5ed7; }
-        .empty-chat { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; text-align: center; }
-        .empty-state { padding: 40px; }
+        .connection-status { font-size: 12px; padding: 5px 10px; border-radius: 15px; }
+        .connection-status.connected { background: #d4edda; color: #155724; }
+        .connection-status.disconnected { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-chat-dots-fill"></i> Live Chat Support</h4>
-            <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-house"></i> Home</a>
+            <div class="d-flex align-items-center gap-2">
+                <span id="connectionStatus" class="connection-status disconnected">Connecting...</span>
+                <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-house"></i> Home</a>
+            </div>
         </div>
         
         <div class="chat-container d-flex">
@@ -68,13 +72,16 @@
             </div>
             
             <div class="chat-main">
-                <div class="chat-header">
+                <div class="chat-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0" id="selectedUserName">Select a conversation</h5>
+                    @auth
+                    <span class="text-muted" style="font-size: 12px;">Logged in as: {{ auth()->user()->name }}</span>
+                    @endauth
                 </div>
                 
                 <div class="chat-messages" id="chatMessages">
-                    <div class="empty-chat">
-                        <div class="empty-state">
+                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                        <div class="text-center">
                             <i class="bi bi-chat-square-text fs-1"></i>
                             <p class="mt-3">Select a conversation to start chatting</p>
                         </div>
@@ -82,136 +89,241 @@
                 </div>
                 
                 <div class="chat-input-area">
-                    <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." maxlength="5000">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." maxlength="5000" autocomplete="off">
                     <button class="chat-send-btn" id="chatSendBtn"><i class="bi bi-send"></i> Send</button>
                 </div>
             </div>
         </div>
     </div>
 
-<script>
-var selectedUserId = null;
-var currentUserId = {{ auth()->id() }};
-
-function initChat() {
-    var firstUser = document.querySelector('.chat-user');
-    if (firstUser) {
-        var userId = parseInt(firstUser.getAttribute('data-user-id'));
-        if (userId) {
-            selectUser(userId);
-        }
-    }
-}
-
-function selectUser(userId) {
-    selectedUserId = userId;
-    var items = document.querySelectorAll('.chat-user');
-    for (var i = 0; i < items.length; i++) {
-        items[i].classList.remove('active');
-    }
-    var el = document.querySelector('.chat-user[data-user-id="' + userId + '"]');
-    if (el) {
-        el.classList.add('active');
-        var nameEl = el.querySelector('.chat-user-name');
-        document.getElementById('selectedUserName').textContent = nameEl ? nameEl.textContent : 'Chat';
-    }
-    loadMessages();
-}
-
-function loadMessages() {
-    if (!selectedUserId) return;
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.1/dist/echo.iife.js"></script>
     
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/chat/messages/' + selectedUserId, true);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            var data = JSON.parse(xhr.responseText);
-            var container = document.getElementById('chatMessages');
+    <script>
+    // Assign Pusher to window first
+    window.Pusher = Pusher;
+    
+    // Initialize Echo and assign to window
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: '{{ config('broadcasting.connections.pusher.key') }}',
+        cluster: '{{ config('broadcasting.connections.pusher.cluster') }}',
+        forceTLS: true,
+        encrypted: true,
+    });
+    
+    var selectedUserId = null;
+    var currentUserId = {{ auth()->id() }};
+    var messagesContainer = document.getElementById('chatMessages');
+    var chatInput = document.getElementById('chatInput');
+    var chatSendBtn = document.getElementById('chatSendBtn');
+    var connectionStatus = document.getElementById('connectionStatus');
+    
+    // Connection status handling
+    window.Echo.connector.pusher.connection.bind('connected', function() {
+        connectionStatus.textContent = 'Live';
+        connectionStatus.className = 'connection-status connected';
+    });
+    
+    window.Echo.connector.pusher.connection.bind('disconnected', function() {
+        connectionStatus.textContent = 'Disconnected';
+        connectionStatus.className = 'connection-status disconnected';
+    });
+    
+    window.Echo.connector.pusher.connection.bind('error', function(error) {
+        connectionStatus.textContent = 'Connection Error';
+        connectionStatus.className = 'connection-status disconnected';
+    });
+    
+    // Subscribe to user's private channel
+    window.Echo.private('chat.' + currentUserId)
+        .listen('.message.sent', function(data) {
+            // Skip if message is from current user (already shown via optimistic UI)
+            if (data.sender_id === currentUserId) {
+                return;
+            }
+            // Skip duplicates
+            if (isMessageDuplicate(data)) {
+                return;
+            }
+            if (data.receiver_id === selectedUserId) {
+                appendMessageToUI(data, false);
+            }
+        });
+        
+        function selectUser(userId) {
+            selectedUserId = userId;
+            document.querySelectorAll('.chat-user').forEach(function(el) {
+                el.classList.remove('active');
+            });
+            var el = document.querySelector('.chat-user[data-user-id="' + userId + '"]');
+            if (el) {
+                el.classList.add('active');
+                var nameEl = el.querySelector('.chat-user-name');
+                document.getElementById('selectedUserName').textContent = nameEl ? nameEl.textContent : 'Chat';
+            }
+            loadMessages();
+        }
+        
+        function loadMessages() {
+            if (!selectedUserId) return;
             
-            if (!data.messages || data.messages.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-4">Type a message to start the conversation!</div>';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/chat/messages/' + selectedUserId, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    renderMessages(data.messages || []);
+                    markAsRead();
+                }
+            };
+            xhr.send();
+        }
+        
+        function renderMessages(messages) {
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted"><div class="text-center"><i class="bi bi-chat-square-text fs-1"></i><p class="mt-3">No messages yet. Say hello!</p></div></div>';
                 return;
             }
             
-            var html = '';
-            for (var i = 0; i < data.messages.length; i++) {
-                var msg = data.messages[i];
-                var cls = msg.sender_id === currentUserId ? 'message-sent' : 'message-received';
-                var time = new Date(msg.created_at).toLocaleString();
-                html += '<div class="message ' + cls + '">' + escapeHtml(msg.message) +
-                    '<small class="message-time">' + time + '</small></div>';
+            for (var i = 0; i < messages.length; i++) {
+                var msg = messages[i];
+                msg.sender_id = msg.sender_id || msg.user_id;
+                appendMessageToUI(msg, false);
             }
-            container.innerHTML = html;
-            container.scrollTop = container.scrollHeight;
+        }
+        
+        function appendMessageToUI(data, isOptimistic) {
+            var existingEmpty = messagesContainer.querySelector('.d-flex.align-items-center.justify-content-center');
+            if (existingEmpty) {
+                existingEmpty.parentElement.innerHTML = '';
+            }
             
-            markAsRead();
+            var cls = data.sender_id === currentUserId ? 'message-sent' : 'message-received';
+            var time = data.created_at ? new Date(data.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            
+            var div = document.createElement('div');
+            div.className = 'message ' + cls;
+            div.dataset.messageId = data.id || data.temp_id || '';
+            div.innerHTML = escapeHtml(data.message) + '<small class="message-time">' + time + '</small>';
+            messagesContainer.appendChild(div);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return div;
         }
-    };
-    xhr.send();
-}
-
-function markAsRead() {
-    if (!selectedUserId) return;
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/chat/read/' + selectedUserId, true);
-    xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
-    xhr.send();
-}
-
-document.getElementById('chatSendBtn').addEventListener('click', sendMessage);
-document.getElementById('chatInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') sendMessage();
-});
-
-function sendMessage() {
-    var input = document.getElementById('chatInput');
-    var message = input.value.trim();
-    if (!message) return;
-    
-    if (!selectedUserId) {
-        var firstUser = document.querySelector('.chat-user');
-        if (firstUser) {
-            selectedUserId = parseInt(firstUser.getAttribute('data-user-id'));
+        
+        function isMessageDuplicate(data) {
+            var existing = messagesContainer.querySelectorAll('.message');
+            for (var i = 0; i < existing.length; i++) {
+                var el = existing[i];
+                if (el.dataset.messageId && el.dataset.messageId === data.id) {
+                    return true;
+                }
+            }
+            return false;
         }
-    }
-    
-    if (!selectedUserId) {
-        alert('No chat available. Please try again later.');
-        return;
-    }
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/chat/send', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            var data = JSON.parse(xhr.responseText);
-            if (data.success) {
-                input.value = '';
-                loadMessages();
+        
+        function markAsRead() {
+            if (!selectedUserId) return;
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/chat/read/' + selectedUserId, true);
+            xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+            xhr.send();
+        }
+        
+        chatSendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        function sendMessage() {
+            var message = chatInput.value.trim();
+            if (!message) return;
+            
+            if (!selectedUserId) {
+                var firstUser = document.querySelector('.chat-user');
+                if (firstUser) {
+                    selectedUserId = parseInt(firstUser.getAttribute('data-user-id'));
+                    var nameEl = firstUser.querySelector('.chat-user-name');
+                    document.getElementById('selectedUserName').textContent = nameEl ? nameEl.textContent : 'Chat';
+                }
+            }
+            
+            if (!selectedUserId) {
+                return;
+            }
+            
+            var tempId = 'temp_' + Date.now();
+            var optimisticData = {
+                id: tempId,
+                temp_id: tempId,
+                sender_id: currentUserId,
+                receiver_id: selectedUserId,
+                message: message,
+                created_at: new Date().toISOString()
+            };
+            
+            appendMessageToUI(optimisticData, true);
+            
+            chatInput.value = '';
+            chatInput.disabled = true;
+            chatSendBtn.disabled = true;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/chat/send', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    chatInput.disabled = false;
+                    chatSendBtn.disabled = false;
+                    chatInput.focus();
+                    
+                    if (xhr.status === 200) {
+                        var data = JSON.parse(xhr.responseText);
+                        if (data.success && data.message) {
+                            var tempEl = messagesContainer.querySelector('[data-message-id="' + tempId + '"]');
+                            if (tempEl) {
+                                tempEl.dataset.messageId = data.message.id;
+                                var timeEl = tempEl.querySelector('.message-time');
+                                if (timeEl && data.message.created_at) {
+                                    timeEl.textContent = new Date(data.message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                                }
+                            }
+                        }
+                    } else {
+                        var tempEl = messagesContainer.querySelector('[data-message-id="' + tempId + '"]');
+                        if (tempEl) {
+                            tempEl.remove();
+                            chatInput.value = message;
+                        }
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                receiver_id: selectedUserId,
+                message: message
+            }));
+        }
+        
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        // Initialize first user
+        function initChat() {
+            var firstUser = document.querySelector('.chat-user');
+            if (firstUser) {
+                var userId = parseInt(firstUser.getAttribute('data-user-id'));
+                if (userId) {
+                    selectUser(userId);
+                }
             }
         }
-    };
-    xhr.send(JSON.stringify({
-        receiver_id: selectedUserId,
-        message: message
-    }));
-}
-
-function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text || '';
-    return div.innerHTML;
-}
-
-setInterval(function() {
-    if (selectedUserId) {
-        loadMessages();
-    }
-}, 3000);
-
-window.onload = initChat;
-</script>
+        
+        window.onload = initChat;
+    </script>
 </body>
 </html>
