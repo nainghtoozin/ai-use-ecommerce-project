@@ -77,6 +77,12 @@
                         <i class="fas fa-globe"></i> 
                         <span>Website Info</span>
                     </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.settings.edit') }}" class="nav-item {{ request()->routeIs('admin.settings*') ? 'active' : '' }}">
+                        <i class="fas fa-headset"></i> 
+                        <span>Customer Support Settings</span>
+                    </a>
                 </li>                
             </ul>
         </nav>

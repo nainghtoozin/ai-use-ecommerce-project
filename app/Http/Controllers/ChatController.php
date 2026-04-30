@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+use App\Events\UserTyping;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,7 @@ class ChatController extends Controller
         $request->validate([
             'receiver_id' => 'required|integer|exists:users,id',
             'message' => 'required|string|max:5000',
+            'reply_to_id' => 'nullable|integer|exists:messages,id',
         ]);
 
         $senderId = Auth::id();
@@ -78,13 +80,19 @@ class ChatController extends Controller
             return response()->json(['error' => 'Cannot send message to yourself'], 400);
         }
 
-        $message = Message::create([
+        $data = [
             'sender_id' => $senderId,
             'receiver_id' => $receiverId,
             'message' => $request->message,
-        ]);
+        ];
 
-        $message->load('sender:id,name');
+        if ($request->reply_to_id) {
+            $data['reply_to_id'] = $request->reply_to_id;
+        }
+
+        $message = Message::create($data);
+
+        $message->load(['sender:id,name', 'replyTo:id,message,sender_id']);
 
         event(new MessageSent($message));
 
@@ -94,18 +102,30 @@ class ChatController extends Controller
         ]);
     }
 
-    public function fetchMessages(int $userId): JsonResponse
+    public function fetchMessages(int $userId, ?int $beforeId = null): JsonResponse
     {
         $currentUserId = Auth::id();
+        $limit = 20;
 
-        $messages = Message::conversation($currentUserId, $userId)
-            ->orderBy('created_at', 'asc')
-            ->limit(50)
-            ->get(['id', 'sender_id', 'receiver_id', 'message', 'created_at']);
+        $query = Message::conversation($currentUserId, $userId)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit);
+
+        if ($beforeId) {
+            $beforeMessage = Message::find($beforeId);
+            if ($beforeMessage) {
+                $query->where('created_at', '<', $beforeMessage->created_at);
+            }
+        }
+
+        $messages = $query->get(['id', 'sender_id', 'receiver_id', 'message', 'created_at', 'reply_to_id']);
+
+        $messages = $messages->reverse()->values();
 
         return response()->json([
             'success' => true,
             'messages' => $messages,
+            'has_more' => $messages->count() >= $limit,
         ]);
     }
 
@@ -152,5 +172,22 @@ class ChatController extends Controller
         }
 
         return response()->json(['users' => $result]);
+    }
+
+    public function typing(Request $request): JsonResponse
+    {
+        $request->validate([
+            'receiver_id' => 'required|integer|exists:users,id',
+            'is_typing' => 'boolean',
+        ]);
+
+        $senderId = Auth::id();
+        $senderName = Auth::user()->name;
+        $receiverId = (int) $request->receiver_id;
+        $isTyping = $request->is_typing ?? true;
+
+        event(new UserTyping($senderId, $receiverId, $senderName, $isTyping));
+
+        return response()->json(['success' => true]);
     }
 }

@@ -38,19 +38,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::get('/chat/messages/{userId}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
+    Route::get('/chat/messages/{userId}/{beforeId?}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
     Route::post('/chat/read/{userId}', [ChatController::class, 'markAsRead'])->name('chat.read');
     Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
+    Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
 });
 
 // Admin routes (only accessible by users with role 'admin')
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
 
+    // Settings
+    Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
+
     // Chat Routes
     Route::get('/chat/users', [ChatController::class, 'getAdminUsers'])->name('chat.users');
     Route::get('/chat/messages/{userId}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
+    Route::get('/chat/messages/{userId}/{beforeId?}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::post('/chat/read/{userId}', [ChatController::class, 'markAsRead'])->name('chat.read');
+    Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
 
     // Search Routes
     Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');

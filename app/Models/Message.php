@@ -15,6 +15,7 @@ class Message extends Model
         'receiver_id',
         'message',
         'is_read',
+        'reply_to_id',
     ];
 
     protected $casts = [
@@ -30,6 +31,16 @@ class Message extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function replyTo(): BelongsTo
+    {
+        return $this->belongsTo(Message::class, 'reply_to_id');
+    }
+
+    public function replies(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Message::class, 'reply_to_id');
     }
 
     public function scopeConversation($query, int $userId1, int $userId2)
