@@ -1,0 +1,5 @@
+@import '@fontsource-variable/figtree/index.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,0 +1,268 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Models\ActivityLog;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
+
+class AdminUserController extends Controller
+{
+    public function __construct(
+        private readonly \App\Services\ImageService $imageService
+    ) {}
+
+    public function index(Request $request)
+    {
+        $search = $request->get('search');
+        $role = $request->get('role');
+        $status = $request->get('status');
+
+        $users = User::with('roles')
+            ->when($search, fn($q, $s) => $q->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('email', 'like', "%{$s}%");
+            }))
+            ->when($role, fn($q, $r) => $q->whereHas('roles', fn($q) => $q->where('name', $r)))
+            ->when($status, fn($q, $s) => $q->where('status', $s))
+            ->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        $roles = Role::orderBy('name')->pluck('name');
+
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $users,
+            'filters' => ['search' => $search, 'role' => $role, 'status' => $status],
+            'roles' => $roles,
+        ]);
+    }
+
+    public function create()
+    {
+        $roles = Role::orderBy('name')->pluck('name');
+
+        return Inertia::render('Admin/Users/Create', [
+            'roles' => $roles,
+        ]);
+    }
+
+    public function store(StoreUserRequest $request)
+    {
+        $data = $request->validated();
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'status' => $data['status'] ?? User::STATUS_ACTIVE,
+        ]);
+
+        $user->syncRoles([$data['role']]);
+        $user->update(['role' => $data['role']]);
+
+        if ($request->hasFile('profile_image')) {
+            $path = $this->imageService->upload($request->file('profile_image'), 'profile-images');
+            $user->update(['profile_image' => $path]);
+        }
+
+        $user->logActivity('created', "User created by admin", [
+            'created_by' => auth()->id(),
+            'assigned_role' => $data['role'],
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User created successfully.');
+    }
+
+    public function show(int $id)
+    {
+        $user = User::with('roles')->findOrFail($id);
+
+        $activities = ActivityLog::query()
+            ->where('subject_type', User::class)
+            ->where('subject_id', $user->id)
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        return Inertia::render('Admin/Users/Show', [
+            'user' => $user,
+            'activities' => $activities,
+        ]);
+    }
+
+    public function edit(int $id)
+    {
+        $user = User::with('roles')->findOrFail($id);
+        $roles = Role::orderBy('name')->pluck('name');
+
+        return Inertia::render('Admin/Users/Edit', [
+            'user' => $user,
+            'roles' => $roles,
+        ]);
+    }
+
+    public function update(UpdateUserRequest $request, int $id)
+    {
+        $user = User::with('roles')->findOrFail($id);
+        $data = $request->validated();
+        $changes = [];
+
+        if (isset($data['name']) && $data['name'] !== $user->name) {
+            $changes[] = 'name';
+        }
+        if (isset($data['email']) && $data['email'] !== $user->email) {
+            $changes[] = 'email';
+        }
+
+        $updateData = [];
+        foreach (['name', 'email'] as $field) {
+            if (isset($data[$field])) {
+                $updateData[$field] = $data[$field];
+            }
+        }
+
+        if (!empty($data['password'])) {
+            $updateData['password'] = Hash::make($data['password']);
+            $changes[] = 'password';
+        }
+
+        if (!empty($data['status'])) {
+            if ($data['status'] !== $user->status) {
+                if ($data['status'] !== User::STATUS_ACTIVE && auth()->id() === $user->id) {
+                    return redirect()->back()->with('error', 'You cannot change your own status.');
+                }
+                $updateData['status'] = $data['status'];
+                $changes[] = "status:{$user->status}->{$data['status']}";
+            }
+        }
+
+        if (!empty($updateData)) {
+            $user->update($updateData);
+        }
+
+        if (isset($data['role'])) {
+            $currentRoles = $user->roles->pluck('name')->toArray();
+            if ($data['role'] !== ($currentRoles[0] ?? null)) {
+                if ($user->hasRole('superadmin') && $data['role'] !== 'superadmin') {
+                    $superadminCount = User::role('superadmin')->count();
+                    if ($superadminCount <= 1) {
+                        return redirect()->back()->with('error', 'Cannot remove the last remaining superadmin.');
+                    }
+                }
+                $user->syncRoles([$data['role']]);
+                $user->update(['role' => $data['role']]);
+                $changes[] = "role:->{$data['role']}";
+            }
+        }
+
+        if ($request->hasFile('profile_image')) {
+            $path = $this->imageService->upload($request->file('profile_image'), 'profile-images');
+            $user->update(['profile_image' => $path]);
+            $changes[] = 'profile_image';
+        }
+
+        if (!empty($changes)) {
+            $user->logActivity('updated', "User updated by admin", [
+                'updated_by' => auth()->id(),
+                'changes' => $changes,
+            ]);
+        }
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User updated successfully.');
+    }
+
+    public function destroy(int $id)
+    {
+        $user = User::with('roles')->findOrFail($id);
+
+        if ($user->hasRole('superadmin')) {
+            $superadminCount = User::role('superadmin')->count();
+            if ($superadminCount <= 1) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Cannot delete the last remaining superadmin.');
+            }
+        }
+
+        if ($user->hasRole('admin') && !$user->hasRole('superadmin')) {
+            $adminCount = User::role('admin')->count();
+            if ($adminCount <= 1) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Cannot delete the last remaining admin.');
+            }
+        }
+
+        if (auth()->id() === $user->id) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'You cannot delete your own account.');
+        }
+
+        $user->logActivity('deleted', "User deleted by admin", [
+            'deleted_by' => auth()->id(),
+        ]);
+
+        $user->delete();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User deleted successfully.');
+    }
+
+    public function suspend(int $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (auth()->id() === $user->id) {
+            return redirect()->back()->with('error', 'You cannot suspend your own account.');
+        }
+
+        $user->update(['status' => User::STATUS_SUSPENDED]);
+
+        $user->logActivity('suspended', "User suspended by admin", [
+            'suspended_by' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User suspended successfully.');
+    }
+
+    public function ban(int $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (auth()->id() === $user->id) {
+            return redirect()->back()->with('error', 'You cannot ban your own account.');
+        }
+
+        $user->update(['status' => User::STATUS_BANNED]);
+
+        $user->logActivity('banned', "User banned by admin", [
+            'banned_by' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User banned successfully.');
+    }
+
+    public function activate(int $id)
+    {
+        $user = User::findOrFail($id);
+
+        $user->update(['status' => User::STATUS_ACTIVE]);
+
+        $user->logActivity('activated', "User reactivated by admin", [
+            'activated_by' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User reactivated successfully.');
+    }
+}

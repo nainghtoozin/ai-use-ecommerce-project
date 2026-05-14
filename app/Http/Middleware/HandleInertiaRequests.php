@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+use App\Models\WebsiteInfo;
+use App\Models\Category;
+use App\Models\Product;
+
+class HandleInertiaRequests extends Middleware
+{
+    protected $rootView = 'app';
+
+    public function version(Request $request): ?string
+    {
+        return parent::version($request);
+    }
+
+    public function share(Request $request): array
+    {
+        $cart = $this->getCartData($request);
+
+        $user = $request->user();
+        $userData = $user ? [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'status' => $user->status,
+            'profile_image' => $user->profile_image,
+            'email_verified_at' => $user->email_verified_at,
+            'is_admin' => $user->isAdmin(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ] : null;
+
+        return array_merge(parent::share($request), [
+            'auth' => [
+                'user' => $userData,
+            ],
+            'cart' => $cart,
+            'notifications' => [
+                'unread_count' => $this->getUnreadCount($request),
+            ],
+            'flash' => [
+                'success' => session('success'),
+                'error'   => session('error'),
+                'warning' => session('warning'),
+            ],
+            'app' => [
+                'name' => config('app.name', 'Laravel'),
+            ],
+            'website_info' => cache()->remember('website_info', 3600, function() {
+                return WebsiteInfo::first();
+            }),
+            'categories' => cache()->remember('categories', 3600, function() {
+                return Category::orderBy('name')->get(['id', 'name']);
+            }),
+        ]);
+    }
+
+    private function getCartData(Request $request): array
+    {
+        $sessionCart = $request->session()->get('cart', []);
+        
+        if (empty($sessionCart)) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'items' => [],
+            ];
+        }
+
+        $productIds = array_keys($sessionCart);
+        
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        
+        $items = [];
+        $total = 0;
+        $count = 0;
+
+        foreach ($sessionCart as $productId => $item) {
+            $product = $products->get($productId);
+            
+            if ($product) {
+                $quantity = $item['quantity'];
+                $count += $quantity;
+                $itemTotal = $product->price * $quantity;
+                $total += $itemTotal;
+                
+                $items[] = [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => (float) $product->price,
+                    'photo1' => $product->photo1,
+                    'quantity' => $quantity,
+                ];
+            }
+        }
+
+        return [
+            'count' => $count,
+            'total' => (float) $total,
+            'items' => $items,
+        ];
+    }
+
+    private function getUnreadCount(Request $request): int
+    {
+        if (!$request->user()) return 0;
+        
+        return cache()->remember('unread_notifications_' . $request->user()->id, 30, function() {
+            return (int) request()->user()->unreadNotifications()->count();
+        });
+    }
+}

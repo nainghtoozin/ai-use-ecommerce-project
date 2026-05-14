@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\PromotionBanner;
+use App\Services\ImageService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class AdminPromotionBannerController extends Controller
+{
+    public function __construct(
+        private readonly ImageService $imageService
+    ) {}
+
+    public function index()
+    {
+        $promotions = PromotionBanner::latest()->paginate(10);
+
+        return Inertia::render('Admin/PromotionBanners/Index', [
+            'promotions' => $promotions,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'link' => 'required|url',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->imageService->upload($request->file('image'), 'promotions');
+        }
+
+        $promotion = PromotionBanner::create($data);
+
+        return redirect()->route('admin.banners.index')
+            ->with('success', 'Banner created successfully!');
+    }
+
+    public function show(PromotionBanner $promotion)
+    {
+        return redirect()->route('admin.banners.index');
+    }
+
+    public function update(Request $request, PromotionBanner $promotion)
+    {
+        $data = $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'link' => 'sometimes|url',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $this->imageService->delete($promotion->image);
+            $data['image'] = $this->imageService->upload($request->file('image'), 'promotions');
+        }
+
+        $promotion->update($data);
+
+        return redirect()->route('admin.banners.index')
+            ->with('success', 'Banner updated successfully.');
+    }
+
+    public function destroy(PromotionBanner $promotion)
+    {
+        $this->imageService->delete($promotion->image);
+        $promotion->delete();
+
+        return redirect()->route('admin.banners.index')
+            ->with('success', 'Banner deleted successfully.');
+    }
+
+    public function create()
+    {
+        return Inertia::render('Admin/PromotionBanners/Create');
+    }
+
+    public function edit(PromotionBanner $promotion)
+    {
+        return Inertia::render('Admin/PromotionBanners/Edit', [
+            'promotion' => $promotion,
+        ]);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        $promotions = PromotionBanner::where(function ($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%")
+                ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->orderBy('updated_at', 'desc')
+            ->paginate(10);
+
+        $promotions->appends(['query' => $query]);
+
+        return Inertia::render('Admin/PromotionBanners/Index', [
+            'promotions' => $promotions,
+            'query' => $query,
+        ]);
+    }
+}

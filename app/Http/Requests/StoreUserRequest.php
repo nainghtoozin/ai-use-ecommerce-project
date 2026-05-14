@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules;
+
+class StoreUserRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->isAdmin() ?? false;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'string', 'exists:roles,name'],
+            'status' => ['required', 'string', 'in:active,suspended,banned'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'role.exists' => 'The selected role does not exist in the system.',
+            'status.in' => 'Status must be one of: active, suspended, banned.',
+        ];
+    }
+}
