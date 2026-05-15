@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Order;
+use App\Models\Setting;
 use App\Models\User;
 use App\Events\OrderPlaced;
 use App\Events\PaymentProofUploaded;
@@ -41,6 +42,11 @@ class ProcessOrderNotifications implements ShouldQueue
         NotificationPreferenceService $preferenceService,
     ): void {
         try {
+            $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
+            $telegramEnabled = Setting::get('telegram_notifications_enabled', 'true') === 'true';
+
+            $admins = User::where('role', User::ROLE_ADMIN)->get();
+
             ActivityLogger::log(
                 'Order #' . $this->order->id . ' placed',
                 'order_created',
@@ -48,16 +54,20 @@ class ProcessOrderNotifications implements ShouldQueue
                 ['order_id' => $this->order->id, 'total_amount' => $this->order->total_amount]
             );
 
-            $telegramService->sendOrderNotification($this->order);
-            $orderNotificationService->notifyOrderPlaced($this->order);
-
-            $admins = User::where('role', User::ROLE_ADMIN)->get();
-            $adminsWhoWantNewOrder = $preferenceService->filterUsersByPreference($admins, 'new_order');
-            if ($adminsWhoWantNewOrder->isNotEmpty()) {
-                BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
+            if ($telegramEnabled) {
+                $telegramService->sendOrderNotification($this->order);
             }
 
-            if ($this->paymentScreenshotPath) {
+            if ($notificationsEnabled) {
+                $orderNotificationService->notifyOrderPlaced($this->order);
+
+                $adminsWhoWantNewOrder = $preferenceService->filterUsersByPreference($admins, 'new_order');
+                if ($adminsWhoWantNewOrder->isNotEmpty()) {
+                    BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
+                }
+            }
+
+            if ($notificationsEnabled && $this->paymentScreenshotPath) {
                 $adminsWhoWantProof = $preferenceService->filterUsersByPreference($admins, 'payment_proof_uploaded');
                 if ($adminsWhoWantProof->isNotEmpty()) {
                     try {

@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\AdminNotificationSettingsController;
+use App\Http\Controllers\Admin\AdminTelegramBotController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CheckoutController;
@@ -201,6 +203,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Website Info
     Route::get('website-info/edit', [AdminWebsiteInfoController::class, 'edit'])->name('website-info.edit');
     Route::post('website-info/update', [AdminWebsiteInfoController::class, 'update'])->name('website-info.update');
+
+    // Notification Settings
+    Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');
+    Route::post('/settings/notifications', [AdminNotificationSettingsController::class, 'update'])->name('settings.notifications.update');
+
+    // Telegram Bot Settings
+    Route::get('/settings/telegram', [AdminTelegramBotController::class, 'edit'])->name('settings.telegram');
+    Route::post('/settings/telegram', [AdminTelegramBotController::class, 'update'])->name('settings.telegram.update');
+    Route::post('/settings/telegram/test', [AdminTelegramBotController::class, 'test'])->name('settings.telegram.test');
 
     // Payment Methods
     Route::resource('payment-methods', AdminPaymentMethodController::class)->except(['show']);

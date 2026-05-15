@@ -80,22 +80,22 @@ export default function AdminDashboard({
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 lg:gap-4">
                     {statCards.map((stat, idx) => {
                         const colors = colorMap[stat.color];
                         return (
-                            <div key={idx} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition-shadow duration-200">
+                            <div key={idx} className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-lg transition-shadow duration-200">
                                 <div className="flex items-start justify-between">
-                                    <div className={`p-2.5 rounded-lg ${stat.bg}`}>
-                                        <i className={`bi ${stat.icon} text-lg ${colors.icon}`}></i>
+                                    <div className={`p-2 rounded-lg ${stat.bg}`}>
+                                        <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
                                     </div>
                                     {stat.label === 'Total Revenue' && growthTodayVsYesterday !== null && (
                                         <GrowthBadge value={growthTodayVsYesterday} />
                                     )}
                                 </div>
-                                <div className="mt-4">
-                                    <p className="text-2xl font-bold text-gray-900 truncate">{stat.value}</p>
-                                    <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+                                <div className="mt-3 lg:mt-4">
+                                    <p className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{stat.value}</p>
+                                    <p className="text-xs lg:text-sm text-gray-500 mt-1">{stat.label}</p>
                                 </div>
                             </div>
                         );
@@ -117,7 +117,7 @@ export default function AdminDashboard({
                             </div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
                         {[
                             { label: 'Today', gross: revenueToday, net: netrevenueToday, growth: growthTodayVsYesterday },
                             { label: 'Yesterday', gross: revenueYesterday, net: netrevenueYesterday },

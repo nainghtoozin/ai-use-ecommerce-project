@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Order;
+use App\Models\Setting;
 use App\Models\User;
 use App\Events\OrderStatusChanged;
 use App\Events\PaymentVerified;
@@ -47,37 +48,41 @@ class ProcessOrderStatusChange implements ShouldQueue
 
         $this->logActivity();
 
-        $userNotif = $this->getUserNotification();
-        if ($userNotif && $this->order->user && $preferenceService->userWantsNotification($this->order->user, $userNotif['pref_key'])) {
-            try {
-                $this->order->user->notify(new $userNotif['class']($this->order));
-            } catch (\Throwable $e) {
-                Log::warning("Failed to send {$this->event} notification to user", [
-                    'order_id' => $this->order->id,
-                    'message' => $e->getMessage(),
-                ]);
-            }
-        }
+        $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
 
-        $adminNotif = $this->getAdminNotification();
-        if ($adminNotif) {
-            $admins = User::where('role', User::ROLE_ADMIN)->get();
-            $adminsWhoWant = $preferenceService->filterUsersByPreference($admins, $adminNotif['pref_key']);
-            if ($adminsWhoWant->isNotEmpty()) {
+        if ($notificationsEnabled) {
+            $userNotif = $this->getUserNotification();
+            if ($userNotif && $this->order->user && $preferenceService->userWantsNotification($this->order->user, $userNotif['pref_key'])) {
                 try {
-                    Notification::send($adminsWhoWant, new $adminNotif['class']($this->order));
+                    $this->order->user->notify(new $userNotif['class']($this->order));
                 } catch (\Throwable $e) {
-                    Log::warning("Failed to send {$this->event} admin notification", [
+                    Log::warning("Failed to send {$this->event} notification to user", [
                         'order_id' => $this->order->id,
                         'message' => $e->getMessage(),
                     ]);
                 }
             }
-        }
 
-        $broadcast = $this->getBroadcastEvent();
-        if ($broadcast) {
-            BroadcastService::fire(new $broadcast['class']($this->order), ['order_id' => $this->order->id]);
+            $adminNotif = $this->getAdminNotification();
+            if ($adminNotif) {
+                $admins = User::where('role', User::ROLE_ADMIN)->get();
+                $adminsWhoWant = $preferenceService->filterUsersByPreference($admins, $adminNotif['pref_key']);
+                if ($adminsWhoWant->isNotEmpty()) {
+                    try {
+                        Notification::send($adminsWhoWant, new $adminNotif['class']($this->order));
+                    } catch (\Throwable $e) {
+                        Log::warning("Failed to send {$this->event} admin notification", [
+                            'order_id' => $this->order->id,
+                            'message' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+
+            $broadcast = $this->getBroadcastEvent();
+            if ($broadcast) {
+                BroadcastService::fire(new $broadcast['class']($this->order), ['order_id' => $this->order->id]);
+            }
         }
     }
 

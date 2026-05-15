@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Log;
 
 class TelegramService
 {
-    public function sendMessage(string $text): bool
+    public function sendMessage(string $text, ?string $parseMode = null, ?string $overrideBotToken = null, ?string $overrideChatId = null): bool
     {
-        $botToken = config('services.telegram.bot_token');
-        $chatId = config('services.telegram.chat_id');
+        $botToken = $overrideBotToken ?? config('services.telegram.bot_token');
+        $chatId = $overrideChatId ?? config('services.telegram.chat_id');
 
         if (blank($botToken) || blank($chatId)) {
             Log::warning('Telegram notification skipped: missing bot token or chat ID.');
@@ -23,10 +23,11 @@ class TelegramService
             $response = Http::asForm()
                 ->timeout(5)
                 ->retry(2, 200)
-                ->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                ->post("https://api.telegram.org/bot{$botToken}/sendMessage", array_filter([
                     'chat_id' => $chatId,
                     'text' => $text,
-                ]);
+                    'parse_mode' => $parseMode,
+                ]));
 
             if ($response->failed()) {
                 Log::warning('Telegram notification failed.', [
