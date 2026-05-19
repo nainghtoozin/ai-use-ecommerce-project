@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
+import { useState } from 'react';
 
 export default function AdminDashboard({
     totalProducts,
@@ -10,15 +11,17 @@ export default function AdminDashboard({
     revenueToday,
     revenueYesterday,
     revenueLast7Days,
-    revenueLast28Days,
+    revenueLast30Days,
     revenueThisMonth,
     revenueLastMonth,
+    revenueThisYear,
     netrevenueToday,
     netrevenueYesterday,
     netrevenueLast7Days,
-    netrevenueLast28Days,
+    netrevenueLast30Days,
     netrevenueThisMonth,
     netrevenueLastMonth,
+    netrevenueThisYear,
     growthTodayVsYesterday,
     growthThisMonthVsLastMonth,
     topSelling,
@@ -30,8 +33,59 @@ export default function AdminDashboard({
     activePromotions,
     promotionDiscountsThisMonth,
     mostUsedCoupon,
+    selectedPeriod,
+    startDate,
+    endDate,
+    filteredOrdersCount,
+    filteredRevenue,
+    filteredSales,
+    filteredPendingOrders,
+    filteredVerifiedRevenue,
+    growthPercentage,
 }) {
+    const { url } = usePage();
+    const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
+    const [customStartDate, setCustomStartDate] = useState(startDate || '');
+    const [customEndDate, setCustomEndDate] = useState(endDate || '');
+
     const formatMoney = (amount) => Number(amount || 0).toLocaleString() + ' MMK';
+
+    const periods = [
+        { value: 'today', label: 'Today' },
+        { value: 'last_7_days', label: 'Last 7 Days' },
+        { value: 'last_30_days', label: 'Last 30 Days' },
+        { value: 'this_month', label: 'This Month' },
+        { value: 'last_month', label: 'Last Month' },
+        { value: 'this_year', label: 'This Year' },
+        { value: 'custom', label: 'Custom' },
+    ];
+
+    const handlePeriodChange = (period) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set('period', period);
+        
+        if (period === 'custom') {
+            setShowCustomDate(true);
+            return;
+        } else {
+            setShowCustomDate(false);
+            params.delete('start_date');
+            params.delete('end_date');
+        }
+
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    };
+
+    const handleCustomDateSubmit = () => {
+        if (!customStartDate || !customEndDate) return;
+        
+        const params = new URLSearchParams();
+        params.set('period', 'custom');
+        params.set('start_date', customStartDate);
+        params.set('end_date', customEndDate);
+
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    };
 
     function GrowthBadge({ value }) {
         if (value === undefined || value === null) return null;
@@ -45,11 +99,11 @@ export default function AdminDashboard({
     }
 
     const statCards = [
-        { label: 'Total Sales', value: totalSales || 0, icon: 'bi-bag-check', color: 'blue', bg: 'bg-blue-50' },
-        { label: 'Total Revenue', value: formatMoney(totalRevenue), icon: 'bi-cash-stack', color: 'green', bg: 'bg-emerald-50' },
-        { label: 'Total Orders', value: totalOrders || 0, icon: 'bi-receipt', color: 'violet', bg: 'bg-violet-50' },
-        { label: 'Pending Orders', value: pendingOrders || 0, icon: 'bi-hourglass-split', color: 'amber', bg: 'bg-amber-50' },
-        { label: 'Verified Revenue', value: formatMoney(verifiedRevenue), icon: 'bi-check-circle', color: 'emerald', bg: 'bg-green-50' },
+        { label: 'Total Sales', value: filteredSales || 0, icon: 'bi-bag-check', color: 'blue', bg: 'bg-blue-50' },
+        { label: 'Total Revenue', value: formatMoney(filteredRevenue), icon: 'bi-cash-stack', color: 'green', bg: 'bg-emerald-50' },
+        { label: 'Total Orders', value: filteredOrdersCount || 0, icon: 'bi-receipt', color: 'violet', bg: 'bg-violet-50' },
+        { label: 'Pending Orders', value: filteredPendingOrders || 0, icon: 'bi-hourglass-split', color: 'amber', bg: 'bg-amber-50' },
+        { label: 'Verified Revenue', value: formatMoney(filteredVerifiedRevenue), icon: 'bi-check-circle', color: 'emerald', bg: 'bg-green-50' },
         { label: 'Products', value: totalProducts || 0, icon: 'bi-box-seam', color: 'slate', bg: 'bg-slate-50' },
     ];
 
@@ -77,6 +131,66 @@ export default function AdminDashboard({
                         <i className="bi bi-calendar3"></i>
                         <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
+                </div>
+
+                {/* Period Filter */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex flex-wrap gap-2">
+                            {periods.map((period) => (
+                                <button
+                                    key={period.value}
+                                    onClick={() => handlePeriodChange(period.value)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                        selectedPeriod === period.value
+                                            ? 'bg-blue-600 text-white shadow-md'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {period.label}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        {showCustomDate && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <span className="text-gray-500">to</span>
+                                <input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <button
+                                    onClick={handleCustomDateSubmit}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    {selectedPeriod !== 'today' && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                            <span className="text-sm text-gray-500">
+                                Showing data for: <span className="font-medium text-gray-900">{periods.find(p => p.value === selectedPeriod)?.label || 'Custom'}</span>
+                                {selectedPeriod === 'custom' && startDate && endDate && (
+                                    <span> ({new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()})</span>
+                                )}
+                                {growthPercentage !== null && (
+                                    <span className="ml-4">
+                                        Growth: <GrowthBadge value={growthPercentage} />
+                                    </span>
+                                )}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Stats Grid */}
@@ -117,14 +231,15 @@ export default function AdminDashboard({
                             </div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-3 lg:gap-4">
                         {[
                             { label: 'Today', gross: revenueToday, net: netrevenueToday, growth: growthTodayVsYesterday },
                             { label: 'Yesterday', gross: revenueYesterday, net: netrevenueYesterday },
                             { label: 'Last 7 Days', gross: revenueLast7Days, net: netrevenueLast7Days },
-                            { label: 'Last 28 Days', gross: revenueLast28Days, net: netrevenueLast28Days },
+                            { label: 'Last 30 Days', gross: revenueLast30Days, net: netrevenueLast30Days },
                             { label: 'This Month', gross: revenueThisMonth, net: netrevenueThisMonth, growth: growthThisMonthVsLastMonth },
                             { label: 'Last Month', gross: revenueLastMonth, net: netrevenueLastMonth },
+                            { label: 'This Year', gross: revenueThisYear, net: netrevenueThisYear },
                         ].map((item, idx) => (
                             <div key={idx} className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                                 <p className="text-xs font-medium text-gray-500 mb-2">{item.label}</p>
@@ -250,8 +365,8 @@ export default function AdminDashboard({
                                 <div className="p-5 space-y-3">
                                     {outOfStock.data.slice(0, 4).map((product) => (
                                         <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors">
-                                            {product.photo1 ? (
-                                                <img src={assetUrl(product.photo1)} alt={product.name} className="w-10 h-10 object-cover rounded-lg" />
+                                            {product.photo1_url ? (
+                                                <img src={product.photo1_url} alt={product.name} className="w-10 h-10 object-cover rounded-lg" />
                                             ) : (
                                                 <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
                                                     N/A
@@ -288,8 +403,8 @@ export default function AdminDashboard({
                                 <div className="p-5 space-y-3">
                                     {lowStock.data.slice(0, 4).map((product) => (
                                         <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-amber-50 transition-colors">
-                                            {product.photo1 ? (
-                                                <img src={assetUrl(product.photo1)} alt={product.name} className="w-10 h-10 object-cover rounded-lg" />
+                                            {product.photo1_url ? (
+                                                <img src={product.photo1_url} alt={product.name} className="w-10 h-10 object-cover rounded-lg" />
                                             ) : (
                                                 <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
                                                     N/A

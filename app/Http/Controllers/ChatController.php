@@ -53,7 +53,7 @@ class ChatController extends Controller
         }
 
         if (empty($result)) {
-            $admin = User::where('role', 'admin')->first();
+            $admin = User::role('admin')->first();
             if ($admin && $admin->id !== $currentUserId) {
                 $result[] = [
                     'user' => $admin,
@@ -164,7 +164,7 @@ class ChatController extends Controller
 
     public function getAdminUsers(): JsonResponse
     {
-        $users = User::where('role', '!=', 'admin')
+        $users = User::whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->orderBy('name', 'asc')
             ->get(['id', 'name']);
 

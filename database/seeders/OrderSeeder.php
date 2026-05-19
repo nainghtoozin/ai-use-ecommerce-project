@@ -11,7 +11,7 @@ class OrderSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::where('role', 'customer')->get();
+        $users = User::role('customer')->get();
         
         if ($users->isEmpty()) {
             $this->command->warn('No customer users found. Skipping order seeding.');

@@ -60,14 +60,11 @@ class RoleManagementTest extends TestCase
         Role::create(['name' => 'customer', 'guard_name' => 'web']);
 
         // Create users
-        $this->superadmin = User::factory()->create(['role' => 'superadmin']);
-        $this->superadmin->assignRole('superadmin');
+        $this->superadmin = User::factory()->superadmin()->create();
 
-        $this->admin = User::factory()->create(['role' => 'admin']);
-        $this->admin->assignRole('admin');
+        $this->admin = User::factory()->admin()->create();
 
-        $this->customer = User::factory()->create(['role' => 'customer']);
-        $this->customer->assignRole('customer');
+        $this->customer = User::factory()->customer()->create();
     }
 
     public function test_superadmin_can_view_roles_index(): void
@@ -166,7 +163,7 @@ class RoleManagementTest extends TestCase
     public function test_superadmin_cannot_delete_role_with_users(): void
     {
         $role = Role::create(['name' => 'test-role', 'guard_name' => 'web']);
-        $user = User::factory()->create(['role' => 'test-role']);
+        $user = User::factory()->create();
         $user->assignRole('test-role');
 
         $response = $this->actingAs($this->superadmin)->delete("/admin/roles/{$role->id}");
@@ -272,7 +269,7 @@ class RoleManagementTest extends TestCase
     {
         $restrictedRole = Role::create(['name' => 'restricted', 'guard_name' => 'web']);
         $restrictedRole->syncPermissions(['dashboard.view']);
-        $restrictedUser = User::factory()->create(['role' => 'restricted']);
+        $restrictedUser = User::factory()->create();
         $restrictedUser->assignRole('restricted');
 
         $response = $this->actingAs($restrictedUser)->get('/admin/permissions');

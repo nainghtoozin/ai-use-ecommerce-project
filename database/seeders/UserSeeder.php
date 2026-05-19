@@ -9,17 +9,6 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create admin user
-        if (!User::where('email', 'admin@shop.com')->exists()) {
-            User::create([
-                'name' => 'Admin User',
-                'email' => 'admin@shop.com',
-                'password' => bcrypt('password'),
-                'role' => 'admin',
-                'email_verified_at' => now(),
-            ]);
-        }
-
         // Create customer users
         $customers = [
             ['name' => 'John Doe', 'email' => 'john@example.com'],
@@ -35,14 +24,17 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($customers as $customer) {
-            if (!User::where('email', $customer['email'])->exists()) {
-                User::create([
+            $user = User::updateOrCreate(
+                ['email' => $customer['email']],
+                [
                     'name' => $customer['name'],
-                    'email' => $customer['email'],
                     'password' => bcrypt('password'),
-                    'role' => 'customer',
                     'email_verified_at' => now(),
-                ]);
+                ]
+            );
+
+            if (!$user->hasRole('customer')) {
+                $user->assignRole('customer');
             }
         }
     }

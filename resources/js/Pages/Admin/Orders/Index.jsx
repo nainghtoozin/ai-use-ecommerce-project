@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import PerPageSelect from '@/Components/PerPageSelect';
 
-export default function AdminOrdersIndex({ orders, filters = {} }) {
+export default function AdminOrdersIndex({ orders, filters = {}, showPagination = true, warning = null }) {
     const [filterForm, setFilterForm] = useState({
         order_status: filters.order_status || '',
         payment_status: filters.payment_status || '',
@@ -120,6 +121,14 @@ export default function AdminOrdersIndex({ orders, filters = {} }) {
                     </div>
                 )}
 
+                {/* Per Page Selector */}
+                <div className="flex justify-between items-center mb-4">
+                    <PerPageSelect />
+                    {warning && (
+                        <p className="text-sm text-amber-600">{warning}</p>
+                    )}
+                </div>
+
                 {/* Orders Table */}
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                     <div className="overflow-x-auto">
@@ -187,7 +196,7 @@ export default function AdminOrdersIndex({ orders, filters = {} }) {
                     </div>
 
                     {/* Pagination */}
-                    {orders?.links && orders.links.length > 3 && (
+                    {showPagination && orders?.links && orders.links.length > 3 && (
                         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                             <p className="text-sm text-gray-500">
                                 Showing {orders.from} to {orders.to} of {orders.total} results

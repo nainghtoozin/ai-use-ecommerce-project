@@ -52,7 +52,7 @@ export default function AppLayout({ children, header = null }) {
 
     const logout = () => router.post('/logout');
 
-    const isAdmin = auth?.user?.role === 'admin';
+    const isAdmin = auth?.user?.is_admin;
     const logoUrl = assetUrl(website_info?.logo);
     const siteName = website_info?.name || 'Electronics Store';
 

@@ -26,7 +26,7 @@ class HandleInertiaRequests extends Middleware
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->role,
+            'role' => $user->getRoleNames()->first(),
             'status' => $user->status,
             'profile_image' => $user->profile_image,
             'email_verified_at' => $user->email_verified_at,

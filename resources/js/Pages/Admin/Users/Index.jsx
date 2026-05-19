@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import PerPageSelect from '@/Components/PerPageSelect';
 import { assetUrl } from '@/Utils/helpers';
 
-export default function UsersIndex({ users, filters, roles }) {
+export default function UsersIndex({ users, filters, roles, showPagination = true, warning = null }) {
     const { props } = usePage();
     const [search, setSearch] = useState(filters?.search || '');
     const [roleFilter, setRoleFilter] = useState(filters?.role || '');
@@ -116,6 +117,14 @@ export default function UsersIndex({ users, filters, roles }) {
                                 </select>
                             </div>
 
+                            {/* Per Page Selector */}
+                            <div className="flex justify-between items-center mb-4">
+                                <PerPageSelect />
+                                {warning && (
+                                    <p className="text-sm text-amber-600">{warning}</p>
+                                )}
+                            </div>
+
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
@@ -196,7 +205,7 @@ export default function UsersIndex({ users, filters, roles }) {
                                 </table>
                             </div>
 
-                            {users.links && (
+                            {users.links && showPagination && (
                                 <div className="mt-6">
                                     {users.links.map((link, i) => (
                                         <button

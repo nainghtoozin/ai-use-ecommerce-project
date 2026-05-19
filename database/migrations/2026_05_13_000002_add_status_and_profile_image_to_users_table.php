@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('status')->default('active')->after('role');
+            $table->string('status')->default('active')->after('remember_token');
             $table->string('profile_image')->nullable()->after('status');
         });
     }

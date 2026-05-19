@@ -6,17 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->json('notification_preferences')->nullable()->after('remember_token');
+            $table->dropColumn('role');
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('notification_preferences');
+            $table->string('role')->default('client');
         });
     }
 };

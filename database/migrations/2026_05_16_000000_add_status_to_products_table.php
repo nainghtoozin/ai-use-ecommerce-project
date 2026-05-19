@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->json('notification_preferences')->nullable()->after('remember_token');
+        Schema::table('products', function (Blueprint $table) {
+            $table->enum('status', ['active', 'inactive'])->default('active')->after('stock');
         });
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('notification_preferences');
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropColumn('status');
         });
     }
 };

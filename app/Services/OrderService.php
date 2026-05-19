@@ -193,7 +193,7 @@ class OrderService
                     ]);
 
                     if ($newStock < 10 && $oldStock >= 10) {
-                        $admins = User::where('role', User::ROLE_ADMIN)->get();
+                        $admins = User::role('admin')->get();
                         $adminsWhoWantLowStock = $this->preferenceService->filterUsersByPreference($admins, 'low_stock');
 
                         if ($adminsWhoWantLowStock->isNotEmpty()) {
@@ -258,6 +258,9 @@ class OrderService
                 'order_id' => $order->id,
             ]);
         }
+
+        event(new OrderStatusChanged($order->fresh(), $oldStatus, $newStatus));
+        app(DashboardCacheService::class)->clearOrderRelatedCache();
 
         return $order->fresh();
     }

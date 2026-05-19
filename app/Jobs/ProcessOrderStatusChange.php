@@ -65,7 +65,7 @@ class ProcessOrderStatusChange implements ShouldQueue
 
             $adminNotif = $this->getAdminNotification();
             if ($adminNotif) {
-                $admins = User::where('role', User::ROLE_ADMIN)->get();
+                $admins = User::role('admin')->get();
                 $adminsWhoWant = $preferenceService->filterUsersByPreference($admins, $adminNotif['pref_key']);
                 if ($adminsWhoWant->isNotEmpty()) {
                     try {

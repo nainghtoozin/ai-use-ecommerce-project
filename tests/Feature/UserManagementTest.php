@@ -55,8 +55,7 @@ class UserManagementTest extends TestCase
 
         Role::create(['name' => 'customer', 'guard_name' => 'web']);
 
-        $this->superadmin = User::factory()->create(['role' => 'superadmin']);
-        $this->superadmin->assignRole('superadmin');
+        $this->superadmin = User::factory()->superadmin()->create();
     }
 
     public function test_create_page_passes_all_roles(): void
@@ -75,8 +74,7 @@ class UserManagementTest extends TestCase
 
     public function test_edit_page_passes_all_roles_and_user_role(): void
     {
-        $user = User::factory()->create(['role' => 'customer']);
-        $user->assignRole('customer');
+        $user = User::factory()->create();
 
         $response = $this->actingAs($this->superadmin)->get("/admin/users/{$user->id}/edit");
 
@@ -90,8 +88,7 @@ class UserManagementTest extends TestCase
 
     public function test_user_can_be_assigned_any_existing_role(): void
     {
-        $user = User::factory()->create(['role' => 'customer']);
-        $user->assignRole('customer');
+        $user = User::factory()->create();
 
         $response = $this->actingAs($this->superadmin)->put("/admin/users/{$user->id}", [
             'name' => $user->name,
@@ -103,18 +100,15 @@ class UserManagementTest extends TestCase
         $response->assertRedirect();
         $user->refresh();
         $this->assertTrue($user->hasRole('admin'));
-        $this->assertEquals('admin', $user->role);
     }
 
     public function test_syncRoles_replaces_previous_role(): void
     {
-        $user = User::factory()->create(['role' => 'customer']);
-        $user->assignRole('customer');
+        $user = User::factory()->create();
 
         $this->assertTrue($user->hasRole('customer'));
 
         $user->syncRoles(['admin']);
-        $user->update(['role' => 'admin']);
         $user->refresh();
 
         $this->assertTrue($user->hasRole('admin'));
@@ -124,8 +118,7 @@ class UserManagementTest extends TestCase
 
     public function test_only_one_role_is_assigned(): void
     {
-        $user = User::factory()->create(['role' => 'customer']);
-        $user->assignRole('customer');
+        $user = User::factory()->create();
 
         $user->syncRoles(['admin']);
         $user->refresh();
@@ -150,7 +143,6 @@ class UserManagementTest extends TestCase
         $this->assertNotNull($user);
         $this->assertTrue($user->hasRole('admin'));
         $this->assertCount(1, $user->roles);
-        $this->assertEquals('admin', $user->role);
     }
 
     public function test_last_superadmin_cannot_be_demoted(): void

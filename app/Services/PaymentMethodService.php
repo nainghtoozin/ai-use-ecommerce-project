@@ -39,13 +39,17 @@ class PaymentMethodService
 
     private function handleQrImage(array $data, ?PaymentMethod $paymentMethod = null): array
     {
-        if (isset($data['qr_image']) && $data['qr_image'] instanceof UploadedFile) {
+        if (array_key_exists('qr_image', $data) && $data['qr_image'] instanceof UploadedFile) {
             if ($paymentMethod && $paymentMethod->qr_image) {
                 $this->imageService->delete($paymentMethod->qr_image);
             }
             $data['qr_image'] = $this->imageService->upload($data['qr_image'], 'payment-methods');
-        } elseif (!isset($data['qr_image']) && $paymentMethod) {
+        } elseif (!array_key_exists('qr_image', $data) && $paymentMethod) {
             $data['qr_image'] = $paymentMethod->qr_image;
+        } elseif (array_key_exists('qr_image', $data) && is_null($data['qr_image']) && $paymentMethod) {
+            $data['qr_image'] = $paymentMethod->qr_image;
+        } elseif (!array_key_exists('qr_image', $data) && !$paymentMethod) {
+            $data['qr_image'] = null;
         }
         return $data;
     }

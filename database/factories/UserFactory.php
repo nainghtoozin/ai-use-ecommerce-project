@@ -19,7 +19,6 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => 'customer',
             'status' => 'active',
         ];
     }
@@ -27,35 +26,35 @@ class UserFactory extends Factory
     public function configure(): static
     {
         return $this->afterCreating(function ($user) {
-            $roleName = match ($user->role) {
-                'superadmin' => 'superadmin',
-                'admin' => 'admin',
-                default => 'customer',
-            };
-            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
-            $user->syncRoles([$roleName]);
+            if (!$user->hasAnyRole(Role::all())) {
+                Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
+                $user->assignRole('customer');
+            }
         });
     }
 
     public function superadmin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'superadmin',
-        ]);
+        return $this->afterCreating(function ($user) {
+            Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
+            $user->syncRoles(['superadmin']);
+        });
     }
 
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'admin',
-        ]);
+        return $this->afterCreating(function ($user) {
+            Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+            $user->syncRoles(['admin']);
+        });
     }
 
     public function customer(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'customer',
-        ]);
+        return $this->afterCreating(function ($user) {
+            Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
+            $user->syncRoles(['customer']);
+        });
     }
 
     public function unverified(): static

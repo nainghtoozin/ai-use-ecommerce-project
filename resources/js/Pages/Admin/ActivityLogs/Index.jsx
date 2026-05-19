@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import PerPageSelect from '@/Components/PerPageSelect';
 
-export default function ActivityLogsIndex({ logs, filters }) {
+export default function ActivityLogsIndex({ logs, filters, showPagination = true }) {
     const [logFilter, setLogFilter] = useState(filters?.log_name || '');
     const [eventFilter, setEventFilter] = useState(filters?.event || '');
 
@@ -79,6 +80,11 @@ export default function ActivityLogsIndex({ logs, filters }) {
                                 </select>
                             </div>
 
+                            {/* Per Page Selector */}
+                            <div className="flex justify-between items-center mt-4">
+                                <PerPageSelect showTotal={true} total={logs.total} />
+                            </div>
+
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
@@ -115,7 +121,7 @@ export default function ActivityLogsIndex({ logs, filters }) {
                                 </table>
                             </div>
 
-                            {logs.links && (
+                            {showPagination && logs.links && (
                                 <div className="mt-6">
                                     {logs.links.map((link, i) => (
                                         <button

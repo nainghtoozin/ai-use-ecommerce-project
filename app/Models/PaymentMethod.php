@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentMethod extends Model
 {
@@ -21,6 +22,21 @@ class PaymentMethod extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    protected $appends = ['qr_image_url'];
+
+    public function getQrImageUrlAttribute(): ?string
+    {
+        if (empty($this->qr_image)) {
+            return null;
+        }
+
+        if (str_starts_with($this->qr_image, 'http://') || str_starts_with($this->qr_image, 'https://')) {
+            return $this->qr_image;
+        }
+
+        return asset('storage/' . $this->qr_image);
+    }
 
     public function scopeActive($query)
     {

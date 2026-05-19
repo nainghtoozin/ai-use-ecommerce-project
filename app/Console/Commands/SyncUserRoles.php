@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 class SyncUserRoles extends Command
 {
     protected $signature = 'sync:user-roles';
-    protected $description = 'Sync users.role column with Spatie roles';
+    protected $description = 'Assign customer role to users without any Spatie role';
 
     public function handle(): void
     {
@@ -25,13 +25,10 @@ class SyncUserRoles extends Command
         $updated = 0;
         User::chunk(100, function ($users) use ($bar, &$updated) {
             foreach ($users as $user) {
-                $roleName = match ($user->role) {
-                    'superadmin' => 'superadmin',
-                    'admin' => 'admin',
-                    default => 'customer',
-                };
-                $user->syncRoles([$roleName]);
-                $updated++;
+                if (!$user->hasAnyRole(Role::all())) {
+                    $user->assignRole('customer');
+                    $updated++;
+                }
                 $bar->advance();
             }
         });

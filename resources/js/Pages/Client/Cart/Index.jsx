@@ -230,8 +230,8 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 href={`/client/product/${item.id}`}
                                                 className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden"
                                             >
-                                                {item.photo1 ? (
-                                                    <img src={assetUrl(item.photo1)} alt={item.name} className="w-full h-full object-cover" />
+                                                {item.photo1_url ? (
+                                                    <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full">
                                                         <i className="bi bi-image text-gray-400 text-xl"></i>
@@ -298,8 +298,8 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 href={`/client/product/${item.id}`}
                                                 className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden"
                                             >
-                                                {item.photo1 ? (
-                                                    <img src={assetUrl(item.photo1)} alt={item.name} className="w-full h-full object-cover" />
+                                                {item.photo1_url ? (
+                                                    <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full">
                                                         <i className="bi bi-image text-gray-400 text-xl"></i>

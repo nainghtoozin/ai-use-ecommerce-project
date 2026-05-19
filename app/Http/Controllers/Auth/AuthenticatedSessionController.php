@@ -25,28 +25,31 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
+        $user = User::where('email', $request->email)->first();
+
+        if ($user && !$user->isActive()) {
+            if ($user->isSuspended()) {
+                return back()->withErrors([
+                    'email' => 'Your account has been suspended. Please contact support.',
+                ])->onlyInput('email');
+            }
+
+            if ($user->isBanned()) {
+                return back()->withErrors([
+                    'email' => 'Your account has been banned. Please contact support.',
+                ])->onlyInput('email');
+            }
+
+            return back()->withErrors([
+                'email' => 'Your account is inactive.',
+            ])->onlyInput('email');
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();
 
         $user = Auth::user();
-
-        // Check if user is active
-        if (!$user->isActive()) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            if ($user->isSuspended()) {
-                return redirect()->route('login')
-                    ->with('error', 'Your account has been suspended. Please contact support.');
-            }
-
-            if ($user->isBanned()) {
-                return redirect()->route('login')
-                    ->with('error', 'Your account has been banned.');
-            }
-        }
 
         ActivityLogger::log(
             'User logged in',

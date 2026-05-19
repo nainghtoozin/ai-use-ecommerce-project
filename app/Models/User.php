@@ -19,12 +19,12 @@ class User extends Authenticatable
     const STATUS_ACTIVE = 'active';
     const STATUS_SUSPENDED = 'suspended';
     const STATUS_BANNED = 'banned';
+    const STATUS_INACTIVE = 'inactive';
 
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
         'status',
         'profile_image',
         'notification_preferences',
@@ -70,9 +70,6 @@ class User extends Authenticatable
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (empty($user->role)) {
-                $user->role = 'customer';
-            }
             if (empty($user->status)) {
                 $user->status = self::STATUS_ACTIVE;
             }
@@ -97,6 +94,11 @@ class User extends Authenticatable
     public function isBanned(): bool
     {
         return $this->status === self::STATUS_BANNED;
+    }
+
+    public function isInactive(): bool
+    {
+        return $this->status === self::STATUS_INACTIVE;
     }
 
     public function getDefaultNotificationPreferences(): array

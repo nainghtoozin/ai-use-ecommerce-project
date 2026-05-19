@@ -6,10 +6,14 @@ use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
 use App\Events\OrderPlaced;
+use App\Events\OrderStatusChanged;
 use App\Events\PaymentProofUploaded;
+use App\Events\PaymentVerified;
+use App\Events\PaymentRejected;
 use App\Notifications\PaymentProofUploadedNotification;
 use App\Services\ActivityLogger;
 use App\Services\BroadcastService;
+use App\Services\DashboardCacheService;
 use App\Services\NotificationPreferenceService;
 use App\Services\OrderNotificationService;
 use App\Services\TelegramService;
@@ -45,7 +49,7 @@ class ProcessOrderNotifications implements ShouldQueue
             $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
             $telegramEnabled = Setting::get('telegram_notifications_enabled', 'true') === 'true';
 
-            $admins = User::where('role', User::ROLE_ADMIN)->get();
+            $admins = User::role('admin')->get();
 
             ActivityLogger::log(
                 'Order #' . $this->order->id . ' placed',
@@ -66,6 +70,9 @@ class ProcessOrderNotifications implements ShouldQueue
                     BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
                 }
             }
+
+            event(new OrderPlaced($this->order));
+            app(DashboardCacheService::class)->clearOrderRelatedCache();
 
             if ($notificationsEnabled && $this->paymentScreenshotPath) {
                 $adminsWhoWantProof = $preferenceService->filterUsersByPreference($admins, 'payment_proof_uploaded');

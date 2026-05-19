@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\PaymentMethod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,12 +15,23 @@ class PaymentMethodUpdateRequest extends FormRequest
 
     public function rules(): array
     {
+        $paymentMethod = $this->route('paymentMethod')
+            ?? $this->route('payment_method')
+            ?? $this->route('paymentMethods');
+
+        $ignoreId = null;
+        if ($paymentMethod instanceof PaymentMethod) {
+            $ignoreId = $paymentMethod->id;
+        } elseif (is_numeric($paymentMethod)) {
+            $ignoreId = $paymentMethod;
+        }
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('payment_methods', 'name')->ignore($this->route('paymentMethod')),
+                Rule::unique('payment_methods', 'name')->ignore($ignoreId),
             ],
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',

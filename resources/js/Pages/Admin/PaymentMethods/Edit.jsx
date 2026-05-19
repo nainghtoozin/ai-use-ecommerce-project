@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
 
 export default function PaymentMethodEdit({ paymentMethod }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         name: paymentMethod.name || '',
         account_name: paymentMethod.account_name || '',
         account_number: paymentMethod.account_number || '',
@@ -16,11 +16,26 @@ export default function PaymentMethodEdit({ paymentMethod }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        put(`/admin/payment-methods/${paymentMethod.id}`);
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('name', data.name || '');
+        formData.append('account_name', data.account_name || '');
+        formData.append('account_number', data.account_number || '');
+        formData.append('bank_name', data.bank_name || '');
+        formData.append('is_active', data.is_active ? '1' : '0');
+        if (data.qr_image) {
+            formData.append('qr_image', data.qr_image);
+        }
+
+        router.post(`/admin/payment-methods/${paymentMethod.id}`, formData, {
+            forceFormData: true,
+            preserveScroll: true,
+            preserveState: false,
+        });
     }
 
     function handleQrFile(e) {
-        const file = e.target.files[0];
+        const file = e.target.files?.[0] || null;
         setData('qr_image', file);
         if (file) {
             const reader = new FileReader();
@@ -31,7 +46,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
         }
     }
 
-    const existingQr = paymentMethod.qr_image && !qrPreview ? assetUrl(paymentMethod.qr_image) : null;
+    const existingQr = paymentMethod.qr_image_url && !qrPreview ? paymentMethod.qr_image_url : null;
 
     return (
         <AdminLayout>

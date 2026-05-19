@@ -29,10 +29,10 @@ export default function ProductCard({ product, onAddToCart, addingId = null }) {
         <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
             <Link href={`/client/product/${product.id}`} className="block">
                 <div className="relative aspect-square bg-gray-100 overflow-hidden">
-                    {product.photo1 ? (
+                    {product.photo1_url ? (
                         <>
                             <img
-                                src={assetUrl(product.photo1)}
+                                src={product.photo1_url}
                                 alt={product.name}
                                 className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${
                                     imageLoaded ? 'opacity-100' : 'opacity-0'

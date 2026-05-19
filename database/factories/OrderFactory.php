@@ -15,7 +15,7 @@ class OrderFactory extends Factory
 
     public function definition(): array
     {
-        $users = User::where('role', 'customer')->pluck('id')->toArray();
+        $users = User::role('customer')->pluck('id')->toArray();
         $cities = City::pluck('id')->toArray();
         $paymentMethods = PaymentMethod::where('is_active', true)->pluck('id')->toArray();
 

@@ -383,24 +383,24 @@ return (
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                 {pm.qr_image && (
-                                                                     <div className="flex justify-center sm:justify-end items-start mt-3 sm:mt-0">
-                                                                         <div className="text-center sm:text-right">
-                                                                             <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Scan to Pay</p>
-                                                                             <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(assetUrl(pm.qr_image)); }} className="block">
-                                                                                 <img
-                                                                                     src={assetUrl(pm.qr_image)}
-                                                                                     alt={`${pm.name} QR`}
-                                                                                     className="w-36 h-36 sm:w-44 sm:h-44 rounded-xl border border-gray-200 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                                                 />
-                                                                             </button>
-                                                                             <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(assetUrl(pm.qr_image)); }}
-                                                                                 className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">
-                                                                                 Tap to enlarge
-                                                                             </button>
-                                                                         </div>
-                                                                     </div>
-                                                                 )}
+{pm.qr_image_url && (
+                                                                      <div className="flex justify-center sm:justify-end items-start mt-3 sm:mt-0">
+                                                                          <div className="text-center sm:text-right">
+                                                                              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Scan to Pay</p>
+                                                                              <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(pm.qr_image_url); }} className="block">
+                                                                                  <img
+                                                                                      src={pm.qr_image_url}
+                                                                                      alt={`${pm.name} QR`}
+                                                                                      className="w-36 h-36 sm:w-44 sm:h-44 rounded-xl border border-gray-200 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                                                  />
+                                                                              </button>
+                                                                              <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(pm.qr_image_url); }}
+                                                                                  className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">
+                                                                                  Tap to enlarge
+                                                                              </button>
+                                                                          </div>
+                                                                      </div>
+                                                                  )}
                                                             </div>
                                                             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
                                                                 <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-2">How to Pay</p>
@@ -522,9 +522,9 @@ return (
                                     <div className="divide-y divide-gray-100">
                                         {cartItems.map((item) => (
                                             <div key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
-                                                {item.photo1 && (
+                                                {item.photo1_url && (
                                                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                                        <img src={assetUrl(item.photo1)} alt={item.name} className="w-full h-full object-cover" />
+                                                        <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                     </div>
                                                 )}
                                                 <div className="flex-1 min-w-0 self-center">

@@ -20,7 +20,7 @@ class ClientController extends Controller
         $categoryId = $request->input('category', '');
         $sort = $request->input('sort', 'latest');
 
-        $products = Product::with('category');
+        $products = Product::active()->with('category');
 
         if ($query) {
             $products->where('name', 'LIKE', "%{$query}%");
@@ -87,6 +87,10 @@ class ClientController extends Controller
 
     public function show_product(Product $product)
     {
+        if ($product->status !== Product::STATUS_ACTIVE) {
+            abort(404);
+        }
+
         $promotions = Promotion::valid()->automatic()
             ->with(['products', 'categories'])
             ->orderBy('priority', 'desc')

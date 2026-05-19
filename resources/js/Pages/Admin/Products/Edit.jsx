@@ -12,6 +12,7 @@ export default function ProductEdit({ product, categories }) {
         base_price: product.base_price,
         stock: product.stock,
         category_id: product.category_id,
+        status: product.status || 'active',
         photo1: null,
         photo2: null,
     });
@@ -29,6 +30,7 @@ export default function ProductEdit({ product, categories }) {
         formData.append('base_price', data.base_price);
         formData.append('stock', data.stock);
         formData.append('category_id', data.category_id);
+        formData.append('status', data.status);
         formData.append('_method', 'PUT');
 
         if (photo1File) formData.append('photo1', photo1File);
@@ -148,12 +150,30 @@ export default function ProductEdit({ product, categories }) {
                         </div>
                     </div>
 
+                    {/* Status */}
+                    <div>
+                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                            Status
+                        </label>
+                        <select
+                            id="status"
+                            value={data.status}
+                            onChange={(e) => setData('status', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
+                        <p className="mt-1 text-sm text-gray-500">Inactive products won't be visible to customers.</p>
+                    </div>
+
                     {/* Image Uploads */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <ImageUpload
                             name="photo1"
                             label="Photo 1"
-                            value={assetUrl(product.photo1)}
+                            value={product.photo1_url || null}
                             onChange={(file) => setPhoto1File(file)}
                             error={errors.photo1}
                             maxSize={2}
@@ -162,7 +182,7 @@ export default function ProductEdit({ product, categories }) {
                         <ImageUpload
                             name="photo2"
                             label="Photo 2 (Optional)"
-                            value={assetUrl(product.photo2)}
+                            value={product.photo2_url || null}
                             onChange={(file) => setPhoto2File(file)}
                             error={errors.photo2}
                             maxSize={2}

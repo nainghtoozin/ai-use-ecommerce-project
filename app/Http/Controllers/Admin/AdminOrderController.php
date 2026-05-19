@@ -5,13 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessOrderStatusChange;
 use App\Models\Order;
+use App\Events\PaymentVerified;
+use App\Events\PaymentRejected;
 use App\Services\OrderService;
+use App\Services\DashboardCacheService;
+use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class AdminOrderController extends Controller
 {
+    use PerPageTrait;
+
     protected $orderService;
 
     public function __construct(OrderService $orderService)
@@ -53,10 +59,31 @@ class AdminOrderController extends Controller
             });
         }
 
-        $orders = $ordersQuery->latest()->paginate(15)->withQueryString();
+        $resolved = $this->resolvePerPage($request);
+        $perPage = $resolved['per_page'];
+        $warning = $resolved['warning'];
+        
+        if ($resolved['should_paginate']) {
+            $orders = $ordersQuery->latest()->paginate($perPage)->withQueryString();
+            $showPagination = true;
+        } else {
+            $total = $ordersQuery->count();
+            $items = $ordersQuery->latest()->get();
+            
+            $orders = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total,
+                $total,
+                1,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+            $showPagination = false;
+        }
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
+            'showPagination' => $showPagination,
+            'warning' => $warning,
             'filters' => $filters,
         ]);
     }
@@ -211,6 +238,9 @@ class AdminOrderController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'payment_verified');
 
+            event(new PaymentVerified($order));
+            app(DashboardCacheService::class)->clearOrderRelatedCache();
+
             return redirect()->route('admin.orders.show', $id)
                 ->with('success', 'Payment verified successfully.');
         } catch (\Exception $e) {
@@ -242,6 +272,9 @@ class AdminOrderController extends Controller
             ]);
 
             ProcessOrderStatusChange::dispatch($order, 'payment_rejected', rejectionReason: $request->rejection_reason);
+
+            event(new PaymentRejected($order));
+            app(DashboardCacheService::class)->clearOrderRelatedCache();
 
             return redirect()->route('admin.orders.show', $id)
                 ->with('success', 'Payment rejected.');

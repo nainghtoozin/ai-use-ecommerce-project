@@ -7,6 +7,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,8 @@ use Spatie\Permission\Models\Role;
 
 class AdminUserController extends Controller
 {
+    use PerPageTrait;
+
     public function __construct(
         private readonly \App\Services\ImageService $imageService
     ) {}
@@ -32,14 +35,35 @@ class AdminUserController extends Controller
             }))
             ->when($role, fn($q, $r) => $q->whereHas('roles', fn($q) => $q->where('name', $r)))
             ->when($status, fn($q, $s) => $q->where('status', $s))
-            ->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+            ->orderBy('created_at', 'desc');
+
+        $resolved = $this->resolvePerPage($request);
+        $perPage = $resolved['per_page'];
+        $warning = $resolved['warning'];
+        
+        if ($resolved['should_paginate']) {
+            $users = $users->paginate($perPage)->withQueryString();
+            $showPagination = true;
+        } else {
+            $total = $users->count();
+            $items = $users->get();
+            
+            $users = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total,
+                $total,
+                1,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+            $showPagination = false;
+        }
 
         $roles = Role::orderBy('name')->pluck('name');
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
+            'showPagination' => $showPagination,
+            'warning' => $warning,
             'filters' => ['search' => $search, 'role' => $role, 'status' => $status],
             'roles' => $roles,
         ]);
@@ -66,7 +90,6 @@ class AdminUserController extends Controller
         ]);
 
         $user->syncRoles([$data['role']]);
-        $user->update(['role' => $data['role']]);
 
         if ($request->hasFile('profile_image')) {
             $path = $this->imageService->upload($request->file('profile_image'), 'profile-images');
@@ -159,7 +182,6 @@ class AdminUserController extends Controller
                     }
                 }
                 $user->syncRoles([$data['role']]);
-                $user->update(['role' => $data['role']]);
                 $changes[] = "role:->{$data['role']}";
             }
         }
