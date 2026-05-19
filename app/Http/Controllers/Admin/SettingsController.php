@@ -3,96 +3,55 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Setting;
-use Illuminate\Http\Request;
+use App\Http\Requests\UpdateWebsiteSettingsRequest;
+use App\Models\WebsiteInfo;
+use App\Services\ImageService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class SettingsController extends Controller
 {
+    public function __construct(
+        private readonly ImageService $imageService
+    ) {}
+
     public function edit(): \Inertia\Response
     {
-        $settings = Setting::pluck('value', 'key')->toArray();
+        $settings = WebsiteInfo::getSettings();
 
         return Inertia::render('Admin/Settings/Edit', [
-            'settings' => $settings,
+            'settings' => $settings->toArray(),
         ]);
     }
 
-    public function update(Request $request)
+    public function update(UpdateWebsiteSettingsRequest $request)
     {
-        $request->validate([
-            'telegram_link' => 'nullable|string|max:255',
-            'viber_link' => 'nullable|string|max:255',
-            'facebook_link' => 'nullable|string|max:255',
-            'whatsapp_link' => 'nullable|string|max:255',
-        ]);
+        $info = WebsiteInfo::firstOrCreate(['id' => 1]);
 
-        $keys = ['telegram_link', 'viber_link', 'facebook_link', 'whatsapp_link'];
+        $imageFields = ['logo', 'favicon', 'og_image', 'hero_image'];
 
-        foreach ($keys as $key) {
-            $value = $request->input($key);
-            if (!empty($value)) {
-                $value = $this->normalizeLink($key, $value);
+        foreach ($imageFields as $field) {
+            if ($request->hasFile($field)) {
+                if ($info->$field) {
+                    $this->imageService->delete($info->$field);
+                }
+                $info->$field = $this->imageService->upload($request->file($field), 'website');
             }
-            Setting::set($key, $value);
         }
 
-        return redirect()->route('admin.settings.edit')
-            ->with('success', 'Settings updated successfully.');
-    }
+        $info->fill($request->validated());
+        $info->save();
 
-    private function normalizeLink(string $key, string $value): string
-    {
-        $value = trim($value);
+        WebsiteInfo::clearCache();
+        Cache::forget('website_info');
+        Cache::forget('categories');
 
-        return match ($key) {
-            'telegram_link' => $this->formatTelegram($value),
-            'whatsapp_link' => $this->formatWhatsApp($value),
-            'facebook_link' => $this->formatFacebook($value),
-            'viber_link' => $this->formatViber($value),
-            default => $value,
-        };
-    }
+        Log::info('Website settings updated', [
+            'user_id' => auth()->id(),
+            'updated_fields' => array_keys($request->validated()),
+        ]);
 
-    private function formatTelegram(string $value): string
-    {
-        if (str_starts_with($value, '@')) {
-            return 'https://t.me/' . ltrim($value, '@');
-        }
-        if (!str_starts_with($value, 'http')) {
-            return 'https://t.me/' . $value;
-        }
-        return $value;
-    }
-
-    private function formatWhatsApp(string $value): string
-    {
-        if (preg_match('/^\+?[0-9]{7,15}$/', preg_replace('/[\s\-\(\)]/', '', $value))) {
-            $number = preg_replace('/[^\d]/', '', $value);
-            return 'https://wa.me/' . $number;
-        }
-        if (!str_starts_with($value, 'http')) {
-            return 'https://wa.me/' . preg_replace('/[^\d]/', '', $value);
-        }
-        return $value;
-    }
-
-    private function formatFacebook(string $value): string
-    {
-        if (!str_starts_with($value, 'http')) {
-            return 'https://facebook.com/' . ltrim($value, '/');
-        }
-        return $value;
-    }
-
-    private function formatViber(string $value): string
-    {
-        if (str_starts_with($value, '+')) {
-            return 'viber://chat?number=' . urlencode($value);
-        }
-        if (!str_starts_with($value, 'http') && !str_starts_with($value, 'viber://')) {
-            return 'viber://chat?number=' . $value;
-        }
-        return $value;
+        return redirect()->back()->with('success', 'Settings updated successfully.');
     }
 }

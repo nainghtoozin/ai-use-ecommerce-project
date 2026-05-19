@@ -10,7 +10,6 @@ use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminPromotionController;
 use App\Http\Controllers\Admin\AdminPromotionBannerController;
 use App\Http\Controllers\Admin\AdminTownshipController;
-use App\Http\Controllers\Admin\AdminWebsiteInfoController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -125,9 +124,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
     Route::get('/payments', [AdminPaymentMethodController::class, 'index'])->name('payments.index');
-    Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
-
-    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     // Admin Chat
     Route::get('/chat/users', [ChatController::class, 'getAdminUsers'])->name('chat.users');
@@ -205,9 +201,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::delete('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'destroy'])->name('coupons.destroy');
     Route::get('/coupons/search', [\App\Http\Controllers\Admin\AdminCouponController::class, 'search'])->name('coupons.search');
 
-    // Website Info
-    Route::get('website-info/edit', [AdminWebsiteInfoController::class, 'edit'])->name('website-info.edit');
-    Route::post('website-info/update', [AdminWebsiteInfoController::class, 'update'])->name('website-info.update');
+    // Website Info (now uses SettingsController)
+    Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
+    Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
 
     // Notification Settings
     Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');

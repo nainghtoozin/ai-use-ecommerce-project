@@ -7,6 +7,7 @@ use Inertia\Middleware;
 use App\Models\WebsiteInfo;
 use App\Models\Category;
 use App\Models\Product;
+use Cache;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -50,9 +51,8 @@ class HandleInertiaRequests extends Middleware
             'app' => [
                 'name' => config('app.name', 'Laravel'),
             ],
-            'website_info' => cache()->remember('website_info', 3600, function() {
-                return WebsiteInfo::first();
-            }),
+            'website_info' => WebsiteInfo::getSettings(),
+            'websiteSettings' => WebsiteInfo::getSettings()->toArray(),
             'categories' => cache()->remember('categories', 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
