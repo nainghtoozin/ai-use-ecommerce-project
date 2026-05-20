@@ -54,7 +54,7 @@ export default function AppLayout({ children, header = null }) {
 
     const isAdmin = auth?.user?.is_admin;
     const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.name || 'Electronics Store';
+    const siteName = website_info?.site_name || 'My Store';
 
     const adminMenu = [
         { label: 'Dashboard', href: '/admin/dashboard', icon: 'bi-speedometer2' },
@@ -334,7 +334,7 @@ export default function AppLayout({ children, header = null }) {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">{siteName}</h3>
-                                    <p className="text-gray-400 text-sm">{website_info?.about_description || 'Your trusted electronics store'}</p>
+                                    <p className="text-gray-400 text-sm">{website_info?.about_description || 'Your trusted online store'}</p>
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">Quick Links</h3>

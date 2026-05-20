@@ -13,7 +13,7 @@ export default function AdminSidebar() {
     const [collapsed, setCollapsed] = useState(false);
 
     const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.name || 'Electronics Store';
+    const siteName = website_info?.site_name || 'My Store';
 
     const menuSections = useMemo(() => [
         {

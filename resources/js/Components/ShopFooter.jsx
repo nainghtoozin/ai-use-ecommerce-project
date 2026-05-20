@@ -3,7 +3,7 @@ import { assetUrl } from '@/Utils/helpers';
 
 export default function ShopFooter() {
     const { website_info } = usePage().props;
-    const siteName = website_info?.name || 'Electronics Store';
+    const siteName = website_info?.site_name || 'My Store';
     const logoUrl = assetUrl(website_info?.logo);
 
     const shopLinks = [
@@ -28,11 +28,12 @@ export default function ShopFooter() {
     ];
 
     const socials = [
-        { key: 'facebook', icon: 'bi-facebook', link: website_info?.facebook_link, color: 'hover:bg-blue-600' },
-        { key: 'whatsapp', icon: 'bi-whatsapp', link: website_info?.whatsapp_link, color: 'hover:bg-green-500' },
-        { key: 'telegram', icon: 'bi-telegram', link: website_info?.telegram_link, color: 'hover:bg-sky-500' },
-        { key: 'viber', icon: 'bi-chat-square-text', link: website_info?.viber_link, color: 'hover:bg-purple-500' },
-        { key: 'instagram', icon: 'bi-instagram', link: website_info?.instagram_link, color: 'hover:bg-pink-500' },
+        { key: 'facebook', icon: 'bi-facebook', link: website_info?.facebook_url, color: 'hover:bg-blue-600' },
+        { key: 'whatsapp', icon: 'bi-whatsapp', link: website_info?.whatsapp_number ? `https://wa.me/${website_info.whatsapp_number.replace(/\D/g,'')}` : null, color: 'hover:bg-green-500' },
+        { key: 'telegram', icon: 'bi-telegram', link: website_info?.telegram_username ? `https://t.me/${website_info.telegram_username}` : null, color: 'hover:bg-sky-500' },
+        { key: 'instagram', icon: 'bi-instagram', link: website_info?.instagram_url, color: 'hover:bg-pink-500' },
+        { key: 'youtube', icon: 'bi-youtube', link: website_info?.youtube_url, color: 'hover:bg-red-600' },
+        { key: 'linkedin', icon: 'bi-linkedin', link: website_info?.linkedin_url, color: 'hover:bg-blue-700' },
     ].filter(s => s.link);
 
     return (
@@ -52,7 +53,7 @@ export default function ShopFooter() {
                                 <span className="text-xl font-bold">{siteName}</span>
                             </Link>
                             <p className="text-slate-400 text-sm leading-relaxed mb-5">
-                                {website_info?.about_description || 'Your trusted destination for quality electronics and tech products. Shop with confidence with our secure checkout and fast delivery.'}
+                                {website_info?.about_description || website_info?.footer_description || 'Your trusted destination for quality products.'}
                             </p>
                             {socials.length > 0 && (
                                 <div className="flex items-center gap-2">
@@ -126,15 +127,15 @@ export default function ShopFooter() {
                                         </a>
                                     </li>
                                 )}
-                                {website_info?.email && (
+                                {website_info?.support_email && (
                                     <li>
-                                        <a href={`mailto:${website_info.email}`} className="flex items-start gap-3 group">
+                                        <a href={`mailto:${website_info.support_email}`} className="flex items-start gap-3 group">
                                             <div className="w-8 h-8 bg-slate-800 group-hover:bg-blue-600 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0">
                                                 <i className="bi bi-envelope text-sm"></i>
                                             </div>
                                             <div>
                                                 <p className="text-xs text-slate-500">Email</p>
-                                                <p className="text-sm text-slate-300 group-hover:text-white transition-colors break-all">{website_info.email}</p>
+                                                <p className="text-sm text-slate-300 group-hover:text-white transition-colors break-all">{website_info.support_email}</p>
                                             </div>
                                         </a>
                                     </li>

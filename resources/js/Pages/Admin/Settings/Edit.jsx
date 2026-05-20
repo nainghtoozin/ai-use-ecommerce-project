@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, router, Head } from '@inertiajs/react';
-import { route } from 'ziggy-js';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ImageUpload from '@/Components/ImageUpload';
 
@@ -17,16 +16,10 @@ const TABS = [
   { id: 'system', label: 'System', icon: 'bi-sliders' },
 ];
 
-const assetUrl = (path) => {
-  if (!path) return null;
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `/storage/${path}`;
-};
-
 export default function SettingsEdit({ settings = {} }) {
   const [activeTab, setActiveTab] = useState('general');
 
-  const { data, setData, put, processing, errors, reset } = useForm({
+  const { data, setData, processing, errors } = useForm({
     site_name: settings.site_name || settings.name || '',
     site_tagline: settings.site_tagline || '',
     site_description: settings.site_description || '',
@@ -104,28 +97,6 @@ export default function SettingsEdit({ settings = {} }) {
     enable_compare: settings.enable_compare !== undefined ? settings.enable_compare : true,
   });
 
-  const [previewImages, setPreviewImages] = useState({
-    logo: assetUrl(settings.logo),
-    favicon: assetUrl(settings.favicon),
-    og_image: assetUrl(settings.og_image),
-    footer_logo: assetUrl(settings.footer_logo),
-    about_image: assetUrl(settings.about_image),
-    hero_image: assetUrl(settings.hero_image),
-  });
-
-  const handleImageChange = (field, file) => {
-    setData(field, file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImages(prev => ({ ...prev, [field]: e.target.result }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewImages(prev => ({ ...prev, [field]: null }));
-    }
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -141,9 +112,14 @@ export default function SettingsEdit({ settings = {} }) {
       }
     });
     formData.append('_method', 'PUT');
-    router.post(route('admin.website-info.update'), formData, {
+    router.post('/admin/website-info/edit', formData, {
       forceFormData: true,
       preserveScroll: true,
+      onSuccess: () => {
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      },
     });
   };
 
@@ -255,16 +231,16 @@ export default function SettingsEdit({ settings = {} }) {
                     <ImageUpload
                       name="logo"
                       label="Site Logo"
-                      value={previewImages.logo}
-                      onChange={(file) => handleImageChange('logo', file)}
+                      value={data.logo ?? settings.logo}
+                      onChange={(file) => setData('logo', file)}
                       error={errors.logo}
                       maxSize={2}
                     />
                     <ImageUpload
                       name="favicon"
                       label="Favicon"
-                      value={previewImages.favicon}
-                      onChange={(file) => handleImageChange('favicon', file)}
+                      value={data.favicon ?? settings.favicon}
+                      onChange={(file) => setData('favicon', file)}
                       error={errors.favicon}
                       maxSize={0.5}
                       accept="image/*"
@@ -272,16 +248,16 @@ export default function SettingsEdit({ settings = {} }) {
                     <ImageUpload
                       name="og_image"
                       label="Open Graph Image"
-                      value={previewImages.og_image}
-                      onChange={(file) => handleImageChange('og_image', file)}
+                      value={data.og_image ?? settings.og_image}
+                      onChange={(file) => setData('og_image', file)}
                       error={errors.og_image}
                       maxSize={2}
                     />
                     <ImageUpload
                       name="footer_logo"
                       label="Footer Logo"
-                      value={previewImages.footer_logo}
-                      onChange={(file) => handleImageChange('footer_logo', file)}
+                      value={data.footer_logo ?? settings.footer_logo}
+                      onChange={(file) => setData('footer_logo', file)}
                       error={errors.footer_logo}
                       maxSize={2}
                     />
@@ -331,8 +307,8 @@ export default function SettingsEdit({ settings = {} }) {
                     <ImageUpload
                       name="about_image"
                       label="About Image"
-                      value={previewImages.about_image}
-                      onChange={(file) => handleImageChange('about_image', file)}
+                      value={data.about_image ?? settings.about_image}
+                      onChange={(file) => setData('about_image', file)}
                       error={errors.about_image}
                       maxSize={2}
                     />
@@ -423,8 +399,8 @@ export default function SettingsEdit({ settings = {} }) {
                     <ImageUpload
                       name="hero_image"
                       label="Hero Image"
-                      value={previewImages.hero_image}
-                      onChange={(file) => handleImageChange('hero_image', file)}
+                      value={data.hero_image ?? settings.hero_image}
+                      onChange={(file) => setData('hero_image', file)}
                       error={errors.hero_image}
                       maxSize={2}
                     />

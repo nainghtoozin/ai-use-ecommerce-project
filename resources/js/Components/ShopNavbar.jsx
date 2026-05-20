@@ -19,7 +19,7 @@ export default function ShopNavbar() {
     const searchInputRef = useRef(null);
 
     const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.name || 'Electronics Store';
+    const siteName = website_info?.site_name || 'My Store';
 
     useEffect(() => {
         const handleCartUpdate = (e) => {

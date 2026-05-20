@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 
 export default function AdminFooter() {
     const { website_info } = usePage().props;
-    const siteName = website_info?.name || 'Electronics Store';
+    const siteName = website_info?.site_name || 'My Store';
     const year = new Date().getFullYear();
 
     return (

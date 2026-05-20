@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import getImagePreviewUrl from '@/utils/getImagePreviewUrl';
 
 export default function ImageUpload({
     name,
@@ -10,11 +11,10 @@ export default function ImageUpload({
     maxSize = 2,
     previewSize = 'md',
 }) {
-    const [preview, setPreview] = useState(value);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [dragActive, setDragActive] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const inputRef = useRef(null);
+
+    const previewUrl = getImagePreviewUrl(value);
 
     const previewSizes = {
         sm: 'w-24 h-24',
@@ -23,7 +23,15 @@ export default function ImageUpload({
         full: 'w-full h-64',
     };
 
-    const handleFile = useCallback((file) => {
+    useEffect(() => {
+        return () => {
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
+
+    const handleFile = (file) => {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
@@ -37,63 +45,34 @@ export default function ImageUpload({
             return;
         }
 
-        setIsUploading(true);
-        setUploadProgress(0);
-
-        const reader = new FileReader();
-
-        reader.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const progress = Math.round((e.loaded / e.total) * 100);
-                setUploadProgress(progress);
-            }
-        };
-
-        reader.onloadend = () => {
-            setPreview(reader.result);
-            setIsUploading(false);
-            setUploadProgress(0);
-
-            if (onChange) {
-                onChange(file);
-            }
-        };
-
-        reader.onerror = () => {
-            setIsUploading(false);
-            setUploadProgress(0);
-            alert('Failed to read file.');
-        };
-
-        reader.readAsDataURL(file);
-    }, [maxSize, onChange]);
+        if (onChange) {
+            onChange(file);
+        }
+    };
 
     const handleInputChange = (e) => {
         const file = e.target.files?.[0];
         handleFile(file);
     };
 
-    const handleDrag = (e) => {
+    const handleDragOver = (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setDragActive(true);
-        } else if (e.type === 'dragleave') {
-            setDragActive(false);
-        }
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
+        setIsDragging(false);
         const file = e.dataTransfer.files?.[0];
         handleFile(file);
     };
 
     const handleRemove = () => {
-        setPreview(null);
-        setUploadProgress(0);
         if (inputRef.current) inputRef.current.value = '';
         if (onChange) onChange(null);
     };
@@ -112,17 +91,14 @@ export default function ImageUpload({
             )}
 
             <div className="flex items-start gap-4">
-                {/* Preview */}
                 <div className={`${previewSizes[previewSize]} flex-shrink-0 relative group`}>
-                    {preview ? (
+                    {previewUrl ? (
                         <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                             <img
-                                src={preview}
+                                src={previewUrl}
                                 alt={label || 'Preview'}
                                 className="w-full h-full object-cover"
                             />
-
-                            {/* Remove button */}
                             <button
                                 type="button"
                                 onClick={handleRemove}
@@ -143,7 +119,6 @@ export default function ImageUpload({
                     )}
                 </div>
 
-                {/* Upload area */}
                 <div className="flex-1 min-w-0">
                     <input
                         ref={inputRef}
@@ -155,56 +130,36 @@ export default function ImageUpload({
                     />
 
                     <div
-                        onDragEnter={handleDrag}
-                        onDragOver={handleDrag}
-                        onDragLeave={handleDrag}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onClick={handleClick}
                         className={`
                             relative border-2 border-dashed rounded-lg p-4 cursor-pointer transition-colors
-                            ${dragActive
+                            ${isDragging
                                 ? 'border-blue-500 bg-blue-50'
                                 : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                             }
                             ${error ? 'border-red-300 bg-red-50' : ''}
                         `}
                     >
-                        {isUploading ? (
-                            <div className="flex flex-col items-center justify-center py-4">
-                                <svg className="animate-spin h-6 w-6 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                </svg>
-                                <span className="text-sm text-gray-600">
-                                    Uploading... {uploadProgress}%
+                        <div className="text-center">
+                            <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3" />
+                            </svg>
+                            <p className="mt-1 text-sm text-gray-600">
+                                <span className="font-medium text-blue-600 hover:text-blue-500">
+                                    Click to upload
                                 </span>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                                    <div
-                                        className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                                        style={{ width: `${uploadProgress}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center">
-                                <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3" />
-                                </svg>
-                                <p className="mt-1 text-sm text-gray-600">
-                                    <span className="font-medium text-blue-600 hover:text-blue-500">
-                                        Click to upload
-                                    </span>
-                                    {' '}or drag and drop
-                                </p>
-                                <p className="mt-1 text-xs text-gray-400">
-                                    PNG, JPG, WEBP up to {maxSize}MB
-                                </p>
-                            </div>
-                        )}
+                                {' '}or drag and drop
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400">
+                                PNG, JPG, WEBP up to {maxSize}MB
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Error */}
                     {error && (
                         <p className="mt-1 text-sm text-red-600">{error}</p>
                     )}

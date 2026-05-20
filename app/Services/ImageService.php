@@ -33,7 +33,8 @@ class ImageService
 
     private function uploadToLocal(UploadedFile $file, string $folder): string
     {
-        $path = $file->store($folder, 'public');
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs($folder, $filename, 'public');
 
         Log::info('Image uploaded to local storage', ['folder' => $folder, 'path' => $path]);
 

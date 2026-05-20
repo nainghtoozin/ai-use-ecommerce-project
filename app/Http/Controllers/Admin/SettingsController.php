@@ -29,28 +29,34 @@ class SettingsController extends Controller
     {
         $info = WebsiteInfo::firstOrCreate(['id' => 1]);
 
-        $imageFields = ['logo', 'favicon', 'og_image', 'hero_image'];
+        $imageFields = ['logo', 'favicon', 'og_image', 'hero_image', 'footer_logo', 'about_image'];
 
         foreach ($imageFields as $field) {
             if ($request->hasFile($field)) {
                 if ($info->$field) {
                     $this->imageService->delete($info->$field);
                 }
-                $info->$field = $this->imageService->upload($request->file($field), 'website');
+                $info->$field = $this->imageService->upload($request->file($field), 'website-settings');
             }
         }
 
-        $info->fill($request->validated());
+        $validated = $request->validated();
+        unset($validated['logo'], $validated['favicon'], $validated['og_image'], $validated['hero_image'], $validated['footer_logo'], $validated['about_image']);
+
+        $info->fill($validated);
         $info->save();
 
         WebsiteInfo::clearCache();
-        Cache::forget('website_info');
         Cache::forget('categories');
 
         Log::info('Website settings updated', [
             'user_id' => auth()->id(),
-            'updated_fields' => array_keys($request->validated()),
+            'updated_fields' => array_keys($validated),
         ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Settings updated successfully.']);
+        }
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
     }

@@ -4,10 +4,8 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Models\WebsiteInfo;
 use App\Models\Category;
 use App\Models\Product;
-use Cache;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -35,6 +33,9 @@ class HandleInertiaRequests extends Middleware
             'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
         ] : null;
 
+        $settingsModel = \App\Models\WebsiteInfo::first();
+        $websiteSettings = $settingsModel ? $settingsModel->toArray() : [];
+
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $userData,
@@ -49,10 +50,10 @@ class HandleInertiaRequests extends Middleware
                 'warning' => session('warning'),
             ],
             'app' => [
-                'name' => config('app.name', 'Laravel'),
+                'name' => $websiteSettings['site_name'] ?? config('app.name', 'My E-Commerce Store'),
             ],
-            'website_info' => WebsiteInfo::getSettings(),
-            'websiteSettings' => WebsiteInfo::getSettings()->toArray(),
+            'website_info' => $websiteSettings,
+            'websiteSettings' => $websiteSettings,
             'categories' => cache()->remember('categories', 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
@@ -62,7 +63,7 @@ class HandleInertiaRequests extends Middleware
     private function getCartData(Request $request): array
     {
         $sessionCart = $request->session()->get('cart', []);
-        
+
         if (empty($sessionCart)) {
             return [
                 'count' => 0,
@@ -72,22 +73,21 @@ class HandleInertiaRequests extends Middleware
         }
 
         $productIds = array_keys($sessionCart);
-        
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
-        
+
         $items = [];
         $total = 0;
         $count = 0;
 
         foreach ($sessionCart as $productId => $item) {
             $product = $products->get($productId);
-            
+
             if ($product) {
                 $quantity = $item['quantity'];
                 $count += $quantity;
                 $itemTotal = $product->price * $quantity;
                 $total += $itemTotal;
-                
+
                 $items[] = [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -108,7 +108,7 @@ class HandleInertiaRequests extends Middleware
     private function getUnreadCount(Request $request): int
     {
         if (!$request->user()) return 0;
-        
+
         return cache()->remember('unread_notifications_' . $request->user()->id, 30, function() {
             return (int) request()->user()->unreadNotifications()->count();
         });

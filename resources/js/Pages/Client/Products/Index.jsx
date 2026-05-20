@@ -1,12 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { InfiniteScroll } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import ProductCard from '@/Components/ProductCard';
 import { assetUrl } from '@/Utils/helpers';
 import { useCart } from '@/Hooks/useCart';
+import { Link } from '@inertiajs/react';
 
 export default function ClientProductIndex({ products, categories, banners, searchQuery, filters: initFilters = {} }) {
+    const { props } = usePage();
+    const { website_info } = props;
     const { addToCart, addingId } = useCart();
     const [query, setQuery] = useState(searchQuery || '');
     const [selectedCategory, setSelectedCategory] = useState(initFilters.category_id || '');
@@ -159,8 +162,48 @@ export default function ClientProductIndex({ products, categories, banners, sear
                 </div>
             )}
 
-            {/* Fallback banner */}
-            {!banners?.length && (
+            {/* Hero Section from Settings */}
+            {website_info?.hero_title && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-xl">
+                        <div className="flex items-center gap-6 sm:gap-10 px-6 sm:px-10 lg:px-14 py-8 sm:py-10 lg:py-14">
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white leading-tight">
+                                    {website_info.hero_title}
+                                </h2>
+                                {website_info.hero_subtitle && (
+                                    <p className="mt-2 sm:mt-3 text-sm sm:text-base text-blue-100 max-w-lg leading-relaxed">
+                                        {website_info.hero_subtitle}
+                                    </p>
+                                )}
+                                {website_info.hero_button_text && (
+                                    <Link
+                                        href={website_info.hero_button_link || '/'}
+                                        className="mt-4 sm:mt-5 inline-flex items-center gap-1.5 px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full hover:bg-white/30 transition-colors"
+                                    >
+                                        {website_info.hero_button_text}
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                        </svg>
+                                    </Link>
+                                )}
+                            </div>
+                            {website_info.hero_image && (
+                                <div className="hidden sm:block w-40 lg:w-56 flex-shrink-0">
+                                    <img
+                                        src={assetUrl(website_info.hero_image)}
+                                        alt={website_info.hero_title}
+                                        className="w-full h-28 lg:h-36 object-cover rounded-xl shadow-lg"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Fallback banner - only show if no hero and no banners */}
+            {!website_info?.hero_title && !banners?.length && (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 shadow-xl px-6 sm:px-10 lg:px-14 py-8 sm:py-10 lg:py-14">
                         <div className="relative z-10">

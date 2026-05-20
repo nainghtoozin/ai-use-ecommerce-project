@@ -1,12 +1,15 @@
 export function assetUrl(path, placeholder = true) {
     if (!path) {
-        // Return a data URI placeholder SVG for product images
         if (placeholder) {
             return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect fill="%23e5e7eb" width="400" height="400"/><g fill="%239ca3af"><path d="M175 130h50v50h-50z"/><circle cx="140" cy="140" r="20"/><path d="M150 200h100v20h-100zM150 240h80v20h-80zM150 280h60v20h-60z"/></g><text x="200" y="350" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="14">No Image</text></svg>');
         }
         return null;
     }
+    if (path instanceof File) {
+        return URL.createObjectURL(path);
+    }
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/storage/') || path.startsWith('data:') || path.startsWith('blob:')) return path;
     return `/storage/${path}`;
 }
 
