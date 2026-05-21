@@ -70,6 +70,67 @@ class ClientController extends Controller
         ]);
     }
 
+    public function products(Request $request)
+    {
+        $query = $request->input('query', '');
+        $categoryId = $request->input('category', '');
+        $sort = $request->input('sort', 'latest');
+        $inStock = $request->boolean('in_stock');
+
+        $products = Product::active()->with('category');
+
+        if ($query) {
+            $products->where('name', 'LIKE', "%{$query}%");
+        }
+
+        if ($categoryId) {
+            $products->where('category_id', $categoryId);
+        }
+
+        if ($inStock) {
+            $products->where('stock', '>', 0);
+        }
+
+        switch ($sort) {
+            case 'price_asc':
+                $products->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $products->orderBy('price', 'desc');
+                break;
+            case 'name':
+                $products->orderBy('name', 'asc');
+                break;
+            default:
+                $products->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $promotions = Promotion::valid()->automatic()
+            ->with(['products', 'categories'])
+            ->orderBy('priority', 'desc')
+            ->get();
+
+        return Inertia::render('Client/Products/Products', [
+            'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions) {
+                $best = $this->findBestPromotionForProduct($product, $promotions);
+                if ($best) {
+                    $product->promotion_badge = $best['badge'];
+                    $product->promotion_discount = $best['discount'];
+                    $product->promotion_price = max(0, (float) $product->price - $best['discount']);
+                }
+                return $product;
+            })),
+            'categories' => fn () => Category::all(),
+            'searchQuery' => $query,
+            'filters' => [
+                'category_id' => $categoryId,
+                'sort' => $sort,
+                'in_stock' => $inStock,
+            ],
+        ]);
+    }
+
     public function cart()
     {
         return Inertia::render('Client/Cart/Index');

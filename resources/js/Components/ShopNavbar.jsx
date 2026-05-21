@@ -1,22 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
+import { Heart } from 'lucide-react';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function ShopNavbar() {
     const { props, url } = usePage();
-    const { auth, website_info, cart: serverCart, categories = [] } = props;
-    
+    const { auth, website_info, cart: serverCart } = props;
+
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
-    const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
     const [cartCount, setCartCount] = useState(serverCart?.count || 0);
-    
+    const [wishlistCount, setWishlistCount] = useState(props.wishlist_count || 0);
+
     const userMenuRef = useRef(null);
-    const categoryMenuRef = useRef(null);
-    const searchInputRef = useRef(null);
 
     const logoUrl = assetUrl(website_info?.logo);
     const siteName = website_info?.site_name || 'My Store';
@@ -25,32 +22,26 @@ export default function ShopNavbar() {
         const handleCartUpdate = (e) => {
             setCartCount(e.detail.count);
         };
-        
+        const handleWishlistUpdate = (e) => {
+            setWishlistCount(e.detail.count);
+        };
+
         window.addEventListener('cart-updated', handleCartUpdate);
-        
+        window.addEventListener('wishlist-updated', handleWishlistUpdate);
+
         function handleClickOutside(event) {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
                 setUserMenuOpen(false);
             }
-            if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
-                setCategoryMenuOpen(false);
-            }
         }
         document.addEventListener('mousedown', handleClickOutside);
-        
+
         return () => {
             window.removeEventListener('cart-updated', handleCartUpdate);
+            window.removeEventListener('wishlist-updated', handleWishlistUpdate);
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            router.get('/', { query: searchQuery.trim() }, { preserveState: true });
-            setMobileSearchOpen(false);
-        }
-    };
 
     function isActive(href) {
         if (href === '/' && url === '/') return true;
@@ -67,7 +58,7 @@ export default function ShopNavbar() {
 
     const navLinks = [
         { label: 'Home', href: '/', icon: 'bi-house-door' },
-        { label: 'Products', href: '/', icon: 'bi-grid' },
+        { label: 'Products', href: '/products', icon: 'bi-grid' },
         { label: 'My Orders', href: '/orders', icon: 'bi-receipt' },
     ];
 
@@ -86,57 +77,7 @@ export default function ShopNavbar() {
                         <span className="text-lg lg:text-xl font-bold text-gray-900 hidden lg:block">{siteName}</span>
                     </Link>
 
-                    <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg">
-                        <div className="relative w-full">
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search products..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
-                            />
-                            <button
-                                type="submit"
-                                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
-                            >
-                                <i className="bi bi-search text-lg"></i>
-                            </button>
-                        </div>
-                    </form>
-
                     <div className="hidden md:flex items-center gap-1">
-                        <div ref={categoryMenuRef} className="relative">
-                            <button
-                                onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-                                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <i className="bi bi-grid-3x3-gap text-lg"></i>
-                                <span>Categories</span>
-                                <i className={`bi bi-chevron-down text-xs transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`}></i>
-                            </button>
-                            {categoryMenuOpen && categories.length > 0 && (
-                                <div className="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 py-2 overflow-hidden">
-                                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                        Browse Categories
-                                    </div>
-                                    <div className="max-h-64 overflow-y-auto">
-                                        {categories.map((cat) => (
-                                            <Link
-                                                key={cat.id}
-                                                href={`/?category=${cat.id}`}
-                                                onClick={() => setCategoryMenuOpen(false)}
-                                                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                            >
-                                                <i className="bi bi-tag text-gray-400"></i>
-                                                {cat.name}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
                         {navLinks.map((item) => (
                             <Link
                                 key={item.href}
@@ -154,6 +95,18 @@ export default function ShopNavbar() {
                     </div>
 
                     <div className="flex items-center gap-1">
+                        <Link
+                            href="/wishlist"
+                            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Wishlist"
+                        >
+                            <Heart className="w-5 h-5" />
+                            {wishlistCount > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                    {wishlistCount > 99 ? '99+' : wishlistCount}
+                                </span>
+                            )}
+                        </Link>
                         <Link
                             href="/cart"
                             className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -247,52 +200,7 @@ export default function ShopNavbar() {
             {mobileMenuOpen && (
                 <div className="md:hidden border-t border-gray-200 bg-white shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto">
                     <div className="px-4 py-3 space-y-3">
-                        <form onSubmit={handleSearch} className="relative">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search products..."
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-                            />
-                            <button
-                                type="submit"
-                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                            >
-                                <i className="bi bi-search text-lg"></i>
-                            </button>
-                        </form>
-
-                        {categories.length > 0 && (
-                            <div>
-                                <button
-                                    onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-                                    className="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg"
-                                >
-                                    <span><i className="bi bi-grid-3x3-gap mr-2"></i>Categories</span>
-                                    <i className={`bi bi-chevron-down text-xs transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`}></i>
-                                </button>
-                                {categoryMenuOpen && (
-                                    <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200">
-                                        {categories.map((cat) => (
-                                            <Link
-                                                key={cat.id}
-                                                href={`/?category=${cat.id}`}
-                                                onClick={() => {
-                                                    setCategoryMenuOpen(false);
-                                                    setMobileMenuOpen(false);
-                                                }}
-                                                className="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600"
-                                            >
-                                                {cat.name}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
+                        <div className="grid grid-cols-2 gap-2">
                             {navLinks.map((item) => (
                                 <Link
                                     key={item.href}
@@ -308,6 +216,19 @@ export default function ShopNavbar() {
                                     {item.label}
                                 </Link>
                             ))}
+                            <Link
+                                href="/wishlist"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                            >
+                                <Heart className="w-4 h-4" />
+                                Wishlist
+                                {wishlistCount > 0 && (
+                                    <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                        {wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
                             <Link
                                 href="/cart"
                                 onClick={() => setMobileMenuOpen(false)}

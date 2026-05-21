@@ -1,10 +1,24 @@
-import { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { useState, useEffect, memo } from 'react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
+import { Heart } from 'lucide-react';
+import { useWishlist } from '@/Hooks/useWishlist';
 
-export default function ProductCard({ product, onAddToCart, addingId = null }) {
+const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId = null }) {
+    const { props } = usePage();
+    const { auth, wishlisted_ids = [] } = props;
+    const { toggleWishlist } = useWishlist();
+
     const [imageLoaded, setImageLoaded] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
+    const [wishlistAnim, setWishlistAnim] = useState(false);
+    const [optimisticWishlisted, setOptimisticWishlisted] = useState(
+        wishlisted_ids.includes(product.id)
+    );
+
+    useEffect(() => {
+        setOptimisticWishlisted(wishlisted_ids.includes(product.id));
+    }, [wishlisted_ids, product.id]);
 
     const handleAddToCart = async (e) => {
         e.preventDefault();
@@ -18,6 +32,22 @@ export default function ProductCard({ product, onAddToCart, addingId = null }) {
         setIsAdding(false);
     };
 
+    const handleWishlistToggle = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!auth?.user) {
+            router.visit('/login');
+            return;
+        }
+
+        setOptimisticWishlisted((prev) => !prev);
+        setWishlistAnim(true);
+        setTimeout(() => setWishlistAnim(false), 400);
+
+        toggleWishlist(product.id, optimisticWishlisted);
+    };
+
     const isOutOfStock = product.stock === 0;
     const isLowStock = product.stock > 0 && product.stock < 10;
     const hasPromotion = product.promotion_price && product.promotion_price < product.price;
@@ -26,7 +56,7 @@ export default function ProductCard({ product, onAddToCart, addingId = null }) {
     const savingsAmount = hasPromotion ? Math.round(product.price - product.promotion_price) : 0;
 
     return (
-        <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
+        <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
             <Link href={`/client/product/${product.id}`} className="block">
                 <div className="relative aspect-square bg-gray-100 overflow-hidden">
                     {product.photo1_url ? (
@@ -68,19 +98,35 @@ export default function ProductCard({ product, onAddToCart, addingId = null }) {
                         </div>
                     )}
 
-                    {/* Promotion badge */}
                     {hasPromotion && (
-                        <div className="absolute top-3 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
+                        <div className="absolute top-14 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
                             {product.promotion_badge}
                         </div>
                     )}
 
-                    {/* Old discount_percentage fallback */}
                     {!hasPromotion && product.discount_percentage > 0 && (
-                        <div className="absolute top-3 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
+                        <div className="absolute top-14 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
                             -{product.discount_percentage}%
                         </div>
                     )}
+
+                    <button
+                        onClick={handleWishlistToggle}
+                        className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                            optimisticWishlisted
+                                ? 'bg-red-50 shadow-md'
+                                : 'bg-white/80 backdrop-blur-sm shadow-md hover:bg-white hover:shadow-lg'
+                        } ${wishlistAnim ? 'scale-110' : 'scale-100'}`}
+                        aria-label={optimisticWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                    >
+                        <Heart
+                            className={`w-[18px] h-[18px] transition-all duration-300 ${
+                                optimisticWishlisted
+                                    ? 'fill-red-500 text-red-500 scale-110'
+                                    : 'fill-none text-gray-600 hover:text-red-400'
+                            }`}
+                        />
+                    </button>
                 </div>
             </Link>
 
@@ -160,4 +206,6 @@ export default function ProductCard({ product, onAddToCart, addingId = null }) {
             </div>
         </div>
     );
-}
+});
+
+export default ProductCard;

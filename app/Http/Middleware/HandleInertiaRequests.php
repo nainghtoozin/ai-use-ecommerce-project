@@ -41,6 +41,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $userData,
             ],
             'cart' => $cart,
+            'wishlist_count' => $user ? (int) $user->wishlistItems()->count() : 0,
+            'wishlisted_ids' => $user ? $user->wishlistItems()->pluck('product_id')->toArray() : [],
             'notifications' => [
                 'unread_count' => $this->getUnreadCount($request),
             ],

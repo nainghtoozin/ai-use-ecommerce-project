@@ -155,14 +155,14 @@ class RefreshDashboardMetrics implements ShouldQueue
 
     private function getPreviousPeriod($period, $start, $end): array
     {
-        $startCarbon = $start instanceof Carbon ? $start : Carbon::parse($start);
-        $endCarbon = $end instanceof Carbon ? $end : Carbon::parse($end);
+        $start = Carbon::parse($start);
+        $end = Carbon::parse($end);
         
-        $diff = $startCarbon->diffInDays($endCarbon);
+        $length = $start->diffInDays($end) + 1;
         
         return [
-            'start' => $startCarbon->subDays($diff + 1)->startOfDay(),
-            'end' => $startCarbon->copy()->endOfDay(),
+            'start' => $start->copy()->subDays($length)->startOfDay(),
+            'end' => $start->copy()->subDay()->endOfDay(),
         ];
     }
 

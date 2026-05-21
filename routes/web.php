@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminTelegramBotController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\ClientOrderController;
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\Route;
 // ============================================================
 Route::get('/', [ClientController::class, 'index'])->name('home');
 Route::get('/dashboard', [ClientController::class, 'index'])->name('client.dashboard');
+Route::get('/products', [ClientController::class, 'products'])->name('products.page');
 
 Route::get('/run-migrate', function () {
     Artisan::call('migrate', ['--force' => true]);
@@ -272,6 +274,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/cart/remove-coupon', [CartController::class, 'removeCoupon'])->name('cart.remove-coupon');
     Route::post('/cart/apply-promotion', [CartController::class, 'applyPromotion'])->name('cart.apply-promotion');
     Route::post('/cart/remove-promotion', [CartController::class, 'removePromotion'])->name('cart.remove-promotion');
+});
+
+// Wishlist (literal routes before parameterized routes)
+Route::prefix('wishlist')->name('wishlist.')->middleware('auth')->group(function () {
+    Route::get('/', [WishlistController::class, 'index'])->name('index');
+    Route::post('/move-all-to-cart', [WishlistController::class, 'moveAllToCart'])->name('move-all-to-cart');
+    Route::post('/move-to-cart/{product}', [WishlistController::class, 'moveToCart'])->name('move-to-cart');
+    Route::post('/{product}', [WishlistController::class, 'store'])->name('store');
+    Route::delete('/clear', [WishlistController::class, 'clear'])->name('clear');
+    Route::delete('/{product}', [WishlistController::class, 'destroy'])->name('destroy');
 });
 
 // API

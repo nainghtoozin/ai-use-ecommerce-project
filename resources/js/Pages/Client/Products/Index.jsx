@@ -6,6 +6,7 @@ import ProductCard from '@/Components/ProductCard';
 import { assetUrl } from '@/Utils/helpers';
 import { useCart } from '@/Hooks/useCart';
 import { Link } from '@inertiajs/react';
+import BackToTopButton from '@/Components/BackToTopButton';
 
 export default function ClientProductIndex({ products, categories, banners, searchQuery, filters: initFilters = {} }) {
     const { props } = usePage();
@@ -352,6 +353,7 @@ export default function ClientProductIndex({ products, categories, banners, sear
                     </>
                 )}
             </div>
+            <BackToTopButton />
         </ShopLayout>
     );
 }

@@ -26,7 +26,7 @@ class DashboardCacheService
 
     public function clearCacheForPeriod(string $period): void
     {
-        Cache::forget("dashboard_metrics_{$period}_");
+        Cache::forget("dashboard_metrics_{$period}__");
         Cache::forget("dashboard_metrics_{$period}_null_null");
     }
 
@@ -38,7 +38,7 @@ class DashboardCacheService
 
     public function clearProductRelatedCache(): void
     {
-        Cache::forget('dashboard_metrics_today_');
+        Cache::forget('dashboard_metrics_today__');
         ComputeFullDashboardMetrics::dispatch()->onQueue('default');
     }
 
@@ -49,6 +49,8 @@ class DashboardCacheService
 
     public function getCacheKey(string $period, ?string $startDate = null, ?string $endDate = null): string
     {
-        return "dashboard_metrics_{$period}_{$startDate}_{$endDate}";
+        $start = $startDate ?? '';
+        $end = $endDate ?? '';
+        return "dashboard_metrics_{$period}_{$start}_{$end}";
     }
 }

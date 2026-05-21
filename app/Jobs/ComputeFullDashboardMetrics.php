@@ -99,10 +99,14 @@ class ComputeFullDashboardMetrics implements ShouldQueue
 
     private function getPreviousPeriod($period, $start, $end): array
     {
-        $diff = Carbon::parse($start)->diffInDays(Carbon::parse($end));
+        $start = Carbon::parse($start);
+        $end = Carbon::parse($end);
+        
+        $length = $start->diffInDays($end) + 1;
+        
         return [
-            'start' => Carbon::parse($start)->subDays($diff + 1)->startOfDay(),
-            'end' => Carbon::parse($start)->copy()->endOfDay(),
+            'start' => $start->copy()->subDays($length)->startOfDay(),
+            'end' => $start->copy()->subDay()->endOfDay(),
         ];
     }
 
