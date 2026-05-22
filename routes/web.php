@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
+use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Admin\AdminTelegramBotController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ChatController;
@@ -193,6 +194,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Promotions Reports
     Route::get('/promotions/reports', [\App\Http\Controllers\Admin\AdminPromotionReportController::class, 'index'])->name('promotions.reports');
     Route::get('/promotions/reports/data', [\App\Http\Controllers\Admin\AdminPromotionReportController::class, 'getData'])->name('promotions.reports.data');
+
+    // Reports
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/sales', [AdminReportController::class, 'sales'])->name('sales');
+        Route::post('/sales/clear-cache', [AdminReportController::class, 'clearCache'])->name('sales.clear-cache');
+        Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details');
+    });
 
     // Coupons (discount engine)
     Route::get('/coupons', [\App\Http\Controllers\Admin\AdminCouponController::class, 'index'])->name('coupons.index');

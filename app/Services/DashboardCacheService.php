@@ -33,6 +33,7 @@ class DashboardCacheService
     public function clearOrderRelatedCache(): void
     {
         $this->clearAllDashboardCache();
+        Cache::forget('sales_report_summary_default');
         ComputeFullDashboardMetrics::dispatch()->onQueue('default');
     }
 
