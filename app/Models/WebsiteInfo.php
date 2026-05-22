@@ -20,6 +20,7 @@ class WebsiteInfo extends Model
         'date_format',
         'logo',
         'favicon',
+        'footer_logo',
         'contact_email',
         'support_email',
         'phone',
@@ -125,6 +126,13 @@ class WebsiteInfo extends Model
         return asset('storage/' . $this->hero_image);
     }
 
+    public function getFooterLogoUrlAttribute(): ?string
+    {
+        if (!$this->footer_logo) return null;
+        if (str_starts_with($this->footer_logo, 'http')) return $this->footer_logo;
+        return asset('storage/' . $this->footer_logo);
+    }
+
     public function toArray(): array
     {
         $data = parent::toArray();
@@ -132,6 +140,7 @@ class WebsiteInfo extends Model
         $data['favicon_url'] = $this->favicon_url;
         $data['og_image_url'] = $this->og_image_url;
         $data['hero_image_url'] = $this->hero_image_url;
+        $data['footer_logo_url'] = $this->footer_logo_url;
         return $data;
     }
 }
