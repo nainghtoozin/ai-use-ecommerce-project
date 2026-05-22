@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Printer, Copy, Check, Package, User, CreditCard } from 'lucide-react';
+import { X, Printer, Copy, Check, Package, User, CreditCard, Wallet, Image, Link, AlertCircle, Maximize2 } from 'lucide-react';
 
 const styleId = 'order-detail-modal-styles';
 if (!document.getElementById(styleId)) {
@@ -9,6 +9,10 @@ if (!document.getElementById(styleId)) {
         @keyframes modal-scale-in {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes lightbox-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         @media print {
             body * { visibility: hidden; }
@@ -85,19 +89,52 @@ const statusBadgeColors = {
     cancelled: 'bg-red-50 text-red-700 border-red-200',
 };
 
+const paymentStatusLabels = {
+    unpaid: 'Unpaid',
+    pending: 'Pending',
+    paid: 'Paid',
+    verified: 'Verified',
+    rejected: 'Rejected',
+};
+
+const paymentStatusBadgeColors = {
+    unpaid: 'bg-gray-50 text-gray-600 border-gray-200',
+    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    paid: 'bg-green-50 text-green-700 border-green-200',
+    verified: 'bg-blue-50 text-blue-700 border-blue-200',
+    rejected: 'bg-red-50 text-red-700 border-red-200',
+};
+
 function formatCurrency(amount) {
     return Number(amount || 0).toLocaleString() + ' MMK';
 }
 
-function StatusBadge({ status }) {
-    const colorClass = statusBadgeColors[status] || 'bg-gray-50 text-gray-600 border-gray-200';
-    const label = statusLabels[status] || status;
+function StatusBadge({ status, colorMap, labelMap }) {
+    const colors = colorMap || statusBadgeColors;
+    const labels = labelMap || statusLabels;
+    const colorClass = colors[status] || 'bg-gray-50 text-gray-600 border-gray-200';
+    const label = labels[status] || status;
     return (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClass}`}>
             {label}
         </span>
     );
 }
+
+const paymentLabelMap = {
+    unpaid: 'Unpaid',
+    pending: 'Pending',
+    paid: 'Paid',
+    verified: 'Verified',
+    rejected: 'Rejected',
+};
+const paymentColorMap = {
+    unpaid: 'bg-gray-50 text-gray-600 border-gray-200',
+    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    paid: 'bg-green-50 text-green-700 border-green-200',
+    verified: 'bg-blue-50 text-blue-700 border-blue-200',
+    rejected: 'bg-red-50 text-red-700 border-red-200',
+};
 
 function SectionCard({ icon: Icon, title, children, className = '' }) {
     return (
@@ -106,9 +143,7 @@ function SectionCard({ icon: Icon, title, children, className = '' }) {
                 {Icon && <Icon className="w-4 h-4 text-gray-400" />}
                 <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
             </div>
-            <div className="px-5 py-4">
-                {children}
-            </div>
+            <div className="px-5 py-4">{children}</div>
         </div>
     );
 }
@@ -158,7 +193,8 @@ export default function OrderDetailModal({ orderId, onClose }) {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [copied, setCopied] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [lightboxImage, setLightboxImage] = useState(null);
 
     const contentRef = useRef(null);
 
@@ -166,34 +202,35 @@ export default function OrderDetailModal({ orderId, onClose }) {
         window.print();
     };
 
-    const handleCopySummary = () => {
-        if (!order) return;
-        const lines = [
-            `Order #${order.id}`,
-            `Status: ${statusLabels[order.order_status] || order.order_status}`,
-            `Date: ${order.created_at?.substring(0, 10)}`,
-            '',
-            '--- Payment Summary ---',
-            `Subtotal: ${formatCurrency(order.subtotal)}`,
-            `Delivery Fee: ${formatCurrency(order.delivery_fee)}`,
-            Number(order.discount_amount) > 0 ? `Discount: -${formatCurrency(order.discount_amount)}` : null,
-            `Grand Total: ${formatCurrency(order.total_amount)}`,
-            '',
-            `Customer: ${order.user?.name || `${order.first_name} ${order.last_name}`}`,
-        ].filter(Boolean).join('\n');
+    const generateInvoiceToken = (orderData) => {
+        const seed = `${orderData.id}-${orderData.created_at}-s3cur3`;
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+            const char = seed.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        const prefix = orderData.id.toString(16).padStart(4, '0');
+        const suffix = Math.abs(hash).toString(36).substring(0, 8);
+        return `${prefix}${suffix}`;
+    };
 
-        navigator.clipboard.writeText(lines).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+    const handleCopyInvoiceLink = () => {
+        if (!order) return;
+        const token = generateInvoiceToken(order);
+        const link = `${window.location.origin}/invoice/${token}`;
+        navigator.clipboard.writeText(link).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
         }).catch(() => {
             const ta = document.createElement('textarea');
-            ta.value = lines;
+            ta.value = link;
             document.body.appendChild(ta);
             ta.select();
             document.execCommand('copy');
             document.body.removeChild(ta);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
         });
     };
 
@@ -201,6 +238,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
         if (!orderId) return;
         setLoading(true);
         setError(null);
+        setLightboxImage(null);
 
         fetch(`/admin/reports/sales/order/${orderId}`)
             .then((res) => {
@@ -226,17 +264,49 @@ export default function OrderDetailModal({ orderId, onClose }) {
     useEffect(() => {
         if (!orderId) return;
         const handler = (e) => {
-            if (e.key === 'Escape') onCloseRef.current();
+            if (e.key === 'Escape') {
+                if (lightboxImage) {
+                    setLightboxImage(null);
+                } else {
+                    onCloseRef.current();
+                }
+            }
         };
         document.addEventListener('keydown', handler);
         return () => document.removeEventListener('keydown', handler);
-    }, [orderId]);
+    }, [orderId, lightboxImage]);
 
     if (!orderId) return null;
 
+    const paymentMethodName = order?.payment_method?.name || '';
+    const isCOD = paymentMethodName.toUpperCase() === 'CASH_ON_DELIVERY';
+    const screenshotUrl = order?.payment_screenshot_url;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm no-print" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm no-print" onClick={() => lightboxImage ? setLightboxImage(null) : onClose()} />
+
+            {lightboxImage && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 no-print"
+                    style={{ animation: 'lightbox-fade-in 200ms ease-out' }}
+                >
+                    <div className="absolute inset-0 bg-black/80" onClick={() => setLightboxImage(null)} />
+                    <div className="relative max-w-3xl max-h-[85vh] w-full h-full flex items-center justify-center">
+                        <button
+                            onClick={() => setLightboxImage(null)}
+                            className="absolute top-2 right-2 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                        >
+                            <X className="w-5 h-5 text-white" />
+                        </button>
+                        <img
+                            src={lightboxImage}
+                            alt="Payment screenshot"
+                            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                        />
+                    </div>
+                </div>
+            )}
 
             <div
                 ref={contentRef}
@@ -323,6 +393,66 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                 </SectionCard>
                             </div>
 
+                            <SectionCard icon={Wallet} title="Payment Information">
+                                {isCOD ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-400">Method</span>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                Cash on Delivery
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                                            <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                                            <p className="text-xs sm:text-sm text-amber-800">
+                                                No online payment uploaded yet. Payment will be collected upon delivery.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {order.payment_method?.name && (
+                                                <InfoRow label="Payment Method" value={order.payment_method.name} />
+                                            )}
+                                            {order.payment_method?.account_name && (
+                                                <InfoRow label="Account Holder" value={order.payment_method.account_name} />
+                                            )}
+                                            {order.transaction_id && (
+                                                <InfoRow label="Transaction No" value={order.transaction_id} />
+                                            )}
+                                            <div>
+                                                <p className="text-xs text-gray-400 mb-0.5">Payment Status</p>
+                                                <StatusBadge
+                                                    status={order.payment_status}
+                                                    colorMap={paymentColorMap}
+                                                    labelMap={paymentLabelMap}
+                                                />
+                                            </div>
+                                        </div>
+                                        {screenshotUrl && (
+                                            <div>
+                                                <p className="text-xs text-gray-400 mb-2">Payment Screenshot</p>
+                                                <button
+                                                    onClick={() => setLightboxImage(screenshotUrl)}
+                                                    className="group relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition-colors"
+                                                >
+                                                    <img
+                                                        src={screenshotUrl}
+                                                        alt="Payment screenshot"
+                                                        className="w-full h-full object-cover"
+                                                        loading="lazy"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                        <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </SectionCard>
+
                             <SectionCard icon={Package} title={`Order Items (${order.items?.length || 0})`}>
                                 <div className="overflow-x-auto -mx-5 sm:mx-0">
                                     <table className="w-full text-sm">
@@ -388,14 +518,14 @@ export default function OrderDetailModal({ orderId, onClose }) {
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
-                            onClick={handleCopySummary}
+                            onClick={handleCopyInvoiceLink}
                             disabled={!order}
                             className="flex-1 sm:flex-none px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {copied ? (
+                            {linkCopied ? (
                                 <><Check className="w-4 h-4 text-green-500" /> Copied</>
                             ) : (
-                                <><Copy className="w-4 h-4" /> Copy Summary</>
+                                <><Link className="w-4 h-4" /> Copy Invoice Link</>
                             )}
                         </button>
                         <button
