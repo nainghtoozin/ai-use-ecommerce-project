@@ -201,17 +201,17 @@ export default function Reports({ promotions, products, categories }) {
                 {!loading && data && (
                     <>
                         {/* Summary Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
                             {statCards.map((stat, idx) => {
                                 const colors = colorMap[stat.color];
                                 return (
-                                    <div key={idx} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition-shadow duration-200">
-                                        <div className={`p-2.5 rounded-lg ${colors.bg} inline-flex`}>
-                                            <i className={`bi ${stat.icon} text-lg ${colors.icon}`}></i>
+                                    <div key={idx} className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-lg transition-shadow duration-200">
+                                        <div className={`p-2 lg:p-2.5 rounded-lg ${colors.bg} inline-flex`}>
+                                            <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
                                         </div>
-                                        <p className="text-xl font-bold text-gray-900 mt-3 truncate">{stat.value}</p>
-                                        <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
-                                        <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>
+                                        <p className="text-lg sm:text-xl font-bold text-gray-900 mt-2 lg:mt-3 break-words">{stat.value}</p>
+                                        <p className="text-xs sm:text-sm text-gray-500 mt-1">{stat.label}</p>
+                                        {stat.sub && <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>}
                                     </div>
                                 );
                             })}

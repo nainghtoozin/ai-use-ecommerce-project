@@ -7,9 +7,14 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\PaymentMethod;
+use App\Events\PaymentVerified;
+use App\Events\PaymentRejected;
+use App\Jobs\ProcessOrderStatusChange;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class AdminReportController extends Controller
@@ -23,6 +28,7 @@ class AdminReportController extends Controller
     private const CACHE_TTL_STOCK = 900;
     private const CACHE_TTL_TOP_SELLING = 600;
     private const CACHE_TTL_SLOW_MOVING = 600;
+    private const CACHE_TTL_PAYMENTS_SUMMARY = 600;
 
     /**
      * Build a deterministic cache key from the filters that affect each section.
@@ -36,6 +42,31 @@ class AdminReportController extends Controller
         ]));
         ksort($relevant);
         return self::CACHE_PREFIX . $section . '_' . md5(json_encode($relevant));
+    }
+
+    /**
+     * Cache key for payment summary — same filter-hash approach, excludes pagination.
+     */
+    private function paymentCacheKey(string $section, array $filters): string
+    {
+        $relevant = array_intersect_key($filters, array_flip([
+            'date_from', 'date_to', 'payment_method_id',
+            'payment_status', 'verification_status', 'search', 'search_by',
+        ]));
+        ksort($relevant);
+        return 'payments_' . $section . '_' . md5(json_encode($relevant));
+    }
+
+    /**
+     * Cached COD method ID — rarely changes, so cache it for an hour.
+     */
+    private function getCodMethodId(): ?int
+    {
+        return Cache::remember('payment_cod_method_id', 3600, fn() =>
+            PaymentMethod::where('name', 'Cash on Delivery')
+                ->orWhere('name', 'COD')
+                ->value('id')
+        );
     }
 
     public function sales(Request $request)
@@ -355,6 +386,249 @@ class AdminReportController extends Controller
             'categories'  => $categories,
             'filters'     => $filters,
         ]);
+    }
+
+    public function payments(Request $request)
+    {
+        $perPage = $this->resolvePerPage($request);
+        $filters = $request->only([
+            'date_from', 'date_to', 'payment_method_id',
+            'payment_status', 'verification_status',
+            'search', 'search_by',
+        ]);
+
+        if (empty($filters['date_from']) && empty($filters['date_to'])) {
+            $today = now()->toDateString();
+            $filters['date_from'] = $today;
+            $filters['date_to'] = $today;
+        }
+
+        // ── Cached COD method ID ──
+        $codMethodId = $this->getCodMethodId();
+
+        // ── Shared filter builder (fluent, no closures) ──
+        //     Building the query once and cloning avoids redundant WHERE
+        //     generation and lets MySQL reuse the same execution plan.
+        $baseQuery = Order::query()
+            ->when($filters['date_from'] ?? null, fn($q) =>
+                $q->where('orders.created_at', '>=', $filters['date_from'] . ' 00:00:00'))
+            ->when($filters['date_to'] ?? null, fn($q) =>
+                $q->where('orders.created_at', '<=', $filters['date_to'] . ' 23:59:59'))
+            ->when(!empty($filters['payment_method_id']), fn($q) =>
+                $q->where('orders.payment_method_id', $filters['payment_method_id']))
+            ->when(!empty($filters['payment_status']), fn($q) =>
+                $this->applyPaymentStatusFilter($q, $filters['payment_status']))
+            ->when(!empty($filters['verification_status']), fn($q) =>
+                $this->applyVerificationStatusFilter($q, $filters['verification_status']))
+            ->when(!empty($filters['search']), fn($q) =>
+                $this->applyPaymentSearchFilter($q, $filters['search'], $filters['search_by'] ?? ''));
+
+        // ── 1. Summary cards (cached per filter set, excludes pagination) ──
+        //     Uses the same WHERE conditions as the paginated query, so the
+        //     cache is shared across all pages for identical filters.
+        $summary = Cache::remember(
+            $this->paymentCacheKey('summary', $filters),
+            self::CACHE_TTL_PAYMENTS_SUMMARY,
+            fn() => $this->computePaymentSummary(clone $baseQuery, $codMethodId)
+        );
+
+        // ── 2. Paginated transactions (not cached) ──
+        //     paginate() issues COUNT(*) + SELECT with LIMIT/OFFSET.
+        //     For very deep pages, upgrade to cursor pagination.
+        $orders = $baseQuery
+            ->select([
+                'orders.id',
+                'orders.transaction_id',
+                'orders.first_name',
+                'orders.last_name',
+                'orders.paid_amount',
+                'orders.total_amount',
+                'orders.delivery_fee',
+                'orders.discount_amount',
+                'orders.payment_method_id',
+                'orders.payment_status',
+                'orders.order_status',
+                'orders.payment_verified_at',
+                'orders.created_at',
+                'orders.payer_name',
+                'orders.payment_screenshot',
+                'orders.payment_proof',
+                'orders.rejection_reason',
+            ])
+            ->with('paymentMethod:id,name,bank_name')
+            ->orderByDesc('orders.created_at')
+            ->paginate($perPage);
+
+        // ── 3. Payment methods for dropdown ──
+        $paymentMethods = Cache::remember('payment_methods_active', 3600, fn() =>
+            PaymentMethod::select(['id', 'name', 'bank_name'])
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+        );
+
+        return Inertia::render('Admin/Reports/Payments', [
+            'orders'         => $orders,
+            'summary'        => $summary,
+            'paymentMethods' => $paymentMethods,
+            'codMethodId'    => $codMethodId,
+            'filters'        => $filters,
+        ]);
+    }
+
+    /**
+     * Single-pass aggregation query for all summary cards.
+     * All CASE expressions run in one table scan — no subqueries, no looping.
+     *
+     * CRITICAL: Do NOT use `?` placeholders inside DB::raw() passed to select().
+     * Laravel's select() does not accept bindings (the second arg is ignored).
+     * Instead, inject safe integer values directly into the raw SQL.
+     */
+    private function computePaymentSummary($query, ?int $codMethodId): object
+    {
+        $codId = (int) ($codMethodId ?? 0);
+
+        return $query->select([
+                DB::raw('COALESCE(SUM(orders.total_amount), 0) as total_payment_amount'),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_VERIFIED . "' THEN orders.total_amount ELSE 0 END), 0) as verified_amount"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_VERIFIED . "' THEN 1 ELSE 0 END), 0) as verified_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as pending_verification_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_VERIFIED . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN orders.total_amount ELSE 0 END), 0) as refunded_amount"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_VERIFIED . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as refunded_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_REJECTED . "' THEN 1 ELSE 0 END), 0) as failed_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_VERIFIED . "') THEN COALESCE(orders.paid_amount, orders.total_amount) ELSE 0 END), 0) as net_received"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_method_id = {$codId} THEN 1 ELSE 0 END), 0) as cod_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_method_id = {$codId} THEN orders.total_amount ELSE 0 END), 0) as cod_amount"),
+            ])
+            ->first();
+    }
+
+    /**
+     * Payment status filter — uses model constants so renaming propagates automatically.
+     */
+    private function applyPaymentStatusFilter($query, string $status): void
+    {
+        match ($status) {
+            'paid' => $query->whereIn('orders.payment_status', [
+                Order::PAYMENT_STATUS_PAID,
+                Order::PAYMENT_STATUS_VERIFIED,
+            ]),
+            'pending' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_PENDING),
+            'failed' => $query->where(function ($q) {
+                $q->where('orders.payment_status', Order::PAYMENT_STATUS_REJECTED)
+                  ->orWhere(function ($q) {
+                      $q->where('orders.order_status', Order::ORDER_STATUS_CANCELLED)
+                        ->where('orders.payment_status', '!=', Order::PAYMENT_STATUS_UNPAID);
+                  });
+            }),
+            'refunded' => $query->where('orders.order_status', Order::ORDER_STATUS_CANCELLED)
+                               ->whereIn('orders.payment_status', [
+                                   Order::PAYMENT_STATUS_PAID,
+                                   Order::PAYMENT_STATUS_VERIFIED,
+                                   Order::PAYMENT_STATUS_PENDING,
+                               ]),
+            default => null,
+        };
+    }
+
+    /**
+     * Verification status filter.
+     */
+    private function applyVerificationStatusFilter($query, string $status): void
+    {
+        match ($status) {
+            'unchecked' => $query->whereIn('orders.payment_status', [
+                Order::PAYMENT_STATUS_UNPAID,
+                Order::PAYMENT_STATUS_PAID,
+            ]),
+            'verified' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_VERIFIED),
+            'rejected' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_REJECTED),
+            default => null,
+        };
+    }
+
+    /**
+     * Search filter for payment report.
+     * - order_id: exact integer match (sargable)
+     * - transaction_id: LIKE with prefix-first pattern when possible
+     * - default: exact id match + LIKE on transaction_id
+     */
+    private function applyPaymentSearchFilter($query, string $search, string $by): void
+    {
+        $query->where(function ($q) use ($search, $by) {
+            if ($by === 'order_id') {
+                $q->where('orders.id', (int) $search);
+            } elseif ($by === 'transaction_id') {
+                $q->where('orders.transaction_id', 'like', "%{$search}%");
+            } else {
+                // Default: try exact id match; fallback to transaction_id LIKE
+                $q->where('orders.id', (int) $search)
+                  ->orWhere('orders.transaction_id', 'like', "%{$search}%");
+            }
+        });
+    }
+
+    public function verifyPayment(string $id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+
+            if (!$order->canApprovePayment()) {
+                return redirect()->back()->with('error', 'This payment cannot be verified.');
+            }
+
+            $order->update([
+                'order_status'    => Order::ORDER_STATUS_VERIFIED,
+                'payment_status'  => Order::PAYMENT_STATUS_VERIFIED,
+                'payment_verified_at' => now(),
+                'rejection_reason'    => null,
+            ]);
+
+            ProcessOrderStatusChange::dispatch($order, 'payment_verified');
+
+            event(new PaymentVerified($order));
+
+            return redirect()->back()->with('success', "Payment for Order #{$order->id} verified successfully.");
+        } catch (\Exception $e) {
+            Log::error('Payment verification failed: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to verify payment.');
+        }
+    }
+
+    public function rejectPayment(Request $request, string $id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+
+            if (!$order->canRejectPayment()) {
+                return redirect()->back()->with('error', 'This payment cannot be rejected.');
+            }
+
+            $validated = $request->validate([
+                'rejection_reason' => ['nullable', 'string', 'max:1000'],
+            ]);
+
+            $order->update([
+                'order_status'   => Order::ORDER_STATUS_REJECTED,
+                'payment_status' => Order::PAYMENT_STATUS_REJECTED,
+                'rejection_reason' => $validated['rejection_reason'] ?? null,
+            ]);
+
+            ProcessOrderStatusChange::dispatch(
+                $order,
+                'payment_rejected',
+                rejectionReason: $validated['rejection_reason'] ?? null,
+            );
+
+            event(new PaymentRejected($order));
+
+            return redirect()->back()->with('success', "Payment for Order #{$order->id} rejected.");
+        } catch (\Exception $e) {
+            Log::error('Payment rejection failed: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to reject payment.');
+        }
     }
 
     private function resolvePerPage(Request $request): int

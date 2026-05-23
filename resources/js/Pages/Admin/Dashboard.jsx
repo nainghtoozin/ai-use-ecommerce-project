@@ -2,16 +2,39 @@ import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useState } from 'react';
 
+const paymentMethodStyles = {
+    kpay:      { icon: 'bi-phone',       bg: 'bg-blue-100', text: 'text-blue-600' },
+    wavepay:   { icon: 'bi-phone',       bg: 'bg-cyan-100', text: 'text-cyan-600' },
+    'cb pay':  { icon: 'bi-bank',        bg: 'bg-indigo-100', text: 'text-indigo-600' },
+    'cb':      { icon: 'bi-bank',        bg: 'bg-indigo-100', text: 'text-indigo-600' },
+    visa:      { icon: 'bi-credit-card', bg: 'bg-blue-100', text: 'text-blue-700' },
+    mastercard:{ icon: 'bi-credit-card', bg: 'bg-orange-100', text: 'text-orange-600' },
+    'cash on delivery': { icon: 'bi-cash-stack', bg: 'bg-green-100', text: 'text-green-600' },
+    cod:       { icon: 'bi-cash-stack',  bg: 'bg-green-100', text: 'text-green-600' },
+};
+
+function getMethodStyle(name) {
+    if (!name) return { icon: 'bi-wallet', bg: 'bg-gray-100', text: 'text-gray-500' };
+    const key = name.toLowerCase().replace(/\s+/g, '');
+    for (const [k, v] of Object.entries(paymentMethodStyles)) {
+        if (key.includes(k.replace(/\s+/g, '')) || name.toLowerCase().includes(k)) {
+            return v;
+        }
+    }
+    return { icon: 'bi-wallet', bg: 'bg-gray-100', text: 'text-gray-500' };
+}
+
 export default function AdminDashboard({
     totalProducts,
     filteredOrdersCount,
-    filteredRevenue,
+    totalReceivedPayments,
     filteredPendingOrders,
     filteredCustomers,
     lowStockCount,
     orders,
     lowStock,
     outOfStock,
+    paymentMethodSummary,
     selectedPeriod,
     startDate,
     endDate,
@@ -91,11 +114,11 @@ export default function AdminDashboard({
             subtitle: 'Awaiting confirmation',
         },
         {
-            label: 'Revenue',
-            value: formatMoney(filteredRevenue),
+            label: 'Total Received Payments',
+            value: formatMoney(totalReceivedPayments),
             icon: 'bi-cash-stack',
             color: 'emerald',
-            subtitle: 'Completed orders',
+            subtitle: 'Verified & confirmed payments',
         },
         {
             label: 'Products',
@@ -212,20 +235,20 @@ export default function AdminDashboard({
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
                     {statCards.map((stat, idx) => {
                         const colors = colorMap[stat.color];
                         return (
                             <div
                                 key={idx}
-                                className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200"
+                                className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-2.5 rounded-lg ${colors.bg}`}>
-                                        <i className={`bi ${stat.icon} text-lg ${colors.icon}`}></i>
+                                <div className="flex items-center gap-3 lg:gap-4">
+                                    <div className={`p-2 lg:p-2.5 rounded-lg shrink-0 ${colors.bg}`}>
+                                        <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-xl font-bold text-gray-900 truncate">{stat.value}</p>
+                                        <p className="text-lg sm:text-xl font-bold text-gray-900 break-words">{stat.value}</p>
                                         <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
                                     </div>
                                 </div>
@@ -233,6 +256,55 @@ export default function AdminDashboard({
                         );
                     })}
                 </div>
+
+                {/* Payment Methods Breakdown */}
+                {paymentMethodSummary?.length > 0 && (
+                    <div className="bg-white rounded-xl border border-gray-200">
+                        <div className="px-5 py-4 border-b border-gray-100">
+                            <h2 className="text-sm font-semibold text-gray-700">Payment Methods Breakdown</h2>
+                        </div>
+                        <div className="p-5">
+                            {(() => {
+                                const maxTotal = Math.max(...paymentMethodSummary.map(p => Number(p.total)));
+                                return (
+                                    <div className="space-y-4">
+                                        {paymentMethodSummary.map((pm, i) => {
+                                            const style = getMethodStyle(pm.name);
+                                            const total = Number(pm.total);
+                                            const pct = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+                                            return (
+                                                <div key={i} className="flex items-center gap-3 lg:gap-4">
+                                                    <div className={`p-2 rounded-lg shrink-0 ${style.bg}`}>
+                                                        <i className={`bi ${style.icon} ${style.text}`}></i>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span className="text-sm font-medium text-gray-900 truncate">
+                                                                {pm.name}
+                                                            </span>
+                                                            <span className="text-sm font-semibold text-gray-900 tabular-nums shrink-0">
+                                                                {Number(total).toLocaleString()} MMK
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-1.5 w-full bg-gray-100 rounded-full h-2">
+                                                            <div
+                                                                className="h-2 rounded-full transition-all duration-500"
+                                                                style={{
+                                                                    width: `${Math.max(pct, 4)}%`,
+                                                                    backgroundColor: i === 0 ? '#2563eb' : i === 1 ? '#0891b2' : i === 2 ? '#059669' : '#6b7280',
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                )}
 
                 {/* Recent Orders + Stock Alerts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

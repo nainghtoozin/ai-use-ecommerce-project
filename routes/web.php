@@ -201,6 +201,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::post('/sales/clear-cache', [AdminReportController::class, 'clearCache'])->name('sales.clear-cache');
         Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details');
         Route::get('/product-sales', [AdminReportController::class, 'productSales'])->name('product-sales');
+        Route::get('/payments', [AdminReportController::class, 'payments'])->name('payments');
+        Route::post('/payments/{order}/verify', [AdminReportController::class, 'verifyPayment'])->name('payments.verify');
+        Route::post('/payments/{order}/reject', [AdminReportController::class, 'rejectPayment'])->name('payments.reject');
     });
 
     // Coupons (discount engine)

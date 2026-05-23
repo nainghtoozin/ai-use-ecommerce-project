@@ -219,7 +219,7 @@ export default function ProductSalesReport({ products, summary, top_selling, slo
 
                 <FilterForm form={form} setForm={setForm} onSubmit={handleSubmit} onReset={handleReset} categories={categories} />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-3 lg:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 lg:gap-4">
                     <Card icon={DollarSign}    label="Total Product Revenue" value={formatCurrency(summary?.total_revenue)} color="blue" />
                     <Card icon={ShoppingBag}   label="Total Units Sold"     value={Number(summary?.total_units_sold || 0).toLocaleString()} color="emerald" />
                     <Card icon={TrendingUp}    label="Top Selling Product"  value={summary?.top_selling_product || 'N/A'} color="amber" />

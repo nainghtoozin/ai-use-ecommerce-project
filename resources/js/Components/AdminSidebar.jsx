@@ -3,7 +3,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import {
     LayoutDashboard, Package, Tags, Megaphone,
-    BarChart3, ShoppingBag,
+    BarChart3, ShoppingBag, Receipt,
     ShoppingCart, CreditCard,
     Building2, MapPin,
     Users, ShieldCheck, History,
@@ -32,6 +32,7 @@ export default function AdminSidebar() {
         'Megaphone': Megaphone,
         'BarChart3': BarChart3,
         'ShoppingBag': ShoppingBag,
+        'Receipt': Receipt,
         'ShoppingCart': ShoppingCart,
         'CreditCard': CreditCard,
         'Building2': Building2,
@@ -67,6 +68,7 @@ export default function AdminSidebar() {
             items: [
                 { label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' },
                 { label: 'Product Sales Report', href: '/admin/reports/product-sales', icon: 'ShoppingBag' },
+                { label: 'Payment Report', href: '/admin/reports/payments', icon: 'Receipt' },
             ]
         },
         {
