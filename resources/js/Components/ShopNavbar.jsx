@@ -70,7 +70,7 @@ export default function ShopNavbar() {
                         {logoUrl ? (
                             <img src={logoUrl} alt={siteName} className="h-8 w-auto lg:h-9" />
                         ) : (
-                            <div className="h-8 w-8 lg:h-9 lg:w-9 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <div className="h-8 w-8 lg:h-9 lg:w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                 <i className="bi bi-shop text-white text-base lg:text-lg"></i>
                             </div>
                         )}
@@ -84,9 +84,10 @@ export default function ShopNavbar() {
                                 href={item.href}
                                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                     isActive(item.href)
-                                        ? 'bg-blue-50 text-blue-700'
+                                        ? 'text-white'
                                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                 }`}
+                                style={isActive(item.href) ? { backgroundColor: 'var(--theme-color, #3B82F6)' } : {}}
                             >
                                 <i className={`bi ${item.icon}`}></i>
                                 <span>{item.label}</span>
@@ -135,7 +136,7 @@ export default function ShopNavbar() {
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                         className="flex items-center gap-2 px-1.5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                     >
-                                        <div className="w-7 lg:w-8 h-7 lg:h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                                        <div className="w-7 lg:w-8 h-7 lg:h-8 text-white rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                             {auth.user.name?.charAt(0).toUpperCase()}
                                         </div>
                                         <span className="hidden lg:inline max-w-[80px] truncate">{auth.user.name}</span>
@@ -174,13 +175,19 @@ export default function ShopNavbar() {
                             <div className="hidden sm:flex items-center gap-2">
                                 <Link
                                     href="/login"
-                                    className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                                    className="px-3 lg:px-4 py-2 text-sm font-medium hover:text-white transition-colors"
+                                    style={{ color: 'var(--theme-color, #3B82F6)' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--theme-color, #3B82F6)'}
                                 >
                                     Login
                                 </Link>
                                 <Link
                                     href="/register"
-                                    className="px-3 lg:px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                    className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
+                                    style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                                 >
                                     Register
                                 </Link>
@@ -208,9 +215,10 @@ export default function ShopNavbar() {
                                     onClick={() => setMobileMenuOpen(false)}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                                         isActive(item.href)
-                                            ? 'bg-blue-50 text-blue-700'
+                                            ? 'text-white'
                                             : 'text-gray-600 hover:bg-gray-100'
                                     }`}
+                                    style={isActive(item.href) ? { backgroundColor: 'var(--theme-color, #3B82F6)' } : {}}
                                 >
                                     <i className={`bi ${item.icon}`}></i>
                                     {item.label}
@@ -254,7 +262,8 @@ export default function ShopNavbar() {
                                 </Link>
                                 <Link
                                     href="/register"
-                                    className="flex items-center justify-center px-3 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
+                                    style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                 >
                                     Register
                                 </Link>

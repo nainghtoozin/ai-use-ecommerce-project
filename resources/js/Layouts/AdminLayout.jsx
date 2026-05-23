@@ -7,6 +7,12 @@ export default function AdminLayout({ children, header = null }) {
     return (
         <>
             <FlashMessages />
+            <style>{`
+                :root {
+                    --admin-theme: var(--theme-color, #3B82F6);
+                    --admin-theme-rgb: var(--theme-color-rgb, 59, 130, 246);
+                }
+            `}</style>
             <div className="min-h-screen flex bg-gray-100">
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0">

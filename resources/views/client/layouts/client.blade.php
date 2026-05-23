@@ -24,6 +24,23 @@
         <link rel="icon" type="image/png" href="{{ Storage::url($websiteInfo->logo) }}?v={{ time() }}">
     @endif
 
+    @php
+        $themeColor = !empty($websiteInfo->theme_color) && preg_match('/^#[0-9A-Fa-f]{6}$/', $websiteInfo->theme_color)
+            ? $websiteInfo->theme_color
+            : '#3B82F6';
+        $themeColorRgb = implode(', ', array_map(function($hex) {
+            return hexdec($hex);
+        }, str_split(ltrim($themeColor, '#'), 2)));
+    @endphp
+
+    <style>
+        :root {
+            --theme-color: {{ $themeColor }};
+            --theme-color-rgb: {{ $themeColorRgb }};
+            --primary-color: {{ $themeColor }};
+        }
+    </style>
+
 
     <!-- Custom theme CSS -->
     @php
@@ -43,27 +60,133 @@
 
     @include('client.components.navbar')
 
+    @php
+        $heroImages = [];
+        if (!empty($websiteInfo->hero_images_urls) && is_array($websiteInfo->hero_images_urls)) {
+            $heroImages = array_values(array_filter($websiteInfo->hero_images_urls));
+        }
+        if (empty($heroImages) && !empty($websiteInfo->hero_image_url)) {
+            $heroImages[] = $websiteInfo->hero_image_url;
+        }
+        $isHeroCarousel = count($heroImages) > 1;
+    @endphp
+
     <!-- Enhanced Hero Section -->
-    <section class="hero text-center py-5 px-3">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h2 class="fw-bold mb-3 display-5">{{ $websiteInfo->hero_title ?? 'Quality Electronics, Delivered Fast' }}</h2>
-                    <p class="lead mb-4">{{ $websiteInfo->hero_description ?? 'Reliable gadgets for home, work, and play. Explore the latest in electronics with secure checkout and fast shipping.' }}</p>
-                    <div class="d-flex justify-content-center gap-3 flex-wrap">
-                        <span class="badge bg-white text-primary px-3 py-2 fs-6">
-                            <i class="bi bi-truck me-2"></i>{{ $websiteInfo->shipping_info ?? 'Free Shipping' }}
-                        </span>
-                        <span class="badge bg-white text-primary px-3 py-2 fs-6">
-                            <i class="bi bi-shield-check me-2"></i>{{ $websiteInfo->secure_payment_info ?? 'Secure Payment' }}
-                        </span>
-                        <span class="badge bg-white text-primary px-3 py-2 fs-6">
-                            <i class="bi bi-arrow-clockwise me-2"></i>{{ $websiteInfo->easy_returns_info ?? 'Easy Returns' }}
-                        </span>
+    <section class="hero position-relative overflow-hidden" style="min-height: 380px;">
+        @if($isHeroCarousel)
+            <!-- Hero Carousel -->
+            <div id="heroCarousel" class="carousel slide h-100" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
+                <div class="carousel-inner h-100">
+                    @foreach($heroImages as $index => $imageUrl)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }} h-100">
+                            <img src="{{ $imageUrl }}"
+                                 class="hero-carousel-img d-block w-100 h-100"
+                                 style="object-fit: cover; object-position: center;"
+                                 alt="Hero {{ $index + 1 }}"
+                                 loading="{{ $index === 0 ? 'eager' : 'lazy' }}">
+                        </div>
+                    @endforeach
+                </div>
+
+                @if(count($heroImages) > 1)
+                    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" style="width: 5%;">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" style="width: 5%;">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+
+                    <div class="carousel-indicators" style="margin-bottom: -30px;">
+                        @foreach($heroImages as $index => $imageUrl)
+                            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ $index }}"
+                                    class="{{ $index === 0 ? 'active' : '' }}"
+                                    aria-current="{{ $index === 0 ? 'true' : 'false' }}"
+                                    aria-label="Slide {{ $index + 1 }}"></button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <!-- Hero overlay content -->
+            <div class="hero-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                 style="background: linear-gradient(135deg, rgba(0,0,0,0.45), rgba(0,0,0,0.25)); z-index: 1;">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 text-center text-white">
+                            <h2 class="fw-bold mb-3 display-4">{{ $websiteInfo->hero_title ?? 'Quality Electronics, Delivered Fast' }}</h2>
+                            <p class="lead mb-4 fs-5">{{ $websiteInfo->hero_subtitle ?? $websiteInfo->hero_description ?? 'Reliable gadgets for home, work, and play. Explore the latest in electronics with secure checkout and fast shipping.' }}</p>
+                            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                <span class="badge bg-white px-3 py-2 fs-6" style="color: var(--theme-color, #3B82F6) !important;">
+                                    <i class="bi bi-truck me-2"></i>{{ $websiteInfo->shipping_info ?? 'Free Shipping' }}
+                                </span>
+                                <span class="badge bg-white px-3 py-2 fs-6" style="color: var(--theme-color, #3B82F6) !important;">
+                                    <i class="bi bi-shield-check me-2"></i>{{ $websiteInfo->secure_payment_info ?? 'Secure Payment' }}
+                                </span>
+                                <span class="badge bg-white px-3 py-2 fs-6" style="color: var(--theme-color, #3B82F6) !important;">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>{{ $websiteInfo->easy_returns_info ?? 'Easy Returns' }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @else
+            <!-- Static Hero (single image or no image) -->
+            <div class="position-relative" style="min-height: 380px;">
+                @if(!empty($heroImages[0]))
+                    <img src="{{ $heroImages[0] }}"
+                         class="w-100 h-100"
+                         style="object-fit: cover; object-position: center; min-height: 380px;"
+                         alt="Hero"
+                         loading="eager">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                         style="background: linear-gradient(135deg, rgba(0,0,0,0.45), rgba(0,0,0,0.25)); z-index: 1;">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8 text-center text-white">
+                                    <h2 class="fw-bold mb-3 display-4">{{ $websiteInfo->hero_title ?? 'Quality Electronics, Delivered Fast' }}</h2>
+                                    <p class="lead mb-4 fs-5">{{ $websiteInfo->hero_subtitle ?? $websiteInfo->hero_description ?? 'Reliable gadgets for home, work, and play. Explore the latest in electronics with secure checkout and fast shipping.' }}</p>
+                                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                        <span class="badge bg-white px-3 py-2 fs-6" style="color: var(--theme-color, #3B82F6) !important;">
+                                            <i class="bi bi-truck me-2"></i>{{ $websiteInfo->shipping_info ?? 'Free Shipping' }}
+                                        </span>
+                                        <span class="badge bg-white px-3 py-2 fs-6" style="color: var(--theme-color, #3B82F6) !important;">
+                                            <i class="bi bi-shield-check me-2"></i>{{ $websiteInfo->secure_payment_info ?? 'Secure Payment' }}
+                                        </span>
+                                        <span class="badge bg-white px-3 py-2 fs-6" style="color: var(--theme-color, #3B82F6) !important;">
+                                            <i class="bi bi-arrow-clockwise me-2"></i>{{ $websiteInfo->easy_returns_info ?? 'Easy Returns' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <!-- Fallback: no hero image, use gradient -->
+                    <div class="container py-5">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8 text-center text-white">
+                                <h2 class="fw-bold mb-3 display-5">{{ $websiteInfo->hero_title ?? 'Quality Electronics, Delivered Fast' }}</h2>
+                                <p class="lead mb-4">{{ $websiteInfo->hero_subtitle ?? $websiteInfo->hero_description ?? 'Reliable gadgets for home, work, and play. Explore the latest in electronics with secure checkout and fast shipping.' }}</p>
+                                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                    <span class="badge bg-white text-primary px-3 py-2 fs-6">
+                                        <i class="bi bi-truck me-2"></i>{{ $websiteInfo->shipping_info ?? 'Free Shipping' }}
+                                    </span>
+                                    <span class="badge bg-white text-primary px-3 py-2 fs-6">
+                                        <i class="bi bi-shield-check me-2"></i>{{ $websiteInfo->secure_payment_info ?? 'Secure Payment' }}
+                                    </span>
+                                    <span class="badge bg-white text-primary px-3 py-2 fs-6">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>{{ $websiteInfo->easy_returns_info ?? 'Easy Returns' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        @endif
     </section>
      <!-- Promotions Banner Slider -->
     @if(isset($promotions) && $promotions->count() > 0)

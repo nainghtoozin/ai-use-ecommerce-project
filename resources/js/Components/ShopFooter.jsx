@@ -28,12 +28,12 @@ export default function ShopFooter() {
     ];
 
     const socials = [
-        { key: 'facebook', icon: 'bi-facebook', link: website_info?.facebook_url, color: 'hover:bg-blue-600' },
-        { key: 'whatsapp', icon: 'bi-whatsapp', link: website_info?.whatsapp_number ? `https://wa.me/${website_info.whatsapp_number.replace(/\D/g,'')}` : null, color: 'hover:bg-green-500' },
-        { key: 'telegram', icon: 'bi-telegram', link: website_info?.telegram_username ? `https://t.me/${website_info.telegram_username}` : null, color: 'hover:bg-sky-500' },
-        { key: 'instagram', icon: 'bi-instagram', link: website_info?.instagram_url, color: 'hover:bg-pink-500' },
-        { key: 'youtube', icon: 'bi-youtube', link: website_info?.youtube_url, color: 'hover:bg-red-600' },
-        { key: 'linkedin', icon: 'bi-linkedin', link: website_info?.linkedin_url, color: 'hover:bg-blue-700' },
+        { key: 'facebook', icon: 'bi-facebook', link: website_info?.facebook_url, color: 'hover:opacity-80' },
+        { key: 'whatsapp', icon: 'bi-whatsapp', link: website_info?.whatsapp_number ? `https://wa.me/${website_info.whatsapp_number.replace(/\D/g,'')}` : null, color: 'hover:opacity-80' },
+        { key: 'telegram', icon: 'bi-telegram', link: website_info?.telegram_username ? `https://t.me/${website_info.telegram_username}` : null, color: 'hover:opacity-80' },
+        { key: 'instagram', icon: 'bi-instagram', link: website_info?.instagram_url, color: 'hover:opacity-80' },
+        { key: 'youtube', icon: 'bi-youtube', link: website_info?.youtube_url, color: 'hover:opacity-80' },
+        { key: 'linkedin', icon: 'bi-linkedin', link: website_info?.linkedin_url, color: 'hover:opacity-80' },
     ].filter(s => s.link);
 
     return (
@@ -46,7 +46,7 @@ export default function ShopFooter() {
                                 {logoUrl ? (
                                     <img src={logoUrl} alt={siteName} className="h-9 w-auto" />
                                 ) : (
-                                    <div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center">
+                                    <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                         <i className="bi bi-shop text-white text-lg"></i>
                                     </div>
                                 )}
@@ -63,7 +63,8 @@ export default function ShopFooter() {
                                             href={social.link}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className={`w-9 h-9 bg-slate-800 ${social.color} rounded-lg flex items-center justify-center text-sm transition-all duration-200 hover:shadow-lg`}
+                                            className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-all duration-200 hover:shadow-lg`}
+                                            style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                         >
                                             <i className={`bi ${social.icon}`}></i>
                                         </a>
@@ -117,9 +118,9 @@ export default function ShopFooter() {
                                 {website_info?.phone && (
                                     <li>
                                         <a href={`tel:${website_info.phone}`} className="flex items-start gap-3 group">
-                                            <div className="w-8 h-8 bg-slate-800 group-hover:bg-blue-600 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0">
-                                                <i className="bi bi-telephone text-sm"></i>
-                                            </div>
+                                                <div className="w-8 h-8 group-hover:opacity-80 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
+                                                    <i className="bi bi-telephone text-sm"></i>
+                                                </div>
                                             <div>
                                                 <p className="text-xs text-slate-500">Phone</p>
                                                 <p className="text-sm text-slate-300 group-hover:text-white transition-colors">{website_info.phone}</p>
@@ -130,9 +131,9 @@ export default function ShopFooter() {
                                 {website_info?.support_email && (
                                     <li>
                                         <a href={`mailto:${website_info.support_email}`} className="flex items-start gap-3 group">
-                                            <div className="w-8 h-8 bg-slate-800 group-hover:bg-blue-600 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0">
-                                                <i className="bi bi-envelope text-sm"></i>
-                                            </div>
+                                                <div className="w-8 h-8 group-hover:opacity-80 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
+                                                    <i className="bi bi-envelope text-sm"></i>
+                                                </div>
                                             <div>
                                                 <p className="text-xs text-slate-500">Email</p>
                                                 <p className="text-sm text-slate-300 group-hover:text-white transition-colors break-all">{website_info.support_email}</p>
@@ -143,9 +144,9 @@ export default function ShopFooter() {
                                 {website_info?.address && (
                                     <li>
                                         <div className="flex items-start gap-3 group">
-                                            <div className="w-8 h-8 bg-slate-800 group-hover:bg-blue-600 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0">
-                                                <i className="bi bi-geo-alt text-sm"></i>
-                                            </div>
+                                                <div className="w-8 h-8 group-hover:opacity-80 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
+                                                    <i className="bi bi-geo-alt text-sm"></i>
+                                                </div>
                                             <div>
                                                 <p className="text-xs text-slate-500">Address</p>
                                                 <p className="text-sm text-slate-300 group-hover:text-white transition-colors">{website_info.address}</p>

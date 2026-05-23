@@ -40,8 +40,38 @@ class SettingsController extends Controller
             }
         }
 
+        if ($request->hasFile('hero_images')) {
+            $existingImages = $info->hero_images ?? [];
+            $keepExisting = $request->input('hero_images_existing', []);
+
+            foreach ($existingImages as $existingPath) {
+                if (!in_array($existingPath, $keepExisting, true)) {
+                    $this->imageService->delete($existingPath);
+                }
+            }
+
+            $newPaths = [];
+            foreach ($request->file('hero_images') as $file) {
+                $newPaths[] = $this->imageService->upload($file, 'website-settings');
+            }
+
+            $info->hero_images = array_values(array_merge($keepExisting, $newPaths));
+        } elseif ($request->has('hero_images_existing')) {
+            $keepExisting = $request->input('hero_images_existing', []);
+            $existingImages = $info->hero_images ?? [];
+
+            foreach ($existingImages as $existingPath) {
+                if (!in_array($existingPath, $keepExisting, true)) {
+                    $this->imageService->delete($existingPath);
+                }
+            }
+
+            $info->hero_images = array_values($keepExisting);
+        }
+
         $validated = $request->validated();
         unset($validated['logo'], $validated['favicon'], $validated['og_image'], $validated['hero_image'], $validated['footer_logo'], $validated['about_image']);
+        unset($validated['hero_images'], $validated['hero_images_existing']);
 
         $info->fill($validated);
         $info->save();

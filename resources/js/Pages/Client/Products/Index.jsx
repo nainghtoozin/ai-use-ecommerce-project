@@ -17,6 +17,15 @@ export default function ClientProductIndex({ products, categories, banners, sear
     const [sortBy, setSortBy] = useState(initFilters.sort || 'latest');
     const [loading, setLoading] = useState(false);
     const [currentBanner, setCurrentBanner] = useState(0);
+    const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+
+    const heroImages = website_info?.hero_images_urls?.length
+        ? website_info.hero_images_urls
+        : website_info?.hero_image_url
+            ? [website_info.hero_image_url]
+            : [];
+
+    const isMultipleHeroImages = heroImages.length > 1;
 
     const debounceRef = useRef(null);
 
@@ -27,6 +36,14 @@ export default function ClientProductIndex({ products, categories, banners, sear
         }, 5000);
         return () => clearInterval(interval);
     }, [banners?.length]);
+
+    useEffect(() => {
+        if (!isMultipleHeroImages) return;
+        const interval = setInterval(() => {
+            setCurrentHeroSlide(prev => (prev + 1) % heroImages.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [isMultipleHeroImages, heroImages.length]);
 
     const handleQueryChange = (value) => {
         setQuery(value);
@@ -167,7 +184,7 @@ export default function ClientProductIndex({ products, categories, banners, sear
             {website_info?.hero_title && (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-xl">
-                        <div className="flex items-center gap-6 sm:gap-10 px-6 sm:px-10 lg:px-14 py-8 sm:py-10 lg:py-14">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-10 px-6 sm:px-10 lg:px-14 py-6 sm:py-8 lg:py-12">
                             <div className="flex-1 min-w-0">
                                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white leading-tight">
                                     {website_info.hero_title}
@@ -189,13 +206,36 @@ export default function ClientProductIndex({ products, categories, banners, sear
                                     </Link>
                                 )}
                             </div>
-                            {website_info.hero_image && (
-                                <div className="hidden sm:block w-40 lg:w-56 flex-shrink-0">
-                                    <img
-                                        src={assetUrl(website_info.hero_image)}
-                                        alt={website_info.hero_title}
-                                        className="w-full h-28 lg:h-36 object-cover rounded-xl shadow-lg"
-                                    />
+                            {heroImages.length > 0 && (
+                                <div className="w-full sm:w-56 lg:w-72 xl:w-80 flex-shrink-0">
+                                    <div className="relative w-full h-40 lg:h-48 xl:h-56">
+                                        {heroImages.map((img, idx) => (
+                                            <img
+                                                key={idx}
+                                                src={assetUrl(img)}
+                                                alt={`${website_info.hero_title}${isMultipleHeroImages ? ` - ${idx + 1}` : ''}`}
+                                                className={`absolute inset-0 w-full h-full object-cover rounded-xl shadow-xl transition-opacity duration-700 ${
+                                                    idx === currentHeroSlide % heroImages.length ? 'opacity-100' : 'opacity-0'
+                                                }`}
+                                                loading={idx === 0 ? 'eager' : 'lazy'}
+                                            />
+                                        ))}
+                                    </div>
+                                    {isMultipleHeroImages && (
+                                        <div className="flex justify-center gap-1.5 mt-3">
+                                            {heroImages.map((_, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setCurrentHeroSlide(idx)}
+                                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                                        idx === currentHeroSlide % heroImages.length
+                                                            ? 'bg-white w-4'
+                                                            : 'bg-white/50 hover:bg-white/70'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

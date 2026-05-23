@@ -56,7 +56,11 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
     const savingsAmount = hasPromotion ? Math.round(product.price - product.promotion_price) : 0;
 
     return (
-        <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
+        <div className="group relative bg-white rounded-2xl shadow-sm hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
+             style={{ border: '1px solid rgba(var(--theme-color-rgb, 59, 130, 246), 0.12)', '--tw-shadow-color': 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.08)' }}
+             onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 20px 40px rgba(var(--theme-color-rgb, 59, 130, 246), 0.12)'; e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; }}
+             onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.12)'; }}
+        >
             <Link href={`/client/product/${product.id}`} className="block">
                 <div className="relative aspect-square bg-gray-100 overflow-hidden">
                     {product.photo1_url ? (
@@ -71,7 +75,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                             />
                             {!imageLoaded && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                                    <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: 'var(--theme-color, #3B82F6)' }}></div>
                                 </div>
                             )}
                         </>
@@ -114,17 +118,19 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                         onClick={handleWishlistToggle}
                         className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
                             optimisticWishlisted
-                                ? 'bg-red-50 shadow-md'
-                                : 'bg-white/80 backdrop-blur-sm shadow-md hover:bg-white hover:shadow-lg'
+                                ? 'shadow-md'
+                                : 'bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg'
                         } ${wishlistAnim ? 'scale-110' : 'scale-100'}`}
+                        style={optimisticWishlisted ? { backgroundColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.1)' } : {}}
                         aria-label={optimisticWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                     >
                         <Heart
                             className={`w-[18px] h-[18px] transition-all duration-300 ${
                                 optimisticWishlisted
-                                    ? 'fill-red-500 text-red-500 scale-110'
-                                    : 'fill-none text-gray-600 hover:text-red-400'
+                                    ? 'scale-110'
+                                    : 'fill-none hover:text-red-400'
                             }`}
+                            style={optimisticWishlisted ? { fill: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' } : { color: 'var(--theme-color, #3B82F6)' }}
                         />
                     </button>
                 </div>
@@ -137,7 +143,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                             {product.category.name}
                         </p>
                     )}
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors min-h-[2.5rem]">
+                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-theme transition-colors min-h-[2.5rem]">
                         {product.name}
                     </h3>
                 </Link>
@@ -177,7 +183,10 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                         <button
                             onClick={handleAddToCart}
                             disabled={addingId === product.id || isAdding}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-white rounded-xl text-sm font-semibold active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                            style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                         >
                             {addingId === product.id || isAdding ? (
                                 <>
@@ -197,7 +206,10 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                     )}
                     <Link
                         href={`/client/product/${product.id}`}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl text-sm font-semibold transition-all duration-200"
+                        style={{ borderColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.2)', color: 'var(--theme-color, #3B82F6)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; e.currentTarget.style.backgroundColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.06)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.2)'; e.currentTarget.style.backgroundColor = ''; }}
                     >
                         <i className="bi bi-eye"></i>
                         View Details

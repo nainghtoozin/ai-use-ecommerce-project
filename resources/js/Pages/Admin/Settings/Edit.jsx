@@ -3,6 +3,16 @@ import { useForm, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ImageUpload from '@/Components/ImageUpload';
 
+const PRESET_COLORS = [
+  { name: 'Blue', value: '#3B82F6' },
+  { name: 'Emerald', value: '#10B981' },
+  { name: 'Purple', value: '#8B5CF6' },
+  { name: 'Rose', value: '#F43F5E' },
+  { name: 'Orange', value: '#F97316' },
+  { name: 'Slate', value: '#64748B' },
+  { name: 'Black', value: '#0F172A' },
+];
+
 const TABS = [
   { id: 'general', label: 'General', icon: 'bi-gear' },
   { id: 'branding', label: 'Branding', icon: 'bi-palette' },
@@ -18,6 +28,12 @@ const TABS = [
 
 export default function SettingsEdit({ settings = {} }) {
   const [activeTab, setActiveTab] = useState('general');
+  const [heroFiles, setHeroFiles] = useState([]);
+  const [heroExisting, setHeroExisting] = useState(settings.hero_images_urls || []);
+  const [heroDragActive, setHeroDragActive] = useState(false);
+  const MAX_HERO_IMAGES = 5;
+
+  const totalHeroCount = heroFiles.length + heroExisting.length;
 
   const { data, setData, processing, errors } = useForm({
     site_name: settings.site_name || settings.name || '',
@@ -111,6 +127,18 @@ export default function SettingsEdit({ settings = {} }) {
         }
       }
     });
+
+    if (heroFiles.length > 0 || heroExisting.length > 0) {
+      heroFiles.forEach((file) => {
+        formData.append('hero_images[]', file);
+      });
+      if (heroExisting.length > 0) {
+        heroExisting.forEach((url) => {
+          formData.append('hero_images_existing[]', url);
+        });
+      }
+    }
+
     formData.append('_method', 'PUT');
     router.post('/admin/website-info/edit', formData, {
       forceFormData: true,
@@ -123,6 +151,38 @@ export default function SettingsEdit({ settings = {} }) {
     });
   };
 
+  const addHeroFiles = (files) => {
+    const validFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const spaceLeft = MAX_HERO_IMAGES - totalHeroCount;
+    if (spaceLeft <= 0) return;
+    const toAdd = validFiles.slice(0, spaceLeft);
+    setHeroFiles((prev) => [...prev, ...toAdd]);
+  };
+
+  const removeHeroFile = (index) => {
+    setHeroFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingHero = (url) => {
+    setHeroExisting((prev) => prev.filter((u) => u !== url));
+  };
+
+  const handleHeroDragOver = (e) => {
+    e.preventDefault();
+    if (totalHeroCount < MAX_HERO_IMAGES) setHeroDragActive(true);
+  };
+
+  const handleHeroDragLeave = (e) => {
+    e.preventDefault();
+    setHeroDragActive(false);
+  };
+
+  const handleHeroDrop = (e) => {
+    e.preventDefault();
+    setHeroDragActive(false);
+    if (e.dataTransfer.files?.length) addHeroFiles(e.dataTransfer.files);
+  };
+
   const renderField = (name, label, type = 'text', options = {}) => (
     <div className={options.colSpan || 'col-span-1'}>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -131,13 +191,13 @@ export default function SettingsEdit({ settings = {} }) {
           value={data[name]}
           onChange={(e) => setData(name, e.target.value)}
           rows={options.rows || 3}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         />
       ) : type === 'select' ? (
         <select
           value={data[name]}
           onChange={(e) => setData(name, e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         >
           {options.options?.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -151,7 +211,7 @@ export default function SettingsEdit({ settings = {} }) {
             onChange={(e) => setData(name, e.target.checked)}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgba(var(--theme-color-rgb,59,130,246)/0.3)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--theme-color,#3B82F6)]"></div>
           <span className="ml-3 text-sm text-gray-500">{options.switchLabel || ''}</span>
         </label>
       ) : (
@@ -159,7 +219,7 @@ export default function SettingsEdit({ settings = {} }) {
           type={type}
           value={data[name]}
           onChange={(e) => setData(name, e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         />
       )}
       {errors[name] && <p className="mt-1 text-sm text-red-600">{errors[name]}</p>}
@@ -183,11 +243,12 @@ export default function SettingsEdit({ settings = {} }) {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                   className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'border-blue-600 text-blue-600'
+                      ? 'text-white border-transparent'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
+                  style={activeTab === tab.id ? { backgroundColor: 'var(--theme-color, #3B82F6)', borderBottomColor: 'var(--theme-color, #3B82F6)' } : {}}
                 >
                   <i className={`bi ${tab.icon} mr-2`}></i>
                   {tab.label}
@@ -216,7 +277,100 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('timezone', 'Timezone')}
                     {renderField('currency_code', 'Currency Code')}
                     {renderField('currency_symbol', 'Currency Symbol')}
-                    {renderField('theme_color', 'Theme Color', 'text')}
+
+                    {/* Theme Color Picker */}
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
+                      <div className="flex flex-wrap items-start gap-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <div
+                            className="w-16 h-16 rounded-xl shadow-inner border-2 border-gray-200 transition-colors duration-200"
+                            style={{ backgroundColor: data.theme_color }}
+                          />
+                          <input
+                            type="color"
+                            value={data.theme_color}
+                            onChange={(e) => setData('theme_color', e.target.value)}
+                            className="w-16 h-10 cursor-pointer rounded-lg border border-gray-300"
+                            title="Pick custom color"
+                          />
+                        </div>
+
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 mb-2">Preset Colors</p>
+                          <div className="flex flex-wrap gap-2">
+                            {PRESET_COLORS.map((color) => (
+                              <button
+                                key={color.value}
+                                type="button"
+                                onClick={() => setData('theme_color', color.value)}
+                                className={`group relative w-10 h-10 rounded-lg border-2 transition-all duration-150 hover:scale-110 ${
+                                  data.theme_color === color.value
+                                    ? 'border-gray-900 ring-2 ring-gray-300 ring-offset-2'
+                                    : 'border-gray-200 hover:border-gray-400'
+                                }`}
+                                style={{ backgroundColor: color.value }}
+                                title={color.name}
+                              >
+                                {data.theme_color === color.value && (
+                                  <svg className="w-4 h-4 text-white absolute inset-0 m-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Selected: <span className="font-mono font-medium text-gray-600">{data.theme_color}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <label className="text-xs text-gray-500 mb-1 block">Custom Hex (optional)</label>
+                        <input
+                          type="text"
+                          value={data.theme_color}
+                          onChange={(e) => setData('theme_color', e.target.value)}
+                          placeholder="#3B82F6"
+                          className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
+                        />
+                      </div>
+
+                      {/* Live Preview */}
+                      <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-xs font-medium text-gray-500 mb-3">Live Preview</p>
+                        <div className="flex flex-wrap gap-3 items-center">
+                          <button
+                            className="px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors"
+                            style={{ backgroundColor: data.theme_color }}
+                          >
+                            Primary Button
+                          </button>
+                          <button
+                            className="px-4 py-2 text-sm font-medium rounded-lg border-2 transition-colors"
+                            style={{ borderColor: data.theme_color, color: data.theme_color }}
+                          >
+                            Outline Button
+                          </button>
+                          <span
+                            className="px-3 py-1 text-white text-xs font-medium rounded-full"
+                            style={{ backgroundColor: data.theme_color }}
+                          >
+                            Badge
+                          </span>
+                          <a
+                            href="#"
+                            className="text-sm font-medium"
+                            style={{ color: data.theme_color }}
+                          >
+                            Link
+                          </a>
+                        </div>
+                      </div>
+
+                      {errors.theme_color && <p className="mt-2 text-sm text-red-600">{errors.theme_color}</p>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -396,14 +550,86 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('hero_button_link', 'Hero Button Link')}
                   </div>
                   <div className="mt-4">
-                    <ImageUpload
-                      name="hero_image"
-                      label="Hero Image"
-                      value={data.hero_image ?? settings.hero_image}
-                      onChange={(file) => setData('hero_image', file)}
-                      error={errors.hero_image}
-                      maxSize={2}
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hero Images
+                      <span className="text-gray-400 font-normal ml-1">({totalHeroCount}/{MAX_HERO_IMAGES})</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mb-3">Upload up to {MAX_HERO_IMAGES} images for the homepage hero carousel. If only one image is set, it displays as a static hero.</p>
+
+                    {/* Preview Grid */}
+                    {(heroExisting.length > 0 || heroFiles.length > 0) && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-3">
+                        {heroExisting.map((url, idx) => (
+                          <div key={`existing-${idx}`} className="group relative aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                            <img src={url} alt={`Hero ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingHero(url)}
+                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            {idx === 0 && (
+                              <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">Cover</span>
+                            )}
+                          </div>
+                        ))}
+                        {heroFiles.map((file, idx) => {
+                          const preview = URL.createObjectURL(file);
+                          return (
+                            <div key={`new-${idx}`} className="group relative aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                              <img src={preview} alt={`New hero ${idx + 1}`} className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(preview)} />
+                              <button
+                                type="button"
+                                onClick={() => removeHeroFile(idx)}
+                                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                              <span className="absolute bottom-1 left-1 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded">New</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Upload Drop Area */}
+                    {totalHeroCount < MAX_HERO_IMAGES && (
+                      <label
+                        onDragOver={handleHeroDragOver}
+                        onDragLeave={handleHeroDragLeave}
+                        onDrop={handleHeroDrop}
+                        className={`relative flex items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${
+                          heroDragActive
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => { if (e.target.files?.length) addHeroFiles(e.target.files); e.target.value = ''; }}
+                          className="hidden"
+                        />
+                        <div className="text-center">
+                          <svg className="mx-auto h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3" />
+                          </svg>
+                          <p className="mt-1 text-sm text-gray-600">
+                            <span className="font-medium text-blue-600">Click to upload</span> or drag & drop
+                          </p>
+                          <p className="mt-0.5 text-xs text-gray-400">PNG, JPG, WEBP up to 2MB</p>
+                        </div>
+                      </label>
+                    )}
+
+                    {errors.hero_images && <p className="mt-2 text-sm text-red-600">{errors.hero_images}</p>}
                   </div>
                 </div>
                 <div className="border-t border-gray-200 pt-6">
@@ -467,7 +693,10 @@ export default function SettingsEdit({ settings = {} }) {
               <button
                 type="submit"
                 disabled={processing}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-6 py-2 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 {processing ? (
                   <>

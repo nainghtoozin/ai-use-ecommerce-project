@@ -3,3 +3,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .btn-theme {
+        background-color: var(--theme-color);
+        color: white;
+        transition: opacity 0.2s;
+    }
+    .btn-theme:hover {
+        opacity: 0.9;
+    }
+
+    .btn-theme-outline {
+        background-color: transparent;
+        border: 2px solid var(--theme-color);
+        color: var(--theme-color);
+        transition: all 0.2s;
+    }
+    .btn-theme-outline:hover {
+        background-color: var(--theme-color);
+        color: white;
+    }
+
+    .text-theme {
+        color: var(--theme-color);
+    }
+
+    .bg-theme {
+        background-color: var(--theme-color);
+    }
+
+    .border-theme {
+        border-color: var(--theme-color);
+    }
+
+    .ring-theme {
+        --tw-ring-color: var(--theme-color);
+    }
+
+    .from-theme {
+        --tw-gradient-from: var(--theme-color);
+    }
+
+    .to-theme {
+        --tw-gradient-to: var(--theme-color);
+    }
+
+    .shadow-theme {
+        --tw-shadow-color: rgba(var(--theme-color-rgb, 59, 130, 246), 0.2);
+    }
+}

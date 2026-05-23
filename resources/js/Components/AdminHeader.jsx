@@ -36,7 +36,7 @@ export default function AdminHeader() {
                     </div>
                     <NotificationBell isAdmin={true} />
                     <div className="flex items-center gap-2 border-l border-gray-200 pl-2 lg:pl-3">
-                        <div className="w-7 lg:w-8 h-7 lg:h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-xs font-bold shadow-sm">
+                        <div className="w-7 lg:w-8 h-7 lg:h-8 text-white rounded-lg flex items-center justify-center text-xs font-bold shadow-sm" style={{ background: 'linear-gradient(135deg, var(--theme-color, #3B82F6), color-mix(in srgb, var(--theme-color, #3B82F6) 80%, black))' }}>
                             {auth?.user?.name?.charAt(0).toUpperCase()}
                         </div>
                         <div className="hidden lg:block">

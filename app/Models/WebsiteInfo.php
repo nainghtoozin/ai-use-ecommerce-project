@@ -50,6 +50,7 @@ class WebsiteInfo extends Model
         'hero_button_text',
         'hero_button_link',
         'hero_image',
+        'hero_images',
         'footer_description',
         'footer_copyright',
         'maintenance_mode',
@@ -76,6 +77,7 @@ class WebsiteInfo extends Model
         'is_active' => 'boolean',
         'free_shipping_threshold' => 'decimal:2',
         'default_shipping_fee' => 'decimal:2',
+        'hero_images' => 'array',
     ];
 
     public static function getSettings(): self
@@ -126,6 +128,18 @@ class WebsiteInfo extends Model
         return asset('storage/' . $this->hero_image);
     }
 
+    public function getHeroImagesUrlsAttribute(): array
+    {
+        if (empty($this->hero_images) || !is_array($this->hero_images)) {
+            return [];
+        }
+
+        return array_map(function ($path) {
+            if (str_starts_with($path, 'http')) return $path;
+            return asset('storage/' . $path);
+        }, $this->hero_images);
+    }
+
     public function getFooterLogoUrlAttribute(): ?string
     {
         if (!$this->footer_logo) return null;
@@ -140,6 +154,7 @@ class WebsiteInfo extends Model
         $data['favicon_url'] = $this->favicon_url;
         $data['og_image_url'] = $this->og_image_url;
         $data['hero_image_url'] = $this->hero_image_url;
+        $data['hero_images_urls'] = $this->hero_images_urls;
         $data['footer_logo_url'] = $this->footer_logo_url;
         return $data;
     }

@@ -8,6 +8,21 @@
 
     <title inertia>{{ $page['props']['website_info']['site_name'] ?? 'My E-Commerce Store' }}</title>
 
+    @php
+        $themeColor = ($page['props']['website_info']['theme_color'] ?? '') ?: '#3B82F6';
+        $themeColor = preg_match('/^#[0-9A-Fa-f]{6}$/', $themeColor) ? $themeColor : '#3B82F6';
+        $themeColorRgb = implode(', ', array_map(function($hex) {
+            return hexdec($hex);
+        }, str_split(ltrim($themeColor, '#'), 2)));
+    @endphp
+
+    <style>
+        :root {
+            --theme-color: {{ $themeColor }};
+            --theme-color-rgb: {{ $themeColorRgb }};
+        }
+    </style>
+
     <!-- Bootstrap CSS (legacy support) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">

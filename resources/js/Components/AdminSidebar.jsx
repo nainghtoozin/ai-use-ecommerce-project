@@ -177,7 +177,7 @@ export default function AdminSidebar() {
             >
                 <div className={`h-16 flex items-center ${collapsed ? 'justify-center px-2' : 'px-5'} border-b border-slate-800 flex-shrink-0`}>
                     {collapsed ? (
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                             <Store className="w-5 h-5 text-white" />
                         </div>
                     ) : (
@@ -185,7 +185,7 @@ export default function AdminSidebar() {
                             {logoUrl ? (
                                 <img src={logoUrl} alt={siteName} className="h-8 w-auto" />
                             ) : (
-                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                     <Store className="w-5 h-5 text-white" />
                                 </div>
                             )}
@@ -239,9 +239,10 @@ export default function AdminSidebar() {
                                                         href={item.href}
                                                         onClick={() => setSidebarOpen(false)}
                                                         className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative ${active
-                                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                                                                ? 'text-white shadow-md'
                                                                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                                             }`}
+                                                        style={active ? { backgroundColor: 'var(--theme-color, #3B82F6)', boxShadow: '0 4px 12px rgba(var(--theme-color-rgb, 59, 130, 246), 0.2)' } : {}}
                                                         title={collapsed ? item.label : undefined}
                                                     >
                                                         {active && (
@@ -262,7 +263,7 @@ export default function AdminSidebar() {
 
                 <div className={`p-3 border-t border-slate-800 flex-shrink-0 ${collapsed ? 'items-center' : ''}`}>
                     <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
-                        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md" style={{ background: 'linear-gradient(135deg, var(--theme-color, #3B82F6), color-mix(in srgb, var(--theme-color, #3B82F6) 80%, black))' }}>
                             {auth?.user?.name?.charAt(0).toUpperCase()}
                         </div>
                         {!collapsed && (
