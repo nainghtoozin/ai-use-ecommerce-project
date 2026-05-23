@@ -28,12 +28,71 @@ const TABS = [
 
 export default function SettingsEdit({ settings = {} }) {
   const [activeTab, setActiveTab] = useState('general');
-  const [heroFiles, setHeroFiles] = useState([]);
-  const [heroExisting, setHeroExisting] = useState(settings.hero_images_urls || []);
+  const [heroItems, setHeroItems] = useState(() => {
+    return (settings.hero_images_urls || []).map((url, i) => ({
+      id: `hero-existing-${i}-${Date.now()}`,
+      type: 'existing',
+      url,
+      file: null,
+    }));
+  });
   const [heroDragActive, setHeroDragActive] = useState(false);
   const MAX_HERO_IMAGES = 5;
 
-  const totalHeroCount = heroFiles.length + heroExisting.length;
+  const totalHeroCount = heroItems.length;
+
+  const addHeroFiles = (files) => {
+    const validFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const spaceLeft = MAX_HERO_IMAGES - totalHeroCount;
+    if (spaceLeft <= 0) return;
+    const toAdd = validFiles.slice(0, spaceLeft);
+    setHeroItems((prev) => [
+      ...prev,
+      ...toAdd.map((file) => ({
+        id: `hero-new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: 'new',
+        url: null,
+        file,
+      })),
+    ]);
+  };
+
+  const removeHeroItem = (id) => {
+    setHeroItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const replaceHeroItem = (id, file) => {
+    setHeroItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { id: `hero-new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, type: 'new', url: null, file }
+          : item
+      )
+    );
+  };
+
+  const moveHeroItem = (id, direction) => {
+    setHeroItems((prev) => {
+      const idx = prev.findIndex((item) => item.id === id);
+      if (idx === -1) return prev;
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const result = [...prev];
+      [result[idx], result[newIdx]] = [result[newIdx], result[idx]];
+      return result;
+    });
+  };
+
+  const setCoverItem = (id) => {
+    setHeroItems((prev) => {
+      const idx = prev.findIndex((item) => item.id === id);
+      if (idx <= 0) return prev;
+      const result = [...prev];
+      const [item] = result.splice(idx, 1);
+      result.unshift(item);
+      return result;
+    });
+  };
 
   const { data, setData, processing, errors } = useForm({
     site_name: settings.site_name || settings.name || '',
@@ -128,15 +187,19 @@ export default function SettingsEdit({ settings = {} }) {
       }
     });
 
-    if (heroFiles.length > 0 || heroExisting.length > 0) {
-      heroFiles.forEach((file) => {
-        formData.append('hero_images[]', file);
+    if (heroItems.length > 0) {
+      const payload = heroItems.map((item) => ({
+        type: item.type,
+        path: item.type === 'existing' ? item.url : null,
+      }));
+      formData.append('hero_images_payload', JSON.stringify(payload));
+      heroItems.forEach((item) => {
+        if (item.type === 'new') {
+          formData.append('hero_images[]', item.file);
+        }
       });
-      if (heroExisting.length > 0) {
-        heroExisting.forEach((url) => {
-          formData.append('hero_images_existing[]', url);
-        });
-      }
+    } else {
+      formData.append('hero_images_payload', JSON.stringify([]));
     }
 
     formData.append('_method', 'PUT');
@@ -149,22 +212,6 @@ export default function SettingsEdit({ settings = {} }) {
         }, 500);
       },
     });
-  };
-
-  const addHeroFiles = (files) => {
-    const validFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
-    const spaceLeft = MAX_HERO_IMAGES - totalHeroCount;
-    if (spaceLeft <= 0) return;
-    const toAdd = validFiles.slice(0, spaceLeft);
-    setHeroFiles((prev) => [...prev, ...toAdd]);
-  };
-
-  const removeHeroFile = (index) => {
-    setHeroFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const removeExistingHero = (url) => {
-    setHeroExisting((prev) => prev.filter((u) => u !== url));
   };
 
   const handleHeroDragOver = (e) => {
@@ -554,45 +601,103 @@ export default function SettingsEdit({ settings = {} }) {
                       Hero Images
                       <span className="text-gray-400 font-normal ml-1">({totalHeroCount}/{MAX_HERO_IMAGES})</span>
                     </label>
-                    <p className="text-xs text-gray-500 mb-3">Upload up to {MAX_HERO_IMAGES} images for the homepage hero carousel. If only one image is set, it displays as a static hero.</p>
+                    <p className="text-xs text-gray-500 mb-3">Upload up to {MAX_HERO_IMAGES} images for the homepage hero carousel. Click an image to replace it. Drag to reorder or use the arrow buttons.</p>
 
                     {/* Preview Grid */}
-                    {(heroExisting.length > 0 || heroFiles.length > 0) && (
+                    {heroItems.length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-3">
-                        {heroExisting.map((url, idx) => (
-                          <div key={`existing-${idx}`} className="group relative aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                            <img src={url} alt={`Hero ${idx + 1}`} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => removeExistingHero(url)}
-                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                            {idx === 0 && (
-                              <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">Cover</span>
-                            )}
-                          </div>
-                        ))}
-                        {heroFiles.map((file, idx) => {
-                          const preview = URL.createObjectURL(file);
+                        {heroItems.map((item, idx) => {
+                          const previewUrl = item.type === 'new' ? URL.createObjectURL(item.file) : item.url;
                           return (
-                            <div key={`new-${idx}`} className="group relative aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                              <img src={preview} alt={`New hero ${idx + 1}`} className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(preview)} />
+                          <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow">
+                            {/* Cover badge */}
+                            {idx === 0 && (
+                              <span className="absolute top-1 left-1 z-10 bg-yellow-500 text-white text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                Cover
+                              </span>
+                            )}
+                            {/* New badge */}
+                            {item.type === 'new' && (
+                              <span className="absolute top-1 right-1 z-10 bg-blue-500 text-white text-[10px] font-medium px-1.5 py-0.5 rounded shadow">
+                                New
+                              </span>
+                            )}
+                            {/* Image (click to replace) */}
+                            <label className="block cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files?.[0]) {
+                                    replaceHeroItem(item.id, e.target.files[0]);
+                                    e.target.value = '';
+                                  }
+                                }}
+                              />
+                              <div className="relative aspect-video overflow-hidden">
+                                <img
+                                  src={previewUrl}
+                                  alt={`Hero ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onLoad={() => item.type === 'new' && URL.revokeObjectURL(previewUrl)}
+                                />
+                                {/* Hover overlay */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white/20 backdrop-blur-sm rounded-full p-2 hover:bg-white/30">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+                            </label>
+
+                            {/* Bottom toolbar */}
+                            <div className="flex items-center justify-between px-2 py-1.5 bg-gray-50 border-t border-gray-100">
+                              <div className="flex items-center gap-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => moveHeroItem(item.id, -1)}
+                                  disabled={idx === 0}
+                                  className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  title="Move left"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                </button>
+                                <span className="text-[11px] text-gray-400 font-mono w-4 text-center select-none">{idx + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => moveHeroItem(item.id, 1)}
+                                  disabled={idx === heroItems.length - 1}
+                                  className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  title="Move right"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                </button>
+                                {idx > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setCoverItem(item.id)}
+                                    className="p-1 rounded hover:bg-amber-100 transition-colors ml-1"
+                                    title="Set as cover"
+                                  >
+                                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                                  </button>
+                                )}
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => removeHeroFile(idx)}
-                                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                onClick={() => removeHeroItem(item.id)}
+                                className="p-1 rounded hover:bg-red-100 transition-colors group/delete"
+                                title="Remove"
                               >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <svg className="w-3.5 h-3.5 text-gray-400 group-hover/delete:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
-                              <span className="absolute bottom-1 left-1 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded">New</span>
                             </div>
-                          );
+                          </div>
+                        );
                         })}
                       </div>
                     )}

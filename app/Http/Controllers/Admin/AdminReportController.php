@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +17,26 @@ class AdminReportController extends Controller
     private array $perPageOptions = [25, 50, 100, 500, 1000];
     private int $defaultPerPage = 25;
     private int $cacheTTL = 300;
+
+    private const CACHE_PREFIX = 'product_sales_';
+    private const CACHE_TTL_SUMMARY = 600;
+    private const CACHE_TTL_STOCK = 900;
+    private const CACHE_TTL_TOP_SELLING = 600;
+    private const CACHE_TTL_SLOW_MOVING = 600;
+
+    /**
+     * Build a deterministic cache key from the filters that affect each section.
+     * Pagination params are excluded so the summary/top/slow caches are shared
+     * across all pages for the same filter set.
+     */
+    private function cacheKey(string $section, array $filters): string
+    {
+        $relevant = array_intersect_key($filters, array_flip([
+            'date_from', 'date_to', 'category_id', 'search', 'stock_status',
+        ]));
+        ksort($relevant);
+        return self::CACHE_PREFIX . $section . '_' . md5(json_encode($relevant));
+    }
 
     public function sales(Request $request)
     {
@@ -164,6 +187,174 @@ class AdminReportController extends Controller
             ->withSum('items as items_count', 'quantity')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+    }
+
+    public function productSales(Request $request)
+    {
+        $perPage = $this->resolvePerPage($request);
+        $filters = $request->only(['date_from', 'date_to', 'category_id', 'search', 'stock_status']);
+
+        if (empty($filters['date_from']) && empty($filters['date_to'])) {
+            $today = now()->toDateString();
+            $filters['date_from'] = $today;
+            $filters['date_to'] = $today;
+        }
+
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo   = $filters['date_to']   ?? null;
+
+        // ── 1. Main paginated product report ──
+        //     Single aggregation query with filtered joins.
+        //     Uses paginate() (count + data). The COUNT(*) over a GROUP BY
+        //     subquery is the one query that cannot be cached per-page, but
+        //     with an index on orders.created_at + order_items.product_id
+        //     the count remains sub-second up to millions of rows.
+        $mainQuery = OrderItem::select([
+                'order_items.product_id',
+                DB::raw('MAX(products.name) as product_name'),
+                DB::raw('MAX(products.stock) as stock'),
+                DB::raw('MAX(categories.name) as category_name'),
+                DB::raw('MAX(categories.id) as category_id'),
+                DB::raw('COALESCE(SUM(order_items.quantity), 0) as total_quantity'),
+                DB::raw('COALESCE(SUM(order_items.price * order_items.quantity), 0) as gross_revenue'),
+                DB::raw('COUNT(DISTINCT order_items.order_id) as order_count'),
+            ])
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->when($dateFrom, fn($q) => $q->where('orders.created_at', '>=', $dateFrom . ' 00:00:00'))
+            ->when($dateTo,   fn($q) => $q->where('orders.created_at', '<=', $dateTo   . ' 23:59:59'))
+            ->when(!empty($filters['search']), function ($q) use ($filters) {
+                $search = $filters['search'];
+                $q->where(function ($q) use ($search) {
+                    $q->where('products.name', 'like', "%{$search}%")
+                      ->orWhere('order_items.product_id', (int) $search);
+                });
+            })
+            ->when(!empty($filters['category_id']), fn($q) => $q->where('products.category_id', $filters['category_id']))
+            ->when(!empty($filters['stock_status']), function ($q) use ($filters) {
+                match ($filters['stock_status']) {
+                    'in_stock'     => $q->where('products.stock', '>', 10)->whereNotNull('products.stock'),
+                    'low_stock'    => $q->where('products.stock', '>', 0)->where('products.stock', '<=', 10),
+                    'out_of_stock' => $q->where(function ($q) {
+                        $q->where('products.stock', '<=', 0)->orWhereNull('products.stock');
+                    }),
+                    default => null,
+                };
+            })
+            ->groupBy('order_items.product_id');
+
+        $products = $mainQuery
+            ->orderByDesc(DB::raw('SUM(order_items.price * order_items.quantity)'))
+            ->paginate($perPage);
+
+        // ── 2. Summary aggregates (cached) ──
+        //     Cached because the value is identical for every pagination page
+        //     under the same filter set. Invalidated implicitly via TTL.
+        $summary = Cache::remember(
+            $this->cacheKey('summary', $filters),
+            self::CACHE_TTL_SUMMARY,
+            function () use ($filters, $dateFrom, $dateTo) {
+                $q = OrderItem::select([
+                        DB::raw('COALESCE(SUM(order_items.quantity), 0) as total_units_sold'),
+                        DB::raw('COALESCE(SUM(order_items.price * order_items.quantity), 0) as total_revenue'),
+                    ])
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->when($dateFrom, fn($q) => $q->where('orders.created_at', '>=', $dateFrom . ' 00:00:00'))
+                    ->when($dateTo,   fn($q) => $q->where('orders.created_at', '<=', $dateTo   . ' 23:59:59'))
+                    ->when(!empty($filters['category_id']), function ($q) use ($filters) {
+                        $q->whereIn('order_items.product_id', function ($sq) use ($filters) {
+                            $sq->select('id')->from('products')->where('category_id', $filters['category_id']);
+                        });
+                    });
+
+                if (!empty($filters['search'])) {
+                    $search = $filters['search'];
+                    $q->where(function ($q) use ($search) {
+                        $q->whereHas('product', fn($p) => $p->where('name', 'like', "%{$search}%"))
+                          ->orWhere('order_items.product_id', (int) $search);
+                    });
+                }
+
+                return $q->first();
+            }
+        );
+
+        // ── 3. Stock status counts (cached, longer TTL) ──
+        //     These are global — unaffected by date range, search, or category.
+        //     Only changes when product stock is updated (new shipments, sales).
+        $stockCounts = Cache::remember(
+            self::CACHE_PREFIX . 'stock_counts',
+            self::CACHE_TTL_STOCK,
+            fn() => Product::select([
+                DB::raw("COALESCE(SUM(CASE WHEN stock > 0 AND stock <= 10 THEN 1 ELSE 0 END), 0) as low_stock"),
+                DB::raw("COALESCE(SUM(CASE WHEN stock IS NULL OR stock <= 0 THEN 1 ELSE 0 END), 0) as out_of_stock"),
+            ])->first()
+        );
+
+        // ── 4. Top selling products (top 5, cached) ──
+        $topSelling = Cache::remember(
+            $this->cacheKey('top_selling', $filters),
+            self::CACHE_TTL_TOP_SELLING,
+            function () use ($dateFrom, $dateTo) {
+                return OrderItem::select([
+                        'order_items.product_id',
+                        DB::raw('MAX(products.name) as name'),
+                        DB::raw('MAX(products.stock) as stock'),
+                        DB::raw('COALESCE(SUM(order_items.quantity), 0) as qty_sold'),
+                        DB::raw('COALESCE(SUM(order_items.price * order_items.quantity), 0) as revenue'),
+                    ])
+                    ->join('products', 'order_items.product_id', '=', 'products.id')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->when($dateFrom, fn($q) => $q->where('orders.created_at', '>=', $dateFrom . ' 00:00:00'))
+                    ->when($dateTo,   fn($q) => $q->where('orders.created_at', '<=', $dateTo   . ' 23:59:59'))
+                    ->groupBy('order_items.product_id')
+                    ->orderByDesc(DB::raw('SUM(order_items.quantity)'))
+                    ->limit(5)
+                    ->get();
+            }
+        );
+
+        // ── 5. Slow moving products (anti-join, cached) ──
+        //     The sold-product subquery is date-dependent but expensive;
+        //     caching it avoids re-scanning order_items on every page navigation.
+        $slowMoving = Cache::remember(
+            $this->cacheKey('slow_moving', $filters),
+            self::CACHE_TTL_SLOW_MOVING,
+            function () use ($dateFrom, $dateTo) {
+                $soldSub = OrderItem::select('product_id')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->when($dateFrom, fn($q) => $q->where('orders.created_at', '>=', $dateFrom . ' 00:00:00'))
+                    ->when($dateTo,   fn($q) => $q->where('orders.created_at', '<=', $dateTo   . ' 23:59:59'))
+                    ->distinct();
+
+                return Product::select(['id', 'name', 'stock', 'price'])
+                    ->leftJoinSub($soldSub, 'sold', 'products.id', '=', 'sold.product_id')
+                    ->whereNull('sold.product_id')
+                    ->where('stock', '>', 0)
+                    ->orderByDesc('stock')
+                    ->limit(10)
+                    ->get();
+            }
+        );
+
+        // ── 6. Categories for dropdown ──
+        $categories = Category::select(['id', 'name'])->orderBy('name')->get();
+
+        return Inertia::render('Admin/Reports/ProductSales', [
+            'products'    => $products,
+            'summary'     => [
+                'total_revenue'       => (float) ($summary->total_revenue ?? 0),
+                'total_units_sold'    => (int) ($summary->total_units_sold ?? 0),
+                'top_selling_product' => $topSelling->isNotEmpty() ? $topSelling->first()->name : 'N/A',
+                'low_stock_count'     => (int) ($stockCounts->low_stock ?? 0),
+                'out_of_stock_count'  => (int) ($stockCounts->out_of_stock ?? 0),
+            ],
+            'top_selling' => $topSelling,
+            'slow_moving' => $slowMoving,
+            'categories'  => $categories,
+            'filters'     => $filters,
+        ]);
     }
 
     private function resolvePerPage(Request $request): int

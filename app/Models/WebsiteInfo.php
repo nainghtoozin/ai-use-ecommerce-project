@@ -135,7 +135,9 @@ class WebsiteInfo extends Model
         }
 
         return array_map(function ($path) {
+            if (empty($path)) return null;
             if (str_starts_with($path, 'http')) return $path;
+            if (str_starts_with($path, '/storage/')) return asset($path);
             return asset('storage/' . $path);
         }, $this->hero_images);
     }

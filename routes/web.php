@@ -200,6 +200,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::get('/sales', [AdminReportController::class, 'sales'])->name('sales');
         Route::post('/sales/clear-cache', [AdminReportController::class, 'clearCache'])->name('sales.clear-cache');
         Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details');
+        Route::get('/product-sales', [AdminReportController::class, 'productSales'])->name('product-sales');
     });
 
     // Coupons (discount engine)

@@ -40,38 +40,70 @@ class SettingsController extends Controller
             }
         }
 
-        if ($request->hasFile('hero_images')) {
+        if ($request->has('hero_images_payload')) {
+            $payload = json_decode($request->input('hero_images_payload'), true);
+            $newFiles = $request->file('hero_images', []);
             $existingImages = $info->hero_images ?? [];
-            $keepExisting = $request->input('hero_images_existing', []);
+            $orderedImages = [];
+            $newIndex = 0;
+
+            foreach ($payload as $item) {
+                if (($item['type'] ?? '') === 'new') {
+                    if (isset($newFiles[$newIndex])) {
+                        $path = $this->imageService->upload($newFiles[$newIndex], 'website-settings');
+                        $orderedImages[] = $this->normalizePath($path);
+                        $newIndex++;
+                    }
+                } elseif (($item['type'] ?? '') === 'existing') {
+                    $orderedImages[] = $this->normalizePath($item['path'] ?? '');
+                }
+            }
 
             foreach ($existingImages as $existingPath) {
-                if (!in_array($existingPath, $keepExisting, true)) {
+                $normalized = $this->normalizePath($existingPath);
+                if (!in_array($normalized, $orderedImages, true)) {
+                    $this->imageService->delete($existingPath);
+                }
+            }
+
+            $info->hero_images = !empty($orderedImages) ? $orderedImages : null;
+        } elseif ($request->hasFile('hero_images')) {
+            $existingImages = $info->hero_images ?? [];
+            $keepExisting = $request->input('hero_images_existing', []);
+            $keepNormalized = array_map(fn($p) => $this->normalizePath($p), $keepExisting);
+
+            foreach ($existingImages as $existingPath) {
+                $normalized = $this->normalizePath($existingPath);
+                if (!in_array($normalized, $keepNormalized, true)) {
                     $this->imageService->delete($existingPath);
                 }
             }
 
             $newPaths = [];
             foreach ($request->file('hero_images') as $file) {
-                $newPaths[] = $this->imageService->upload($file, 'website-settings');
+                $path = $this->imageService->upload($file, 'website-settings');
+                $newPaths[] = $this->normalizePath($path);
             }
 
-            $info->hero_images = array_values(array_merge($keepExisting, $newPaths));
+            $info->hero_images = array_values(array_merge($keepNormalized, $newPaths));
         } elseif ($request->has('hero_images_existing')) {
             $keepExisting = $request->input('hero_images_existing', []);
             $existingImages = $info->hero_images ?? [];
+            $keepNormalized = array_map(fn($p) => $this->normalizePath($p), $keepExisting);
 
             foreach ($existingImages as $existingPath) {
-                if (!in_array($existingPath, $keepExisting, true)) {
+                $normalized = $this->normalizePath($existingPath);
+                if (!in_array($normalized, $keepNormalized, true)) {
                     $this->imageService->delete($existingPath);
                 }
             }
 
-            $info->hero_images = array_values($keepExisting);
+            $info->hero_images = array_values($keepNormalized);
         }
 
         $validated = $request->validated();
         unset($validated['logo'], $validated['favicon'], $validated['og_image'], $validated['hero_image'], $validated['footer_logo'], $validated['about_image']);
-        unset($validated['hero_images'], $validated['hero_images_existing']);
+        unset($validated['hero_images'], $validated['hero_images_existing'], $validated['hero_images_payload']);
 
         $info->fill($validated);
         $info->save();
@@ -89,5 +121,24 @@ class SettingsController extends Controller
         }
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
+    }
+
+    private function normalizePath(string $path): string
+    {
+        if (empty($path)) {
+            return $path;
+        }
+
+        $appStorageUrl = rtrim(config('app.url'), '/') . '/storage/';
+
+        if (str_starts_with($path, $appStorageUrl)) {
+            return substr($path, strlen($appStorageUrl));
+        }
+
+        if (str_starts_with($path, '/storage/')) {
+            return substr($path, 9);
+        }
+
+        return $path;
     }
 }
