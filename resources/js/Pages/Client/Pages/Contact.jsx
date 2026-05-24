@@ -9,17 +9,25 @@ export default function Contact({
     address,
     country,
     google_maps_embed_url,
-    websiteInfo
+    websiteInfo,
+    contact_info,
+    address_info,
 }) {
     const { props } = usePage();
     const settings = websiteInfo || props.website_info || {};
+    const ci = contact_info || settings.contact_info || {};
+    const ai = address_info || settings.address_info || {};
 
-    const email = contact_email || settings.contact_email;
-    const support = support_email || settings.support_email;
-    const tel = phone || settings.phone;
-    const whatsapp = whatsapp_number || settings.whatsapp_number;
-    const addr = address || settings.address;
-    const mapsEmbed = google_maps_embed_url || settings.google_maps_embed_url;
+    const tel = ci.primary_phone || phone || settings.phone;
+    const tel2 = ci.secondary_phone;
+    const whatsapp = ci.whatsapp_number || whatsapp_number || settings.whatsapp_number;
+    const email = ci.contact_email || contact_email || settings.contact_email;
+    const support = ci.support_email || support_email || settings.support_email;
+    const sales = ci.sales_email;
+    const telegram = ci.telegram_username;
+    const addrParts = [ai.address_line_1, ai.address_line_2, ai.city, ai.state_region, ai.postal_code, ai.country || country || settings.country].filter(Boolean);
+    const addrStr = addrParts.length > 0 ? addrParts.join(', ') : (address || settings.address);
+    const mapsLink = ai.google_maps_link || google_maps_embed_url || settings.google_maps_embed_url;
 
     return (
         <ShopLayout>
@@ -36,7 +44,7 @@ export default function Contact({
                     </div>
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        {tel && (
+                        {(tel || tel2) && (
                             <div className="bg-white rounded-xl border border-gray-200 p-6">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -47,6 +55,7 @@ export default function Contact({
                                     <h3 className="font-semibold text-gray-900">Phone</h3>
                                 </div>
                                 <p className="text-gray-600">{tel}</p>
+                                {tel2 && <p className="text-gray-500 text-sm mt-1">{tel2}</p>}
                             </div>
                         )}
 
@@ -64,7 +73,7 @@ export default function Contact({
                             </div>
                         )}
 
-                        {(email || support) && (
+                        {(email || support || sales) && (
                             <div className="bg-white rounded-xl border border-gray-200 p-6">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="p-2 bg-red-100 rounded-lg">
@@ -74,11 +83,27 @@ export default function Contact({
                                     </div>
                                     <h3 className="font-semibold text-gray-900">Email</h3>
                                 </div>
-                                <p className="text-gray-600">{email || support}</p>
+                                {email && <p className="text-gray-600">{email}</p>}
+                                {support && <p className="text-gray-500 text-sm mt-1">Support: {support}</p>}
+                                {sales && <p className="text-gray-500 text-sm mt-1">Sales: {sales}</p>}
                             </div>
                         )}
 
-                        {addr && (
+                        {telegram && (
+                            <div className="bg-white rounded-xl border border-gray-200 p-6">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-2 bg-sky-100 rounded-lg">
+                                        <svg className="w-5 h-5 text-sky-600" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 000 24zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="font-semibold text-gray-900">Telegram</h3>
+                                </div>
+                                <p className="text-gray-600">@{telegram}</p>
+                            </div>
+                        )}
+
+                        {addrStr && (
                             <div className="bg-white rounded-xl border border-gray-200 p-6 sm:col-span-2 lg:col-span-3">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="p-2 bg-purple-100 rounded-lg">
@@ -89,27 +114,41 @@ export default function Contact({
                                     </div>
                                     <h3 className="font-semibold text-gray-900">Address</h3>
                                 </div>
-                                <p className="text-gray-600">
-                                    {addr}{country ? `, ${country}` : ''}
-                                </p>
+                                <p className="text-gray-600">{addrStr}</p>
                             </div>
                         )}
                     </div>
 
-                    {mapsEmbed && (
+                    {mapsLink && (
                         <div className="bg-white rounded-xl border border-gray-200 p-4">
                             <div className="aspect-video">
-                                <iframe
-                                    src={mapsEmbed}
-                                    width="100%"
-                                    height="100%"
-                                    style={{ border: 0 }}
-                                    allowFullScreen=""
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    title="Store Location"
-                                    className="rounded-lg"
-                                ></iframe>
+                                {mapsLink.includes('embed') ? (
+                                    <iframe
+                                        src={mapsLink}
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        allowFullScreen=""
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        title="Store Location"
+                                        className="rounded-lg"
+                                    ></iframe>
+                                ) : (
+                                    <a
+                                        href={mapsLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-full h-full bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    >
+                                        <div className="text-center">
+                                            <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                            </svg>
+                                            <span className="text-gray-600 font-medium">View on Google Maps</span>
+                                        </div>
+                                    </a>
+                                )}
                             </div>
                         </div>
                     )}

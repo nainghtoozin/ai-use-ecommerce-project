@@ -34,6 +34,8 @@ class StaticPagesController extends Controller
             'address' => $settings->address,
             'country' => $settings->country,
             'google_maps_embed_url' => $settings->google_maps_embed_url,
+            'contact_info' => $settings->contact_info,
+            'address_info' => $settings->address_info,
         ]);
     }
 

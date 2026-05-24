@@ -53,6 +53,8 @@ class WebsiteInfo extends Model
         'hero_images',
         'footer_description',
         'footer_copyright',
+        'contact_info',
+        'address_info',
         'maintenance_mode',
         'maintenance_message',
         'allow_registration',
@@ -78,6 +80,8 @@ class WebsiteInfo extends Model
         'free_shipping_threshold' => 'decimal:2',
         'default_shipping_fee' => 'decimal:2',
         'hero_images' => 'array',
+        'contact_info' => 'array',
+        'address_info' => 'array',
     ];
 
     public static function getSettings(): self

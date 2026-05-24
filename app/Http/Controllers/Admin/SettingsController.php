@@ -105,7 +105,34 @@ class SettingsController extends Controller
         unset($validated['logo'], $validated['favicon'], $validated['og_image'], $validated['hero_image'], $validated['footer_logo'], $validated['about_image']);
         unset($validated['hero_images'], $validated['hero_images_existing'], $validated['hero_images_payload']);
 
+        $contactInfo = [
+            'primary_phone' => $validated['phone'] ?? '',
+            'secondary_phone' => $validated['secondary_phone'] ?? '',
+            'support_email' => $validated['support_email'] ?? '',
+            'sales_email' => $validated['sales_email'] ?? '',
+            'contact_email' => $validated['contact_email'] ?? '',
+            'whatsapp_number' => $validated['whatsapp_number'] ?? '',
+            'telegram_username' => $validated['telegram_username'] ?? '',
+        ];
+
+        $addressInfo = [
+            'address_line_1' => $validated['address_line_1'] ?? ($validated['address'] ?? ''),
+            'address_line_2' => $validated['address_line_2'] ?? '',
+            'city' => $validated['city'] ?? '',
+            'state_region' => $validated['state'] ?? '',
+            'postal_code' => $validated['postal_code'] ?? '',
+            'country' => $validated['country'] ?? '',
+            'google_maps_link' => $validated['google_maps_link'] ?? ($validated['google_maps_embed_url'] ?? ''),
+        ];
+
+        $newFields = ['secondary_phone', 'sales_email', 'telegram_username', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'google_maps_link'];
+        foreach ($newFields as $field) {
+            unset($validated[$field]);
+        }
+
         $info->fill($validated);
+        $info->contact_info = $contactInfo;
+        $info->address_info = $addressInfo;
         $info->save();
 
         WebsiteInfo::clearCache();
