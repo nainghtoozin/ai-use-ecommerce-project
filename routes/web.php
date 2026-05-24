@@ -27,6 +27,7 @@ use App\Http\Controllers\Client\StaticPagesController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TelegramIntegrationController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -133,6 +134,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{order}/confirm-payment', [\App\Http\Controllers\Client\ClientOrderController::class, 'confirmPayment'])->name('orders.confirm-payment');
     Route::post('/orders/{order}/cancel', [\App\Http\Controllers\Client\ClientOrderController::class, 'cancelOrder'])->name('orders.cancel');
 
+    // Telegram Integration
+    Route::get('/telegram-integration', [TelegramIntegrationController::class, 'show'])->name('telegram-integration.show');
+    Route::post('/telegram-integration', [TelegramIntegrationController::class, 'store'])->name('telegram-integration.store');
+    Route::post('/telegram-integration/connect', [TelegramIntegrationController::class, 'connect'])->name('telegram-integration.connect');
+    Route::get('/telegram-integration/status', [TelegramIntegrationController::class, 'status'])->name('telegram-integration.status');
+    Route::patch('/telegram-integration/toggle', [TelegramIntegrationController::class, 'toggle'])->name('telegram-integration.toggle');
+    Route::post('/telegram-integration/test', [TelegramIntegrationController::class, 'sendTestMessage'])->name('telegram-integration.test');
+
     // ============================================================
     // BROADCAST TEST ROUTE (remove in production)
     // ============================================================
@@ -201,6 +210,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
     Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');
+
+    // Telegram Integration Settings
+    Route::get('/settings/telegram-integration', [\App\Http\Controllers\TelegramIntegrationController::class, 'edit'])->name('settings.telegram-integration');
 
     // Banners (slider)
     Route::get('/banners', [AdminPromotionBannerController::class, 'index'])->name('banners.index');
@@ -328,3 +340,5 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 
 Route::get('/api/locations', [App\Http\Controllers\Api\LocationController::class, 'getCities']);
 Route::get('/api/townships/{cityId}', [App\Http\Controllers\Api\LocationController::class, 'getTownships']);
+
+

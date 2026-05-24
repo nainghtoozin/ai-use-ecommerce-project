@@ -15,6 +15,7 @@ export default function AdminHeader() {
         if (path.includes('cities')) return 'Cities';
         if (path.includes('townships')) return 'Townships';
         if (path.includes('website-info')) return 'Website Info';
+        if (path.includes('telegram-integration')) return 'Telegram Integration';
         if (path.includes('settings')) return 'Settings';
         return 'Admin Panel';
     };

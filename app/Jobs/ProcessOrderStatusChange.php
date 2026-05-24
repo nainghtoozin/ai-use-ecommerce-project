@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Models\Setting;
+use App\Models\TelegramIntegration;
 use App\Models\User;
 use App\Events\OrderStatusChanged;
 use App\Events\PaymentVerified;
@@ -84,6 +85,107 @@ class ProcessOrderStatusChange implements ShouldQueue
                 BroadcastService::fire(new $broadcast['class']($this->order), ['order_id' => $this->order->id]);
             }
         }
+
+        $this->dispatchTelegramStatusChange();
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        Log::error('ProcessOrderStatusChange exhausted all attempts', [
+            'order_id' => $this->order->id,
+            'event' => $this->event,
+            'error' => $e->getMessage(),
+        ]);
+    }
+
+    private function dispatchTelegramStatusChange(): void
+    {
+        try {
+            $integrations = TelegramIntegration::where('is_enabled', true)
+                ->whereHas('user', function ($q) {
+                    $q->role('admin');
+                })
+                ->get();
+
+            if ($integrations->isEmpty()) {
+                Log::info('Telegram status notification skipped - no admin integrations', [
+                    'order_id' => $this->order->id,
+                    'event' => $this->event,
+                ]);
+
+                return;
+            }
+
+            $message = $this->buildStatusMessage();
+
+            foreach ($integrations as $integration) {
+                SendTelegramMessageJob::dispatch($integration, $message)->onQueue('default');
+            }
+
+            Log::info('Telegram status notification dispatched', [
+                'order_id' => $this->order->id,
+                'event' => $this->event,
+                'integration_count' => $integrations->count(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Telegram status notification dispatch failed', [
+                'order_id' => $this->order->id,
+                'event' => $this->event,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function buildStatusMessage(): string
+    {
+        $this->order->loadMissing('paymentMethod');
+
+        $emoji = match ($this->event) {
+            'confirmed' => '✅',
+            'shipped' => '📦',
+            'delivered' => '✅',
+            'cancelled_by_admin', 'cancelled_by_customer' => '❌',
+            'payment_verified' => '💳',
+            'payment_rejected' => '❌',
+            'payment_proof_uploaded' => '📎',
+            default => '📋',
+        };
+
+        $label = match ($this->event) {
+            'confirmed' => 'Order Confirmed',
+            'shipped' => 'Order Shipped',
+            'delivered' => 'Order Delivered',
+            'cancelled_by_admin' => 'Order Cancelled by Admin',
+            'cancelled_by_customer' => 'Order Cancelled by Customer',
+            'payment_verified' => 'Payment Verified',
+            'payment_rejected' => 'Payment Rejected',
+            'payment_proof_uploaded' => 'Payment Proof Uploaded',
+            default => 'Status Updated',
+        };
+
+        $lines = [];
+        $lines[] = "{$emoji} {$label} #{$this->order->id}";
+        $lines[] = '';
+        $lines[] = "👤 Customer: {$this->order->customer_name}";
+        $lines[] = "📞 Phone: {$this->order->phone}";
+        $lines[] = '💰 Total: ' . number_format((float) $this->order->total_amount) . ' MMK';
+        $lines[] = '💳 Payment: ' . ($this->order->paymentMethod?->name ?? 'N/A');
+
+        if ($this->oldStatus) {
+            $lines[] = '';
+            $lines[] = "📋 Status: {$this->oldStatus} -> {$this->order->order_status}";
+        } else {
+            $lines[] = "📋 Status: {$this->order->order_status}";
+        }
+
+        if ($this->event === 'payment_rejected' && $this->rejectionReason) {
+            $lines[] = "⚠️ Reason: {$this->rejectionReason}";
+        }
+
+        $lines[] = '';
+        $lines[] = '🕐 ' . now()->format('M j, Y g:i A');
+
+        return implode("\n", $lines);
     }
 
     private function logActivity(): void
@@ -174,14 +276,5 @@ class ProcessOrderStatusChange implements ShouldQueue
             'payment_proof_uploaded' => ['class' => PaymentProofUploaded::class],
             default => null,
         };
-    }
-
-    public function failed(\Throwable $e): void
-    {
-        Log::error('ProcessOrderStatusChange exhausted all attempts', [
-            'order_id' => $this->order->id,
-            'event' => $this->event,
-            'error' => $e->getMessage(),
-        ]);
     }
 }

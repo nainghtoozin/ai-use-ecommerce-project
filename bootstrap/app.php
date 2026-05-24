@@ -16,6 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__ . '/../routes/web.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
+        then: function () {
+            $router = app('router');
+
+            $router->post('/webhooks/telegram/{telegramIntegration}', \App\Http\Controllers\TelegramWebhookController::class)
+                ->name('webhooks.telegram')
+                ->middleware(\Illuminate\Routing\Middleware\SubstituteBindings::class);
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -31,6 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
+
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/telegram/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

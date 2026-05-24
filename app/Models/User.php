@@ -91,6 +91,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Product::class, 'wishlists');
     }
 
+    public function telegramIntegration()
+    {
+        return $this->hasOne(TelegramIntegration::class);
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

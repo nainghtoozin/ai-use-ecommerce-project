@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Models\Setting;
+use App\Models\TelegramIntegration;
 use App\Models\User;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
@@ -77,6 +78,8 @@ class ProcessOrderNotifications implements ShouldQueue
                     BroadcastService::fire(new PaymentProofUploaded($this->order), ['order_id' => $this->order->id]);
                 }
             }
+
+            $this->dispatchTelegramOrderPlaced();
         } catch (\Throwable $e) {
             Log::error('Order placed but notifications failed', [
                 'order_id' => $this->order->id,
@@ -91,5 +94,65 @@ class ProcessOrderNotifications implements ShouldQueue
             'order_id' => $this->order->id,
             'error' => $e->getMessage(),
         ]);
+    }
+
+    private function dispatchTelegramOrderPlaced(): void
+    {
+        try {
+            $integrations = TelegramIntegration::where('is_enabled', true)
+                ->whereHas('user', function ($q) {
+                    $q->role('admin');
+                })
+                ->get();
+
+            if ($integrations->isEmpty()) {
+                Log::info('Telegram notification skipped - no admin integrations', [
+                    'order_id' => $this->order->id,
+                ]);
+
+                return;
+            }
+
+            $this->order->loadMissing('items.product', 'paymentMethod');
+
+            $lines = [];
+            $lines[] = "🆕 New Order #{$this->order->id}";
+            $lines[] = '';
+            $lines[] = "👤 Customer: {$this->order->customer_name}";
+            $lines[] = "📞 Phone: {$this->order->phone}";
+            $lines[] = '💳 Payment: ' . ($this->order->paymentMethod?->name ?? 'N/A');
+            $lines[] = '💰 Total: ' . number_format((float) $this->order->total_amount) . ' MMK';
+            $lines[] = '';
+
+            if ($this->order->items->isNotEmpty()) {
+                $lines[] = '📦 Products:';
+
+                foreach ($this->order->items as $item) {
+                    $productName = $item->product?->name ?? "Product #{$item->product_id}";
+                    $itemTotal = (float) $item->price * (int) $item->quantity;
+                    $lines[] = '  - ' . $productName . ' x' . $item->quantity . ' - ' . number_format($itemTotal) . ' MMK';
+                }
+
+                $lines[] = '';
+            }
+
+            $lines[] = '🕐 ' . now()->format('M j, Y g:i A');
+
+            $message = implode("\n", $lines);
+
+            foreach ($integrations as $integration) {
+                SendTelegramMessageJob::dispatch($integration, $message)->onQueue('default');
+            }
+
+            Log::info('Telegram order notification dispatched', [
+                'order_id' => $this->order->id,
+                'integration_count' => $integrations->count(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Telegram order notification dispatch failed', [
+                'order_id' => $this->order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
