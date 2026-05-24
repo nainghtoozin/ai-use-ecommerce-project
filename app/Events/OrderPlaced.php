@@ -9,6 +9,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class OrderPlaced implements ShouldBroadcastNow
 {
@@ -20,12 +21,18 @@ class OrderPlaced implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        $channels = [new PrivateChannel('notifications.user.'.$this->order->user_id)];
+        $customerChannel = 'notifications.user.'.$this->order->user_id;
+        $channels = [new PrivateChannel($customerChannel)];
 
         $admins = \App\Models\User::role('admin')->pluck('id');
         foreach ($admins as $adminId) {
             $channels[] = new PrivateChannel('notifications.user.'.$adminId);
         }
+
+        Log::debug('[OrderPlaced] Broadcasting to channels:', [
+            'customer_channel' => $customerChannel,
+            'admin_channels' => $admins->toArray(),
+        ]);
 
         return $channels;
     }

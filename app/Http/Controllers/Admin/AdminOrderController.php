@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Events\PaymentVerified;
 use App\Events\PaymentRejected;
 use App\Services\OrderService;
-use App\Services\DashboardCacheService;
 use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -239,7 +238,6 @@ class AdminOrderController extends Controller
             ProcessOrderStatusChange::dispatch($order, 'payment_verified');
 
             event(new PaymentVerified($order));
-            app(DashboardCacheService::class)->clearOrderRelatedCache();
 
             return redirect()->route('admin.orders.show', $id)
                 ->with('success', 'Payment verified successfully.');
@@ -274,7 +272,6 @@ class AdminOrderController extends Controller
             ProcessOrderStatusChange::dispatch($order, 'payment_rejected', rejectionReason: $request->rejection_reason);
 
             event(new PaymentRejected($order));
-            app(DashboardCacheService::class)->clearOrderRelatedCache();
 
             return redirect()->route('admin.orders.show', $id)
                 ->with('success', 'Payment rejected.');

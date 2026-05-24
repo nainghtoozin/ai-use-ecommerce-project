@@ -99,7 +99,6 @@ export default function AdminSidebar() {
                 { label: 'Notifications', href: '/admin/notifications', icon: 'Bell' },
                 { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
                 { label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' },
-                { label: 'Telegram Bot', href: '/admin/settings/telegram', icon: 'Send' },
                 { label: 'Settings', href: '/admin/settings', icon: 'Settings' },
             ]
         }

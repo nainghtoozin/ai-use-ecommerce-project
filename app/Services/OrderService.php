@@ -259,9 +259,6 @@ class OrderService
             ]);
         }
 
-        event(new OrderStatusChanged($order->fresh(), $oldStatus, $newStatus));
-        app(DashboardCacheService::class)->clearOrderRelatedCache();
-
         return $order->fresh();
     }
 

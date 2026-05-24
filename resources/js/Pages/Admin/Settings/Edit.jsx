@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ImageUpload from '@/Components/ImageUpload';
+import { assetUrl } from '@/Utils/helpers';
 
 const PRESET_COLORS = [
   { name: 'Blue', value: '#3B82F6' },
@@ -29,10 +30,10 @@ const TABS = [
 export default function SettingsEdit({ settings = {} }) {
   const [activeTab, setActiveTab] = useState('general');
   const [heroItems, setHeroItems] = useState(() => {
-    return (settings.hero_images_urls || []).map((url, i) => ({
+    return (settings.hero_images || []).map((rawPath, i) => ({
       id: `hero-existing-${i}-${Date.now()}`,
       type: 'existing',
-      url,
+      url: rawPath,
       file: null,
     }));
   });
@@ -607,7 +608,7 @@ export default function SettingsEdit({ settings = {} }) {
                     {heroItems.length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-3">
                         {heroItems.map((item, idx) => {
-                          const previewUrl = item.type === 'new' ? URL.createObjectURL(item.file) : item.url;
+                          const previewUrl = item.type === 'new' ? URL.createObjectURL(item.file) : assetUrl(item.url);
                           return (
                           <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow">
                             {/* Cover badge */}

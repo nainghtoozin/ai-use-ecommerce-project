@@ -26,8 +26,8 @@ export default function AppLayout({ children, header = null }) {
         if (auth?.user) {
             fetchNotifications();
             window.Echo.private(`chat.${auth.user.id}`)
-                .listen('MessageSent', () => setUnreadCount((p) => p + 1))
-                .listen('UserTyping', () => {});
+                .listen('.message.sent', () => setUnreadCount((p) => p + 1))
+                .listen('.typing', () => {});
             return () => window.Echo.leave(`chat.${auth.user.id}`);
         }
     }, [auth?.user?.id, fetchNotifications]);

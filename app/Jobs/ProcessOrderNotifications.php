@@ -16,7 +16,6 @@ use App\Services\BroadcastService;
 use App\Services\DashboardCacheService;
 use App\Services\NotificationPreferenceService;
 use App\Services\OrderNotificationService;
-use App\Services\TelegramService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -41,13 +40,11 @@ class ProcessOrderNotifications implements ShouldQueue
     ) {}
 
     public function handle(
-        TelegramService $telegramService,
         OrderNotificationService $orderNotificationService,
         NotificationPreferenceService $preferenceService,
     ): void {
         try {
             $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
-            $telegramEnabled = Setting::get('telegram_notifications_enabled', 'true') === 'true';
 
             $admins = User::role('admin')->get();
 
@@ -58,21 +55,9 @@ class ProcessOrderNotifications implements ShouldQueue
                 ['order_id' => $this->order->id, 'total_amount' => $this->order->total_amount]
             );
 
-            if ($telegramEnabled) {
-                $telegramService->sendOrderNotification($this->order);
-            }
-
             if ($notificationsEnabled) {
                 $orderNotificationService->notifyOrderPlaced($this->order);
-
-                $adminsWhoWantNewOrder = $preferenceService->filterUsersByPreference($admins, 'new_order');
-                if ($adminsWhoWantNewOrder->isNotEmpty()) {
-                    BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
-                }
             }
-
-            event(new OrderPlaced($this->order));
-            app(DashboardCacheService::class)->clearOrderRelatedCache();
 
             if ($notificationsEnabled && $this->paymentScreenshotPath) {
                 $adminsWhoWantProof = $preferenceService->filterUsersByPreference($admins, 'payment_proof_uploaded');

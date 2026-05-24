@@ -17,7 +17,6 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminReportController;
-use App\Http\Controllers\Admin\AdminTelegramBotController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\WishlistController;
@@ -133,6 +132,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{order}/upload-payment', [\App\Http\Controllers\Client\ClientOrderController::class, 'uploadPaymentProof'])->name('orders.upload-payment');
     Route::post('/orders/{order}/confirm-payment', [\App\Http\Controllers\Client\ClientOrderController::class, 'confirmPayment'])->name('orders.confirm-payment');
     Route::post('/orders/{order}/cancel', [\App\Http\Controllers\Client\ClientOrderController::class, 'cancelOrder'])->name('orders.cancel');
+
+    // ============================================================
+    // BROADCAST TEST ROUTE (remove in production)
+    // ============================================================
+    Route::get('/broadcast/test', function (\Illuminate\Http\Request $request) {
+        $userId = $request->user()->id;
+        $message = $request->query('message', 'This is a test broadcast from the server.');
+        \App\Events\TestBroadcastEvent::dispatch($userId, $message);
+        return response()->json([
+            'success' => true,
+            'message' => "Test broadcast dispatched to user #{$userId}",
+        ]);
+    })->name('broadcast.test');
 });
 
 // ============================================================
@@ -239,11 +251,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Notification Settings
     Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');
     Route::post('/settings/notifications', [AdminNotificationSettingsController::class, 'update'])->name('settings.notifications.update');
-
-    // Telegram Bot Settings
-    Route::get('/settings/telegram', [AdminTelegramBotController::class, 'edit'])->name('settings.telegram');
-    Route::post('/settings/telegram', [AdminTelegramBotController::class, 'update'])->name('settings.telegram.update');
-    Route::post('/settings/telegram/test', [AdminTelegramBotController::class, 'test'])->name('settings.telegram.test');
 
     // Payment Methods
     Route::resource('payment-methods', AdminPaymentMethodController::class)->except(['show']);

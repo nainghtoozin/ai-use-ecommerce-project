@@ -29,24 +29,24 @@ export default function ChatIndex({ conversations = [] }) {
 
     useEffect(() => {
         if (auth?.user?.id) {
-            window.Echo.private(`chat.${auth.user.id}`)
-                .listen('MessageSent', (e) => {
-                    const msg = e.message;
-                    if (selectedUser && (msg.sender_id === selectedUser.id || msg.receiver_id === selectedUser.id)) {
-                        setMessages((prev) => [...prev, msg]);
-                        scrollToBottom();
-                        axios.post(`/chat/read/${selectedUser.id}`);
-                    }
-                })
-                .listen('UserTyping', (e) => {
-                    if (selectedUser && e.sender_id === selectedUser.id) {
-                        setTypingUsers((prev) => ({ ...prev, [e.sender_id]: true }));
-                        clearTimeout(typingTimeoutRef.current);
-                        typingTimeoutRef.current = setTimeout(() => {
-                            setTypingUsers((prev) => ({ ...prev, [e.sender_id]: false }));
-                        }, 3000);
-                    }
-                });
+            const channel = window.Echo.private(`chat.${auth.user.id}`);
+            channel.listen('.message.sent', (e) => {
+                const msg = e;
+                if (selectedUser && (msg.sender_id === selectedUser.id || msg.receiver_id === selectedUser.id)) {
+                    setMessages((prev) => [...prev, msg]);
+                    scrollToBottom();
+                    axios.post(`/chat/read/${selectedUser.id}`);
+                }
+            });
+            channel.listen('.typing', (e) => {
+                if (selectedUser && e.sender_id === selectedUser.id) {
+                    setTypingUsers((prev) => ({ ...prev, [e.sender_id]: true }));
+                    clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => {
+                        setTypingUsers((prev) => ({ ...prev, [e.sender_id]: false }));
+                    }, 3000);
+                }
+            });
             return () => {
                 window.Echo.leave(`chat.${auth.user.id}`);
                 clearTimeout(typingTimeoutRef.current);

@@ -142,10 +142,47 @@ class WebsiteInfo extends Model
 
         return array_map(function ($path) {
             if (empty($path)) return null;
-            if (str_starts_with($path, 'http')) return $path;
+            $path = self::normalizeImagePath($path);
             if (str_starts_with($path, '/storage/')) return asset($path);
             return asset('storage/' . $path);
         }, $this->hero_images);
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (self $model) {
+            $imageFields = ['logo', 'favicon', 'og_image', 'hero_image', 'footer_logo', 'about_image'];
+            foreach ($imageFields as $field) {
+                if (isset($model->attributes[$field]) && is_string($model->attributes[$field])) {
+                    $model->attributes[$field] = self::normalizeImagePath($model->attributes[$field]);
+                }
+            }
+
+            if (isset($model->attributes['hero_images'])) {
+                $paths = is_array($model->hero_images) ? $model->hero_images : [];
+                $cleaned = array_map(fn($p) => self::normalizeImagePath($p), $paths);
+                $model->hero_images = $cleaned;
+            }
+        });
+    }
+
+    public static function normalizeImagePath(string $path): string
+    {
+        if (empty($path)) {
+            return $path;
+        }
+
+        if (preg_match('#^https?://[^/]+/storage/(.+)$#', $path, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($path, '/storage/')) {
+            return substr($path, 9);
+        }
+
+        return $path;
     }
 
     public function getFooterLogoUrlAttribute(): ?string

@@ -4,7 +4,6 @@ import AdminLayout from '@/Layouts/AdminLayout';
 export default function NotificationSettings({ settings = {} }) {
     const { data, setData, post, processing, errors } = useForm({
         notifications_enabled: settings.notifications_enabled === 'true' || settings.notifications_enabled === true ? 'true' : 'false',
-        telegram_notifications_enabled: settings.telegram_notifications_enabled === 'true' || settings.telegram_notifications_enabled === true ? 'true' : 'false',
     });
 
     function handleSubmit(e) {
@@ -39,25 +38,6 @@ export default function NotificationSettings({ settings = {} }) {
                                     When enabled, customer and admin bell notifications will be created after an order is placed.
                                 </p>
                                 {errors.notifications_enabled && <p className="mt-1 text-sm text-red-600">{errors.notifications_enabled}</p>}
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                            <input
-                                id="telegram_notifications_enabled"
-                                type="checkbox"
-                                checked={data.telegram_notifications_enabled === 'true'}
-                                onChange={(e) => setData('telegram_notifications_enabled', e.target.checked ? 'true' : 'false')}
-                                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <div>
-                                <label htmlFor="telegram_notifications_enabled" className="text-sm font-medium text-gray-900 cursor-pointer">
-                                    Enable Telegram Notifications
-                                </label>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    When enabled, order notifications will be sent to Telegram.
-                                </p>
-                                {errors.telegram_notifications_enabled && <p className="mt-1 text-sm text-red-600">{errors.telegram_notifications_enabled}</p>}
                             </div>
                         </div>
 

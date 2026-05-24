@@ -17,7 +17,6 @@ class AdminNotificationSettingsController extends Controller
         return Inertia::render('Admin/Settings/NotificationSettings', [
             'settings' => [
                 'notifications_enabled' => $settings['notifications_enabled'] ?? 'true',
-                'telegram_notifications_enabled' => $settings['telegram_notifications_enabled'] ?? 'true',
             ],
         ]);
     }
@@ -26,18 +25,15 @@ class AdminNotificationSettingsController extends Controller
     {
         $request->validate([
             'notifications_enabled' => 'required',
-            'telegram_notifications_enabled' => 'required',
         ]);
 
         Setting::set('notifications_enabled', $this->toBooleanString($request->input('notifications_enabled')));
-        Setting::set('telegram_notifications_enabled', $this->toBooleanString($request->input('telegram_notifications_enabled')));
 
         ActivityLogger::log(
             'Notification settings updated',
             'settings_updated',
             properties: [
                 'notifications_enabled' => $this->toBooleanString($request->input('notifications_enabled')),
-                'telegram_notifications_enabled' => $this->toBooleanString($request->input('telegram_notifications_enabled')),
             ]
         );
 

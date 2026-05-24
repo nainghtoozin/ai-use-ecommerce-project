@@ -165,10 +165,8 @@ class SettingsController extends Controller
             return $path;
         }
 
-        $appStorageUrl = rtrim(config('app.url'), '/') . '/storage/';
-
-        if (str_starts_with($path, $appStorageUrl)) {
-            return substr($path, strlen($appStorageUrl));
+        if (preg_match('#^https?://[^/]+/storage/(.+)$#', $path, $matches)) {
+            return $matches[1];
         }
 
         if (str_starts_with($path, '/storage/')) {

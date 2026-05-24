@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Events\OrderPlaced;
 use App\Jobs\ProcessOrderNotifications;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Services\CouponService;
+use Illuminate\Support\Facades\Log;
 use App\Services\ImageService;
 use App\Services\NotificationPreferenceService;
 use App\Services\OrderNotificationService;
 use App\Services\PromotionService;
-use App\Services\TelegramService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,7 +20,6 @@ use Inertia\Inertia;
 class OrderController extends Controller
 {
     public function __construct(
-        private readonly TelegramService $telegramService,
         private readonly OrderNotificationService $orderNotificationService,
         private readonly NotificationPreferenceService $preferenceService,
         private readonly ImageService $imageService,
@@ -163,6 +163,12 @@ class OrderController extends Controller
         foreach ($items as $item) {
             $order->items()->create($item);
         }
+
+        \Illuminate\Support\Facades\Log::debug('[OrderController] Broadcasting OrderPlaced event for order #' . $order->id);
+
+        event(new OrderPlaced($order));
+
+        \Illuminate\Support\Facades\Log::debug('[OrderController] Dispatched ProcessOrderNotifications job for order #' . $order->id);
 
         ProcessOrderNotifications::dispatch($order, $paymentScreenshotPath)
             ->onQueue('default');

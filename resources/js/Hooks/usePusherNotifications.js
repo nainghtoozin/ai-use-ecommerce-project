@@ -105,17 +105,23 @@ export default function usePusherNotifications() {
         const notification = normalizeNotification({}, { isRead: false, isPersisted: false, ...data });
         setNotifications((prev) => [notification, ...prev].slice(0, 50));
         setUnreadCount((prev) => prev + 1);
+        console.debug('[Pusher] Notification added:', notification.title);
         if (preferences?.notification_sound) {
             playNotificationSound();
         }
     }, [preferences]);
 
     useEffect(() => {
-        if (!auth?.user?.id || !window.Echo) return;
+        if (!auth?.user?.id || !window.Echo) {
+            console.warn('[Pusher] Skipping channel subscription - Echo unavailable or user not logged in');
+            return;
+        }
         const userId = auth.user.id;
+        console.debug('[Pusher] Subscribing to private channel:', `notifications.user.${userId}`);
         const channel = window.Echo.private(`notifications.user.${userId}`);
 
         channel.listen('.order.placed', (e) => {
+            console.debug('[Pusher] Event received: .order.placed', e);
             addNotification({ title: e.title, message: e.message, orderId: e.id, icon: '🛒', createdAt: new Date().toISOString() });
         });
 
