@@ -53,6 +53,7 @@ class WebsiteInfo extends Model
         'hero_images',
         'footer_description',
         'footer_copyright',
+        'footer_settings',
         'contact_info',
         'address_info',
         'maintenance_mode',
@@ -82,6 +83,7 @@ class WebsiteInfo extends Model
         'hero_images' => 'array',
         'contact_info' => 'array',
         'address_info' => 'array',
+        'footer_settings' => 'array',
     ];
 
     public static function getSettings(): self

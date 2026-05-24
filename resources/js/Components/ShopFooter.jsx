@@ -3,15 +3,43 @@ import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import ContactDrawer from '@/Components/ContactDrawer';
 
+function InfoModal({ open, onClose, title, children }) {
+    if (!open) return null;
+    return (
+        <>
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-x-4 bottom-0 z-50 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[480px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[70vh] sm:max-h-[60vh] flex flex-col animate-slide-up">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+                    <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+                    <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                        <i className="bi bi-x-lg text-xs"></i>
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto px-5 py-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                    {children}
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function ShopFooter() {
     const { website_info } = usePage().props;
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [infoModal, setInfoModal] = useState(null);
+
+    const fs = website_info?.footer_settings || {};
     const siteName = website_info?.site_name || 'My Store';
-    const logoUrl = assetUrl(website_info?.logo);
+    const logoUrl = assetUrl(website_info?.footer_logo_url || website_info?.logo);
     const themeColor = 'var(--theme-color, #3B82F6)';
 
     const ci = website_info?.contact_info || {};
     const ai = website_info?.address_info || {};
+
+    const description = fs.description || website_info?.footer_description || website_info?.about_description || '';
+    const extraText = fs.extra_text || '';
+    const descTruncated = description.length > 120;
+    const descPreview = descTruncated ? description.substring(0, 120) + '...' : description;
 
     const shopLinks = [
         { label: 'All Products', href: '/' },
@@ -41,7 +69,7 @@ export default function ShopFooter() {
         { key: 'instagram', icon: 'bi-instagram', link: website_info?.instagram_url },
         { key: 'youtube', icon: 'bi-youtube', link: website_info?.youtube_url },
         { key: 'linkedin', icon: 'bi-linkedin', link: website_info?.linkedin_url },
-    ].filter(s => s.link);
+    ].filter(Boolean);
 
     const phone = ci.primary_phone || website_info?.phone;
     const supportEmail = ci.support_email || website_info?.support_email;
@@ -51,6 +79,20 @@ export default function ShopFooter() {
     return (
         <>
             <ContactDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+            <InfoModal
+                open={infoModal === 'description'}
+                onClose={() => setInfoModal(null)}
+                title={`About ${siteName}`}
+            >
+                {description}
+            </InfoModal>
+            <InfoModal
+                open={infoModal === 'extra'}
+                onClose={() => setInfoModal(null)}
+                title={`About ${siteName}`}
+            >
+                {extraText}
+            </InfoModal>
             <footer className="bg-slate-900 text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="py-8 lg:py-10 border-b border-slate-800">
@@ -66,11 +108,33 @@ export default function ShopFooter() {
                                     )}
                                     <span className="text-lg font-bold">{siteName}</span>
                                 </Link>
-                                <p className="text-slate-400 text-xs leading-relaxed mb-4 line-clamp-2">
-                                    {website_info?.about_description || website_info?.footer_description || 'Your trusted destination for quality products.'}
+                                <p className="text-slate-400 text-xs leading-relaxed">
+                                    {descPreview}
                                 </p>
+                                {(descTruncated || extraText) && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                        {descTruncated && (
+                                            <button
+                                                onClick={() => setInfoModal('description')}
+                                                className="text-xs font-medium transition-colors"
+                                                style={{ color: themeColor }}
+                                            >
+                                                Read More →
+                                            </button>
+                                        )}
+                                        {extraText && (
+                                            <button
+                                                onClick={() => setInfoModal('extra')}
+                                                className="text-xs font-medium transition-colors"
+                                                style={{ color: themeColor }}
+                                            >
+                                                About Our Store →
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                                 {socials.length > 0 && (
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 mt-3">
                                         {socials.map((social) => (
                                             <a
                                                 key={social.key}

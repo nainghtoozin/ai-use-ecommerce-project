@@ -67,6 +67,13 @@ class WebsiteSettingsSeeder extends Seeder
             'hero_button_link' => '/products',
             'footer_description' => 'Your trusted online shopping destination in Myanmar. Quality products, great prices, fast delivery.',
             'footer_copyright' => '2026 ShopMyanmar. All rights reserved.',
+            'footer_settings' => json_encode([
+                'description' => 'Your trusted online shopping destination in Myanmar. Quality products, great prices, fast delivery.',
+                'extra_text' => 'ShopMyanmar was founded with a mission to bring the best online shopping experience to Myanmar. We partner with trusted local and international brands to offer you quality products at competitive prices. Our dedicated team works around the clock to ensure your orders are processed and delivered with care.',
+                'show_contact_button' => true,
+                'show_social_icons' => true,
+                'compact_mode' => true,
+            ]),
             'maintenance_mode' => false,
             'maintenance_message' => 'We are currently performing scheduled maintenance. Please check back soon.',
             'allow_registration' => true,

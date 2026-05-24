@@ -125,7 +125,15 @@ class SettingsController extends Controller
             'google_maps_link' => $validated['google_maps_link'] ?? ($validated['google_maps_embed_url'] ?? ''),
         ];
 
-        $newFields = ['secondary_phone', 'sales_email', 'telegram_username', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'google_maps_link'];
+        $footerSettings = [
+            'description' => $validated['footer_description'] ?? '',
+            'extra_text' => $validated['footer_extra_text'] ?? '',
+            'show_contact_button' => true,
+            'show_social_icons' => true,
+            'compact_mode' => true,
+        ];
+
+        $newFields = ['secondary_phone', 'sales_email', 'telegram_username', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'google_maps_link', 'footer_extra_text'];
         foreach ($newFields as $field) {
             unset($validated[$field]);
         }
@@ -133,6 +141,7 @@ class SettingsController extends Controller
         $info->fill($validated);
         $info->contact_info = $contactInfo;
         $info->address_info = $addressInfo;
+        $info->footer_settings = $footerSettings;
         $info->save();
 
         WebsiteInfo::clearCache();

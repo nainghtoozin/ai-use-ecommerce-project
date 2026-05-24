@@ -157,9 +157,9 @@ export default function SettingsEdit({ settings = {} }) {
     shipping_info: settings.shipping_info || '',
     secure_payment_info: settings.secure_payment_info || '',
     easy_returns_info: settings.easy_returns_info || '',
-    footer_description: settings.footer_description || '',
+    footer_description: settings.footer_settings?.description || settings.footer_description || '',
     footer_copyright: settings.footer_copyright || '',
-    footer_extra_text: settings.footer_extra_text || '',
+    footer_extra_text: settings.footer_settings?.extra_text || '',
     free_shipping_threshold: settings.free_shipping_threshold || 50000,
     default_shipping_fee: settings.default_shipping_fee || 2000,
     cod_enabled: settings.cod_enabled !== undefined ? settings.cod_enabled : true,
@@ -752,11 +752,24 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'footer' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Footer Settings</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Footer Logo</h3>
+                  <div className="max-w-xs">
+                    <ImageUpload
+                      name="footer_logo"
+                      label="Footer Logo"
+                      value={data.footer_logo ?? settings.footer_logo}
+                      onChange={(file) => setData('footer_logo', file)}
+                      error={errors.footer_logo}
+                      maxSize={2}
+                    />
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Footer Content</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {renderField('footer_description', 'Footer Description', 'textarea', { rows: 3 })}
+                    {renderField('footer_extra_text', 'Extra Text (About Us)', 'textarea', { rows: 4 })}
                     {renderField('footer_copyright', 'Copyright Text')}
-                    {renderField('footer_extra_text', 'Extra Text')}
                   </div>
                 </div>
               </div>
