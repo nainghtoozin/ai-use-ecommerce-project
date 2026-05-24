@@ -6,7 +6,8 @@ import { useWishlist } from '@/Hooks/useWishlist';
 
 const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId = null }) {
     const { props } = usePage();
-    const { auth, wishlisted_ids = [] } = props;
+    const { auth, website_info, wishlisted_ids = [] } = props;
+    const wishlistEnabled = website_info?.enable_wishlist !== false;
     const { toggleWishlist } = useWishlist();
 
     const [imageLoaded, setImageLoaded] = useState(false);
@@ -114,25 +115,27 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                         </div>
                     )}
 
-                    <button
-                        onClick={handleWishlistToggle}
-                        className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
-                            optimisticWishlisted
-                                ? 'shadow-md'
-                                : 'bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg'
-                        } ${wishlistAnim ? 'scale-110' : 'scale-100'}`}
-                        style={optimisticWishlisted ? { backgroundColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.1)' } : {}}
-                        aria-label={optimisticWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-                    >
-                        <Heart
-                            className={`w-[18px] h-[18px] transition-all duration-300 ${
+                    {wishlistEnabled && (
+                        <button
+                            onClick={handleWishlistToggle}
+                            className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
                                 optimisticWishlisted
-                                    ? 'scale-110'
-                                    : 'fill-none hover:text-red-400'
-                            }`}
-                            style={optimisticWishlisted ? { fill: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' } : { color: 'var(--theme-color, #3B82F6)' }}
-                        />
-                    </button>
+                                    ? 'shadow-md'
+                                    : 'bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg'
+                            } ${wishlistAnim ? 'scale-110' : 'scale-100'}`}
+                            style={optimisticWishlisted ? { backgroundColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.1)' } : {}}
+                            aria-label={optimisticWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                        >
+                            <Heart
+                                className={`w-[18px] h-[18px] transition-all duration-300 ${
+                                    optimisticWishlisted
+                                        ? 'scale-110'
+                                        : 'fill-none hover:text-red-400'
+                                }`}
+                                style={optimisticWishlisted ? { fill: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' } : { color: 'var(--theme-color, #3B82F6)' }}
+                            />
+                        </button>
+                    )}
                 </div>
             </Link>
 

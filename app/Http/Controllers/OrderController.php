@@ -52,6 +52,14 @@ class OrderController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $settings = \App\Models\WebsiteInfo::getSettings();
+        $guestCheckout = (bool) ($settings->guest_checkout_enabled ?? true);
+
+        if (!auth()->check() && !$guestCheckout) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to continue checkout.');
+        }
+
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],

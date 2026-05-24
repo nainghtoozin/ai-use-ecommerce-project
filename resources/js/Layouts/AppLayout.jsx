@@ -305,9 +305,11 @@ export default function AppLayout({ children, header = null }) {
                                                 <Link href="/login" className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
                                                     Login
                                                 </Link>
-                                                <Link href="/register" className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                                    Register
-                                                </Link>
+                                                {website_info?.allow_registration !== false && (
+                                                    <Link href="/register" className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                                        Register
+                                                    </Link>
+                                                )}
                                             </>
                                         )}
                                     </div>

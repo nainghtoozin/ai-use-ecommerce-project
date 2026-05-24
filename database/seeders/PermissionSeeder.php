@@ -60,6 +60,9 @@ class PermissionSeeder extends Seeder
 
             // Activity Logs
             'activity-logs.view',
+
+            // Maintenance
+            'bypass maintenance mode',
         ];
 
         foreach ($permissions as $name) {

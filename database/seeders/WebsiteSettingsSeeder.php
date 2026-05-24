@@ -82,8 +82,8 @@ class WebsiteSettingsSeeder extends Seeder
             'enable_compare' => true,
             'guest_checkout_enabled' => true,
             'cod_enabled' => true,
-            'free_shipping_threshold' => 50000,
-            'default_shipping_fee' => 2000,
+            'free_shipping_threshold' => 0,
+            'default_shipping_fee' => 0,
             'is_active' => true,
         ]);
     }

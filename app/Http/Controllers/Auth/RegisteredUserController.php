@@ -15,13 +15,22 @@ use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
-    public function create(): \Inertia\Response
+    public function create(): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
+        $settings = \App\Models\WebsiteInfo::getSettings();
+        if (!$settings->allow_registration) {
+            return redirect()->route('login')->with('error', 'Registration is currently disabled.');
+        }
         return Inertia::render('Auth/Register');
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $settings = \App\Models\WebsiteInfo::getSettings();
+        if (!$settings->allow_registration) {
+            return redirect()->route('login')->with('error', 'Registration is currently disabled.');
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],

@@ -8,8 +8,18 @@ use Inertia\Inertia;
 
 class WishlistController extends Controller
 {
+    protected function wishlistEnabled(): bool
+    {
+        $settings = \App\Models\WebsiteInfo::getSettings();
+        return (bool) ($settings->enable_wishlist ?? true);
+    }
+
     public function index()
     {
+        if (!$this->wishlistEnabled()) {
+            return redirect()->route('home')->with('error', 'Wishlist feature is currently unavailable.');
+        }
+
         $wishlistItems = auth()->user()->wishlistItems()
             ->with('product.category')
             ->latest()
@@ -22,6 +32,10 @@ class WishlistController extends Controller
 
     public function store(Product $product)
     {
+        if (!$this->wishlistEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Wishlist feature is currently unavailable.'], 403);
+        }
+
         $user = auth()->user();
 
         $exists = Wishlist::where('user_id', $user->id)
@@ -50,6 +64,10 @@ class WishlistController extends Controller
 
     public function destroy(Product $product)
     {
+        if (!$this->wishlistEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Wishlist feature is currently unavailable.'], 403);
+        }
+
         $user = auth()->user();
 
         Wishlist::where('user_id', $user->id)
@@ -65,6 +83,10 @@ class WishlistController extends Controller
 
     public function moveToCart(Product $product)
     {
+        if (!$this->wishlistEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Wishlist feature is currently unavailable.'], 403);
+        }
+
         $cart = session()->get('cart', []);
 
         if (isset($cart[$product->id])) {
@@ -92,6 +114,10 @@ class WishlistController extends Controller
 
     public function moveAllToCart()
     {
+        if (!$this->wishlistEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Wishlist feature is currently unavailable.'], 403);
+        }
+
         $user = auth()->user();
         $wishlistItems = $user->wishlistItems()->with('product')->get();
 
@@ -134,6 +160,10 @@ class WishlistController extends Controller
 
     public function clear()
     {
+        if (!$this->wishlistEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Wishlist feature is currently unavailable.'], 403);
+        }
+
         auth()->user()->wishlistItems()->delete();
 
         return response()->json([

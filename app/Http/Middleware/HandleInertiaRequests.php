@@ -36,13 +36,15 @@ class HandleInertiaRequests extends Middleware
         $settingsModel = \App\Models\WebsiteInfo::first();
         $websiteSettings = $settingsModel ? $settingsModel->toArray() : [];
 
+        $wishlistEnabled = $settingsModel && ($settingsModel->enable_wishlist ?? true);
+
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $userData,
             ],
             'cart' => $cart,
-            'wishlist_count' => $user ? (int) $user->wishlistItems()->count() : 0,
-            'wishlisted_ids' => $user ? $user->wishlistItems()->pluck('product_id')->toArray() : [],
+            'wishlist_count' => $wishlistEnabled && $user ? (int) $user->wishlistItems()->count() : 0,
+            'wishlisted_ids' => $wishlistEnabled && $user ? $user->wishlistItems()->pluck('product_id')->toArray() : [],
             'notifications' => [
                 'unread_count' => $this->getUnreadCount($request),
             ],

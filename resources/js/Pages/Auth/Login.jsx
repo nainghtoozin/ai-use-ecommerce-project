@@ -90,12 +90,18 @@ export default function Login({ status }) {
                     </button>
                 </div>
 
-                <div className="mt-4 text-center text-sm text-gray-600">
-                    Don't have an account?{' '}
-                    <Link href="/register" className="text-blue-600 hover:underline">
-                        Register
-                    </Link>
-                </div>
+                {usePage().props.website_info?.allow_registration !== false ? (
+                    <div className="mt-4 text-center text-sm text-gray-600">
+                        Don't have an account?{' '}
+                        <Link href="/register" className="text-blue-600 hover:underline">
+                            Register
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="mt-4 text-center text-sm text-gray-400">
+                        Registration is currently disabled.
+                    </div>
+                )}
             </form>
         </GuestLayout>
     );

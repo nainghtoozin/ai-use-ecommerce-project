@@ -35,6 +35,9 @@ class RoleAndPermissionSeeder extends Seeder
         'payments.view',
         'payments.verify',
         'activity-logs.view',
+
+        // Maintenance
+        'bypass maintenance mode',
     ];
 
     private array $customerPermissions = [

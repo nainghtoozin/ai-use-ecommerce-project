@@ -96,18 +96,20 @@ export default function ShopNavbar() {
                     </div>
 
                     <div className="flex items-center gap-1">
-                        <Link
-                            href="/wishlist"
-                            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Wishlist"
-                        >
-                            <Heart className="w-5 h-5" />
-                            {wishlistCount > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
-                                    {wishlistCount > 99 ? '99+' : wishlistCount}
-                                </span>
-                            )}
-                        </Link>
+                        {website_info?.enable_wishlist !== false && (
+                            <Link
+                                href="/wishlist"
+                                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Wishlist"
+                            >
+                                <Heart className="w-5 h-5" />
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                        {wishlistCount > 99 ? '99+' : wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
                         <Link
                             href="/cart"
                             className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -182,16 +184,18 @@ export default function ShopNavbar() {
                                 >
                                     Login
                                 </Link>
-                                <Link
-                                    href="/register"
-                                    className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
-                                    style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                                >
-                                    Register
-                                </Link>
-                            </div>
+        {website_info?.allow_registration !== false && (
+            <Link
+                href="/register"
+                className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
+                style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+                Register
+            </Link>
+        )}
+        </div>
                         )}
 
                         <button
@@ -224,19 +228,21 @@ export default function ShopNavbar() {
                                     {item.label}
                                 </Link>
                             ))}
-                            <Link
-                                href="/wishlist"
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
-                            >
-                                <Heart className="w-4 h-4" />
-                                Wishlist
-                                {wishlistCount > 0 && (
-                                    <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
-                                        {wishlistCount}
-                                    </span>
-                                )}
-                            </Link>
+                            {website_info?.enable_wishlist !== false && (
+                                <Link
+                                    href="/wishlist"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                >
+                                    <Heart className="w-4 h-4" />
+                                    Wishlist
+                                    {wishlistCount > 0 && (
+                                        <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                            {wishlistCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
                             <Link
                                 href="/cart"
                                 onClick={() => setMobileMenuOpen(false)}
@@ -260,13 +266,15 @@ export default function ShopNavbar() {
                                 >
                                     Login
                                 </Link>
-                                <Link
-                                    href="/register"
-                                    className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
-                                    style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
-                                >
-                                    Register
-                                </Link>
+                                {website_info?.allow_registration !== false && (
+                                    <Link
+                                        href="/register"
+                                        className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
+                                        style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                                    >
+                                        Register
+                                    </Link>
+                                )}
                             </div>
                         )}
                     </div>

@@ -38,6 +38,24 @@ Route::get('/', [ClientController::class, 'index'])->name('home');
 Route::get('/dashboard', [ClientController::class, 'index'])->name('client.dashboard');
 Route::get('/products', [ClientController::class, 'products'])->name('products.page');
 
+Route::get('/maintenance', function () {
+    $settings = \App\Models\WebsiteInfo::getSettings();
+    return \Inertia\Inertia::render('Client/Maintenance', [
+        'message' => $settings->maintenance_message ?? 'We are currently performing scheduled maintenance. Please check back soon.',
+        'siteName' => $settings->site_name ?? 'My Store',
+        'logoUrl' => $settings->logo_url,
+        'contactEmail' => $settings->contact_email ?? $settings->support_email ?? '',
+        'phone' => $settings->phone ?? '',
+        'socialLinks' => [
+            'facebook_url' => $settings->facebook_url ?? '',
+            'twitter_url' => $settings->twitter_url ?? '',
+            'instagram_url' => $settings->instagram_url ?? '',
+            'linkedin_url' => $settings->linkedin_url ?? '',
+            'youtube_url' => $settings->youtube_url ?? '',
+        ],
+    ]);
+})->name('maintenance');
+
 Route::get('/run-migrate', function () {
     Artisan::call('migrate', ['--force' => true]);
     return 'Migrated!';
@@ -101,7 +119,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences.update');
 
     // Checkout
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
 
     // Orders
@@ -299,5 +316,8 @@ Route::prefix('wishlist')->name('wishlist.')->middleware('auth')->group(function
 });
 
 // API
+// Checkout (public — guest checkout gate handled in controller)
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+
 Route::get('/api/locations', [App\Http\Controllers\Api\LocationController::class, 'getCities']);
 Route::get('/api/townships/{cityId}', [App\Http\Controllers\Api\LocationController::class, 'getTownships']);

@@ -19,6 +19,14 @@ class CheckoutController extends Controller
 
     public function index()
     {
+        $settings = \App\Models\WebsiteInfo::getSettings();
+        $guestCheckout = (bool) ($settings->guest_checkout_enabled ?? true);
+
+        if (!auth()->check() && !$guestCheckout) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to continue checkout.');
+        }
+
         $cart = session()->get('cart', []);
 
         if (empty($cart)) {
