@@ -4,8 +4,8 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Models\Setting;
-use App\Models\TelegramIntegration;
 use App\Models\User;
+use App\Services\TelegramRecipientResolver;
 use App\Events\OrderStatusChanged;
 use App\Events\PaymentVerified;
 use App\Events\PaymentRejected;
@@ -101,14 +101,11 @@ class ProcessOrderStatusChange implements ShouldQueue
     private function dispatchTelegramStatusChange(): void
     {
         try {
-            $integrations = TelegramIntegration::where('is_enabled', true)
-                ->whereHas('user', function ($q) {
-                    $q->role('admin');
-                })
-                ->get();
+            $resolver = app(TelegramRecipientResolver::class);
+            $integrations = $resolver->resolve($this->order);
 
             if ($integrations->isEmpty()) {
-                Log::info('Telegram status notification skipped - no admin integrations', [
+                Log::info('[ProcessOrderStatusChange] Telegram status notification skipped - no verified integrations', [
                     'order_id' => $this->order->id,
                     'event' => $this->event,
                 ]);
@@ -122,13 +119,14 @@ class ProcessOrderStatusChange implements ShouldQueue
                 SendTelegramMessageJob::dispatch($integration, $message)->onQueue('default');
             }
 
-            Log::info('Telegram status notification dispatched', [
+            Log::info('[ProcessOrderStatusChange] Telegram status notification dispatched', [
                 'order_id' => $this->order->id,
                 'event' => $this->event,
                 'integration_count' => $integrations->count(),
+                'integration_ids' => $integrations->pluck('id')->toArray(),
             ]);
         } catch (\Throwable $e) {
-            Log::warning('Telegram status notification dispatch failed', [
+            Log::warning('[ProcessOrderStatusChange] Telegram status notification dispatch failed', [
                 'order_id' => $this->order->id,
                 'event' => $this->event,
                 'error' => $e->getMessage(),

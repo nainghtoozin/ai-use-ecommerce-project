@@ -4,8 +4,8 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Models\Setting;
-use App\Models\TelegramIntegration;
 use App\Models\User;
+use App\Services\TelegramRecipientResolver;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
 use App\Events\PaymentProofUploaded;
@@ -56,6 +56,8 @@ class ProcessOrderNotifications implements ShouldQueue
                 ['order_id' => $this->order->id, 'total_amount' => $this->order->total_amount]
             );
 
+            BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
+
             if ($notificationsEnabled) {
                 $orderNotificationService->notifyOrderPlaced($this->order);
             }
@@ -99,14 +101,11 @@ class ProcessOrderNotifications implements ShouldQueue
     private function dispatchTelegramOrderPlaced(): void
     {
         try {
-            $integrations = TelegramIntegration::where('is_enabled', true)
-                ->whereHas('user', function ($q) {
-                    $q->role('admin');
-                })
-                ->get();
+            $resolver = app(TelegramRecipientResolver::class);
+            $integrations = $resolver->resolve($this->order);
 
             if ($integrations->isEmpty()) {
-                Log::info('Telegram notification skipped - no admin integrations', [
+                Log::info('[ProcessOrderNotifications] Telegram order notification skipped - no verified integrations', [
                     'order_id' => $this->order->id,
                 ]);
 
@@ -144,12 +143,13 @@ class ProcessOrderNotifications implements ShouldQueue
                 SendTelegramMessageJob::dispatch($integration, $message)->onQueue('default');
             }
 
-            Log::info('Telegram order notification dispatched', [
+            Log::info('[ProcessOrderNotifications] Telegram order notification dispatched', [
                 'order_id' => $this->order->id,
                 'integration_count' => $integrations->count(),
+                'integration_ids' => $integrations->pluck('id')->toArray(),
             ]);
         } catch (\Throwable $e) {
-            Log::warning('Telegram order notification dispatch failed', [
+            Log::warning('[ProcessOrderNotifications] Telegram order notification dispatch failed', [
                 'order_id' => $this->order->id,
                 'error' => $e->getMessage(),
             ]);

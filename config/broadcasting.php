@@ -13,6 +13,10 @@ return [
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER', 'ap1'),
                 'useTLS' => true,
+                'client_options' => [
+                    \GuzzleHttp\RequestOptions::TIMEOUT => 10,
+                    \GuzzleHttp\RequestOptions::CONNECT_TIMEOUT => 5,
+                ],
             ],
         ],
 

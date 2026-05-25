@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Events\OrderPlaced;
 use App\Jobs\ProcessOrderNotifications;
 use App\Models\Coupon;
 use App\Models\Order;
@@ -163,12 +162,6 @@ class OrderController extends Controller
         foreach ($items as $item) {
             $order->items()->create($item);
         }
-
-        \Illuminate\Support\Facades\Log::debug('[OrderController] Broadcasting OrderPlaced event for order #' . $order->id);
-
-        event(new OrderPlaced($order));
-
-        \Illuminate\Support\Facades\Log::debug('[OrderController] Dispatched ProcessOrderNotifications job for order #' . $order->id);
 
         ProcessOrderNotifications::dispatch($order, $paymentScreenshotPath)
             ->onQueue('default');

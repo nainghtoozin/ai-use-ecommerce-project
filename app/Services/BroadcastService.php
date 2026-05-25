@@ -15,8 +15,12 @@ class BroadcastService
     {
         try {
             event($event);
+            Log::info('Broadcast queued', [
+                'event' => get_class($event),
+                'context' => $context,
+            ]);
         } catch (\Throwable $e) {
-            Log::warning('Broadcast unavailable, degraded gracefully', [
+            Log::warning('Broadcast dispatch failed, queuing retry', [
                 'event' => get_class($event),
                 'context' => $context,
                 'error' => $e->getMessage(),
