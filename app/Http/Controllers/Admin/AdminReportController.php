@@ -89,6 +89,7 @@ class AdminReportController extends Controller
     {
         $order->load([
             'items.product',
+            'items.variant',
             'user',
             'paymentMethod',
             'city',

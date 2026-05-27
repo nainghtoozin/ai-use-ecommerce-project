@@ -28,7 +28,7 @@ class OrderController extends Controller
 
     public function index(Request $request): \Inertia\Response
     {
-        $orders = Order::with(['items.product', 'paymentMethod'])
+        $orders = Order::with(['items.product', 'items.variant', 'paymentMethod'])
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->simplePaginate(10);
@@ -40,7 +40,7 @@ class OrderController extends Controller
 
     public function show(string $id): \Inertia\Response
     {
-        $order = Order::with(['items.product', 'paymentMethod', 'city', 'township'])
+        $order = Order::with(['items.product', 'items.variant', 'paymentMethod', 'city', 'township'])
             ->where('user_id', auth()->id())
             ->findOrFail($id);
 
@@ -88,12 +88,18 @@ class OrderController extends Controller
 
         $items = [];
         foreach ($cart as $item) {
-            $items[] = [
+            $itemData = [
                 'id' => (int) $item['id'],
                 'product_id' => (int) $item['id'],
                 'quantity' => (int) $item['quantity'],
                 'price' => (float) $item['price'],
             ];
+
+            if (!empty($item['variant_id'])) {
+                $itemData['variant_id'] = (int) $item['variant_id'];
+            }
+
+            $items[] = $itemData;
         }
 
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
@@ -160,7 +166,17 @@ class OrderController extends Controller
         }
 
         foreach ($items as $item) {
-            $order->items()->create($item);
+            $orderItemData = [
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+            ];
+
+            if (!empty($item['variant_id'])) {
+                $orderItemData['variant_id'] = $item['variant_id'];
+            }
+
+            $order->items()->create($orderItemData);
         }
 
         ProcessOrderNotifications::dispatch($order, $paymentScreenshotPath)

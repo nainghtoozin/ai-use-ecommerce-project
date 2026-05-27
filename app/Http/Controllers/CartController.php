@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Coupon;
 use App\Services\CouponService;
 use App\Services\PromotionService;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -14,7 +16,8 @@ class CartController extends Controller
 {
     public function __construct(
         private readonly CouponService $couponService,
-        private readonly PromotionService $promotionService
+        private readonly PromotionService $promotionService,
+        private readonly ProductService $productService
     ) {}
 
     public function index()
@@ -47,25 +50,41 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:product_variants,id',
             'quantity' => 'required|integer|min:1',
         ]);
 
         $cart = session()->get('cart', []);
         $productId = $request->product_id;
+        $variantId = $request->variant_id;
         $quantity = $request->quantity;
 
-        // Only fetch needed product data
-        $product = Product::select(['id', 'name', 'price', 'photo1'])->findOrFail($productId);
-        $productName = $product->name;
+        $purchasable = $this->productService->resolvePurchasable($productId, $variantId);
 
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity'] += $quantity;
+        if ($purchasable['stock'] < $quantity) {
+            return response()->json([
+                'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
+            ], 422);
+        }
+
+        $cartKey = $this->buildCartKey($productId, $variantId);
+        $productName = $purchasable['name'];
+
+        if (isset($cart[$cartKey])) {
+            $newQty = $cart[$cartKey]['quantity'] + $quantity;
+            if ($purchasable['stock'] < $newQty) {
+                return response()->json([
+                    'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
+                ], 422);
+            }
+            $cart[$cartKey]['quantity'] = $newQty;
         } else {
-            $cart[$productId] = [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => (float) $product->price,
-                'photo1' => $product->photo1,
+            $cart[$cartKey] = [
+                'product_id' => $purchasable['product_id'],
+                'variant_id' => $purchasable['variant_id'],
+                'name' => $purchasable['name'],
+                'price' => $purchasable['price'],
+                'photo1' => $purchasable['photo1'],
                 'quantity' => $quantity,
             ];
         }
@@ -85,7 +104,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $cartKey)
     {
         $request->validate([
             'quantity' => 'required|integer|min:0',
@@ -93,10 +112,10 @@ class CartController extends Controller
 
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$id])) {
+        if (isset($cart[$cartKey])) {
             if ($request->quantity <= 0) {
-                $itemName = $cart[$id]['name'] ?? 'Item';
-                unset($cart[$id]);
+                $itemName = $cart[$cartKey]['name'] ?? 'Item';
+                unset($cart[$cartKey]);
                 session()->put('cart', $cart);
                 
                 $cartItems = $this->formatCartItems($cart);
@@ -108,7 +127,19 @@ class CartController extends Controller
                     'subtotal' => $subtotal,
                 ]);
             } else {
-                $cart[$id]['quantity'] = $request->quantity;
+                $item = $cart[$cartKey];
+                $purchasable = $this->productService->resolvePurchasable(
+                    $item['product_id'],
+                    $item['variant_id'] ?? null
+                );
+
+                if ($purchasable['stock'] < $request->quantity) {
+                    return response()->json([
+                        'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
+                    ], 422);
+                }
+
+                $cart[$cartKey]['quantity'] = $request->quantity;
                 session()->put('cart', $cart);
                 
                 $cartItems = $this->formatCartItems($cart);
@@ -124,13 +155,13 @@ class CartController extends Controller
         return response()->json(['error' => 'Item not found in cart.'], 422);
     }
 
-    public function destroy($id)
+    public function destroy($cartKey)
     {
         $cart = session()->get('cart', []);
         
-        if (isset($cart[$id])) {
-            $itemName = $cart[$id]['name'] ?? 'Item';
-            unset($cart[$id]);
+        if (isset($cart[$cartKey])) {
+            $itemName = $cart[$cartKey]['name'] ?? 'Item';
+            unset($cart[$cartKey]);
             session()->put('cart', $cart);
             
             $cartItems = $this->formatCartItems($cart);
@@ -266,31 +297,52 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Build a unique session key for a cart item.
+     * Format: "p{product_id}_v{variant_id}" for variable, "p{product_id}" for single.
+     */
+    private function buildCartKey(int $productId, ?int $variantId = null): string
+    {
+        return 'p' . $productId . '_v' . ($variantId ?? '0');
+    }
+
     private function formatCartItems(array $cart): array
     {
         if (empty($cart)) {
             return [];
         }
 
-        // Get all product IDs and fetch in single query
-        $productIds = array_keys($cart);
-        $products = Product::select(['id', 'name', 'price', 'photo1'])
-            ->whereIn('id', $productIds)
-            ->get()
-            ->keyBy('id');
-
         $items = [];
-        foreach ($cart as $id => $item) {
-            $product = $products->get($id);
-            if ($product) {
-                $items[] = [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => (float) $product->price,
-                    'photo1' => $product->photo1,
-                    'quantity' => $item['quantity'],
-                ];
+        foreach ($cart as $cartKey => $item) {
+            $productId = $item['product_id'];
+            $variantId = $item['variant_id'] ?? null;
+
+            $product = Product::select(['id', 'name', 'price', 'photo1', 'type'])->find($productId);
+            if (!$product) {
+                continue;
             }
+
+            $variantName = null;
+            $price = $item['price'];
+
+            if ($variantId) {
+                $variant = ProductVariant::select(['id', 'price', 'sku', 'attributes'])->find($variantId);
+                if ($variant) {
+                    $price = (float) ($variant->price ?? $product->price);
+                    $variantName = $variant->label;
+                }
+            }
+
+            $items[] = [
+                'cart_key' => $cartKey,
+                'id' => $product->id,
+                'variant_id' => $variantId,
+                'name' => $product->name,
+                'variant_name' => $variantName,
+                'price' => (float) $price,
+                'photo1' => $product->photo1,
+                'quantity' => $item['quantity'],
+            ];
         }
         return $items;
     }

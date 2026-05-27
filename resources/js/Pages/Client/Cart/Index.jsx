@@ -89,11 +89,11 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
 
     const finalTotal = Math.max(0, Number(subtotal) - Number(totalDiscount));
 
-    async function handleUpdateQuantity(productId, newQty) {
+    async function handleUpdateQuantity(cartKey, newQty) {
         if (newQty < 1) newQty = 1;
-        setUpdating(productId);
+        setUpdating(cartKey);
         
-        const result = await updateQuantity(productId, newQty);
+        const result = await updateQuantity(cartKey, newQty);
         
         if (result.cartItems) {
             setCartItems(result.cartItems);
@@ -101,60 +101,60 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
         }
         
         if (result.success && newQty === 0) {
-            setCartItems(prev => prev.filter(item => item.id !== productId));
+            setCartItems(prev => prev.filter(item => item.cart_key !== cartKey));
         }
         
         setUpdating(null);
     }
 
-    function handleDraftChange(itemId, value) {
+    function handleDraftChange(cartKey, value) {
         if (value === '' || /^\d+$/.test(value)) {
-            setQuantityDrafts(prev => ({ ...prev, [itemId]: value }));
+            setQuantityDrafts(prev => ({ ...prev, [cartKey]: value }));
         }
     }
 
-    function commitDraft(itemId) {
-        const draft = quantityDrafts[itemId];
+    function commitDraft(cartKey) {
+        const draft = quantityDrafts[cartKey];
         if (draft === undefined) return;
 
         setQuantityDrafts(prev => {
             const next = { ...prev };
-            delete next[itemId];
+            delete next[cartKey];
             return next;
         });
 
         const num = parseInt(draft, 10);
         if (isNaN(num) || num < 1) return;
 
-        const item = cartItems.find(i => i.id === itemId);
+        const item = cartItems.find(i => i.cart_key === cartKey);
         if (item && num !== item.quantity) {
-            handleUpdateQuantity(itemId, num);
+            handleUpdateQuantity(cartKey, num);
         }
     }
 
-    function handleStepperClick(itemId, delta) {
-        const item = cartItems.find(i => i.id === itemId);
+    function handleStepperClick(cartKey, delta) {
+        const item = cartItems.find(i => i.cart_key === cartKey);
         if (!item) return;
 
-        const draft = quantityDrafts[itemId];
+        const draft = quantityDrafts[cartKey];
         const base = draft !== undefined ? parseInt(draft, 10) : item.quantity;
         const newQty = Math.max(1, (isNaN(base) ? 1 : base) + delta);
 
         setQuantityDrafts(prev => {
             const next = { ...prev };
-            delete next[itemId];
+            delete next[cartKey];
             return next;
         });
 
         if (newQty !== item.quantity) {
-            handleUpdateQuantity(itemId, newQty);
+            handleUpdateQuantity(cartKey, newQty);
         }
     }
 
-    async function handleRemoveItem(productId) {
-        setUpdating(productId);
+    async function handleRemoveItem(cartKey) {
+        setUpdating(cartKey);
         
-        const result = await removeItem(productId);
+        const result = await removeItem(cartKey);
         
         if (result.cartItems) {
             setCartItems(result.cartItems);
@@ -223,7 +223,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                             {cartItems.map((item) => {
                                 const lineSubtotal = Number(item.price) * Number(item.quantity);
                                 return (
-                                    <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-sm transition-shadow">
+                                    <div key={item.cart_key} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-sm transition-shadow">
                                         {/* Mobile layout */}
                                         <div className="md:hidden flex gap-3">
                                             <Link
@@ -242,6 +242,11 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 line-clamp-2">
                                                     {item.name}
                                                 </Link>
+                                                {item.variant_name && (
+                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-medium">
+                                                        {item.variant_name}
+                                                    </span>
+                                                )}
                                                 <div className="mt-2 space-y-1.5 text-sm">
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Unit Price</span>
@@ -251,8 +256,8 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                         <span className="text-gray-500">Qty</span>
                                                         <div className="flex items-center border border-gray-300 rounded-lg">
                                                             <button
-                                                                onClick={() => handleStepperClick(item.id, -1)}
-                                                                disabled={updating === item.id}
+                                                                onClick={() => handleStepperClick(item.cart_key, -1)}
+                                                                disabled={updating === item.cart_key}
                                                                 className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded-l-lg disabled:opacity-50 transition-colors"
                                                             >
                                                                 <i className="bi bi-dash"></i>
@@ -260,16 +265,16 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                             <input
                                                                 type="text"
                                                                 inputMode="numeric"
-                                                                value={quantityDrafts[item.id] ?? item.quantity}
-                                                                onChange={(e) => handleDraftChange(item.id, e.target.value)}
-                                                                onBlur={() => commitDraft(item.id)}
+                                                                value={quantityDrafts[item.cart_key] ?? item.quantity}
+                                                                onChange={(e) => handleDraftChange(item.cart_key, e.target.value)}
+                                                                onBlur={() => commitDraft(item.cart_key)}
                                                                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
-                                                                disabled={updating === item.id}
+                                                                disabled={updating === item.cart_key}
                                                                 className="w-12 sm:w-14 text-center text-sm font-semibold text-gray-900 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                                                             />
                                                             <button
-                                                                onClick={() => handleStepperClick(item.id, 1)}
-                                                                disabled={updating === item.id}
+                                                                onClick={() => handleStepperClick(item.cart_key, 1)}
+                                                                disabled={updating === item.cart_key}
                                                                 className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded-r-lg disabled:opacity-50 transition-colors"
                                                             >
                                                                 <i className="bi bi-plus"></i>
@@ -282,8 +287,8 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                     </div>
                                                 </div>
                                                 <button
-                                                    onClick={() => handleRemoveItem(item.id)}
-                                                    disabled={updating === item.id}
+                                                    onClick={() => handleRemoveItem(item.cart_key)}
+                                                    disabled={updating === item.cart_key}
                                                     className="mt-2 text-xs text-red-500 hover:text-red-700 disabled:opacity-50 flex items-center gap-1"
                                                 >
                                                     <i className="bi bi-trash"></i>
@@ -307,9 +312,16 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 )}
                                             </Link>
 
-                                            <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 line-clamp-2">
-                                                {item.name}
-                                            </Link>
+                                            <div>
+                                                <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 line-clamp-2">
+                                                    {item.name}
+                                                </Link>
+                                                {item.variant_name && (
+                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-medium">
+                                                        {item.variant_name}
+                                                    </span>
+                                                )}
+                                            </div>
 
                                             <div className="text-center">
                                                 <span className="text-sm text-gray-800 font-medium">{Number(item.price).toLocaleString()} MMK</span>
@@ -318,8 +330,8 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                             <div className="flex justify-center">
                                                 <div className="flex items-center border border-gray-300 rounded-lg">
                                                     <button
-                                                        onClick={() => handleStepperClick(item.id, -1)}
-                                                        disabled={updating === item.id}
+                                                        onClick={() => handleStepperClick(item.cart_key, -1)}
+                                                        disabled={updating === item.cart_key}
                                                         className="px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-l-lg disabled:opacity-50 transition-colors"
                                                     >
                                                         <i className="bi bi-dash"></i>
@@ -327,16 +339,16 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                     <input
                                                         type="text"
                                                         inputMode="numeric"
-                                                        value={quantityDrafts[item.id] ?? item.quantity}
-                                                        onChange={(e) => handleDraftChange(item.id, e.target.value)}
-                                                        onBlur={() => commitDraft(item.id)}
+                                                        value={quantityDrafts[item.cart_key] ?? item.quantity}
+                                                        onChange={(e) => handleDraftChange(item.cart_key, e.target.value)}
+                                                        onBlur={() => commitDraft(item.cart_key)}
                                                         onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
-                                                        disabled={updating === item.id}
+                                                        disabled={updating === item.cart_key}
                                                         className="w-14 text-center text-sm font-semibold text-gray-900 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                                                     />
                                                     <button
-                                                        onClick={() => handleStepperClick(item.id, 1)}
-                                                        disabled={updating === item.id}
+                                                        onClick={() => handleStepperClick(item.cart_key, 1)}
+                                                        disabled={updating === item.cart_key}
                                                         className="px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-r-lg disabled:opacity-50 transition-colors"
                                                     >
                                                         <i className="bi bi-plus"></i>
@@ -350,8 +362,8 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
 
                                             <div className="flex justify-center">
                                                 <button
-                                                    onClick={() => handleRemoveItem(item.id)}
-                                                    disabled={updating === item.id}
+                                                    onClick={() => handleRemoveItem(item.cart_key)}
+                                                    disabled={updating === item.cart_key}
                                                     className="text-gray-300 hover:text-red-500 transition-colors p-1 disabled:opacity-50"
                                                     title="Remove item"
                                                 >

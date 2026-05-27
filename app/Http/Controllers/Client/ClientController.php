@@ -6,21 +6,29 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Promotion;
 use App\Models\PromotionBanner;
 use App\Models\PaymentMethod;
 use App\Models\City;
+use App\Services\ProductService;
 use Inertia\Inertia;
 
 class ClientController extends Controller
 {
+    public function __construct(
+        private readonly ProductService $productService,
+    ) {}
+
     public function index(Request $request)
     {
         $query = $request->input('query', '');
         $categoryId = $request->input('category', '');
         $sort = $request->input('sort', 'latest');
 
-        $products = Product::active()->with('category');
+        $products = Product::active()
+            ->with('category')
+            ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
         if ($query) {
             $products->where('name', 'LIKE', "%{$query}%");
@@ -30,20 +38,7 @@ class ClientController extends Controller
             $products->where('category_id', $categoryId);
         }
 
-        switch ($sort) {
-            case 'price_asc':
-                $products->orderBy('price', 'asc');
-                break;
-            case 'price_desc':
-                $products->orderBy('price', 'desc');
-                break;
-            case 'name':
-                $products->orderBy('name', 'asc');
-                break;
-            default:
-                $products->orderBy('created_at', 'desc');
-                break;
-        }
+        $this->applySorting($products, $sort);
 
         $promotions = Promotion::valid()->automatic()
             ->with(['products', 'categories'])
@@ -52,13 +47,7 @@ class ClientController extends Controller
 
         return Inertia::render('Client/Products/Index', [
             'products' => Inertia::scroll(fn () => $products->paginate(8)->through(function ($product) use ($promotions) {
-                $best = $this->findBestPromotionForProduct($product, $promotions);
-                if ($best) {
-                    $product->promotion_badge = $best['badge'];
-                    $product->promotion_discount = $best['discount'];
-                    $product->promotion_price = max(0, (float) $product->price - $best['discount']);
-                }
-                return $product;
+                return $this->enrichProductWithPromotion($product, $promotions);
             })),
             'categories' => fn () => Category::all(),
             'banners' => fn () => PromotionBanner::active()->latest()->get(),
@@ -77,7 +66,9 @@ class ClientController extends Controller
         $sort = $request->input('sort', 'latest');
         $inStock = $request->boolean('in_stock');
 
-        $products = Product::active()->with('category');
+        $products = Product::active()
+            ->with('category')
+            ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
         if ($query) {
             $products->where('name', 'LIKE', "%{$query}%");
@@ -88,23 +79,10 @@ class ClientController extends Controller
         }
 
         if ($inStock) {
-            $products->where('stock', '>', 0);
+            $this->applyInStockFilter($products);
         }
 
-        switch ($sort) {
-            case 'price_asc':
-                $products->orderBy('price', 'asc');
-                break;
-            case 'price_desc':
-                $products->orderBy('price', 'desc');
-                break;
-            case 'name':
-                $products->orderBy('name', 'asc');
-                break;
-            default:
-                $products->orderBy('created_at', 'desc');
-                break;
-        }
+        $this->applySorting($products, $sort);
 
         $promotions = Promotion::valid()->automatic()
             ->with(['products', 'categories'])
@@ -113,13 +91,7 @@ class ClientController extends Controller
 
         return Inertia::render('Client/Products/Products', [
             'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions) {
-                $best = $this->findBestPromotionForProduct($product, $promotions);
-                if ($best) {
-                    $product->promotion_badge = $best['badge'];
-                    $product->promotion_discount = $best['discount'];
-                    $product->promotion_price = max(0, (float) $product->price - $best['discount']);
-                }
-                return $product;
+                return $this->enrichProductWithPromotion($product, $promotions);
             })),
             'categories' => fn () => Category::all(),
             'searchQuery' => $query,
@@ -157,12 +129,24 @@ class ClientController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
-        $best = $this->findBestPromotionForProduct($product, $promotions);
+        $product->loadMissing('category');
+        if ($product->isVariable()) {
+            $product->loadMissing(['variants' => fn($q) => $q->active()]);
+        }
+        if ($product->isCombo()) {
+            $product->loadMissing(['comboItems.comboProduct', 'comboItems.linkedVariant']);
+        }
 
-        return Inertia::render('Client/Products/Show', [
+        $best = $this->findBestPromotionForProduct($product, $promotions);
+        $detail = $this->productService->resolveForDetail($product);
+
+        $data = [
             'product' => $product,
             'promotion' => $best,
-        ]);
+            'detail' => $detail,
+        ];
+
+        return Inertia::render('Client/Products/Show', $data);
     }
 
     public function checkout()
@@ -180,6 +164,18 @@ class ClientController extends Controller
         return Inertia::render('Client/Orders/Index', [
             'product' => $product,
         ]);
+    }
+
+    private function enrichProductWithPromotion(Product $product, $promotions): Product
+    {
+        $best = $this->findBestPromotionForProduct($product, $promotions);
+        if ($best) {
+            $product->promotion_badge = $best['badge'];
+            $product->promotion_discount = $best['discount'];
+            $effectivePrice = $this->productService->getPrice($product);
+            $product->promotion_price = max(0, $effectivePrice - $best['discount']);
+        }
+        return $product;
     }
 
     private function findBestPromotionForProduct(Product $product, $promotions): ?array
@@ -200,7 +196,8 @@ class ClientController extends Controller
 
             if (!$applies) continue;
 
-            $cartItem = [['id' => $product->id, 'price' => (float) $product->price, 'quantity' => 1]];
+            $effectivePrice = $this->productService->getPrice($product);
+            $cartItem = [['id' => $product->id, 'price' => $effectivePrice, 'quantity' => 1]];
             $discount = $promotion->calculateDiscount($cartItem);
 
             if ($discount > 0 && $discount > $bestDiscount) {
@@ -226,7 +223,8 @@ class ClientController extends Controller
         }
 
         if ($promotion->type === Promotion::TYPE_FIXED) {
-            $savings = min($discount, (float) $product->price);
+            $effectivePrice = $this->productService->getPrice($product);
+            $savings = min($discount, $effectivePrice);
             if ($savings >= 1000) {
                 return 'Save ' . number_format($savings) . ' MMK';
             }
@@ -238,5 +236,54 @@ class ClientController extends Controller
         }
 
         return 'SALE';
+    }
+
+    private function applySorting($query, string $sort): void
+    {
+        switch ($sort) {
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'name':
+                $query->orderBy('name', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+    }
+
+    private function applyInStockFilter($query): void
+    {
+        $query->where(function ($q) {
+            $q->where(function ($sq) {
+                $sq->where('type', Product::TYPE_SINGLE)
+                    ->where('stock', '>', 0);
+            })->orWhere(function ($sq) {
+                $sq->where('type', Product::TYPE_VARIABLE)
+                    ->whereIn('id', function ($sub) {
+                        $sub->select('product_id')
+                            ->from('product_variants')
+                            ->where('status', ProductVariant::STATUS_ACTIVE)
+                            ->groupBy('product_id')
+                            ->havingRaw('SUM(stock) > 0');
+                    });
+            })->orWhere(function ($sq) {
+                $sq->where('type', Product::TYPE_COMBO)
+                    ->whereIn('id', function ($sub) {
+                        $sub->select('product_id')
+                            ->from('product_combos')
+                            ->whereIn('combo_product_id', function ($sub2) {
+                                $sub2->select('id')
+                                    ->from('products')
+                                    ->where('status', Product::STATUS_ACTIVE)
+                                    ->where('stock', '>', 0);
+                            });
+                    });
+            });
+        });
     }
 }

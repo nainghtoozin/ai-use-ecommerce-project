@@ -477,6 +477,11 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                                                 <p className="text-sm font-medium text-gray-900 truncate max-w-[160px] sm:max-w-[220px]">
                                                                     {item.product?.name || `Product #${item.product_id}`}
                                                                 </p>
+                                                                {item.variant && (
+                                                                    <p className="text-xs text-gray-500 truncate max-w-[160px] sm:max-w-[220px]">
+                                                                        {item.variant.label || `Variant #${item.variant_id}`}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </td>

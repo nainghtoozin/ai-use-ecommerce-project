@@ -1,229 +1,100 @@
-import { useState } from 'react';
-import { useForm, router, Head } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import ImageUpload from '@/Components/ImageUpload';
-import { assetUrl } from '@/Utils/helpers';
+import ProductFormMain from '@/Components/ProductForm/ProductFormMain';
+import SidebarSection from '@/Components/ProductForm/SidebarSection';
+import useProductForm from '@/Components/ProductForm/useProductForm';
 
-export default function ProductEdit({ product, categories }) {
-    const { data, setData, post, processing, errors, progress } = useForm({
-        name: product.name,
-        description: product.description || '',
-        price: product.price,
-        base_price: product.base_price,
-        stock: product.stock,
-        category_id: product.category_id,
-        status: product.status || 'active',
-        photo1: null,
-        photo2: null,
-    });
+const TYPE_LABELS = {
+    single: 'Single Product',
+    variable: 'Variable Product',
+    combo: 'Combo Product',
+};
 
-    const [photo1File, setPhoto1File] = useState(null);
-    const [photo2File, setPhoto2File] = useState(null);
+const TYPE_STYLES = {
+    single: 'bg-blue-100 text-blue-700',
+    variable: 'bg-purple-100 text-purple-700',
+    combo: 'bg-orange-100 text-orange-700',
+};
 
-    function handleSubmit(e) {
-        e.preventDefault();
-
-        const formData = new FormData();
-        formData.append('name', data.name);
-        formData.append('description', data.description);
-        formData.append('price', data.price);
-        formData.append('base_price', data.base_price);
-        formData.append('stock', data.stock);
-        formData.append('category_id', data.category_id);
-        formData.append('status', data.status);
-        formData.append('_method', 'PUT');
-
-        if (photo1File) formData.append('photo1', photo1File);
-        if (photo2File) formData.append('photo2', photo2File);
-
-        router.post(`/admin/products/${product.id}`, formData, {
-            forceFormData: true,
-            preserveScroll: true,
-        });
-    }
+export default function ProductEdit({ product, categories, selectableProducts = [] }) {
+    const {
+        formData,
+        setData,
+        variants,
+        setVariants,
+        comboItems,
+        setComboItems,
+        photo1File,
+        setPhoto1File,
+        photo2File,
+        setPhoto2File,
+        errors,
+        processing,
+        submit,
+        cancel,
+        existingPhoto1Url,
+        existingPhoto2Url,
+    } = useProductForm({ product });
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold text-gray-800">Edit Product</h2>}>
+        <AdminLayout
+            header={
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-semibold text-gray-800">Edit Product</h2>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${TYPE_STYLES[product.type] || TYPE_STYLES.single}`}>
+                                {TYPE_LABELS[product.type] || 'Single Product'}
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-0.5">Update product details</p>
+                    </div>
+                </div>
+            }
+        >
             <Head title={`Edit ${product.name}`} />
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    {/* Product Name */}
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                            Product Name
-                        </label>
-                        <input
-                            id="name"
-                            type="text"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            id="description"
-                            value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
-                            rows="3"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        />
-                        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
-                    </div>
-
-                    {/* Price & Base Price */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                                Price
-                            </label>
-                            <input
-                                id="price"
-                                type="number"
-                                value={data.price}
-                                onChange={(e) => setData('price', e.target.value)}
-                                step="0.01"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <form onSubmit={(e) => { e.preventDefault(); submit(); }}>
+                    <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex-1 min-w-0">
+                            <ProductFormMain
+                                data={formData}
+                                setData={setData}
+                                errors={errors}
+                                photo1File={photo1File}
+                                setPhoto1File={setPhoto1File}
+                                photo2File={photo2File}
+                                setPhoto2File={setPhoto2File}
+                                variants={variants}
+                                setVariants={setVariants}
+                                comboItems={comboItems}
+                                setComboItems={setComboItems}
+                                selectableProducts={selectableProducts}
+                                existingPhoto1Url={existingPhoto1Url}
+                                existingPhoto2Url={existingPhoto2Url}
                             />
-                            {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
                         </div>
 
-                        <div>
-                            <label htmlFor="base_price" className="block text-sm font-medium text-gray-700 mb-1">
-                                Base Price
-                            </label>
-                            <input
-                                id="base_price"
-                                type="number"
-                                value={data.base_price}
-                                onChange={(e) => setData('base_price', e.target.value)}
-                                step="0.01"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            {errors.base_price && <p className="mt-1 text-sm text-red-600">{errors.base_price}</p>}
+                        <div className="w-full lg:w-80 flex-shrink-0">
+                            <div className="lg:sticky lg:top-4">
+                                <SidebarSection
+                                    data={formData}
+                                    setData={setData}
+                                    errors={errors}
+                                    categories={categories}
+                                    processing={processing}
+                                    isEdit
+                                    variants={variants}
+                                    comboItems={comboItems}
+                                    onSubmit={(e) => { e?.preventDefault?.(); submit(); }}
+                                    onCancel={cancel}
+                                    onDeleteUrl={`/admin/products/${product.id}`}
+                                />
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Stock & Category */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
-                                Stock
-                            </label>
-                            <input
-                                id="stock"
-                                type="number"
-                                value={data.stock}
-                                onChange={(e) => setData('stock', e.target.value)}
-                                min="0"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            {errors.stock && <p className="mt-1 text-sm text-red-600">{errors.stock}</p>}
-                        </div>
-
-                        <div>
-                            <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
-                                Category
-                            </label>
-                            <select
-                                id="category_id"
-                                value={data.category_id}
-                                onChange={(e) => setData('category_id', e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="">Select Category</option>
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>}
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                            Status
-                        </label>
-                        <select
-                            id="status"
-                            value={data.status}
-                            onChange={(e) => setData('status', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                        {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
-                        <p className="mt-1 text-sm text-gray-500">Inactive products won't be visible to customers.</p>
-                    </div>
-
-                    {/* Image Uploads */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <ImageUpload
-                            name="photo1"
-                            label="Photo 1"
-                            value={product.photo1_url || null}
-                            onChange={(file) => setPhoto1File(file)}
-                            error={errors.photo1}
-                            maxSize={2}
-                            previewSize="lg"
-                        />
-                        <ImageUpload
-                            name="photo2"
-                            label="Photo 2 (Optional)"
-                            value={product.photo2_url || null}
-                            onChange={(file) => setPhoto2File(file)}
-                            error={errors.photo2}
-                            maxSize={2}
-                            previewSize="lg"
-                        />
-                    </div>
-
-                    {/* Submit */}
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                        <button
-                            type="button"
-                            onClick={() => router.visit('/admin/products')}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                        >
-                            {processing ? (
-                                <>
-                                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                    </svg>
-                                    Updating...
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    Update Product
-                                </>
-                            )}
-                        </button>
                     </div>
                 </form>
-            </div>
             </div>
         </AdminLayout>
     );

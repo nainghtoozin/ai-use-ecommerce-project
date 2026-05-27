@@ -31,6 +31,7 @@ class AdminOrderController extends Controller
         $ordersQuery = Order::query()->with([
             'user',
             'items.product',
+            'items.variant',
             'paymentMethod',
             'city',
             'township'
@@ -92,6 +93,7 @@ class AdminOrderController extends Controller
         $order = Order::with([
             'user',
             'items.product',
+            'items.variant',
             'paymentMethod',
             'city',
             'township'

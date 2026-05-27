@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\ProductCombo;
+use App\Models\ProductVariant;
+use App\Enums\ProductType;
 use App\Services\ImageService;
 use App\Services\DashboardCacheService;
 use App\Services\ActivityLogger;
+use App\Services\ProductService;
+use App\Services\SkuService;
 use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AdminProductController extends Controller
@@ -18,12 +24,24 @@ class AdminProductController extends Controller
     use PerPageTrait;
 
     public function __construct(
-        private readonly ImageService $imageService
+        private readonly ImageService $imageService,
+        private readonly ProductService $productService,
+        private readonly SkuService $skuService,
     ) {}
 
     public function index(Request $request)
     {
         $query = Product::with('category');
+
+        // Eager load active variant stock sum to avoid N+1 on effective_stock
+        $query->withSum(['variants as variant_total_stock' => function ($q) {
+            $q->where('status', ProductVariant::STATUS_ACTIVE);
+        }], 'stock');
+
+        // Eager load active variant count for display in stock column
+        $query->withCount(['variants as active_variant_count' => function ($q) {
+            $q->where('status', ProductVariant::STATUS_ACTIVE);
+        }]);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -37,6 +55,10 @@ class AdminProductController extends Controller
             $query->where('category_id', $request->input('category_id'));
         }
 
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
@@ -45,13 +67,34 @@ class AdminProductController extends Controller
             $stockFilter = $request->input('stock');
             switch ($stockFilter) {
                 case 'out_of_stock':
-                    $query->where('stock', 0);
+                    $query->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->where('type', ProductType::VARIABLE)
+                               ->whereDoesntHave('variants', fn($v) => $v->where('stock', '>', 0)->where('status', ProductVariant::STATUS_ACTIVE));
+                        })->orWhere(function ($q2) {
+                            $q2->where('type', '!=', ProductType::VARIABLE)->where('stock', '<=', 0);
+                        });
+                    });
                     break;
                 case 'low_stock':
-                    $query->where('stock', '>', 0)->where('stock', '<', 10);
+                    $query->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->where('type', ProductType::VARIABLE)
+                               ->whereHas('variants', fn($v) => $v->where('stock', '>', 0)->where('stock', '<', 10)->where('status', ProductVariant::STATUS_ACTIVE));
+                        })->orWhere(function ($q2) {
+                            $q2->where('type', '!=', ProductType::VARIABLE)->where('stock', '>', 0)->where('stock', '<', 10);
+                        });
+                    });
                     break;
                 case 'in_stock':
-                    $query->where('stock', '>=', 10);
+                    $query->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->where('type', ProductType::VARIABLE)
+                               ->whereHas('variants', fn($v) => $v->where('stock', '>=', 10)->where('status', ProductVariant::STATUS_ACTIVE));
+                        })->orWhere(function ($q2) {
+                            $q2->where('type', '!=', ProductType::VARIABLE)->where('stock', '>=', 10);
+                        });
+                    });
                     break;
             }
         }
@@ -87,18 +130,58 @@ class AdminProductController extends Controller
             'filters' => [
                 'search' => $request->input('search', ''),
                 'category_id' => $request->input('category_id', ''),
+                'type' => $request->input('type', ''),
                 'status' => $request->input('status', ''),
                 'stock' => $request->input('stock', ''),
             ],
         ]);
     }
 
-    public function create()
+    public function typeSelect()
+    {
+        $featureGate = \App\Services\FeatureGate::forUser();
+
+        return Inertia::render('Admin/Products/TypeSelect', [
+            'availableTypes' => ProductType::availableTypes(),
+            'allTypes' => ProductType::all(),
+            'featureStatus' => $featureGate->getAllFeaturesStatus(),
+        ]);
+    }
+
+    public function create(Request $request)
     {
         $categories = Category::all();
+        $productType = $request->input('type', ProductType::SINGLE);
+
+        $selectableProducts = null;
+        if ($productType === ProductType::COMBO) {
+            $selectableProducts = Product::comboSelectable()
+                ->with(['category', 'variants' => fn($q) => $q->active()])
+                ->get()
+                ->map(fn($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'type' => $p->type,
+                    'price' => $p->price,
+                    'stock' => $p->getEffectiveStock(),
+                    'photo1_url' => $p->photo1_url,
+                    'category_name' => $p->category?->name,
+                    'variants' => $p->type === 'variable'
+                        ? $p->variants->map(fn($v) => [
+                            'id' => $v->id,
+                            'label' => $v->label,
+                            'price' => $v->getEffectivePrice(),
+                            'stock' => $v->stock,
+                            'sku' => $v->sku,
+                        ])->toArray()
+                        : [],
+                ]);
+        }
 
         return Inertia::render('Admin/Products/Create', [
             'categories' => $categories,
+            'productType' => $productType,
+            'selectableProducts' => $selectableProducts,
         ]);
     }
 
@@ -106,33 +189,99 @@ class AdminProductController extends Controller
     {
         $request->validate([
             'name'        => 'required|string|max:255',
+            'sku'         => 'nullable|string|max:100|unique:products,sku',
             'description' => 'nullable|string',
             'price'       => 'required|numeric|min:0',
             'base_price'  => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
+            'stock'       => 'nullable|integer|min:0',
             'category_id' => 'required|exists:categories,id',
-            'status'      => 'required|in:active,inactive',
+            'status'      => 'required|in:active,inactive,draft',
+            'type'        => 'nullable|in:single,variable,combo',
+            'variants'    => 'nullable|json',
+            'combo_items' => 'nullable|json',
             'photo1'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo2'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        $data = $request->except(['photo1', 'photo2']);
-        
+        $data = $request->except(['photo1', 'photo2', 'variants', 'combo_items']);
+
+        // Set product type, defaulting to single for backward compatibility
+        $data['type'] = $data['type'] ?? ProductType::SINGLE;
+
+        // Validate the product type (includes SaaS feature-gating)
+        $this->productService->validateType($data['type']);
+
+        // Combo products don't need stock (derived from components)
+        if ($data['type'] === ProductType::COMBO) {
+            $data['stock'] = 0;
+        }
+
         if (!isset($data['status'])) {
             $data['status'] = Product::STATUS_ACTIVE;
         }
 
-        if ($request->hasFile('photo1')) {
-            $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
+        // Sanitize data to remove type-inapplicable fields
+        $data = $this->productService->sanitizeData($data, $data['type']);
+
+        $variantsPayload = null;
+        if ($request->filled('variants')) {
+            $variantsPayload = json_decode($request->input('variants'), true);
+            if (!is_array($variantsPayload)) {
+                $variantsPayload = null;
+            }
         }
 
-        if ($request->hasFile('photo2')) {
-            $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
+        $comboItemsPayload = null;
+        if ($request->filled('combo_items')) {
+            $comboItemsPayload = json_decode($request->input('combo_items'), true);
+            if (!is_array($comboItemsPayload)) {
+                $comboItemsPayload = null;
+            }
         }
 
-        Product::create($data);
+        // Validate combo items structure
+        if ($data['type'] === ProductType::COMBO && $comboItemsPayload) {
+            $this->validateComboItems($comboItemsPayload);
+        }
 
-        app(DashboardCacheService::class)->clearProductRelatedCache();
+        DB::transaction(function () use ($data, $request, $variantsPayload, $comboItemsPayload) {
+            if ($request->hasFile('photo1')) {
+                $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
+            }
+
+            if ($request->hasFile('photo2')) {
+                $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
+            }
+
+            $product = Product::create($data);
+
+            // Auto-generate SKU if left empty
+            if (empty($product->sku)) {
+                $generatedSku = $this->skuService->generateProductSku($product);
+                if ($generatedSku) {
+                    $product->update(['sku' => $generatedSku]);
+                }
+            }
+
+            if ($product->isVariable() && $variantsPayload) {
+                $normalized = $this->normalizeVariants($variantsPayload);
+                $this->productService->syncVariants($product, $normalized);
+
+                // Auto-generate SKUs for variants that don't have one
+                $product->variants()->whereNull('sku')->each(function ($variant) {
+                    $generatedSku = $this->skuService->generateVariantSku($variant);
+                    if ($generatedSku) {
+                        $variant->update(['sku' => $generatedSku]);
+                    }
+                });
+            }
+
+            if ($product->isCombo() && $comboItemsPayload) {
+                $this->productService->syncComboItems($product, $comboItemsPayload);
+            }
+
+            app(DashboardCacheService::class)->clearProductRelatedCache();
+        });
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Product created successfully!');
@@ -142,9 +291,70 @@ class AdminProductController extends Controller
     {
         $categories = Category::all();
 
+        $selectableProducts = null;
+        if ($product->isCombo()) {
+            $selectableProducts = Product::comboSelectable()
+                ->where('id', '!=', $product->id)
+                ->with(['category', 'variants' => fn($q) => $q->active()])
+                ->get()
+                ->map(fn($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'type' => $p->type,
+                    'price' => $p->price,
+                    'stock' => $p->getEffectiveStock(),
+                    'photo1_url' => $p->photo1_url,
+                    'category_name' => $p->category?->name,
+                    'variants' => $p->type === 'variable'
+                        ? $p->variants->map(fn($v) => [
+                            'id' => $v->id,
+                            'label' => $v->label,
+                            'price' => $v->getEffectivePrice(),
+                            'stock' => $v->stock,
+                            'sku' => $v->sku,
+                        ])->toArray()
+                        : [],
+                ]);
+        }
+
         return Inertia::render('Admin/Products/Edit', [
-            'product' => $product,
+            'product' => $product->load(['category', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant']),
             'categories' => $categories,
+            'selectableProducts' => $selectableProducts,
+        ]);
+    }
+
+    public function show(Product $product)
+    {
+        $product->load(['category', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant', 'orderItems']);
+
+        // Append price range for variable products
+        if ($product->isVariable()) {
+            $priceRange = $product->getPriceRange();
+            $product->setAttribute('price_range', [
+                'min' => $priceRange[0],
+                'max' => $priceRange[1],
+            ]);
+        }
+
+        // Append combo availability for combo products
+        if ($product->isCombo()) {
+            $product->setAttribute('combo_availability', $product->calculateComboAvailability());
+            $product->setAttribute('combo_summary', $product->getComboSummary());
+        }
+
+        $relatedCombos = [];
+        if ($product->isSingle() || $product->isVariable()) {
+            $relatedCombos = Product::where('type', ProductType::COMBO)
+                ->whereHas('comboItems', fn($q) => $q->where('combo_product_id', $product->id))
+                ->with('comboItems.comboProduct', 'comboItems.linkedVariant')
+                ->active()
+                ->get();
+        }
+
+        return Inertia::render('Admin/Products/Show', [
+            'product' => $product,
+            'relatedCombos' => $relatedCombos,
         ]);
     }
 
@@ -152,31 +362,119 @@ class AdminProductController extends Controller
     {
         $request->validate([
             'name'        => 'required|string|max:255',
+            'sku'         => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'description' => 'nullable|string',
             'price'       => 'required|numeric|min:0',
             'base_price'  => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
+            'stock'       => 'nullable|integer|min:0',
             'category_id' => 'required|exists:categories,id',
-            'status'      => 'required|in:active,inactive',
+            'status'      => 'required|in:active,inactive,draft',
+            'type'        => 'nullable|in:single,variable,combo',
+            'variants'    => 'nullable|json',
+            'combo_items' => 'nullable|json',
             'photo1'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo2'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        $data = $request->except(['photo1', 'photo2']);
+        $data = $request->except(['photo1', 'photo2', 'variants', 'combo_items']);
 
-        if ($request->hasFile('photo1')) {
-            $this->imageService->delete($product->photo1);
-            $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
+        // Validate type if provided (don't overwrite existing type if not sent)
+        if (isset($data['type'])) {
+            $this->productService->validateType($data['type']);
+            $data = $this->productService->sanitizeData($data, $data['type']);
         }
 
-        if ($request->hasFile('photo2')) {
-            $this->imageService->delete($product->photo2);
-            $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
+        // Combo products don't need stock (derived from components)
+        if (isset($data['type']) && $data['type'] === ProductType::COMBO) {
+            $data['stock'] = 0;
         }
 
-        $product->update($data);
+        $variantsPayload = null;
+        if ($request->filled('variants')) {
+            $variantsPayload = json_decode($request->input('variants'), true);
+            if (!is_array($variantsPayload)) {
+                $variantsPayload = null;
+            }
+        }
 
-        app(DashboardCacheService::class)->clearProductRelatedCache();
+        $comboItemsPayload = null;
+        if ($request->filled('combo_items')) {
+            $comboItemsPayload = json_decode($request->input('combo_items'), true);
+            if (!is_array($comboItemsPayload)) {
+                $comboItemsPayload = null;
+            }
+        }
+
+        // Determine the effective type for validation (existing type if not provided)
+        $effectiveType = $data['type'] ?? $product->type;
+
+        // Validate combo items structure
+        if ($effectiveType === ProductType::COMBO && $comboItemsPayload) {
+            $this->validateComboItems($comboItemsPayload);
+        }
+
+        DB::transaction(function () use ($data, $request, $product, $variantsPayload, $comboItemsPayload, $effectiveType) {
+            if ($request->hasFile('photo1')) {
+                $this->imageService->delete($product->photo1);
+                $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
+            }
+
+            if ($request->hasFile('photo2')) {
+                $this->imageService->delete($product->photo2);
+                $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
+            }
+
+            $product->update($data);
+
+            // Auto-generate SKU if it was empty and is still empty after update
+            if (empty($product->sku)) {
+                $generatedSku = $this->skuService->generateProductSku($product);
+                if ($generatedSku) {
+                    $product->update(['sku' => $generatedSku]);
+                }
+            }
+
+            if ($product->isVariable()) {
+                // Empty array means intentionally clear all variants
+                // null means no variant data was sent, leave variants unchanged
+                if (is_array($variantsPayload)) {
+                    if (!empty($variantsPayload)) {
+                        $normalized = $this->normalizeVariants($variantsPayload);
+                        $this->productService->syncVariants($product, $normalized);
+
+                        // Auto-generate SKUs for new variants that don't have one
+                        $product->variants()->whereNull('sku')->each(function ($variant) {
+                            $generatedSku = $this->skuService->generateVariantSku($variant);
+                            if ($generatedSku) {
+                                $variant->update(['sku' => $generatedSku]);
+                            }
+                        });
+                    } else {
+                        // Empty variants array = delete all variants
+                        $product->variants()->delete();
+                    }
+                }
+            } elseif ($product->variants()->exists()) {
+                $product->variants()->delete();
+            }
+
+            if ($product->isCombo()) {
+                // Empty array means intentionally clear all combo items
+                // null means no combo data was sent, leave combo items unchanged
+                if (is_array($comboItemsPayload)) {
+                    if (!empty($comboItemsPayload)) {
+                        $this->productService->syncComboItems($product, $comboItemsPayload);
+                    } else {
+                        // Empty combo items array = delete all combo items
+                        $product->comboItems()->delete();
+                    }
+                }
+            } elseif ($product->comboItems()->exists()) {
+                $product->comboItems()->delete();
+            }
+
+            app(DashboardCacheService::class)->clearProductRelatedCache();
+        });
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Product updated successfully.');
@@ -184,10 +482,25 @@ class AdminProductController extends Controller
 
     public function destroy(Product $product)
     {
-        $this->imageService->delete($product->photo1);
-        $this->imageService->delete($product->photo2);
+        if ($product->hasOrders()) {
+            return back()->with('error', 'Cannot delete product because it exists in customer orders.');
+        }
 
-        $product->delete();
+        DB::transaction(function () use ($product) {
+            // Always clean up variants regardless of current type
+            // to prevent orphaned records if type was changed before deletion
+            $product->variants()->delete();
+
+            if ($product->isCombo()) {
+                $product->comboItems()->delete();
+                ProductCombo::where('combo_product_id', $product->id)->delete();
+            }
+
+            $this->imageService->delete($product->photo1);
+            $this->imageService->delete($product->photo2);
+
+            $product->delete();
+        });
 
         app(DashboardCacheService::class)->clearProductRelatedCache();
 
@@ -209,32 +522,44 @@ class AdminProductController extends Controller
         $ids = $request->input('ids');
         $products = Product::whereIn('id', $ids)->get();
 
-        $count = $products->count();
-        $productNames = $products->pluck('name')->take(5)->toArray();
-        $moreCount = $count > 5 ? $count - 5 : 0;
+        $blockedProducts = $products->filter(fn($p) => $p->hasOrders());
 
-        $description = "Bulk deleted {$count} product(s): " . implode(', ', $productNames);
-        if ($moreCount > 0) {
-            $description .= " and {$moreCount} more";
+        if ($blockedProducts->isNotEmpty()) {
+            $blockedNames = $blockedProducts->pluck('name')->take(3)->implode(', ');
+            $moreCount = $blockedProducts->count() - 3;
+            $blockedMsg = $moreCount > 0 ? " and {$moreCount} more" : '';
+
+            return back()->with('error', "Cannot delete {$blockedProducts->count()} product(s) because they exist in customer orders: {$blockedNames}{$blockedMsg}");
         }
+
+        DB::transaction(function () use ($products, $ids) {
+            foreach ($products as $product) {
+                // Always clean up variants regardless of current type
+                $product->variants()->delete();
+
+                if ($product->isCombo()) {
+                    $product->comboItems()->delete();
+                    ProductCombo::where('combo_product_id', $product->id)->delete();
+                }
+
+                $this->imageService->delete($product->photo1);
+                $this->imageService->delete($product->photo2);
+
+                $product->delete();
+            }
+        });
 
         ActivityLogger::log(
-            $description,
+            "Bulk deleted {$products->count()} product(s): " . $products->pluck('name')->take(5)->implode(', '),
             'product_bulk_deleted',
             null,
-            ['product_ids' => $ids, 'count' => $count]
+            ['product_ids' => $ids, 'count' => $products->count()]
         );
-
-        foreach ($products as $product) {
-            $this->imageService->delete($product->photo1);
-            $this->imageService->delete($product->photo2);
-            $product->delete();
-        }
 
         app(DashboardCacheService::class)->clearProductRelatedCache();
 
         return redirect()->route('admin.products.index')
-            ->with('success', "{$count} product(s) deleted successfully.");
+            ->with('success', "{$products->count()} product(s) deleted successfully.");
     }
 
     public function bulkActivate(Request $request)
@@ -306,5 +631,141 @@ class AdminProductController extends Controller
             'products' => $products,
             'query' => $query,
         ]);
+    }
+
+    /**
+     * Normalize frontend variant payload for database persistence.
+     *
+     * The frontend sends variants with an `options` array of simple values
+     * (e.g. ['XL', 'Black']) but the ProductVariant model stores them as
+     * an `attributes` associative array (e.g. {'option1': 'XL', 'option2': 'Black'}).
+     *
+     * Existing variants include an `id` field for update detection.
+     *
+     * @param array $variants
+     * @return array
+     */
+    protected function normalizeVariants(array $variants): array
+    {
+        $normalized = [];
+
+        foreach ($variants as $variant) {
+            $attributes = [];
+
+            if (isset($variant['options']) && is_array($variant['options'])) {
+                foreach ($variant['options'] as $index => $value) {
+                    $key = 'option' . ($index + 1);
+                    $attributes[$key] = (string) $value;
+                }
+            }
+
+            $normalized[] = [
+                'id' => isset($variant['id']) && !str_starts_with((string) $variant['id'], 'temp_')
+                    ? (int) $variant['id']
+                    : null,
+                'sku' => $variant['sku'] ?? '',
+                'price' => isset($variant['price']) && $variant['price'] !== '' ? max(0, (float) $variant['price']) : null,
+                'compare_price' => isset($variant['compare_price']) && $variant['compare_price'] !== '' ? (float) $variant['compare_price'] : null,
+                'cost_price' => isset($variant['cost_price']) && $variant['cost_price'] !== '' ? (float) $variant['cost_price'] : null,
+                'stock' => isset($variant['stock']) ? (int) $variant['stock'] : 0,
+                'attributes' => $attributes,
+                'status' => $variant['status'] ?? ProductVariant::STATUS_ACTIVE,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Validate combo items payload structure and data integrity.
+     *
+     * Ensures:
+     * - Each item has a valid combo_product_id
+     * - Quantities are positive integers
+     * - Referenced products exist
+     * - If linked_variant_id is provided, it exists and belongs to the product
+     * - No duplicate entries (same product + same variant)
+     *
+     * @param array $items
+     * @return void
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function validateComboItems(array $items): void
+    {
+        if (empty($items)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'combo_items' => 'A combo product must have at least one component.',
+            ]);
+        }
+
+        $seenKeys = [];
+        $itemNumber = 1;
+
+        foreach ($items as $index => $item) {
+            $productKey = "combo_items.{$index}";
+
+            // Validate combo_product_id
+            if (empty($item['combo_product_id'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $productKey => 'Component #' . $itemNumber . ' must reference a valid product.',
+                ]);
+            }
+
+            $productId = (int) $item['combo_product_id'];
+
+            // Check product exists
+            $componentProduct = Product::find($productId);
+            if (!$componentProduct) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $productKey => 'Product #' . $productId . ' does not exist.',
+                ]);
+            }
+
+            // Combo products cannot include other combos
+            if ($componentProduct->isCombo()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $productKey => 'Combo products cannot include other combos.',
+                ]);
+            }
+
+            // Validate quantity
+            $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
+            if ($quantity < 1) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "{$productKey}.quantity" => 'Quantity must be at least 1.',
+                ]);
+            }
+
+            // Validate linked_variant_id if provided
+            if (isset($item['linked_variant_id']) && $item['linked_variant_id']) {
+                $variantId = (int) $item['linked_variant_id'];
+                $variant = ProductVariant::find($variantId);
+
+                if (!$variant) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "{$productKey}.linked_variant_id" => 'Variant #' . $variantId . ' does not exist.',
+                    ]);
+                }
+
+                if ($variant->product_id !== $productId) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "{$productKey}.linked_variant_id" => 'Variant does not belong to the selected product.',
+                    ]);
+                }
+            }
+
+            // Check for duplicates (same product_id + same variant_id)
+            $variantId = isset($item['linked_variant_id']) ? (int) $item['linked_variant_id'] : null;
+            $uniqueKey = "{$productId}:{$variantId}";
+
+            if (isset($seenKeys[$uniqueKey])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $productKey => 'Duplicate component detected.',
+                ]);
+            }
+
+            $seenKeys[$uniqueKey] = true;
+            $itemNumber++;
+        }
     }
 }

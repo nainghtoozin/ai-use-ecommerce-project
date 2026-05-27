@@ -28,6 +28,10 @@ class User extends Authenticatable
         'status',
         'profile_image',
         'notification_preferences',
+        'plan_id',
+        'plan_started_at',
+        'plan_expires_at',
+        'plan_status',
     ];
 
     protected $hidden = [
@@ -41,6 +45,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notification_preferences' => 'array',
+            'plan_started_at' => 'datetime',
+            'plan_expires_at' => 'datetime',
         ];
     }
 
@@ -79,6 +85,47 @@ class User extends Authenticatable
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Get the plan this user is subscribed to, or the default plan.
+     */
+    public function getActivePlan(): ?Plan
+    {
+        if ($this->plan) {
+            return $this->plan;
+        }
+
+        return Plan::defaultPlan();
+    }
+
+    /**
+     * Check if the user has a specific feature enabled through their plan.
+     */
+    public function hasFeature(string $featureKey): bool
+    {
+        $plan = $this->getActivePlan();
+
+        if (!$plan) {
+            return false;
+        }
+
+        return $plan->hasFeature($featureKey);
+    }
+
+    /**
+     * Check if user has an active paid subscription.
+     */
+    public function hasActiveSubscription(): bool
+    {
+        return $this->plan_status === 'active'
+            && $this->plan_id !== null
+            && (!$this->plan_expires_at || $this->plan_expires_at->isFuture());
     }
 
     public function wishlistItems()

@@ -38,7 +38,7 @@ class ClientOrderController extends Controller
     public function index()
     {
         $orders = Order::query()
-            ->with(['items.product', 'paymentMethod'])
+            ->with(['items.product', 'items.variant', 'paymentMethod'])
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->simplePaginate(10);
@@ -118,12 +118,19 @@ class ClientOrderController extends Controller
         $items = [];
         foreach ($itemsData as $item) {
             $productId = $item['id'] ?? $item['product_id'] ?? null;
-            $items[] = [
+            $variantId = $item['variant_id'] ?? null;
+            $itemData = [
                 'id' => (int) $productId,
                 'product_id' => (int) $productId,
                 'quantity' => $item['qty'] ?? $item['quantity'] ?? $item['qty'] ?? 1,
                 'price' => $item['price'] ?? $item['price'] ?? 0,
             ];
+
+            if ($variantId) {
+                $itemData['variant_id'] = (int) $variantId;
+            }
+
+            $items[] = $itemData;
         }
 
         foreach ($items as $index => $item) {

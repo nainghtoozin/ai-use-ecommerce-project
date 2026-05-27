@@ -1,8 +1,196 @@
 import { useState, useEffect, memo } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { assetUrl } from '@/Utils/helpers';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
+
+const LOW_STOCK_THRESHOLD = 10;
+
+function getEffectiveStock(product) {
+    return product.effective_stock ?? product.stock ?? 0;
+}
+
+function getStockStatus(product) {
+    const stock = getEffectiveStock(product);
+    if (stock <= 0) return 'out_of_stock';
+    if (stock < LOW_STOCK_THRESHOLD) return 'low_stock';
+    return 'in_stock';
+}
+
+function getDisplayPrice(product) {
+    if (product.promotion_price !== undefined && product.promotion_price !== null) {
+        const effPrice = product.promotion_price;
+        return {
+            display: Number(effPrice).toLocaleString(),
+            original: Number(getBasePrice(product)).toLocaleString(),
+            savings: Math.round(getBasePrice(product) - effPrice),
+        };
+    }
+
+    if (product.is_variable) {
+        const summary = product.display_price_summary;
+        if (summary) {
+            return { display: summary.display, label: summary.label };
+        }
+        const priceRange = product.price_range;
+        if (priceRange && priceRange.length >= 2) {
+            const min = Number(priceRange[0]).toLocaleString();
+            const max = Number(priceRange[1]).toLocaleString();
+            if (priceRange[0] === priceRange[1]) {
+                return { display: `${min}`, label: '' };
+            }
+            return { display: `${min}`, label: 'From' };
+        }
+        return { display: Number(product.price ?? 0).toLocaleString(), label: 'From' };
+    }
+
+    if (product.is_combo) {
+        const summary = product.display_price_summary;
+        if (summary) {
+            return { display: summary.display, savings: summary.savings > 0 ? summary.savings : null };
+        }
+        return { display: Number(product.price ?? 0).toLocaleString() };
+    }
+
+    const price = Number(product.price ?? 0).toLocaleString();
+    return { display: price };
+}
+
+function getBasePrice(product) {
+    if (product.is_variable) {
+        const summary = product.display_price_summary;
+        if (summary) return summary.min ?? product.price ?? 0;
+        const range = product.price_range;
+        if (range && range.length >= 2) return range[0];
+        return product.price ?? 0;
+    }
+    if (product.is_combo) {
+        const summary = product.display_price_summary;
+        if (summary) return summary.price ?? product.price ?? 0;
+        return product.price ?? 0;
+    }
+    return product.price ?? 0;
+}
+
+const StockBadge = memo(function StockBadge({ status, stock, isVariable, isCombo }) {
+    if (status === 'out_of_stock') {
+        return (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                <span className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">
+                    Out of Stock
+                </span>
+            </div>
+        );
+    }
+
+    if (status === 'low_stock') {
+        let label;
+        if (isVariable) {
+            label = 'Low Stock';
+        } else if (isCombo) {
+            label = 'Limited Stock';
+        } else {
+            label = `Only ${stock} left`;
+        }
+        return (
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-orange-500 text-white text-xs font-medium rounded-full shadow-sm z-10">
+                {label}
+            </div>
+        );
+    }
+
+    return null;
+});
+
+const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
+    const { display, original, savings, label } = displayPrice || {};
+
+    if (product.is_variable) {
+        return (
+            <div className="mt-3">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                    {label && (
+                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</span>
+                    )}
+                    <span className="text-xl font-bold text-gray-900">
+                        {display || Number(product.price ?? 0).toLocaleString()}
+                    </span>
+                    <span className="text-xs text-gray-400 font-medium">MMK</span>
+                </div>
+                {original && (
+                    <span className="text-sm text-gray-400 line-through w-full sm:w-auto block mt-1">
+                        {original} MMK
+                    </span>
+                )}
+                {savings > 0 && (
+                    <p className="text-xs text-green-600 font-semibold mt-1 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Save {Number(savings).toLocaleString()} MMK
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    if (product.is_combo) {
+        return (
+            <div className="mt-3">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-xl font-bold text-gray-900">
+                        {display || Number(product.price ?? 0).toLocaleString()}
+                    </span>
+                    <span className="text-xs text-gray-400 font-medium">MMK</span>
+                    {product.display_price_summary?.base_price > 0 && (
+                        <span className="text-sm text-gray-400 line-through w-full sm:w-auto">
+                            {Number(product.display_price_summary.base_price).toLocaleString()} MMK
+                        </span>
+                    )}
+                </div>
+                {product.display_price_summary?.savings > 0 && (
+                    <p className="text-xs text-green-600 font-semibold mt-1 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Bundle Save {Number(product.display_price_summary.savings).toLocaleString()} MMK
+                    </p>
+                )}
+                {savings > 0 && (
+                    <p className="text-xs text-green-600 font-semibold mt-1 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Save {Number(savings).toLocaleString()} MMK
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-3">
+            <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-xl font-bold text-gray-900">
+                    {display || Number(product.price ?? 0).toLocaleString()}
+                </span>
+                <span className="text-xs text-gray-400 font-medium">MMK</span>
+                {original && (
+                    <span className="text-sm text-gray-400 line-through w-full sm:w-auto">
+                        {original} MMK
+                    </span>
+                )}
+            </div>
+            {savings > 0 && (
+                <p className="text-xs text-green-600 font-semibold mt-1 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Save {Number(savings).toLocaleString()} MMK
+                </p>
+            )}
+        </div>
+    );
+});
 
 const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId = null }) {
     const { props } = usePage();
@@ -20,6 +208,18 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
     useEffect(() => {
         setOptimisticWishlisted(wishlisted_ids.includes(product.id));
     }, [wishlisted_ids, product.id]);
+
+    const effectiveStock = getEffectiveStock(product);
+    const stockStatus = getStockStatus(product);
+    const isOutOfStock = stockStatus === 'out_of_stock';
+    const isLowStock = stockStatus === 'low_stock';
+    const displayPrice = getDisplayPrice(product);
+    const hasPromotion = product.promotion_price !== undefined
+        && product.promotion_price !== null
+        && product.promotion_price < getBasePrice(product);
+    const promotionSavings = hasPromotion
+        ? Math.round(getBasePrice(product) - product.promotion_price)
+        : 0;
 
     const handleAddToCart = async (e) => {
         e.preventDefault();
@@ -48,13 +248,6 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
 
         toggleWishlist(product.id, optimisticWishlisted);
     };
-
-    const isOutOfStock = product.stock === 0;
-    const isLowStock = product.stock > 0 && product.stock < 10;
-    const hasPromotion = product.promotion_price && product.promotion_price < product.price;
-    const displayPrice = hasPromotion ? product.promotion_price : product.price;
-    const originalPrice = hasPromotion ? product.price : null;
-    const savingsAmount = hasPromotion ? Math.round(product.price - product.promotion_price) : 0;
 
     return (
         <div className="group relative bg-white rounded-2xl shadow-sm hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
@@ -89,28 +282,33 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                         </div>
                     )}
 
-                    {isOutOfStock && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <span className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-full">
-                                Out of Stock
-                            </span>
+                    <StockBadge
+                        status={stockStatus}
+                        stock={effectiveStock}
+                        isVariable={product.is_variable}
+                        isCombo={product.is_combo}
+                    />
+
+                    {product.is_combo && !isOutOfStock && (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow-sm z-10">
+                            Bundle
                         </div>
                     )}
 
-                    {isLowStock && !isOutOfStock && (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-orange-500 text-white text-xs font-medium rounded-full shadow-sm">
-                            Only {product.stock} left
+                    {product.is_variable && !isOutOfStock && !isLowStock && (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-blue-600 text-white text-xs font-bold rounded-full shadow-sm z-10">
+                            Multiple Options
                         </div>
                     )}
 
                     {hasPromotion && (
-                        <div className="absolute top-14 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
+                        <div className="absolute top-14 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm z-10">
                             {product.promotion_badge}
                         </div>
                     )}
 
-                    {!hasPromotion && product.discount_percentage > 0 && (
-                        <div className="absolute top-14 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
+                    {!hasPromotion && Number(product.discount_percentage ?? 0) > 0 && (
+                        <div className="absolute top-14 right-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm z-10">
                             -{product.discount_percentage}%
                         </div>
                     )}
@@ -151,27 +349,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                     </h3>
                 </Link>
 
-                <div className="mt-3">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-xl font-bold text-gray-900">
-                            {Number(displayPrice).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-gray-400 font-medium">MMK</span>
-                        {originalPrice && (
-                            <span className="text-sm text-gray-400 line-through w-full sm:w-auto">
-                                {Number(originalPrice).toLocaleString()} MMK
-                            </span>
-                        )}
-                    </div>
-                    {savingsAmount > 0 && (
-                        <p className="text-xs text-green-600 font-semibold mt-1 flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Save {Number(savingsAmount).toLocaleString()} MMK
-                        </p>
-                    )}
-                </div>
+                <PriceDisplay product={product} displayPrice={displayPrice} />
 
                 <div className="mt-4 space-y-2">
                     {isOutOfStock ? (

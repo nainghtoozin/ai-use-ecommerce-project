@@ -521,7 +521,7 @@ return (
                                     <h3 className="text-base font-semibold text-gray-900 mb-4">Items ({totalItems})</h3>
                                     <div className="divide-y divide-gray-100">
                                         {cartItems.map((item) => (
-                                            <div key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
+                                            <div key={item.cart_key || item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
                                                 {item.photo1_url && (
                                                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                                         <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
@@ -529,6 +529,11 @@ return (
                                                 )}
                                                 <div className="flex-1 min-w-0 self-center">
                                                     <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                                                    {item.variant_name && (
+                                                        <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-medium">
+                                                            {item.variant_name}
+                                                        </span>
+                                                    )}
                                                     <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity}</p>
                                                 </div>
                                                 <p className="text-sm font-semibold text-gray-900 whitespace-nowrap self-center">

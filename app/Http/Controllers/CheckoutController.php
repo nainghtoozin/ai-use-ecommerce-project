@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentMethod;
 use App\Models\City;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\CouponService;
 use App\Services\PromotionService;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -14,7 +17,8 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private readonly CouponService $couponService,
-        private readonly PromotionService $promotionService
+        private readonly PromotionService $promotionService,
+        private readonly ProductService $productService
     ) {}
 
     public function index()
@@ -64,17 +68,36 @@ class CheckoutController extends Controller
     private function getCartItems(array $cart): array
     {
         $items = [];
-        foreach ($cart as $id => $item) {
-            $product = \App\Models\Product::find($id);
-            if ($product) {
-                $items[] = [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => (float) $product->price,
-                    'photo1' => $product->photo1,
-                    'quantity' => $item['quantity'],
-                ];
+        foreach ($cart as $cartKey => $item) {
+            $productId = $item['product_id'];
+            $variantId = $item['variant_id'] ?? null;
+
+            $product = Product::select(['id', 'name', 'price', 'type', 'photo1'])->find($productId);
+            if (!$product) {
+                continue;
             }
+
+            $price = (float) $product->price;
+            $variantName = null;
+
+            if ($variantId) {
+                $variant = ProductVariant::select(['id', 'price', 'attributes'])->find($variantId);
+                if ($variant) {
+                    $price = (float) ($variant->price ?? $product->price);
+                    $variantName = $variant->label;
+                }
+            }
+
+            $items[] = [
+                'cart_key' => $cartKey,
+                'id' => $product->id,
+                'variant_id' => $variantId,
+                'name' => $product->name,
+                'variant_name' => $variantName,
+                'price' => $price,
+                'photo1' => $product->photo1,
+                'quantity' => $item['quantity'],
+            ];
         }
         return $items;
     }
