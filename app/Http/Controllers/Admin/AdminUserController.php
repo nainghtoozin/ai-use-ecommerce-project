@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\ActivityLog;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
@@ -22,6 +23,30 @@ class AdminUserController extends Controller
         private readonly \App\Services\ImageService $imageService
     ) {}
 
+    private function isSuperAdmin(): bool
+    {
+        return auth()->check() && auth()->user()->isSuperAdmin();
+    }
+
+    private function protectOwner(User $user): void
+    {
+        if ($this->isSuperAdmin()) {
+            return;
+        }
+
+        if ($user->isOwner()) {
+            abort(403, 'The merchant owner account cannot be modified or removed. Contact SuperAdmin.');
+        }
+    }
+
+    private function getTenantFilter(): mixed
+    {
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+        return Tenant::getCurrent();
+    }
+
     public function index(Request $request)
     {
         $search = $request->get('search');
@@ -29,6 +54,7 @@ class AdminUserController extends Controller
         $status = $request->get('status');
 
         $users = User::with('roles')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->when($search, fn($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%");
@@ -58,10 +84,11 @@ class AdminUserController extends Controller
             $showPagination = false;
         }
 
-        $roles = Role::orderBy('name')->pluck('name');
+        $roles = Role::orderBy('name')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
+            ->pluck('name');
 
         return Inertia::render('Admin/Users/Index', [
-            'users' => $users,
             'showPagination' => $showPagination,
             'warning' => $warning,
             'filters' => ['search' => $search, 'role' => $role, 'status' => $status],
@@ -71,7 +98,9 @@ class AdminUserController extends Controller
 
     public function create()
     {
-        $roles = Role::orderBy('name')->pluck('name');
+        $roles = Role::orderBy('name')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
+            ->pluck('name');
 
         return Inertia::render('Admin/Users/Create', [
             'roles' => $roles,
@@ -107,7 +136,9 @@ class AdminUserController extends Controller
 
     public function show(int $id)
     {
-        $user = User::with('roles')->findOrFail($id);
+        $user = User::with('roles')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
 
         $activities = ActivityLog::query()
             ->where('subject_type', User::class)
@@ -124,8 +155,12 @@ class AdminUserController extends Controller
 
     public function edit(int $id)
     {
-        $user = User::with('roles')->findOrFail($id);
-        $roles = Role::orderBy('name')->pluck('name');
+        $user = User::with('roles')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
+        $roles = Role::orderBy('name')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
+            ->pluck('name');
 
         return Inertia::render('Admin/Users/Edit', [
             'user' => $user,
@@ -135,7 +170,9 @@ class AdminUserController extends Controller
 
     public function update(UpdateUserRequest $request, int $id)
     {
-        $user = User::with('roles')->findOrFail($id);
+        $user = User::with('roles')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
         $data = $request->validated();
         $changes = [];
 
@@ -175,6 +212,10 @@ class AdminUserController extends Controller
         if (isset($data['role'])) {
             $currentRoles = $user->roles->pluck('name')->toArray();
             if ($data['role'] !== ($currentRoles[0] ?? null)) {
+                if ($user->isOwner() && $data['role'] !== 'admin' && !$this->isSuperAdmin()) {
+                    return redirect()->back()->with('error', 'The merchant owner role cannot be changed. Contact SuperAdmin.');
+                }
+
                 if ($user->hasRole('superadmin') && $data['role'] !== 'superadmin') {
                     $superadminCount = User::role('superadmin')->count();
                     if ($superadminCount <= 1) {
@@ -205,7 +246,11 @@ class AdminUserController extends Controller
 
     public function destroy(int $id)
     {
-        $user = User::with('roles')->findOrFail($id);
+        $user = User::with('roles')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
+
+        $this->protectOwner($user);
 
         if ($user->hasRole('superadmin')) {
             $superadminCount = User::role('superadmin')->count();
@@ -216,7 +261,9 @@ class AdminUserController extends Controller
         }
 
         if ($user->hasRole('admin') && !$user->hasRole('superadmin')) {
-            $adminCount = User::role('admin')->count();
+            $adminCount = User::role('admin')
+                ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+                ->count();
             if ($adminCount <= 1) {
                 return redirect()->route('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining admin.');
@@ -240,7 +287,10 @@ class AdminUserController extends Controller
 
     public function suspend(int $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
+
+        $this->protectOwner($user);
 
         if (auth()->id() === $user->id) {
             return redirect()->back()->with('error', 'You cannot suspend your own account.');
@@ -258,7 +308,10 @@ class AdminUserController extends Controller
 
     public function ban(int $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
+
+        $this->protectOwner($user);
 
         if (auth()->id() === $user->id) {
             return redirect()->back()->with('error', 'You cannot ban your own account.');
@@ -276,7 +329,8 @@ class AdminUserController extends Controller
 
     public function activate(int $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->findOrFail($id);
 
         $user->update(['status' => User::STATUS_ACTIVE]);
 

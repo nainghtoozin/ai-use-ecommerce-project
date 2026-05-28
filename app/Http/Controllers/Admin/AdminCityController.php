@@ -7,6 +7,7 @@ use App\Http\Requests\CityStoreRequest;
 use App\Http\Requests\CityUpdateRequest;
 use App\Models\City;
 use App\Services\LocationService;
+use App\Services\MyanmarLocationImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,5 +67,21 @@ class AdminCityController extends Controller
             'success' => true,
             'is_active' => $city->is_active,
         ]);
+    }
+
+    public function importMyanmar(MyanmarLocationImportService $service): RedirectResponse
+    {
+        $stats = $service->import();
+
+        $message = sprintf(
+            'Myanmar locations imported: %d cities created, %d skipped, %d townships created, %d skipped.',
+            $stats['cities_created'],
+            $stats['cities_skipped'],
+            $stats['townships_created'],
+            $stats['townships_skipped']
+        );
+
+        return redirect()->route('admin.cities.index')
+            ->with('success', $message);
     }
 }

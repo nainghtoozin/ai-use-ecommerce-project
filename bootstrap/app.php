@@ -8,6 +8,8 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckUserStatus;
 use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\IdentifyTenant;
+use App\Http\Middleware\EnsureTenantIsActive;
 use App\Models\User;
 use App\Policies\UserPolicy;
 
@@ -29,9 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'check.status' => CheckUserStatus::class,
             'maintenance' => CheckMaintenanceMode::class,
+            'tenant.active' => EnsureTenantIsActive::class,
         ]);
 
         $middleware->web(append: [
+            IdentifyTenant::class,
             HandleInertiaRequests::class,
             CheckUserStatus::class,
             CheckMaintenanceMode::class,

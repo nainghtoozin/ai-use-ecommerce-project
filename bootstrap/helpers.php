@@ -1,5 +1,25 @@
 <?php
 
+if (!function_exists('tenant')) {
+    function tenant(): ?\App\Models\Tenant
+    {
+        return \App\Models\Tenant::getCurrent();
+    }
+}
+
+if (!function_exists('tenantId')) {
+    function tenantId(): ?int
+    {
+        $user = auth()->user();
+        if ($user && $user->tenant_id) {
+            return (int) $user->tenant_id;
+        }
+
+        $t = tenant();
+        return $t ? (int) $t->id : null;
+    }
+}
+
 if (!function_exists('setting')) {
     function setting($key, $default = null)
     {

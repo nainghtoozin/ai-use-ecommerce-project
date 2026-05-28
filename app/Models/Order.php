@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantAware;
 
     const PAYMENT_STATUS_UNPAID = 'unpaid';
     const PAYMENT_STATUS_PAID = 'paid';

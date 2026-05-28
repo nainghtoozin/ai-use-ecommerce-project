@@ -2,10 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Http\Request;
-use Inertia\Middleware;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Tenant;
+use Illuminate\Http\Request;
+use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -30,6 +31,8 @@ class HandleInertiaRequests extends Middleware
             'profile_image' => $user->profile_image,
             'email_verified_at' => $user->email_verified_at,
             'is_admin' => $user->isAdmin(),
+            'is_superadmin' => $user->isSuperAdmin(),
+            'tenant_id' => $user->tenant_id,
             'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
         ] : null;
 
@@ -38,10 +41,19 @@ class HandleInertiaRequests extends Middleware
 
         $wishlistEnabled = $settingsModel && ($settingsModel->enable_wishlist ?? true);
 
+        $tenant = Tenant::getCurrent();
+
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $userData,
             ],
+            'tenant' => $tenant ? [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'logo' => $tenant->logo,
+                'settings' => $tenant->settings,
+            ] : null,
             'cart' => $cart,
             'wishlist_count' => $wishlistEnabled && $user ? (int) $user->wishlistItems()->count() : 0,
             'wishlisted_ids' => $wishlistEnabled && $user ? $user->wishlistItems()->pluck('product_id')->toArray() : [],
@@ -58,7 +70,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'website_info' => $websiteSettings,
             'websiteSettings' => $websiteSettings,
-            'categories' => cache()->remember('categories', 3600, function() {
+            'categories' => cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
         ]);

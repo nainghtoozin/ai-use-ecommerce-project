@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Coupon extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantAware;
 
     const TYPE_PERCENTAGE = 'percentage';
     const TYPE_FIXED_AMOUNT = 'fixed_amount';

@@ -12,12 +12,21 @@ class ActivityLogController extends Controller
 {
     use PerPageTrait;
 
+    private function getTenantFilter(): mixed
+    {
+        if (auth()->check() && auth()->user()->isSuperAdmin()) {
+            return false;
+        }
+        return \App\Models\Tenant::getCurrent();
+    }
+
     public function index(Request $request)
     {
         $logName = $request->get('log_name');
         $event = $request->get('event');
 
         $query = ActivityLog::with('causer')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('activity_logs.tenant_id', $t->id))
             ->when($logName, fn($q, $v) => $q->where('log_name', $v))
             ->when($event, fn($q, $v) => $q->where('event', $v))
             ->latest();

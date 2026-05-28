@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\MessageSent;
 use App\Events\UserTyping;
 use App\Models\Message;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,14 @@ use Inertia\Inertia;
 
 class ChatController extends Controller
 {
+    private function getTenantFilter(): mixed
+    {
+        if (auth()->check() && auth()->user()->isSuperAdmin()) {
+            return false;
+        }
+        return Tenant::getCurrent();
+    }
+
     public function index(): \Inertia\Response
     {
         $currentUserId = Auth::id();
@@ -53,7 +62,9 @@ class ChatController extends Controller
         }
 
         if (empty($result)) {
-            $admin = User::role('admin')->first();
+            $admin = User::role('admin')
+                ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+                ->first();
             if ($admin && $admin->id !== $currentUserId) {
                 $result[] = [
                     'user' => $admin,
@@ -165,6 +176,7 @@ class ChatController extends Controller
     public function getAdminUsers(): JsonResponse
     {
         $users = User::whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->orderBy('name', 'asc')
             ->get(['id', 'name']);
 

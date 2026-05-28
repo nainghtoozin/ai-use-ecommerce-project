@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -43,8 +43,12 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        Role::findOrCreate('customer', 'web');
-        $user->assignRole('customer');
+        $customerRole = Role::firstOrCreate([
+            'name' => 'customer',
+            'guard_name' => 'web',
+            'tenant_id' => \App\Models\Tenant::getCurrent()?->id,
+        ]);
+        $user->assignRole($customerRole);
 
         event(new Registered($user));
 

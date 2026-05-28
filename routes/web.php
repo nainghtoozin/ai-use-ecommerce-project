@@ -159,7 +159,7 @@ Route::middleware('auth')->group(function () {
 // ============================================================
 // ADMIN ROUTES
 // ============================================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.active'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
@@ -274,6 +274,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::resource('cities', AdminCityController::class)->except(['show']);
     Route::post('cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle');
 
+    // Myanmar locations import
+    Route::post('locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
+
     // Townships
     Route::resource('townships', AdminTownshipController::class)->except(['show']);
     Route::post('townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
@@ -313,6 +316,37 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // PERMISSION ROUTES (read-only)
     // ============================================================
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+});
+
+// ============================================================
+// SUPERADMIN ROUTES
+// ============================================================
+Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:superadmin'])->group(function () {
+    Route::redirect('/', '/superadmin/tenants')->name('dashboard');
+
+    Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
+    Route::get('/tenants/create', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'create'])->name('tenants.create');
+    Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');
+    Route::get('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show'])->name('tenants.show');
+    Route::get('/tenants/{tenant}/edit', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'edit'])->name('tenants.edit');
+    Route::put('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('tenants.update');
+    Route::post('/tenants/{tenant}/toggle-status', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'toggleStatus'])->name('tenants.toggle-status');
+    Route::delete('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('tenants.destroy');
+
+    Route::get('/plans', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'index'])->name('plans.index');
+    Route::get('/plans/create', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'create'])->name('plans.create');
+    Route::post('/plans', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'store'])->name('plans.store');
+    Route::get('/plans/{plan}/edit', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'edit'])->name('plans.edit');
+    Route::put('/plans/{plan}', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'update'])->name('plans.update');
+    Route::delete('/plans/{plan}', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'destroy'])->name('plans.destroy');
+
+    Route::get('/subscriptions', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/subscriptions', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'assign'])->name('subscriptions.assign');
+    Route::get('/subscriptions/{subscription}', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'show'])->name('subscriptions.show');
+    Route::put('/subscriptions/{subscription}/change-plan', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'changePlan'])->name('subscriptions.change-plan');
+    Route::post('/subscriptions/{subscription}/renew', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'renew'])->name('subscriptions.renew');
+    Route::post('/subscriptions/{subscription}/cancel', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
+    Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
 });
 
 // Auth

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class WebsiteInfo extends Model
 {
+    use TenantAware;
+
     protected $fillable = [
         'site_name',
         'site_tagline',
@@ -88,9 +91,18 @@ class WebsiteInfo extends Model
 
     public static function getSettings(): self
     {
-        return Cache::rememberForever('website_settings', function () {
-            return self::firstOrCreate(['id' => 1], [
-                'site_name' => 'My E-Commerce Store',
+        $tenant = Tenant::getCurrent();
+        $cacheKey = 'website_settings_' . ($tenant ? $tenant->id : 'default');
+
+        return Cache::rememberForever($cacheKey, function () {
+            $settings = self::first();
+
+            if ($settings) {
+                return $settings;
+            }
+
+            return self::create([
+                'site_name' => tenant()?->name ?? 'My E-Commerce Store',
                 'theme_color' => '#3B82F6',
                 'default_language' => 'en',
                 'timezone' => 'Asia/Yangon',
@@ -101,9 +113,11 @@ class WebsiteInfo extends Model
         });
     }
 
-    public static function clearCache(): void
+    public static function clearCache(?Tenant $tenant = null): void
     {
-        Cache::forget('website_settings');
+        $tenant = $tenant ?? Tenant::getCurrent();
+        $cacheKey = 'website_settings_' . ($tenant ? $tenant->id : 'default');
+        Cache::forget($cacheKey);
     }
 
     public function getLogoUrlAttribute(): ?string

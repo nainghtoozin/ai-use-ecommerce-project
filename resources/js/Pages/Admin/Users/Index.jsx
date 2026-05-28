@@ -6,6 +6,7 @@ import { assetUrl } from '@/Utils/helpers';
 
 export default function UsersIndex({ users, filters, roles, showPagination = true, warning = null }) {
     const { props } = usePage();
+    const isSuperAdmin = props?.auth?.user?.is_superadmin ?? false;
     const [search, setSearch] = useState(filters?.search || '');
     const [roleFilter, setRoleFilter] = useState(filters?.role || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
@@ -158,9 +159,16 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {user.roles?.[0]?.name || 'N/A'}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            {user.roles?.[0]?.name || 'N/A'}
+                                                        </span>
+                                                        {user.is_owner && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                                Owner
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">{statusBadge(user.status)}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
@@ -172,7 +180,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                         <Link href={`/admin/users/${user.id}/edit`} className="text-indigo-600 hover:text-indigo-900">
                                                             <i className="bi bi-pencil"></i>
                                                         </Link>
-                                                        {user.status === 'active' && (
+                                                        {(isSuperAdmin || !user.is_owner) && user.status === 'active' && (
                                                             <>
                                                                 <button onClick={() => handleSuspend(user)} className="text-yellow-600 hover:text-yellow-900">
                                                                     <i className="bi bi-pause-circle"></i>
@@ -187,9 +195,11 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                                 <i className="bi bi-check-circle"></i>
                                                             </button>
                                                         )}
-                                                        <button onClick={() => confirmDelete(user)} className="text-red-600 hover:text-red-900">
-                                                            <i className="bi bi-trash"></i>
-                                                        </button>
+                                                        {(isSuperAdmin || !user.is_owner) && (
+                                                            <button onClick={() => confirmDelete(user)} className="text-red-600 hover:text-red-900">
+                                                                <i className="bi bi-trash"></i>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

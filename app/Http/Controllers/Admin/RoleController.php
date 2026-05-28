@@ -5,14 +5,23 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
+use App\Models\Tenant;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
+    private function getTenantFilter(): mixed
+    {
+        if (auth()->check() && auth()->user()->isSuperAdmin()) {
+            return false;
+        }
+        return Tenant::getCurrent();
+    }
+
     public function index(Request $request)
     {
         if (!auth()->user()->can('roles.view')) {
@@ -22,7 +31,10 @@ class RoleController extends Controller
         $search = $request->input('search');
 
         $roles = Role::with('permissions')
-            ->withCount('users')
+            ->withCount(['users' => function ($q) {
+                $q->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id));
+            }])
+            ->when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
             ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->paginate(10)
@@ -80,7 +92,12 @@ class RoleController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $role = Role::with('permissions')->withCount('users')->findOrFail($id);
+        $role = Role::with('permissions')
+            ->withCount(['users' => function ($q) {
+                $q->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id));
+            }])
+            ->when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
+            ->findOrFail($id);
 
         $groupedPermissions = $role->permissions
             ->groupBy(fn($p) => explode('.', $p->name)[0])
@@ -111,7 +128,9 @@ class RoleController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $role = Role::with('permissions')->findOrFail($id);
+        $role = Role::with('permissions')
+            ->when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
+            ->findOrFail($id);
 
         $groupedPermissions = $this->getGroupedPermissions();
 
@@ -128,7 +147,8 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, $id)
     {
-        $role = Role::findOrFail($id);
+        $role = Role::when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
+            ->findOrFail($id);
 
         $role->update(['name' => $request->name]);
 
@@ -162,16 +182,21 @@ class RoleController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $role = Role::findOrFail($id);
+        $role = Role::when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
+            ->findOrFail($id);
 
-        if (in_array($role->name, ['superadmin', 'customer'])) {
+        if (in_array($role->name, ['superadmin', 'admin', 'customer'])) {
             return redirect()->route('admin.roles.index')
                 ->with('error', "The '{$role->name}' role cannot be deleted.");
         }
 
-        if ($role->users()->count() > 0) {
+        $roleUserCount = $role->users()
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->count();
+
+        if ($roleUserCount > 0) {
             return redirect()->route('admin.roles.index')
-                ->with('error', "Cannot delete role '{$role->name}' because it is assigned to {$role->users()->count()} user(s). Please reassign them first.");
+                ->with('error', "Cannot delete role '{$role->name}' because it is assigned to {$roleUserCount} user(s). Please reassign them first.");
         }
 
         $roleName = $role->name;

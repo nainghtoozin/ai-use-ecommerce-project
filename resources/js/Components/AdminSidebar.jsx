@@ -10,6 +10,7 @@ import {
     Bell, Globe, BellRing, Send, Settings,
     Store, User, LogOut, Menu, X,
     ChevronLeft, ChevronRight, ChevronDown,
+    FileText,
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'admin_sidebar_section_';
@@ -45,6 +46,7 @@ export default function AdminSidebar() {
         'BellRing': BellRing,
         'Send': Send,
         'Settings': Settings,
+        'FileText': FileText,
     };
 
     const Icon = ({ name, className = '' }) => {
@@ -53,57 +55,79 @@ export default function AdminSidebar() {
         return <LucideIcon className={`w-5 h-5 ${className}`} />;
     };
 
-    const menuSections = useMemo(() => [
-        {
-            title: 'Main',
-            items: [
-                ...(can('dashboard.view') ? [{ label: 'Dashboard', href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
-                ...(can('products.view') ? [{ label: 'Products', href: '/admin/products', icon: 'Package' }] : []),
-                ...(can('categories.view') ? [{ label: 'Categories', href: '/admin/categories', icon: 'Tags' }] : []),
-                { label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' },
-            ]
-        },
-        {
-            title: 'Reports',
-            items: [
-                { label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' },
-                { label: 'Product Sales Report', href: '/admin/reports/product-sales', icon: 'ShoppingBag' },
-                { label: 'Payment Report', href: '/admin/reports/payments', icon: 'Receipt' },
-            ]
-        },
-        {
-            title: 'Orders',
-            items: [
-                ...(can('orders.view') ? [{ label: 'Orders', href: '/admin/orders', icon: 'ShoppingCart' }] : []),
-                ...(can('payments.view') ? [{ label: 'Payment Methods', href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
-            ]
-        },
-        {
-            title: 'Locations',
-            items: [
-                { label: 'Cities', href: '/admin/cities', icon: 'Building2' },
-                { label: 'Townships', href: '/admin/townships', icon: 'MapPin' },
-            ]
-        },
-        {
-            title: 'Users',
-            items: [
-                ...(can('users.view') ? [{ label: 'Users', href: '/admin/users', icon: 'Users' }] : []),
-                ...(can('roles.view') ? [{ label: 'Roles', href: '/admin/roles', icon: 'ShieldCheck' }] : []),
-                ...(can('activity-logs.view') ? [{ label: 'Activity Logs', href: '/admin/activity-logs', icon: 'History' }] : []),
-            ]
-        },
-        {
-            title: 'System',
-            items: [
-                { label: 'Notifications', href: '/admin/notifications', icon: 'Bell' },
-                { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
-                { label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' },
-                { label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' },
-                { label: 'Settings', href: '/admin/settings', icon: 'Settings' },
-            ]
-        }
-    ], [userPermissions]);
+    const isSuperAdmin = auth?.user?.is_superadmin;
+
+    const menuSections = useMemo(() => {
+        const sections = [
+            {
+                title: 'Main',
+                items: [
+                    ...(can('dashboard.view') ? [{ label: 'Dashboard', href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
+                ]
+            },
+            {
+                title: 'SaaS Management',
+                items: [
+                    { label: 'Merchants', href: '/superadmin/tenants', icon: 'Building2' },
+                    { label: 'Subscription Plans', href: '/superadmin/plans', icon: 'FileText' },
+                    { label: 'Subscriptions', href: '/superadmin/subscriptions', icon: 'CreditCard' },
+                ]
+            },
+            {
+                title: 'Catalog',
+                items: [
+                    ...(can('products.view') ? [{ label: 'Products', href: '/admin/products', icon: 'Package' }] : []),
+                    ...(can('categories.view') ? [{ label: 'Categories', href: '/admin/categories', icon: 'Tags' }] : []),
+                    { label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' },
+                ]
+            },
+            {
+                title: 'Orders',
+                items: [
+                    ...(can('orders.view') ? [{ label: 'Orders', href: '/admin/orders', icon: 'ShoppingCart' }] : []),
+                    ...(can('payments.view') ? [{ label: 'Payment Methods', href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
+                ]
+            },
+            {
+                title: 'Reports',
+                items: [
+                    { label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' },
+                    { label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' },
+                    { label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' },
+                ]
+            },
+            {
+                title: 'Locations',
+                items: [
+                    { label: 'Cities', href: '/admin/cities', icon: 'Building2' },
+                    { label: 'Townships', href: '/admin/townships', icon: 'MapPin' },
+                ]
+            },
+            {
+                title: 'System',
+                items: [
+                    ...(can('users.view') ? [{ label: 'Users', href: '/admin/users', icon: 'Users' }] : []),
+                    ...(can('roles.view') ? [{ label: 'Roles & Permissions', href: '/admin/roles', icon: 'ShieldCheck' }] : []),
+                    ...(can('activity-logs.view') ? [{ label: 'Activity Logs', href: '/admin/activity-logs', icon: 'History' }] : []),
+                    { label: 'Notifications', href: '/admin/notifications', icon: 'Bell' },
+                ]
+            },
+            {
+                title: 'Configuration',
+                items: [
+                    { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
+                    { label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' },
+                    { label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' },
+                    { label: 'Settings', href: '/admin/settings', icon: 'Settings' },
+                ]
+            }
+        ];
+
+        return sections.filter(s => {
+            if (s.title === 'SaaS Management') return !!isSuperAdmin;
+            return s.items.length > 0;
+        });
+    }, [userPermissions, isSuperAdmin]);
 
     function isActive(href) {
         if (href === '/') return url === '/';

@@ -21,7 +21,9 @@ class PaymentProofUploaded implements ShouldBroadcast
     public function broadcastOn(): array
     {
         $channels = [];
-        $admins = User::role('admin')->pluck('id');
+        $admins = User::role('admin')
+            ->where('users.tenant_id', $this->order->tenant_id)
+            ->pluck('id');
         foreach ($admins as $adminId) {
             $channels[] = new PrivateChannel('notifications.user.'.$adminId);
         }

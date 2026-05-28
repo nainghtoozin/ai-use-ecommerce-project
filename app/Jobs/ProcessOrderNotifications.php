@@ -47,7 +47,9 @@ class ProcessOrderNotifications implements ShouldQueue
         try {
             $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
 
-            $admins = User::role('admin')->get();
+            $admins = User::role('admin')
+                ->where('users.tenant_id', $this->order->tenant_id)
+                ->get();
 
             ActivityLogger::log(
                 'Order #' . $this->order->id . ' placed',

@@ -1,8 +1,11 @@
-import { Link, Head, router } from '@inertiajs/react';
+import { Link, Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
 
 export default function UsersShow({ user, activities }) {
+    const { props } = usePage();
+    const isSuperAdmin = props?.auth?.user?.is_superadmin ?? false;
+
     const statusBadge = (status) => {
         const colors = {
             active: 'bg-green-100 text-green-800',
@@ -15,6 +18,10 @@ export default function UsersShow({ user, activities }) {
             </span>
         );
     };
+
+    const ownerBadge = user.is_owner
+        ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Owner</span>
+        : null;
 
     function confirmDelete() {
         if (window.confirm(`Are you sure you want to delete "${user.name}"? This action cannot be undone.`)) {
@@ -48,6 +55,7 @@ export default function UsersShow({ user, activities }) {
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 {user.roles?.[0]?.name || 'N/A'}
                                             </span>
+                                            {ownerBadge}
                                             {statusBadge(user.status)}
                                         </div>
                                     </div>
@@ -56,9 +64,11 @@ export default function UsersShow({ user, activities }) {
                                     <Link href={`/admin/users/${user.id}/edit`} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
                                         <i className="bi bi-pencil mr-1"></i> Edit
                                     </Link>
-                                    <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
-                                        <i className="bi bi-trash mr-1"></i> Delete
-                                    </button>
+                                    {(isSuperAdmin || !user.is_owner) && (
+                                        <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+                                            <i className="bi bi-trash mr-1"></i> Delete
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 

@@ -24,7 +24,9 @@ class OrderPlaced implements ShouldBroadcast
         $customerChannel = 'notifications.user.'.$this->order->user_id;
         $channels = [new PrivateChannel($customerChannel)];
 
-        $admins = \App\Models\User::role('admin')->pluck('id');
+        $admins = \App\Models\User::role('admin')
+            ->where('users.tenant_id', $this->order->tenant_id)
+            ->pluck('id');
         foreach ($admins as $adminId) {
             $channels[] = new PrivateChannel('notifications.user.'.$adminId);
         }

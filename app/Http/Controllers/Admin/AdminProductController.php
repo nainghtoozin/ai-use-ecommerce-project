@@ -9,7 +9,7 @@ use App\Models\ProductCombo;
 use App\Models\ProductVariant;
 use App\Enums\ProductType;
 use App\Services\ImageService;
-use App\Services\DashboardCacheService;
+
 use App\Services\ActivityLogger;
 use App\Services\ProductService;
 use App\Services\SkuService;
@@ -280,7 +280,7 @@ class AdminProductController extends Controller
                 $this->productService->syncComboItems($product, $comboItemsPayload);
             }
 
-            app(DashboardCacheService::class)->clearProductRelatedCache();
+            
         });
 
         return redirect()->route('admin.products.index')
@@ -473,7 +473,7 @@ class AdminProductController extends Controller
                 $product->comboItems()->delete();
             }
 
-            app(DashboardCacheService::class)->clearProductRelatedCache();
+            
         });
 
         return redirect()->route('admin.products.index')
@@ -502,7 +502,7 @@ class AdminProductController extends Controller
             $product->delete();
         });
 
-        app(DashboardCacheService::class)->clearProductRelatedCache();
+        
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Product deleted successfully!');
@@ -556,7 +556,7 @@ class AdminProductController extends Controller
             ['product_ids' => $ids, 'count' => $products->count()]
         );
 
-        app(DashboardCacheService::class)->clearProductRelatedCache();
+        
 
         return redirect()->route('admin.products.index')
             ->with('success', "{$products->count()} product(s) deleted successfully.");
@@ -583,7 +583,7 @@ class AdminProductController extends Controller
             ['product_ids' => $ids, 'count' => $count]
         );
 
-        app(DashboardCacheService::class)->clearProductRelatedCache();
+        
 
         return redirect()->route('admin.products.index')
             ->with('success', "{$count} product(s) activated successfully.");
@@ -610,7 +610,7 @@ class AdminProductController extends Controller
             ['product_ids' => $ids, 'count' => $count]
         );
 
-        app(DashboardCacheService::class)->clearProductRelatedCache();
+        
 
         return redirect()->route('admin.products.index')
             ->with('success', "{$count} product(s) deactivated successfully.");

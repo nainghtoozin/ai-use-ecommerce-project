@@ -419,7 +419,12 @@ class OrderService
 
     private function fireLowStockAlert($product, int $threshold): void
     {
-        $admins = User::role('admin')->get();
+        $tenantId = is_object($product) ? $product->tenant_id : null;
+        $admins = User::role('admin');
+        if ($tenantId) {
+            $admins->where('users.tenant_id', $tenantId);
+        }
+        $admins = $admins->get();
         $adminsWhoWantLowStock = $this->preferenceService->filterUsersByPreference($admins, 'low_stock');
 
         if ($adminsWhoWantLowStock->isNotEmpty()) {

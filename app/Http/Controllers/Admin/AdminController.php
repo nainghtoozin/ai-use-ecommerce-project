@@ -20,11 +20,12 @@ class AdminController extends Controller
         $endDate = $request->input('end_date');
         $ttl = 300;
         $tz = config('app.timezone');
+        $tenantSuffix = '_' . (tenant()?->id ?? 'global');
 
         // ── Recent orders (cached) ──
         //     Only the last 10; with minimal columns + eager load.
         //     Index on created_at DESC is critical once the table exceeds ~100k rows.
-        $orders = Cache::remember('dashboard_recent_orders_v2', $ttl, fn() =>
+        $orders = Cache::remember('dashboard_recent_orders_v2' . $tenantSuffix, $ttl, fn() =>
             Order::with('user:id,name')
                 ->select('id', 'user_id', 'customer_name', 'first_name', 'last_name', 'total_amount', 'order_status', 'created_at')
                 ->orderByDesc('created_at')
@@ -36,7 +37,7 @@ class AdminController extends Controller
         //     Aggregates total + low-stock counts in a single table scan.
         //     Low-stock / out-of-stock detail lists are separate but use
         //     LIMIT 5 so they never scan more than a handful of rows.
-        $inventory = Cache::remember('dashboard_inventory_v2', $ttl, function () {
+        $inventory = Cache::remember('dashboard_inventory_v2' . $tenantSuffix, $ttl, function () {
             $counts = Product::selectRaw('COUNT(*) as total_products')
                 ->selectRaw("COALESCE(SUM(CASE WHEN stock > 0 AND stock < 10 THEN 1 ELSE 0 END), 0) as low_stock_count")
                 ->first();
@@ -65,12 +66,12 @@ class AdminController extends Controller
         // ── Per-period stats (cached) ──
         $suffix = $this->cacheSuffix($period, $startDate, $endDate);
 
-        $filteredStats = Cache::remember("dashboard_stats{$suffix}", $ttl, fn() =>
+        $filteredStats = Cache::remember("dashboard_stats{$suffix}{$tenantSuffix}", $ttl, fn() =>
             $this->computeStats($start, $end)
         );
 
         // ── Payment method breakdown (cached) ──
-        $paymentMethodSummary = Cache::remember("dashboard_pm{$suffix}", $ttl, fn() =>
+        $paymentMethodSummary = Cache::remember("dashboard_pm{$suffix}{$tenantSuffix}", $ttl, fn() =>
             $this->computePaymentSummary($start, $end)
         );
 
@@ -94,6 +95,7 @@ class AdminController extends Controller
     private function computeStats($start, $end): array
     {
         $stats = DB::table('orders')
+            ->when(tenant(), fn($q, $t) => $q->where('orders.tenant_id', $t->id))
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('COUNT(*) as filtered_orders_count')
             ->selectRaw("COALESCE(SUM(CASE WHEN payment_status = 'verified' OR order_status = 'confirmed' THEN total_amount ELSE 0 END), 0) as total_received_payments")
@@ -117,6 +119,7 @@ class AdminController extends Controller
     {
         return DB::table('orders')
             ->join('payment_methods', 'orders.payment_method_id', '=', 'payment_methods.id')
+            ->when(tenant(), fn($q, $t) => $q->where('orders.tenant_id', $t->id))
             ->whereBetween('orders.created_at', [$start, $end])
             ->whereNotNull('orders.payment_method_id')
             ->select('payment_methods.name', 'payment_methods.bank_name')

@@ -18,7 +18,9 @@ class OrderNotificationService
     public function notifyOrderPlaced(Order $order): void
     {
         try {
-            $admins = User::role('admin')->get();
+            $admins = User::role('admin')
+                ->where('users.tenant_id', $order->tenant_id)
+                ->get();
 
             $admins = $this->preferenceService->filterUsersByPreference($admins, 'new_order');
 

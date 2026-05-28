@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLog extends Model
 {
+    use TenantAware;
     protected $table = 'activity_logs';
 
     protected $fillable = [

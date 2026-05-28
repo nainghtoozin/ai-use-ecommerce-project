@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 
 class SyncUserRoles extends Command
 {
@@ -15,10 +15,6 @@ class SyncUserRoles extends Command
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
-
         $bar = $this->output->createProgressBar(User::count());
         $bar->start();
 
@@ -26,7 +22,12 @@ class SyncUserRoles extends Command
         User::chunk(100, function ($users) use ($bar, &$updated) {
             foreach ($users as $user) {
                 if (!$user->hasAnyRole(Role::all())) {
-                    $user->assignRole('customer');
+                    $customerRole = Role::firstOrCreate([
+                        'name' => 'customer',
+                        'guard_name' => 'web',
+                        'tenant_id' => $user->tenant_id,
+                    ]);
+                    $user->assignRole($customerRole);
                     $updated++;
                 }
                 $bar->advance();

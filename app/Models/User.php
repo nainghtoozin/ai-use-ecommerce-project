@@ -22,10 +22,12 @@ class User extends Authenticatable
     const STATUS_INACTIVE = 'inactive';
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'password',
         'status',
+        'is_owner',
         'profile_image',
         'notification_preferences',
         'plan_id',
@@ -44,6 +46,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_owner' => 'boolean',
             'notification_preferences' => 'array',
             'plan_started_at' => 'datetime',
             'plan_expires_at' => 'datetime',
@@ -79,7 +82,35 @@ class User extends Authenticatable
             if (empty($user->status)) {
                 $user->status = self::STATUS_ACTIVE;
             }
+
+            if (empty($user->tenant_id)) {
+                $tenant = \App\Models\Tenant::getCurrent();
+
+                if ($tenant) {
+                    $user->tenant_id = $tenant->id;
+                }
+            }
         });
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function scopeForTenant($query, $tenantId)
+    {
+        return $query->where('users.tenant_id', $tenantId);
+    }
+
+    public function isOwner(): bool
+    {
+        return (bool) $this->is_owner;
+    }
+
+    public function scopeOwners($query)
+    {
+        return $query->where('is_owner', true);
     }
 
     public function orders()
