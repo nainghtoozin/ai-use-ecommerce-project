@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
+export default function SubscriptionsIndex({ subscriptions, filters, stats, plans }) {
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
     const [showAssign, setShowAssign] = useState(false);
     const [assignTenant, setAssignTenant] = useState('');
     const [tenants, setTenants] = useState([]);
     const [planId, setPlanId] = useState('');
+    const [assignBillingInterval, setAssignBillingInterval] = useState('monthly');
     const [assigning, setAssigning] = useState(false);
 
     function handleSearch(e) {
@@ -33,12 +34,14 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
         router.post('/superadmin/subscriptions', {
             tenant_id: assignTenant,
             plan_id: planId,
+            billing_interval: assignBillingInterval,
         }, {
             preserveState: true,
             onSuccess: () => {
                 setShowAssign(false);
                 setAssignTenant('');
                 setPlanId('');
+                setAssignBillingInterval('monthly');
                 setAssigning(false);
             },
             onError: () => setAssigning(false),
@@ -109,7 +112,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
                         {showAssign && (
                             <form onSubmit={submitAssign} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Assign Subscription Plan</h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Tenant ID</label>
                                         <input
@@ -131,9 +134,20 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
                                             required
                                         >
                                             <option value="">Select plan...</option>
-                                            {subscriptions.data.length > 0 && subscriptions.data[0].plans_list?.map((plan) => (
+                                            {plans?.map((plan) => (
                                                 <option key={plan.id} value={plan.id}>{plan.name}</option>
                                             ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Billing Cycle</label>
+                                        <select
+                                            value={assignBillingInterval}
+                                            onChange={(e) => setAssignBillingInterval(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        >
+                                            <option value="monthly">Monthly</option>
+                                            <option value="yearly">Yearly</option>
                                         </select>
                                     </div>
                                     <div className="flex items-end">
@@ -173,6 +187,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Billing</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
@@ -188,6 +203,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
                                                 <div className="text-xs text-gray-500">{sub.tenant?.email || ''}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sub.plan?.name || '—'}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.billing_interval === 'yearly' ? 'Yearly' : 'Monthly'}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[sub.status] || 'bg-gray-100 text-gray-800'}`}>
                                                     {sub.status}
@@ -211,7 +227,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats }) {
                                     ))}
                                     {subscriptions.data.length === 0 && (
                                         <tr>
-                                            <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                                            <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
                                                 No subscriptions found.
                                             </td>
                                         </tr>

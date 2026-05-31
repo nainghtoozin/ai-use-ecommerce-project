@@ -139,7 +139,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {users.data.map((user) => (
+                                        {users?.data?.map((user) => (
                                             <tr key={user.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
@@ -204,7 +204,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                 </td>
                                             </tr>
                                         ))}
-                                        {users.data.length === 0 && (
+                                        {(!users?.data || users.data.length === 0) && (
                                             <tr>
                                                 <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                                                     No users found.
@@ -215,7 +215,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                 </table>
                             </div>
 
-                            {users.links && showPagination && (
+                            {users?.links && showPagination && (
                                 <div className="mt-6">
                                     {users.links.map((link, i) => (
                                         <button

@@ -38,6 +38,16 @@ class PlanController extends Controller
 
     public function store(Request $request)
     {
+        // Inertia FormData converts JS null → empty string.
+        // Convert empty strings back to null so nullable rules pass.
+        $request->merge([
+            'product_limit' => $request->product_limit === '' ? null : $request->product_limit,
+            'staff_limit' => $request->staff_limit === '' ? null : $request->staff_limit,
+            'storage_limit' => $request->storage_limit === '' ? null : $request->storage_limit,
+            'monthly_price' => $request->monthly_price === '' ? null : $request->monthly_price,
+            'yearly_price' => $request->yearly_price === '' ? null : $request->yearly_price,
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:plans,slug|regex:/^[a-z0-9\-]+$/',
@@ -67,6 +77,14 @@ class PlanController extends Controller
 
     public function update(Request $request, Plan $plan)
     {
+        $request->merge([
+            'product_limit' => $request->product_limit === '' ? null : $request->product_limit,
+            'staff_limit' => $request->staff_limit === '' ? null : $request->staff_limit,
+            'storage_limit' => $request->storage_limit === '' ? null : $request->storage_limit,
+            'monthly_price' => $request->monthly_price === '' ? null : $request->monthly_price,
+            'yearly_price' => $request->yearly_price === '' ? null : $request->yearly_price,
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:plans,slug,' . $plan->id . '|regex:/^[a-z0-9\-]+$/',

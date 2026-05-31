@@ -89,6 +89,7 @@ class AdminUserController extends Controller
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Index', [
+            'users' => $users,
             'showPagination' => $showPagination,
             'warning' => $warning,
             'filters' => ['search' => $search, 'role' => $role, 'status' => $status],

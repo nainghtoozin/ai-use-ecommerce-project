@@ -34,6 +34,8 @@ class SubscriptionController extends Controller
         $totalExpired = Subscription::where('status', 'expired')->count();
         $expiringSoon = Subscription::expiringSoon()->count();
 
+        $plans = Plan::active()->ordered()->get(['id', 'name', 'slug', 'monthly_price', 'yearly_price']);
+
         return Inertia::render('SuperAdmin/Subscriptions/Index', [
             'subscriptions' => $subscriptions,
             'filters' => ['search' => $search, 'status' => $status],
@@ -43,6 +45,7 @@ class SubscriptionController extends Controller
                 'expired' => $totalExpired,
                 'expiring_soon' => $expiringSoon,
             ],
+            'plans' => $plans,
         ]);
     }
 
@@ -58,12 +61,15 @@ class SubscriptionController extends Controller
         $usage = $this->getTenantUsage($subscription->tenant);
 
         $plans = Plan::active()->ordered()->get(['id', 'name', 'slug', 'monthly_price', 'yearly_price']);
+        $intervals = ['monthly', 'yearly'];
 
         return Inertia::render('SuperAdmin/Subscriptions/Show', [
             'subscription' => $subscription,
             'history' => $history,
             'usage' => $usage,
             'plans' => $plans,
+            'intervals' => $intervals,
+            'currentInterval' => $subscription->billing_interval ?? 'monthly',
         ]);
     }
 
@@ -72,6 +78,7 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'tenant_id' => 'required|exists:tenants,id',
             'plan_id' => 'required|exists:plans,id',
+            'billing_interval' => 'nullable|in:monthly,yearly',
             'status' => 'nullable|in:active,trialing',
             'trial_ends_at' => 'nullable|date|after:now',
             'expires_at' => 'nullable|date|after:now',
@@ -89,12 +96,16 @@ class SubscriptionController extends Controller
                 ->with('error', "Tenant \"{$tenant->name}\" already has an active subscription. Change the plan instead.");
         }
 
+        $plan = Plan::findOrFail($validated['plan_id']);
+        $billingInterval = $validated['billing_interval'] ?? $plan->defaultInterval();
+
         $subscription = Subscription::create([
             'tenant_id' => $tenant->id,
-            'plan_id' => $validated['plan_id'],
+            'plan_id' => $plan->id,
+            'billing_interval' => $billingInterval,
             'status' => $validated['status'] ?? 'active',
             'starts_at' => now(),
-            'expires_at' => $validated['expires_at'] ?? null,
+            'expires_at' => $validated['expires_at'] ?? $plan->calculateExpiryDate(now(), $billingInterval),
             'trial_ends_at' => $validated['trial_ends_at'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
@@ -111,6 +122,7 @@ class SubscriptionController extends Controller
     {
         $validated = $request->validate([
             'plan_id' => 'required|exists:plans,id',
+            'billing_interval' => 'nullable|in:monthly,yearly',
             'reason' => 'nullable|string|max:500',
         ]);
 
@@ -130,9 +142,15 @@ class SubscriptionController extends Controller
             }
         }
 
+        $billingInterval = $validated['billing_interval'] ?? $newPlan->defaultInterval();
+
         $subscription->update([
+            'plan_id' => $newPlan->id,
+            'billing_interval' => $billingInterval,
             'status' => 'active',
-            'expires_at' => null,
+            'expires_at' => $subscription->expires_at?->isFuture()
+                ? $subscription->expires_at
+                : $newPlan->calculateExpiryDate(now(), $billingInterval),
             'notes' => $subscription->notes
                 ? $subscription->notes . "\n[" . now() . "] Plan changed: {$oldPlan?->name} → {$newPlan->name}. {$validated['reason']}"
                 : "[" . now() . "] Plan changed: {$oldPlan?->name} → {$newPlan->name}. {$validated['reason']}",
@@ -167,14 +185,23 @@ class SubscriptionController extends Controller
             ? "[" . now() . "] Canceled. Reason: {$validated['reason']}"
             : "[" . now() . "] Canceled by SuperAdmin.";
 
+        // If no future expiry, end access at cancel time.
+        // If there is a future expiry, the merchant keeps access until then.
+        $expiresAt = $subscription->expires_at?->isFuture()
+            ? $subscription->expires_at
+            : now();
+
         $subscription->update([
             'status' => 'canceled',
             'cancelled_at' => now(),
+            'expires_at' => $expiresAt,
             'notes' => $subscription->notes ? $subscription->notes . "\n" . $note : $note,
         ]);
 
         return redirect()->route('superadmin.subscriptions.show', $subscription)
-            ->with('success', 'Subscription canceled. Merchant retains access until expiration.');
+            ->with('success', $subscription->expires_at->isFuture()
+                ? 'Subscription canceled. Merchant retains access until ' . $subscription->expires_at->toFormattedDateString() . '.'
+                : 'Subscription canceled. Access ended immediately.');
     }
 
     public function suspend(Subscription $subscription)
@@ -198,6 +225,11 @@ class SubscriptionController extends Controller
                 ->whereHas('roles', fn($q) => $q->where('name', 'admin'))
                 ->count(),
         ];
+    }
+
+    private function calculateExpiryForPlan(Plan $plan): ?Carbon
+    {
+        return $plan->calculateExpiryDate();
     }
 
     private function checkDowngradeWarnings(Tenant $tenant, Plan $newPlan): array

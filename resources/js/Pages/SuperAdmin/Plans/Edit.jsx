@@ -2,6 +2,38 @@ import { useState } from 'react';
 import { Link, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
+function Input({ field, label, type = 'text', placeholder = '', required = false, helpText = null, form, errors, handleChange }) {
+    const id = `field_${field}`;
+    return (
+        <div>
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+                {label} {required && '*'}
+            </label>
+            {type === 'textarea' ? (
+                <textarea
+                    id={id}
+                    value={form[field]}
+                    onChange={(e) => handleChange(field, e.target.value)}
+                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                    rows={3}
+                />
+            ) : (
+                <input
+                    id={id}
+                    type={type}
+                    value={form[field]}
+                    onChange={(e) => handleChange(field, type === 'checkbox' ? e.target.checked : e.target.value)}
+                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm ${type === 'checkbox' ? 'w-4 h-4' : ''}`}
+                    placeholder={placeholder}
+                    required={required}
+                />
+            )}
+            {helpText && <p className="text-xs text-gray-400 mt-1">{helpText}</p>}
+            {errors[field] && <p className="text-xs text-red-600 mt-1">{errors[field]}</p>}
+        </div>
+    );
+}
+
 export default function EditPlan({ plan }) {
     const [form, setForm] = useState({
         name: plan.name,
@@ -44,38 +76,6 @@ export default function EditPlan({ plan }) {
         });
     }
 
-    function Input({ field, label, type = 'text', placeholder = '', required = false, helpText = null }) {
-        const id = `field_${field}`;
-        return (
-            <div>
-                <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
-                    {label} {required && '*'}
-                </label>
-                {type === 'textarea' ? (
-                    <textarea
-                        id={id}
-                        value={form[field]}
-                        onChange={(e) => handleChange(field, e.target.value)}
-                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                        rows={3}
-                    />
-                ) : (
-                    <input
-                        id={id}
-                        type={type}
-                        value={form[field]}
-                        onChange={(e) => handleChange(field, type === 'checkbox' ? e.target.checked : e.target.value)}
-                        className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm ${type === 'checkbox' ? 'w-4 h-4' : ''}`}
-                        placeholder={placeholder}
-                        required={required}
-                    />
-                )}
-                {helpText && <p className="text-xs text-gray-400 mt-1">{helpText}</p>}
-                {errors[field] && <p className="text-xs text-red-600 mt-1">{errors[field]}</p>}
-            </div>
-        );
-    }
-
     return (
         <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Edit Plan: {plan.name}</h2>}>
             <Head title={`Edit Plan - ${plan.name}`} />
@@ -88,12 +88,12 @@ export default function EditPlan({ plan }) {
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Plan Details</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <Input field="name" label="Plan Name" required placeholder="Starter" />
-                                    <Input field="slug" label="Slug" required placeholder="starter" helpText="URL-safe identifier." />
+                                    <Input field="name" label="Plan Name" required placeholder="Starter" form={form} errors={errors} handleChange={handleChange} />
+                                    <Input field="slug" label="Slug" required placeholder="starter" helpText="URL-safe identifier." form={form} errors={errors} handleChange={handleChange} />
                                 </div>
 
                                 <div className="mt-4">
-                                    <Input field="description" label="Description" type="textarea" placeholder="For growing stores..." />
+                                    <Input field="description" label="Description" type="textarea" placeholder="For growing stores..." form={form} errors={errors} handleChange={handleChange} />
                                 </div>
                             </div>
 
@@ -101,8 +101,8 @@ export default function EditPlan({ plan }) {
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <Input field="monthly_price" label="Monthly Price ($)" type="number" placeholder="29" helpText="Set to 0 for free plan. Leave empty if not available." />
-                                    <Input field="yearly_price" label="Yearly Price ($)" type="number" placeholder="290" helpText="Leave empty if not available." />
+                                    <Input field="monthly_price" label="Monthly Price ($)" type="number" placeholder="29" helpText="Set to 0 for free plan. Leave empty if not available." form={form} errors={errors} handleChange={handleChange} />
+                                    <Input field="yearly_price" label="Yearly Price ($)" type="number" placeholder="290" helpText="Leave empty if not available." form={form} errors={errors} handleChange={handleChange} />
                                 </div>
                             </div>
 
@@ -110,9 +110,9 @@ export default function EditPlan({ plan }) {
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Limits</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                    <Input field="product_limit" label="Product Limit" type="number" placeholder="50" helpText="Leave empty for unlimited." />
-                                    <Input field="staff_limit" label="Staff Accounts" type="number" placeholder="3" helpText="Leave empty for unlimited." />
-                                    <Input field="storage_limit" label="Storage (MB)" type="number" placeholder="1000" helpText="Leave empty for unlimited." />
+                                    <Input field="product_limit" label="Product Limit" type="number" placeholder="e.g. 100" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                    <Input field="staff_limit" label="Staff Accounts" type="number" placeholder="e.g. 10" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                    <Input field="storage_limit" label="Storage (MB)" type="number" placeholder="e.g. 1000" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
                                 </div>
                             </div>
 

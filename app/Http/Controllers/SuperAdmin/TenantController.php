@@ -74,6 +74,17 @@ class TenantController extends Controller
 
             Tenant::clearDefaultCache();
 
+            $plan = \App\Models\Plan::find($validated['plan_id']) ?? \App\Models\Plan::free();
+            $billingInterval = $plan?->defaultInterval() ?? 'monthly';
+            \App\Models\Subscription::create([
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan?->id,
+                'billing_interval' => $billingInterval,
+                'status' => in_array($tenant->status, ['trialing', 'active']) ? $tenant->status : 'active',
+                'starts_at' => now(),
+                'expires_at' => $plan?->calculateExpiryDate(now(), $billingInterval),
+            ]);
+
             foreach (['admin', 'customer'] as $roleName) {
                 Role::firstOrCreate([
                     'name' => $roleName,
@@ -175,6 +186,13 @@ class TenantController extends Controller
             'settings' => $settings,
         ]);
 
+        if ($validated['plan_id']) {
+            $subscription = $tenant->subscription;
+            if ($subscription && $subscription->isInGoodStanding()) {
+                $subscription->update(['plan_id' => $validated['plan_id']]);
+            }
+        }
+
         Tenant::clearDefaultCache();
 
         return redirect()->route('superadmin.tenants.index')
@@ -183,8 +201,13 @@ class TenantController extends Controller
 
     public function toggleStatus(Tenant $tenant)
     {
-        $tenant->status = $tenant->status === 'active' ? 'suspended' : 'active';
+        $wasSuspended = $tenant->status === 'suspended';
+        $tenant->status = $wasSuspended ? 'active' : 'suspended';
         $tenant->save();
+
+        if (!$wasSuspended && $tenant->subscription?->isInGoodStanding()) {
+            $tenant->subscription->markAsExpired();
+        }
 
         Tenant::clearDefaultCache();
 

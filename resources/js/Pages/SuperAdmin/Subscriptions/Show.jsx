@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function ShowSubscription({ subscription, history, usage, plans }) {
+export default function ShowSubscription({ subscription, history, usage, plans, intervals, currentInterval }) {
     const { props } = usePage();
     const flash = props?.flash || {};
     const [showChangePlan, setShowChangePlan] = useState(false);
@@ -13,6 +13,7 @@ export default function ShowSubscription({ subscription, history, usage, plans }
     const [cancelReason, setCancelReason] = useState('');
     const [changePlanId, setChangePlanId] = useState('');
     const [changeReason, setChangeReason] = useState('');
+    const [changeBillingInterval, setChangeBillingInterval] = useState(currentInterval || 'monthly');
     const [processing, setProcessing] = useState(false);
 
     const downgradeWarnings = flash?.downgrade_warnings;
@@ -37,10 +38,11 @@ export default function ShowSubscription({ subscription, history, usage, plans }
         setProcessing(true);
         router.put(`/superadmin/subscriptions/${subscription.id}/change-plan`, {
             plan_id: changePlanId,
+            billing_interval: changeBillingInterval,
             reason: changeReason,
         }, {
             preserveState: true,
-            onSuccess: () => { setShowChangePlan(false); setChangePlanId(''); setChangeReason(''); setProcessing(false); },
+            onSuccess: () => { setShowChangePlan(false); setChangePlanId(''); setChangeReason(''); setChangeBillingInterval(currentInterval || 'monthly'); setProcessing(false); },
             onError: () => setProcessing(false),
         });
     }
@@ -164,7 +166,7 @@ export default function ShowSubscription({ subscription, history, usage, plans }
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Change Plan</h3>
                             <form onSubmit={handleChangePlan} className="space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">New Plan</label>
                                         <select
@@ -177,6 +179,20 @@ export default function ShowSubscription({ subscription, history, usage, plans }
                                             {plans.filter(p => p.id !== subscription.plan_id).map((plan) => (
                                                 <option key={plan.id} value={plan.id}>
                                                     {plan.name} {plan.monthly_price ? `(monthly: ${plan.monthly_price})` : ''} {plan.yearly_price ? `/ yearly: ${plan.yearly_price}` : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
+                                        <select
+                                            value={changeBillingInterval}
+                                            onChange={(e) => setChangeBillingInterval(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        >
+                                            {intervals?.map((interval) => (
+                                                <option key={interval} value={interval}>
+                                                    {interval === 'monthly' ? 'Monthly' : 'Yearly'}
                                                 </option>
                                             ))}
                                         </select>
@@ -314,6 +330,17 @@ export default function ShowSubscription({ subscription, history, usage, plans }
                             <div>
                                 <dt className="text-sm text-gray-500">Plan</dt>
                                 <dd className="text-sm font-medium text-gray-900">{subscription.plan?.name || '—'}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-sm text-gray-500">Billing Cycle</dt>
+                                <dd className="text-sm font-medium text-gray-900">
+                                    {subscription.billing_interval === 'yearly' ? 'Yearly' : 'Monthly'}
+                                    {subscription.plan?.yearly_price && subscription.billing_interval === 'yearly' && (
+                                        <span className="text-xs text-green-600 ml-1">
+                                            (saves {Math.round((1 - subscription.plan.yearly_price / (subscription.plan.monthly_price * 12)) * 100)}%)
+                                        </span>
+                                    )}
+                                </dd>
                             </div>
                             <div>
                                 <dt className="text-sm text-gray-500">Status</dt>

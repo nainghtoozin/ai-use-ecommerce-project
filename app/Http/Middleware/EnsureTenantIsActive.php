@@ -38,6 +38,11 @@ class EnsureTenantIsActive
             abort(403, 'This store is currently suspended. Contact support.');
         }
 
+        if ($tenant->subscriptionExpired()) {
+            auth()->logout();
+            abort(403, 'Your subscription has expired. Please renew to continue.');
+        }
+
         return $next($request);
     }
 }

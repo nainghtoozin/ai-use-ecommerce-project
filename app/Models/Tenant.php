@@ -55,6 +55,13 @@ class Tenant extends Model
         return $this->hasOne(Subscription::class)->latestOfMany();
     }
 
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)
+            ->whereIn('status', ['trialing', 'active'])
+            ->latestOfMany();
+    }
+
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);
@@ -77,20 +84,13 @@ class Tenant extends Model
 
     public function hasActiveSubscription(): bool
     {
-        if ($this->status !== 'active' && $this->status !== 'trialing') {
-            return false;
-        }
-
-        if ($this->expires_at && $this->expires_at->isPast()) {
-            return false;
-        }
-
-        return true;
+        return $this->activeSubscription()->exists();
     }
 
     public function subscriptionExpired(): bool
     {
-        return $this->expires_at && $this->expires_at->isPast();
+        $subscription = $this->subscription;
+        return $subscription && $subscription->hasExpired();
     }
 
     public static function getDefault(): ?self
@@ -121,8 +121,14 @@ class Tenant extends Model
 
     public function scopeExpired($query)
     {
-        return $query->whereNotNull('expires_at')
-            ->where('expires_at', '<', now());
+        return $query->whereHas('subscription', function ($q) {
+            $q->where('status', 'expired')
+              ->orWhere(function ($q) {
+                  $q->whereNotNull('expires_at')
+                    ->where('expires_at', '<', now())
+                    ->whereNotIn('status', ['canceled']);
+              });
+        });
     }
 
     public function scopeTrialing($query)

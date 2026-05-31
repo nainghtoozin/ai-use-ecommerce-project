@@ -10,6 +10,7 @@ class Subscription extends Model
     protected $fillable = [
         'tenant_id',
         'plan_id',
+        'billing_interval',
         'status',
         'starts_at',
         'expires_at',
@@ -24,6 +25,13 @@ class Subscription extends Model
         'trial_ends_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    /* ── Billing helpers ── */
+
+    public function billedPrice(): ?float
+    {
+        return $this->plan?->getPriceForInterval($this->billing_interval ?? 'monthly');
+    }
 
     /* ── Relationships ── */
 
@@ -97,8 +105,12 @@ class Subscription extends Model
             return true;
         }
 
+        if ($this->status === 'trialing') {
+            return $this->trial_ends_at && $this->trial_ends_at->isPast();
+        }
+
         return $this->expires_at && $this->expires_at->isPast()
-            && !in_array($this->status, ['canceled']);
+            && $this->status !== 'canceled';
     }
 
     public function daysUntilExpiry(): int
@@ -142,8 +154,8 @@ class Subscription extends Model
     {
         $this->update([
             'status' => 'active',
-            'expires_at' => $expiresAt,
-            'notes' => $notes ? ($this->notes ? $this->notes . "\n" . $notes : $notes) : $this->notes,
+            'expires_at' => $expiresAt->endOfDay(),
+            'notes' => $notes ? ($this->notes ? $this->notes . "\n" . $notes : $notes) : $notes,
         ]);
 
         if ($this->tenant->status === 'suspended') {
@@ -159,6 +171,12 @@ class Subscription extends Model
             'expires_at' => now(),
         ]);
     }
+
+    /**
+     * Grace period used by markAsExpired. Number of days after expires_at
+     * before the tenant is automatically suspended.
+     */
+    public const GRACE_DAYS = 7;
 
     /* ── Scope ── */
 

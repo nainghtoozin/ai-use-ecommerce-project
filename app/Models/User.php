@@ -128,11 +128,11 @@ class User extends Authenticatable
      */
     public function getActivePlan(): ?Plan
     {
-        if ($this->plan) {
-            return $this->plan;
+        if ($this->isSuperAdmin()) {
+            return null;
         }
-
-        return Plan::defaultPlan();
+        $subscription = $this->tenant?->subscription;
+        return $subscription?->plan ?? Plan::free();
     }
 
     /**
@@ -150,13 +150,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user has an active paid subscription.
+     * Check if user's tenant has an active subscription.
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->plan_status === 'active'
-            && $this->plan_id !== null
-            && (!$this->plan_expires_at || $this->plan_expires_at->isFuture());
+        return $this->tenant?->hasActiveSubscription() ?? false;
     }
 
     public function wishlistItems()

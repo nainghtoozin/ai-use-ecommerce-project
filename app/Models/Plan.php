@@ -33,9 +33,8 @@ class Plan extends Model
     protected $casts = [
         'monthly_price' => 'decimal:2',
         'yearly_price' => 'decimal:2',
-        'product_limit' => 'integer',
-        'staff_limit' => 'integer',
-        'storage_limit' => 'integer',
+        // NOT casting to integer — null means unlimited, 0 means zero.
+        // The integer cast would convert DB NULL → 0, losing the distinction.
         'analytics_enabled' => 'boolean',
         'custom_domain_enabled' => 'boolean',
         // Deprecated compat
@@ -169,11 +168,49 @@ class Plan extends Model
         return static::free();
     }
 
+    /* ── Billing period helpers ── */
+
+    public function calculateExpiryDate(\Carbon\Carbon $from = null, string $interval = 'monthly'): ?\Carbon\Carbon
+    {
+        $from = $from ?? now();
+        if ($this->isFree()) {
+            return null;
+        }
+        return match ($interval) {
+            'monthly' => $from->copy()->addMonth()->endOfDay(),
+            'yearly' => $from->copy()->addYear()->endOfDay(),
+            default => null,
+        };
+    }
+
+    public function defaultInterval(): string
+    {
+        if ($this->isFree()) {
+            return 'monthly';
+        }
+        if ($this->monthly_price && $this->monthly_price > 0) {
+            return 'monthly';
+        }
+        if ($this->yearly_price && $this->yearly_price > 0) {
+            return 'yearly';
+        }
+        return 'monthly';
+    }
+
     /* ── Price helpers ── */
 
     public function getPrice(string $interval = 'monthly'): ?float
     {
         return $interval === 'yearly' ? $this->yearly_price : $this->monthly_price;
+    }
+
+    public function getPriceForInterval(string $interval): ?float
+    {
+        return match ($interval) {
+            'monthly' => $this->monthly_price,
+            'yearly' => $this->yearly_price,
+            default => null,
+        };
     }
 
     public function yearlySavingsPercent(): ?float
