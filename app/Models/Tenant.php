@@ -126,7 +126,7 @@ class Tenant extends Model
               ->orWhere(function ($q) {
                   $q->whereNotNull('expires_at')
                     ->where('expires_at', '<', now())
-                    ->whereNotIn('status', ['canceled']);
+                    ->whereNotIn('status', ['canceled', 'suspended']);
               });
         });
     }

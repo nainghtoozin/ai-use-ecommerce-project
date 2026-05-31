@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\TenantDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -86,11 +87,20 @@ class TenantController extends Controller
             ]);
 
             foreach (['admin', 'customer'] as $roleName) {
-                Role::firstOrCreate([
+                $role = Role::firstOrCreate([
                     'name' => $roleName,
                     'guard_name' => 'web',
                     'tenant_id' => $tenant->id,
                 ]);
+
+                if ($role->wasRecentlyCreated) {
+                    $globalRole = Role::where('name', $roleName)
+                        ->whereNull('tenant_id')
+                        ->first();
+                    if ($globalRole) {
+                        $role->syncPermissions($globalRole->permissions);
+                    }
+                }
             }
 
             if (!empty($validated['create_admin']) && !empty($validated['admin_email'])) {
@@ -202,41 +212,44 @@ class TenantController extends Controller
     public function toggleStatus(Tenant $tenant)
     {
         $wasSuspended = $tenant->status === 'suspended';
-        $tenant->status = $wasSuspended ? 'active' : 'suspended';
-        $tenant->save();
 
-        if (!$wasSuspended && $tenant->subscription?->isInGoodStanding()) {
-            $tenant->subscription->markAsExpired();
+        if ($wasSuspended) {
+            $tenant->status = 'active';
+            $tenant->save();
+
+            if ($tenant->subscription && $tenant->subscription->isSuspended()) {
+                $tenant->subscription->activate();
+            }
+
+            $action = 'activated';
+        } else {
+            $tenant->status = 'suspended';
+            $tenant->save();
+
+            if ($tenant->subscription && $tenant->subscription->isInGoodStanding()) {
+                $tenant->subscription->suspend();
+            }
+
+            $action = 'suspended';
         }
 
         Tenant::clearDefaultCache();
 
-        $action = $tenant->status === 'active' ? 'activated' : 'suspended';
         return redirect()->route('superadmin.tenants.index')
             ->with('success', "Tenant \"{$tenant->name}\" {$action} successfully.");
     }
 
-    public function destroy(Tenant $tenant)
+    public function destroy(Tenant $tenant, TenantDeletionService $deletionService)
     {
         if ($tenant->slug === 'default') {
             return redirect()->route('superadmin.tenants.index')
                 ->with('error', 'The default tenant cannot be deleted.');
         }
 
-        $tenant->delete();
-        Tenant::clearDefaultCache();
+        $deletionService->delete($tenant);
 
         return redirect()->route('superadmin.tenants.index')
             ->with('success', "Tenant \"{$tenant->name}\" deleted successfully.");
     }
 
-    private function ensureTenantRoles(): void
-    {
-        $names = ['superadmin', 'admin', 'customer'];
-        foreach ($names as $name) {
-            Role::firstOrCreate(
-                ['name' => $name, 'guard_name' => 'web']
-            );
-        }
-    }
 }

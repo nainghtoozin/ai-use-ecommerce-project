@@ -37,10 +37,11 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
         expired: 'bg-red-100 text-red-800',
     };
 
-    const canChangePlan = ['active', 'trialing', 'past_due'].includes(subscription.status);
-    const canRenew = ['active', 'past_due', 'canceled'].includes(subscription.status);
+    const canChangePlan = ['active', 'trialing', 'past_due', 'suspended', 'expired'].includes(subscription.status);
+    const canRenew = ['active', 'past_due', 'canceled', 'suspended', 'expired'].includes(subscription.status);
     const canCancel = ['active', 'trialing', 'past_due'].includes(subscription.status);
-    const canSuspend = !['expired'].includes(subscription.status);
+    const canSuspend = ['active', 'trialing'].includes(subscription.status);
+    const canActivate = ['suspended'].includes(subscription.status);
     const canAssignPlans = plans?.length > 0;
 
     function handleChangePlan(e) {
@@ -97,6 +98,15 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
         if (!window.confirm('Suspend this subscription? The merchant will lose access immediately.')) return;
         setProcessing(true);
         router.post(`/superadmin/subscriptions/${subscription.id}/suspend`, {}, {
+            preserveState: true,
+            onFinish: () => setProcessing(false),
+        });
+    }
+
+    function handleActivate() {
+        if (!window.confirm('Activate this subscription? The merchant will regain access.')) return;
+        setProcessing(true);
+        router.post(`/superadmin/subscriptions/${subscription.id}/activate`, {}, {
             preserveState: true,
             onFinish: () => setProcessing(false),
         });
@@ -204,6 +214,15 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                                         className="px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
                                     >
                                         Cancel
+                                    </button>
+                                )}
+                                {canActivate && (
+                                    <button
+                                        onClick={handleActivate}
+                                        disabled={processing}
+                                        className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                    >
+                                        Activate
                                     </button>
                                 )}
                                 {canSuspend && (

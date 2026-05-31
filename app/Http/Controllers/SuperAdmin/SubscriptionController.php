@@ -222,15 +222,30 @@ class SubscriptionController extends Controller
 
     public function suspend(Subscription $subscription)
     {
-        if ($subscription->isExpired()) {
+        if (!$subscription->isInGoodStanding()) {
             return redirect()->route('superadmin.subscriptions.show', $subscription)
-                ->with('error', 'Subscription is already expired.');
+                ->with('error', 'Only active or trialing subscriptions can be suspended.');
         }
 
-        $subscription->markAsExpired();
+        $subscription->suspend();
+        $subscription->tenant->update(['status' => 'suspended']);
 
         return redirect()->route('superadmin.subscriptions.show', $subscription)
-            ->with('success', 'Subscription suspended. Tenant access revoked.');
+            ->with('success', 'Subscription suspended. Remaining time preserved.');
+    }
+
+    public function activate(Subscription $subscription)
+    {
+        if (!$subscription->isSuspended()) {
+            return redirect()->route('superadmin.subscriptions.show', $subscription)
+                ->with('error', 'Only suspended subscriptions can be activated.');
+        }
+
+        $subscription->activate();
+        $subscription->tenant->update(['status' => 'active']);
+
+        return redirect()->route('superadmin.subscriptions.show', $subscription)
+            ->with('success', 'Subscription activated. Remaining time restored.');
     }
 
     private function getTenantUsage(Tenant $tenant): array

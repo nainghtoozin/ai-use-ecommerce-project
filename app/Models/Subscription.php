@@ -16,6 +16,7 @@ class Subscription extends Model
         'expires_at',
         'trial_ends_at',
         'cancelled_at',
+        'suspended_at',
         'notes',
     ];
 
@@ -24,6 +25,7 @@ class Subscription extends Model
         'expires_at' => 'datetime',
         'trial_ends_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'suspended_at' => 'datetime',
     ];
 
     /* ── Billing helpers ── */
@@ -72,6 +74,11 @@ class Subscription extends Model
         return $this->status === 'expired';
     }
 
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspended';
+    }
+
     public function isInGoodStanding(): bool
     {
         return in_array($this->status, ['trialing', 'active']);
@@ -103,6 +110,10 @@ class Subscription extends Model
     {
         if ($this->status === 'expired') {
             return true;
+        }
+
+        if ($this->status === 'suspended') {
+            return false;
         }
 
         if ($this->status === 'trialing') {
@@ -139,7 +150,40 @@ class Subscription extends Model
     public function markAsExpired(): void
     {
         $this->update(['status' => 'expired']);
-        $this->tenant->update(['status' => 'suspended']);
+    }
+
+    public function suspend(): void
+    {
+        $this->update([
+            'status' => 'suspended',
+            'suspended_at' => now(),
+        ]);
+    }
+
+    public function activate(): void
+    {
+        if (!$this->suspended_at) {
+            $this->update(['status' => 'active']);
+            return;
+        }
+
+        if (!$this->expires_at) {
+            $this->update([
+                'status' => 'active',
+                'suspended_at' => null,
+            ]);
+            return;
+        }
+
+        $remainingSeconds = max(0, abs($this->expires_at->diffInSeconds($this->suspended_at)));
+
+        $newExpiry = now()->addSeconds($remainingSeconds);
+
+        $this->update([
+            'status' => 'active',
+            'expires_at' => $newExpiry,
+            'suspended_at' => null,
+        ]);
     }
 
     public function markAsCanceled(?Carbon $at = null): void

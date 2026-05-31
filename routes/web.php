@@ -175,6 +175,8 @@ Route::middleware('auth')->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid'])->group(function () {
     // ── Account routes (accessible even when expired/suspended) ──
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');
+    Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
 
     // ── Operations routes (blocked when expired/suspended) ──
     Route::middleware('subscription.active')->group(function () {
@@ -366,6 +368,7 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
     Route::post('/subscriptions/{subscription}/renew-from-interval', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'renewFromInterval'])->name('subscriptions.renew-from-interval');
     Route::post('/subscriptions/{subscription}/cancel', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
     Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
+    Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
 });
 
 // Auth

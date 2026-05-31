@@ -30,6 +30,15 @@ class CheckUserStatus
                 return redirect()->route('login')
                     ->with('error', 'Your account has been banned. Please contact support.');
             }
+
+            if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->with('error', 'Your account has been suspended. Please contact support.');
+            }
         }
 
         return $next($request);

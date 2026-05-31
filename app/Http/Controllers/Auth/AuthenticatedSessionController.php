@@ -45,6 +45,12 @@ class AuthenticatedSessionController extends Controller
             ])->onlyInput('email');
         }
 
+        if ($user && $user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
+            return back()->withErrors([
+                'email' => 'Your account has been suspended. Please contact support.',
+            ])->onlyInput('email');
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();

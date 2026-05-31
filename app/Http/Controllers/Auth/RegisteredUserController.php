@@ -48,6 +48,16 @@ class RegisteredUserController extends Controller
             'guard_name' => 'web',
             'tenant_id' => \App\Models\Tenant::getCurrent()?->id,
         ]);
+
+        if ($customerRole->wasRecentlyCreated) {
+            $globalRole = Role::where('name', 'customer')
+                ->whereNull('tenant_id')
+                ->first();
+            if ($globalRole) {
+                $customerRole->syncPermissions($globalRole->permissions);
+            }
+        }
+
         $user->assignRole($customerRole);
 
         event(new Registered($user));

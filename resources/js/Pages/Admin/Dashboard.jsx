@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useState } from 'react';
 
@@ -152,11 +152,60 @@ export default function AdminDashboard({
         violet: { bg: 'bg-violet-50', icon: 'text-violet-600', ring: 'ring-violet-100' },
     };
 
+    const { auth } = usePage().props;
+    const subscriptionExpired = auth?.user?.subscription_expired;
+    const subscriptionStatus = auth?.user?.subscription?.status;
+    const showBanner = subscriptionExpired || subscriptionStatus === 'past_due' || subscriptionStatus === 'suspended';
+
     return (
         <AdminLayout>
             <Head title="Dashboard" />
 
             <div className="p-6 lg:p-8 space-y-6">
+                {showBanner && (
+                    <div className={`rounded-xl border p-4 sm:p-5 ${
+                        subscriptionStatus === 'suspended'
+                            ? 'bg-yellow-50 border-yellow-200'
+                            : 'bg-red-50 border-red-200'
+                    }`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-full ${
+                                    subscriptionStatus === 'suspended'
+                                        ? 'bg-yellow-100 text-yellow-600'
+                                        : 'bg-red-100 text-red-600'
+                                }`}>
+                                    <i className={`bi ${
+                                        subscriptionStatus === 'suspended'
+                                            ? 'bi-pause-circle-fill'
+                                            : 'bi-x-circle-fill'
+                                    } text-xl`}></i>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {subscriptionStatus === 'suspended'
+                                            ? 'Your subscription has been suspended'
+                                            : 'Your subscription has expired'
+                                        }
+                                    </p>
+                                    <p className="text-sm text-gray-600 mt-0.5">
+                                        {subscriptionStatus === 'suspended'
+                                            ? 'Please contact support for assistance.'
+                                            : 'Renew your subscription to restore full access.'
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href="/admin/billing"
+                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+                            >
+                                {subscriptionStatus === 'suspended' ? 'Contact Support' : 'Renew Now'}
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
