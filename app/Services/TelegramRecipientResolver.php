@@ -19,15 +19,9 @@ class TelegramRecipientResolver
             ->where('is_enabled', true)
             ->verified();
 
-        // SaaS-ready: scope by tenant/store when relationships exist
-        // Example for future multi-tenant support:
-        // if ($order && $order->shop_id) {
-        //     $query->whereHas('user', function ($q) use ($order) {
-        //         $q->whereHas('shops', function ($sq) use ($order) {
-        //             $sq->where('shops.id', $order->shop_id);
-        //         });
-        //     });
-        // }
+        if ($order && $order->tenant_id) {
+            $query->where('tenant_id', $order->tenant_id);
+        }
 
         $integrations = $query->get();
 

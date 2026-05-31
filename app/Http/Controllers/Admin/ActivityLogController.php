@@ -25,7 +25,7 @@ class ActivityLogController extends Controller
         $logName = $request->get('log_name');
         $event = $request->get('event');
 
-        $query = ActivityLog::with('causer')
+        $query = ActivityLog::with('causer', 'impersonator', 'impersonatedUser')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('activity_logs.tenant_id', $t->id))
             ->when($logName, fn($q, $v) => $q->where('log_name', $v))
             ->when($event, fn($q, $v) => $q->where('event', $v))
@@ -63,7 +63,9 @@ class ActivityLogController extends Controller
 
     public function show(int $id)
     {
-        $log = ActivityLog::with('causer', 'subject')->findOrFail($id);
+        $log = ActivityLog::with('causer', 'subject', 'impersonator', 'impersonatedUser')
+            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('activity_logs.tenant_id', $t->id))
+            ->findOrFail($id);
 
         return Inertia::render('Admin/ActivityLogs/Show', [
             'log' => $log,

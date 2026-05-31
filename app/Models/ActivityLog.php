@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLog extends Model
@@ -18,6 +19,8 @@ class ActivityLog extends Model
         'subject_id',
         'causer_type',
         'causer_id',
+        'impersonator_id',
+        'impersonated_user_id',
         'properties',
         'event',
         'batch_uuid',
@@ -38,6 +41,16 @@ class ActivityLog extends Model
     public function causer(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function impersonator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'impersonator_id');
+    }
+
+    public function impersonatedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'impersonated_user_id');
     }
 
     public function scopeInLog($query, string $logName)

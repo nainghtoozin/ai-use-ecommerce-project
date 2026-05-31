@@ -5,6 +5,7 @@ namespace App\Models\Scopes;
 use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -28,11 +29,23 @@ class TenantScope implements Scope
 
         $tenant = Tenant::getCurrent();
         if ($tenant) {
-            $builder->where(function ($q) use ($model, $tenant) {
-                $q->where($model->getTable() . '.tenant_id', $tenant->id)
-                  ->orWhereNull($model->getTable() . '.tenant_id');
-            });
+            $builder->where($model->getTable() . '.tenant_id', $tenant->id);
+
+            if ($this->modelAllowsNullTenantFallback($model)) {
+                $builder->orWhereNull($model->getTable() . '.tenant_id');
+            }
         }
+    }
+
+    protected function modelAllowsNullTenantFallback(Model $model): bool
+    {
+        $uses = class_uses_recursive($model);
+
+        if (! in_array(TenantAware::class, $uses)) {
+            return false;
+        }
+
+        return $model::allowsNullTenantFallback();
     }
 
     public function extend(Builder $builder): void

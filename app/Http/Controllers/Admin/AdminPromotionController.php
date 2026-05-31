@@ -7,6 +7,7 @@ use App\Models\Promotion;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class AdminPromotionController extends Controller
@@ -43,7 +44,10 @@ class AdminPromotionController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'code' => 'nullable|string|max:50|unique:promotions,code',
+            'code' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('promotions', 'code')->where('tenant_id', tenant()?->id),
+            ],
             'type' => 'required|in:percentage,fixed,free_shipping',
             'value' => 'required|numeric|min:0',
             'max_discount_amount' => 'nullable|numeric|min:0',
@@ -99,7 +103,10 @@ class AdminPromotionController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'code' => 'nullable|string|max:50|unique:promotions,code,' . $promotion->id,
+            'code' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('promotions', 'code')->where('tenant_id', tenant()?->id)->ignore($promotion->id),
+            ],
             'type' => 'sometimes|in:percentage,fixed,free_shipping',
             'value' => 'sometimes|numeric|min:0',
             'max_discount_amount' => 'nullable|numeric|min:0',

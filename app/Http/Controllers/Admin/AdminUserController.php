@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\PerPageTrait;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -111,6 +112,11 @@ class AdminUserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $data = $request->validated();
+
+        // Enforce plan staff limit for admin role users
+        if (($data['role'] ?? null) === 'admin') {
+            SubscriptionLimitService::for()->assertCanCreateStaff();
+        }
 
         $user = User::create([
             'name' => $data['name'],

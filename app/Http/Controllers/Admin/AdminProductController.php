@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use Illuminate\Http\Request;
 use App\Models\Category;
-use App\Models\ProductCombo;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Enums\ProductType;
+use App\Models\ActivityLog;
 use App\Services\ImageService;
-
-use App\Services\ActivityLogger;
 use App\Services\ProductService;
 use App\Services\SkuService;
+use App\Services\SubscriptionLimitService;
 use App\Services\PerPageTrait;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -185,31 +185,18 @@ class AdminProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'sku'         => 'nullable|string|max:100|unique:products,sku',
-            'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
-            'base_price'  => 'required|numeric|min:0',
-            'stock'       => 'nullable|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'status'      => 'required|in:active,inactive,draft',
-            'type'        => 'nullable|in:single,variable,combo',
-            'variants'    => 'nullable|json',
-            'combo_items' => 'nullable|json',
-            'photo1'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'photo2'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
-
-        $data = $request->except(['photo1', 'photo2', 'variants', 'combo_items']);
+        $data = $request->validated();
 
         // Set product type, defaulting to single for backward compatibility
         $data['type'] = $data['type'] ?? ProductType::SINGLE;
 
         // Validate the product type (includes SaaS feature-gating)
         $this->productService->validateType($data['type']);
+
+        // Enforce plan product limit
+        SubscriptionLimitService::for()->assertCanCreateProduct();
 
         // Combo products don't need stock (derived from components)
         if ($data['type'] === ProductType::COMBO) {
@@ -358,25 +345,9 @@ class AdminProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'sku'         => 'nullable|string|max:100|unique:products,sku,' . $product->id,
-            'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
-            'base_price'  => 'required|numeric|min:0',
-            'stock'       => 'nullable|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'status'      => 'required|in:active,inactive,draft',
-            'type'        => 'nullable|in:single,variable,combo',
-            'variants'    => 'nullable|json',
-            'combo_items' => 'nullable|json',
-            'photo1'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'photo2'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
-
-        $data = $request->except(['photo1', 'photo2', 'variants', 'combo_items']);
+        $data = $request->validated();
 
         // Validate type if provided (don't overwrite existing type if not sent)
         if (isset($data['type'])) {

@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
             'tenant_id' => $user->tenant_id,
             'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
             'subscription_expired' => $subscriptionExpired,
+            'subscription_past_due' => $subscription && $subscription->status === 'past_due',
             'subscription' => $subscription ? [
                 'status' => $subscription->status,
                 'plan_name' => $subscription->plan?->name,

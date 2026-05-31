@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantAware;
+use App\Notifications\SubscriptionRenewed;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
 {
+    use TenantAware;
+
     protected $fillable = [
-        'tenant_id',
         'plan_id',
         'billing_interval',
         'status',
@@ -205,6 +208,8 @@ class Subscription extends Model
         if ($this->tenant->status === 'suspended') {
             $this->tenant->update(['status' => 'active']);
         }
+
+        $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
     }
 
     public function cancelImmediately(): void
@@ -265,6 +270,8 @@ class Subscription extends Model
         if ($this->tenant->status === 'suspended') {
             $this->tenant->update(['status' => 'active']);
         }
+
+        $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
     }
 
     /**

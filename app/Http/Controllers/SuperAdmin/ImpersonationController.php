@@ -63,6 +63,8 @@ class ImpersonationController extends Controller
             'subject_id' => $user->id,
             'causer_type' => User::class,
             'causer_id' => $impersonator->id,
+            'impersonator_id' => $impersonator->id,
+            'impersonated_user_id' => $user->id,
             'properties' => [
                 'impersonator_id' => $impersonator->id,
                 'impersonator_name' => $impersonator->name,
@@ -112,6 +114,8 @@ class ImpersonationController extends Controller
             'subject_id' => $impersonatedUser->id,
             'causer_type' => User::class,
             'causer_id' => $impersonator->id,
+            'impersonator_id' => $impersonator->id,
+            'impersonated_user_id' => $impersonatedUser->id,
             'properties' => [
                 'impersonator_id' => $impersonator->id,
                 'impersonator_name' => $impersonatorName,

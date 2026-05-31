@@ -27,8 +27,16 @@ class RefreshDashboardMetrics implements ShouldQueue
     public int $tries = 3;
     public int $timeout = 300;
 
+    public function __construct(
+        public ?int $tenantId = null
+    ) {}
+
     public function handle(): void
     {
+        if ($this->tenantId === null) {
+            return;
+        }
+
         foreach ($this->periods as $period) {
             $this->computeAndCacheMetrics($period);
         }
@@ -38,6 +46,7 @@ class RefreshDashboardMetrics implements ShouldQueue
 
     private function computeAndCacheMetrics(string $period): void
     {
+        $tenantSuffix = '_' . $this->tenantId;
         $dateRange = $this->getDateRangeFromPeriod($period);
         $start = $dateRange['start'];
         $end = $dateRange['end'];
@@ -47,31 +56,37 @@ class RefreshDashboardMetrics implements ShouldQueue
         $prevEnd = $previousRange['end'];
 
         $filteredOrdersCount = DB::table('orders')
+            ->where('tenant_id', $this->tenantId)
             ->whereBetween('created_at', [$start, $end])
             ->count();
 
         $filteredRevenue = DB::table('orders')
+            ->where('tenant_id', $this->tenantId)
             ->where('order_status', 'completed')
             ->whereBetween('created_at', [$start, $end])
             ->sum('total_amount');
 
         $filteredSales = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.tenant_id', $this->tenantId)
             ->where('orders.order_status', 'completed')
             ->whereBetween('orders.created_at', [$start, $end])
             ->sum('order_items.quantity');
 
         $filteredPendingOrders = DB::table('orders')
+            ->where('tenant_id', $this->tenantId)
             ->where('order_status', 'pending')
             ->whereBetween('created_at', [$start, $end])
             ->count();
 
         $filteredVerifiedRevenue = DB::table('orders')
+            ->where('tenant_id', $this->tenantId)
             ->where('payment_status', 'verified')
             ->whereBetween('created_at', [$start, $end])
             ->sum('total_amount');
 
         $previousRevenue = DB::table('orders')
+            ->where('tenant_id', $this->tenantId)
             ->where('order_status', 'completed')
             ->whereBetween('created_at', [$prevStart, $prevEnd])
             ->sum('total_amount');
@@ -91,23 +106,32 @@ class RefreshDashboardMetrics implements ShouldQueue
             'growthPercentage' => $growthPercentage,
         ];
 
-        Cache::put("dashboard_metrics_{$period}_", $data, 600);
+        Cache::put("dashboard_metrics_{$period}{$tenantSuffix}", $data, 600);
     }
 
     private function computeGeneralStats(): void
     {
-        $stats = DB::selectOne("
-            SELECT 
-                (SELECT COUNT(*) FROM products) AS total_products,
-                (SELECT COUNT(*) FROM orders) AS total_orders,
-                (SELECT IFNULL(SUM(total_amount),0) FROM orders WHERE order_status = 'completed') AS total_revenue,
-                (SELECT IFNULL(SUM(oi.quantity),0)
-                 FROM order_items oi
-                 JOIN orders o ON o.id = oi.order_id
-                 WHERE o.order_status = 'completed') AS total_sales
-        ");
+        $tenantSuffix = '_' . $this->tenantId;
 
-        Cache::put('dashboard_general_stats', (array) $stats, 600);
+        $stats = [
+            'total_products' => DB::table('products')
+                ->where('tenant_id', $this->tenantId)
+                ->count(),
+            'total_orders' => DB::table('orders')
+                ->where('tenant_id', $this->tenantId)
+                ->count(),
+            'total_revenue' => DB::table('orders')
+                ->where('tenant_id', $this->tenantId)
+                ->where('order_status', 'completed')
+                ->sum('total_amount'),
+            'total_sales' => DB::table('order_items')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.tenant_id', $this->tenantId)
+                ->where('orders.order_status', 'completed')
+                ->sum('order_items.quantity'),
+        ];
+
+        Cache::put('dashboard_general_stats' . $tenantSuffix, (array) $stats, 600);
     }
 
     private function getDateRangeFromPeriod($period): array

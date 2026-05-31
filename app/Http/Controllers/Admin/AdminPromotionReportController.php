@@ -156,6 +156,7 @@ class AdminPromotionReportController extends Controller
                 DB::raw('COUNT(*) as usage_count'),
                 DB::raw('SUM(order_coupon.discount_amount) as total_discount')
             )
+            ->where('orders.tenant_id', tenant()?->id)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->whereNotIn('orders.order_status', ['cancelled', 'rejected'])
             ->groupBy('order_coupon.coupon_id', 'order_coupon.code', 'order_coupon.type')
@@ -242,6 +243,7 @@ class AdminPromotionReportController extends Controller
                 DB::raw('COUNT(*) as usage_count'),
                 DB::raw('SUM(promotion_usages.discount_amount) as total_discount')
             )
+            ->where('promotions.tenant_id', tenant()?->id)
             ->whereBetween('promotion_usages.used_at', [$startDate, $endDate])
             ->groupBy('promotions.type');
 

@@ -9,4 +9,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('messages:cleanup')->daily();
-Schedule::command('subscriptions:process-expired')->hourly();
+
+// ── Subscription lifecycle ──
+// Process lifecycle transitions every 5 minutes during business hours,
+// hourly otherwise (prevents subscriptions lingering past thresholds).
+Schedule::command('subscriptions:process-expired')->everyFiveMinutes();
+Schedule::command('subscriptions:send-expiry-warnings')->dailyAt('08:00');

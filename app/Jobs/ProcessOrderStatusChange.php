@@ -49,7 +49,7 @@ class ProcessOrderStatusChange implements ShouldQueue
 
         $this->logActivity();
 
-        $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
+        $notificationsEnabled = Setting::get('notifications_enabled', 'true', $this->order->tenant_id) === 'true';
 
         if ($notificationsEnabled) {
             $userNotif = $this->getUserNotification();

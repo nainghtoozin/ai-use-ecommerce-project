@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Notification;
 
 class Tenant extends Model
 {
@@ -18,11 +19,13 @@ class Tenant extends Model
         'settings',
         'subscription_plan_id',
         'expires_at',
+        'used_storage_bytes',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'expires_at' => 'datetime',
+        'used_storage_bytes' => 'integer',
     ];
 
     public function users()
@@ -106,7 +109,7 @@ class Tenant extends Model
             return App::make('current.tenant');
         }
 
-        return self::getDefault();
+        return null;
     }
 
     public static function clearDefaultCache(): void
@@ -134,5 +137,14 @@ class Tenant extends Model
     public function scopeTrialing($query)
     {
         return $query->where('status', 'trialing');
+    }
+
+    public function notifyAdmins($notification): void
+    {
+        $admins = $this->users()->whereHas('roles', function ($q) {
+            $q->where('name', 'admin');
+        })->get();
+
+        Notification::send($admins, $notification);
     }
 }

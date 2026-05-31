@@ -19,30 +19,46 @@ class EnsureTenantIsActive
             return $next($request);
         }
 
-        if (empty($user->tenant_id)) {
-            auth()->logout();
-            return redirect()->route('login')->withErrors([
-                'email' => 'Your account is not associated with any store.',
-            ]);
-        }
-
         $tenant = $user->tenant;
 
         if (! $tenant) {
-            auth()->logout();
-            abort(403, 'Your store account is no longer available.');
+            abort(403, 'Store not found.');
         }
 
-        if ($tenant->status !== 'active') {
-            auth()->logout();
-            abort(403, 'This store is currently suspended. Contact support.');
+        // Suspended — block all operations, redirect to suspension page
+        if ($tenant->status === 'suspended') {
+            return redirect()->route('admin.suspended');
         }
 
-        if ($tenant->subscriptionExpired()) {
-            auth()->logout();
-            abort(403, 'Your subscription has expired. Please renew to continue.');
+        // Banned or inactive — block all operations
+        if (! in_array($tenant->status, ['active', 'trialing'])) {
+            return redirect()->route('admin.suspended')
+                ->with('error', 'Your account is currently restricted. Please contact support.');
         }
 
-        return $next($request);
+        // Free plan — skip subscription check (FeatureGate handles limits)
+        $subscription = $tenant->subscription;
+        if ($subscription && $subscription->plan?->isFree()) {
+            return $next($request);
+        }
+
+        // Active or trialing subscription — allow
+        if ($tenant->hasActiveSubscription()) {
+            return $next($request);
+        }
+
+        // No subscription record — allow (edge case; superadmin should assign one)
+        if (! $subscription) {
+            return $next($request);
+        }
+
+        // Canceled but still within paid period — allow
+        if ($subscription->isCanceled() && $subscription->expires_at && $subscription->expires_at->isFuture()) {
+            return $next($request);
+        }
+
+        // Expired — redirect to dashboard (accessible via tenant.valid only, outside tenant.active)
+        return redirect()->route('admin.dashboard')
+            ->with('error', 'Your subscription has expired. Please renew to restore access to all features.');
     }
 }

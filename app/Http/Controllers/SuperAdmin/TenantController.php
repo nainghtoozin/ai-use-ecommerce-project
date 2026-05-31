@@ -105,14 +105,15 @@ class TenantController extends Controller
 
             if (!empty($validated['create_admin']) && !empty($validated['admin_email'])) {
                 $admin = User::create([
-                    'tenant_id' => $tenant->id,
                     'name' => $validated['admin_name'],
                     'email' => $validated['admin_email'],
                     'password' => Hash::make($validated['admin_password']),
                     'status' => User::STATUS_ACTIVE,
-                    'is_owner' => true,
                     'email_verified_at' => now(),
                 ]);
+                $admin->tenant_id = $tenant->id;
+                $admin->is_owner = true;
+                $admin->save();
 
                 $adminRole = Role::where('name', 'admin')
                     ->where('tenant_id', $tenant->id)

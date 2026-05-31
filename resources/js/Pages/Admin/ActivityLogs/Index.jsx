@@ -105,7 +105,14 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
                                                 <td className="px-6 py-4 whitespace-nowrap">{eventBadge(log.event)}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">{log.description}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {log.causer ? log.causer.name : 'System'}
+                                                    {log.impersonator ? (
+                                                        <span title={`Acting as ${log.impersonated_user?.name || 'Unknown'}`}>
+                                                            {log.impersonator.name}
+                                                            <span className="text-xs text-gray-400 ml-1">(via)</span>
+                                                        </span>
+                                                    ) : log.causer ? (
+                                                        log.causer.name
+                                                    ) : 'System'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.log_name}</td>
                                             </tr>

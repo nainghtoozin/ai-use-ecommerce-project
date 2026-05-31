@@ -304,6 +304,11 @@ class ClientOrderController extends Controller
 
     public function uploadPaymentProof(Request $request, string $id)
     {
+        $user = auth()->user();
+        if ($user->tenant && $user->tenant->subscriptionExpired()) {
+            return redirect()->back()->with('error', 'Your subscription has expired. Please renew to continue.');
+        }
+
         $order = Order::query()
             ->with('user')
             ->where('user_id', auth()->id())
@@ -335,6 +340,11 @@ class ClientOrderController extends Controller
 
     public function cancelOrder(string $id)
     {
+        $user = auth()->user();
+        if ($user->tenant && $user->tenant->subscriptionExpired()) {
+            return redirect()->back()->with('error', 'Your subscription has expired. Please renew to continue.');
+        }
+
         $order = Order::query()
             ->with('user')
             ->where('user_id', auth()->id())
@@ -356,6 +366,11 @@ class ClientOrderController extends Controller
 
     public function confirmPayment(Request $request, string $id)
     {
+        $user = auth()->user();
+        if ($user->tenant && $user->tenant->subscriptionExpired()) {
+            return redirect()->back()->with('error', 'Your subscription has expired. Please renew to continue.');
+        }
+
         $order = Order::query()
             ->where('user_id', auth()->id())
             ->findOrFail($id);

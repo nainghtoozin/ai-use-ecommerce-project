@@ -12,7 +12,7 @@ trait TenantAware
         static::addGlobalScope(new TenantScope());
 
         static::creating(function ($model) {
-            if (! array_key_exists('tenant_id', $model->getAttributes())) {
+            if (empty($model->tenant_id)) {
                 $tenant = Tenant::getCurrent();
                 if ($tenant) {
                     $model->tenant_id = $tenant->id;
@@ -43,5 +43,17 @@ trait TenantAware
     public function scopeForTenant($query, $tenantId)
     {
         return $query->where($this->getTable() . '.tenant_id', $tenantId);
+    }
+
+    /**
+     * Whether this model should include records with NULL tenant_id
+     * as fallback (shared global records visible to all tenants).
+     *
+     * Override in the model class and return true for shared reference data
+     * that should be accessible across all tenants (e.g., system settings).
+     */
+    public static function allowsNullTenantFallback(): bool
+    {
+        return false;
     }
 }

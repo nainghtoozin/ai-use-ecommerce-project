@@ -12,9 +12,15 @@ class Setting extends Model
 
     protected $fillable = ['key', 'value'];
 
-    public static function get($key, $default = null)
+    public static function get($key, $default = null, $tenantId = null)
     {
-        $setting = static::where('key', $key)->first();
+        $query = static::where('key', $key);
+
+        if ($tenantId !== null) {
+            $query = $query->withoutTenantScope()->where('tenant_id', $tenantId);
+        }
+
+        $setting = $query->first();
         return $setting ? $setting->value : $default;
     }
 

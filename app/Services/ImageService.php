@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Tenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -10,11 +11,17 @@ class ImageService
 {
     public function upload(UploadedFile $file, string $folder): string
     {
+        $this->assertStorageLimit($file);
+
         if (app()->environment('production')) {
-            return $this->uploadToCloudinary($file, $folder);
+            $path = $this->uploadToCloudinary($file, $folder);
+        } else {
+            $path = $this->uploadToLocal($file, $folder);
         }
 
-        return $this->uploadToLocal($file, $folder);
+        $this->trackStorage($file->getSize());
+
+        return $path;
     }
 
     private function uploadToCloudinary(UploadedFile $file, string $folder): string
@@ -47,11 +54,21 @@ class ImageService
             return false;
         }
 
+        $fileSize = $this->getFileSize($path);
+
+        $deleted = false;
+
         if (str_starts_with($path, 'http')) {
-            return $this->deleteFromCloudinary($path);
+            $deleted = $this->deleteFromCloudinary($path);
+        } else {
+            $deleted = $this->deleteFromLocal($path);
         }
 
-        return $this->deleteFromLocal($path);
+        if ($deleted && $fileSize > 0) {
+            $this->releaseStorage($fileSize);
+        }
+
+        return $deleted;
     }
 
     private function deleteFromCloudinary(string $url): bool
@@ -83,6 +100,58 @@ class ImageService
             ]);
             return false;
         }
+    }
+
+    private function assertStorageLimit(UploadedFile $file): void
+    {
+        $tenant = $this->resolveTenant();
+        if (!$tenant) {
+            return;
+        }
+
+        SubscriptionLimitService::for($tenant)->assertCanUpload($file->getSize());
+    }
+
+    private function trackStorage(int $bytes): void
+    {
+        $tenant = $this->resolveTenant();
+        if (!$tenant || $bytes <= 0) {
+            return;
+        }
+
+        $tenant->increment('used_storage_bytes', $bytes);
+    }
+
+    private function releaseStorage(int $bytes): void
+    {
+        $tenant = $this->resolveTenant();
+        if (!$tenant || $bytes <= 0) {
+            return;
+        }
+
+        $tenant->decrement('used_storage_bytes', $bytes);
+    }
+
+    private function getFileSize(string $path): int
+    {
+        if (str_starts_with($path, 'http')) {
+            return 0;
+        }
+
+        try {
+            return Storage::disk('public')->size($path) ?: 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    private function resolveTenant(): ?Tenant
+    {
+        if (auth()->check()) {
+            return auth()->user()->tenant;
+        }
+
+        return Tenant::getCurrent();
     }
 
     private function extractPublicId(string $url): ?string

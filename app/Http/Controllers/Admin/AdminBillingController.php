@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,6 +18,8 @@ class AdminBillingController extends Controller
         }
 
         $subscription = $tenant->subscription;
+
+        $usage = SubscriptionLimitService::for($tenant)->getAllUsage();
 
         return Inertia::render('Admin/Billing/Index', [
             'subscription' => $subscription ? [
@@ -42,6 +45,7 @@ class AdminBillingController extends Controller
                 'days_until_expiry' => $subscription->daysUntilExpiry(),
                 'days_since_expiry' => $subscription->daysSinceExpiry(),
             ] : null,
+            'usage' => $usage,
         ]);
     }
 

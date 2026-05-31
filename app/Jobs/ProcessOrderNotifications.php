@@ -45,7 +45,7 @@ class ProcessOrderNotifications implements ShouldQueue
         NotificationPreferenceService $preferenceService,
     ): void {
         try {
-            $notificationsEnabled = Setting::get('notifications_enabled', 'true') === 'true';
+            $notificationsEnabled = Setting::get('notifications_enabled', 'true', $this->order->tenant_id) === 'true';
 
             $admins = User::role('admin')
                 ->where('users.tenant_id', $this->order->tenant_id)

@@ -22,18 +22,12 @@ class User extends Authenticatable
     const STATUS_INACTIVE = 'inactive';
 
     protected $fillable = [
-        'tenant_id',
         'name',
         'email',
         'password',
         'status',
-        'is_owner',
         'profile_image',
         'notification_preferences',
-        'plan_id',
-        'plan_started_at',
-        'plan_expires_at',
-        'plan_status',
     ];
 
     protected $hidden = [

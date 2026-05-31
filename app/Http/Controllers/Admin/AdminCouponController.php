@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class AdminCouponController extends Controller
@@ -40,7 +41,10 @@ class AdminCouponController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'code' => 'nullable|string|max:50|unique:coupons,code',
+            'code' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('coupons', 'code')->where('tenant_id', tenant()?->id),
+            ],
             'type' => 'required|in:percentage,fixed_amount,free_shipping',
             'discount_value' => 'required|numeric|min:0',
             'min_order_amount' => 'nullable|numeric|min:0',
@@ -92,7 +96,10 @@ class AdminCouponController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'code' => 'nullable|string|max:50|unique:coupons,code,' . $coupon->id,
+            'code' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('coupons', 'code')->where('tenant_id', tenant()?->id)->ignore($coupon->id),
+            ],
             'type' => 'sometimes|in:percentage,fixed_amount,free_shipping',
             'discount_value' => 'sometimes|numeric|min:0',
             'min_order_amount' => 'nullable|numeric|min:0',

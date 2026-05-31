@@ -16,10 +16,8 @@ class CityUpdateRequest extends FormRequest
     {
         return [
             'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('cities', 'name')->ignore($this->route('city')),
+                'required', 'string', 'max:255',
+                Rule::unique('cities', 'name')->where('tenant_id', tenant()?->id)->ignore($this->route('city')),
             ],
             'delivery_fee' => 'required|numeric|min:0',
             'is_active' => 'boolean',

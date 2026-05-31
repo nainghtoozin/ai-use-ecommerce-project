@@ -75,6 +75,13 @@ class OrderController extends Controller
             'payment_screenshot' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->tenant && $user->tenant->subscriptionExpired()) {
+                return back()->with('error', 'Your subscription has expired. Please renew your subscription to place orders.');
+            }
+        }
+
         $paymentScreenshotPath = null;
         if ($request->hasFile('payment_screenshot')) {
             $paymentScreenshotPath = $this->imageService->upload($request->file('payment_screenshot'), 'payment-proofs');

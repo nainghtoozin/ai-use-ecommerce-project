@@ -42,13 +42,18 @@ trait LogsActivity
     {
         $logName = $this->activityLogName ?? strtolower(class_basename($this));
 
+        $impersonatorId = session('impersonator_id');
+        $isImpersonating = $impersonatorId && auth()->check() && $impersonatorId !== auth()->id();
+
         ActivityLog::create([
             'log_name' => $logName,
             'description' => $description,
             'subject_type' => static::class,
             'subject_id' => $this->getKey(),
             'causer_type' => auth()->user() ? get_class(auth()->user()) : null,
-            'causer_id' => auth()->id(),
+            'causer_id' => $isImpersonating ? $impersonatorId : auth()->id(),
+            'impersonator_id' => $isImpersonating ? $impersonatorId : null,
+            'impersonated_user_id' => $isImpersonating ? auth()->id() : null,
             'properties' => $properties,
             'event' => $event,
             'batch_uuid' => (string) Str::uuid(),

@@ -32,12 +32,16 @@ class CheckUserStatus
             }
 
             if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
+                if ($user->hasRole('admin')) {
+                    return redirect()->route('admin.suspended');
+                }
+
                 Auth::guard('web')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
                 return redirect()->route('login')
-                    ->with('error', 'Your account has been suspended. Please contact support.');
+                    ->with('error', 'This store has been suspended. Please contact support.');
             }
         }
 

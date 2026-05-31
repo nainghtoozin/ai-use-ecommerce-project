@@ -35,7 +35,8 @@ class City extends Model
 
     public static function getActiveWithTownships()
     {
-        return Cache::remember('active_cities_with_townships', 3600, function () {
+        $suffix = tenant()?->id ?? 'global';
+        return Cache::remember('active_cities_with_townships_' . $suffix, 3600, function () {
             return static::active()
                 ->with(['townships' => fn($q) => $q->active()])
                 ->orderBy('name')

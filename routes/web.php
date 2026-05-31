@@ -56,11 +56,8 @@ Route::get('/maintenance', function () {
     ]);
 })->name('maintenance');
 
-Route::get('/run-migrate', function () {
-    Artisan::call('migrate', ['--force' => true]);
-    return 'Migrated!';
-});
-
+// ============================================================
+// CART ROUTES (public — session based)
 // ============================================================
 // CART ROUTES (public — session based)
 // ============================================================
@@ -142,17 +139,20 @@ Route::middleware('auth')->group(function () {
     Route::patch('/telegram-integration/toggle', [TelegramIntegrationController::class, 'toggle'])->name('telegram-integration.toggle');
     Route::post('/telegram-integration/test', [TelegramIntegrationController::class, 'sendTestMessage'])->name('telegram-integration.test');
 
-    // ============================================================
-    // BROADCAST TEST ROUTE (remove in production)
-    // ============================================================
+// ============================================================
+// BROADCAST TEST ROUTE (production-restricted — SuperAdmin only)
+// ============================================================
     Route::get('/broadcast/test', function (\Illuminate\Http\Request $request) {
-        $userId = $request->user()->id;
-        $message = $request->query('message', 'This is a test broadcast from the server.');
-        \App\Events\TestBroadcastEvent::dispatch($userId, $message);
-        return response()->json([
-            'success' => true,
-            'message' => "Test broadcast dispatched to user #{$userId}",
-        ]);
+        if ($request->user()->isSuperAdmin()) {
+            $userId = $request->user()->id;
+            $message = $request->query('message', 'This is a test broadcast from the server.');
+            \App\Events\TestBroadcastEvent::dispatch($userId, $message);
+            return response()->json([
+                'success' => true,
+                'message' => "Test broadcast dispatched to user #{$userId}",
+            ]);
+        }
+        abort(403);
     })->name('broadcast.test');
 });
 
@@ -161,25 +161,31 @@ Route::middleware('auth')->group(function () {
 // ============================================================
 //
 // Middleware layering:
-//   tenant.valid         — structural tenant check (tenant_id exists, record found)
-//                          Applied to ALL admin routes (account + operations).
-//                          Does NOT check subscription status or tenant suspension.
+//   tenant.valid    — structural tenant check (tenant_id exists, record found)
+//                     Applied to ALL admin routes.
+//                     Does NOT check subscription status or tenant suspension.
 //
-//   subscription.active  — subscription health check (status, expiry, suspension)
-//                          Applied ONLY to operations routes.
-//                          Expired or suspended merchants are redirected to dashboard.
+//   tenant.active   — tenant health check (status + subscription expiry)
+//                     Applied ONLY to operations routes (inner group).
+//                     Suspended → suspension page (all blocked).
+//                     Expired  → redirected to dashboard (account routes only).
+//                     SuperAdmin → always bypass.
 //
-// SuperAdmin always bypasses both middlewares.
+//   Account routes (dashboard, billing, suspended) sit in the outer group
+//   so they remain accessible when the subscription is expired.
+//   Suspended tenants are blocked entirely via CheckUserStatus (global)
+//   or the tenant.active middleware (operations routes).
 //
 // ============================================================
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid'])->group(function () {
-    // ── Account routes (accessible even when expired/suspended) ──
+    // ── Account routes (accessible even when subscription expired) ──
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
+    Route::get('/suspended', fn () => \Inertia\Inertia::render('Admin/Suspended'))->name('suspended');
 
     // ── Operations routes (blocked when expired/suspended) ──
-    Route::middleware('subscription.active')->group(function () {
+    Route::middleware('tenant.active')->group(function () {
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
@@ -336,7 +342,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
     // PERMISSION ROUTES (read-only)
     // ============================================================
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-    }); // ← ends subscription.active group
+    }); // ← ends tenant.active group
 }); // ← ends tenant.valid + admin group
 
 // ============================================================
@@ -379,6 +385,12 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
     Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
 
     Route::post('/impersonate/{user}', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
+
+    // ── Utility routes (SuperAdmin only) ──
+    Route::post('/run-migrate', function () {
+        Artisan::call('migrate', ['--force' => true]);
+        return response()->json(['message' => 'Migration completed.']);
+    })->name('run-migrate');
 });
 
 // Auth

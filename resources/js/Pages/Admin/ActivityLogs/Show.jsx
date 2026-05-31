@@ -28,9 +28,21 @@ export default function ActivityLogsShow({ log }) {
                                     <dd className="mt-1 text-gray-900">{log.log_name}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-gray-500 font-medium">Causer</dt>
-                                    <dd className="mt-1 text-gray-900">{log.causer ? `${log.causer.name} (${log.causer.email})` : 'System'}</dd>
+                                    <dt className="text-gray-500 font-medium">Performed By</dt>
+                                    <dd className="mt-1 text-gray-900">
+                                        {log.impersonator
+                                            ? `${log.impersonator.name} (${log.impersonator.email})`
+                                            : log.causer
+                                                ? `${log.causer.name} (${log.causer.email})`
+                                                : 'System'}
+                                    </dd>
                                 </div>
+                                {log.impersonated_user && (
+                                    <div>
+                                        <dt className="text-gray-500 font-medium">Acting As</dt>
+                                        <dd className="mt-1 text-gray-900">{log.impersonated_user.name} ({log.impersonated_user.email})</dd>
+                                    </div>
+                                )}
                                 <div>
                                     <dt className="text-gray-500 font-medium">Subject Type</dt>
                                     <dd className="mt-1 text-gray-900">{log.subject_type ? log.subject_type.split('\\').pop() : 'N/A'}</dd>
