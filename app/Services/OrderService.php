@@ -450,10 +450,12 @@ class OrderService
     {
         $oldStatus = $order->order_status;
 
+        $this->validateTransition($oldStatus, $newStatus);
+
         DB::transaction(function () use ($order, $newStatus, $oldStatus) {
             $order->update(['order_status' => $newStatus]);
 
-            if ($oldStatus === 'pending' && $newStatus === 'confirmed') {
+            if (in_array($oldStatus, ['pending', 'verified']) && $newStatus === 'confirmed') {
                 $this->reduceStock($order);
             }
 
@@ -501,5 +503,26 @@ class OrderService
         }
 
         return $query->orderBy('created_at', 'desc')->paginate(15);
+    }
+
+    private function validateTransition(string $oldStatus, string $newStatus): void
+    {
+        $valid = [
+            'pending' => ['confirmed', 'cancelled'],
+            'verified' => ['confirmed', 'cancelled'],
+            'confirmed' => ['processing', 'cancelled'],
+            'processing' => ['shipped'],
+            'shipped' => ['delivered'],
+            'delivered' => [],
+            'cancelled' => [],
+        ];
+
+        $allowed = $valid[$oldStatus] ?? [];
+
+        if (!in_array($newStatus, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                "Invalid order status transition: {$oldStatus} → {$newStatus}"
+            );
+        }
     }
 }

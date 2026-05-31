@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PaymentMethodStoreRequest extends FormRequest
 {
@@ -14,7 +16,13 @@ class PaymentMethodStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:payment_methods,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('payment_methods', 'name')
+                    ->where('tenant_id', Tenant::getCurrent()?->id),
+            ],
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',
             'qr_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',

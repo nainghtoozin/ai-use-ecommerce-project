@@ -223,6 +223,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
     // Orders
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/confirm', [AdminOrderController::class, 'confirmOrder'])->name('orders.confirm');
+    Route::post('/orders/{order}/process', [AdminOrderController::class, 'processOrder'])->name('orders.process');
     Route::post('/orders/{order}/ship', [AdminOrderController::class, 'shipOrder'])->name('orders.ship');
     Route::post('/orders/{order}/deliver', [AdminOrderController::class, 'deliverOrder'])->name('orders.deliver');
     Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');

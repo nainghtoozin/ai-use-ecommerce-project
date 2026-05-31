@@ -142,6 +142,7 @@ class ProcessOrderStatusChange implements ShouldQueue
 
         $emoji = match ($this->event) {
             'confirmed' => '✅',
+            'processing' => '🔄',
             'shipped' => '📦',
             'delivered' => '✅',
             'cancelled_by_admin', 'cancelled_by_customer' => '❌',
@@ -153,6 +154,7 @@ class ProcessOrderStatusChange implements ShouldQueue
 
         $label = match ($this->event) {
             'confirmed' => 'Order Confirmed',
+            'processing' => 'Order Processing',
             'shipped' => 'Order Shipped',
             'delivered' => 'Order Delivered',
             'cancelled_by_admin' => 'Order Cancelled by Admin',
@@ -202,6 +204,11 @@ class ProcessOrderStatusChange implements ShouldQueue
                 'event' => 'order_status_changed',
                 'properties' => ['old_status' => $this->oldStatus ?? 'pending', 'new_status' => 'confirmed'],
             ],
+            'processing' => [
+                'description' => "Order #{$this->order->id} moved to processing",
+                'event' => 'order_status_changed',
+                'properties' => ['new_status' => 'processing'],
+            ],
             'shipped' => [
                 'description' => "Order #{$this->order->id} shipped by admin",
                 'event' => 'order_status_changed',
@@ -249,6 +256,7 @@ class ProcessOrderStatusChange implements ShouldQueue
     {
         return match ($this->event) {
             'confirmed' => ['class' => PaymentConfirmedNotification::class, 'pref_key' => 'order_status_changed'],
+            'processing' => ['class' => PaymentConfirmedNotification::class, 'pref_key' => 'order_status_changed'],
             'shipped' => ['class' => OrderShippedNotification::class, 'pref_key' => 'order_status_changed'],
             'delivered' => ['class' => OrderDeliveredNotification::class, 'pref_key' => 'order_status_changed'],
             'cancelled_by_admin' => ['class' => OrderCancelledNotification::class, 'pref_key' => 'order_status_changed'],

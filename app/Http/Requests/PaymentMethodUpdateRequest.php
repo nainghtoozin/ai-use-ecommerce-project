@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\PaymentMethod;
+use App\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,9 @@ class PaymentMethodUpdateRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('payment_methods', 'name')->ignore($ignoreId),
+                Rule::unique('payment_methods', 'name')
+                    ->ignore($ignoreId)
+                    ->where('tenant_id', Tenant::getCurrent()?->id),
             ],
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',

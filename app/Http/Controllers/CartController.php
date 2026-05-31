@@ -80,6 +80,7 @@ class CartController extends Controller
             $cart[$cartKey]['quantity'] = $newQty;
         } else {
             $cart[$cartKey] = [
+                'id' => $purchasable['product_id'],
                 'product_id' => $purchasable['product_id'],
                 'variant_id' => $purchasable['variant_id'],
                 'name' => $purchasable['name'],

@@ -69,7 +69,10 @@ class CheckoutController extends Controller
     {
         $items = [];
         foreach ($cart as $cartKey => $item) {
-            $productId = $item['product_id'];
+            $productId = $item['product_id'] ?? $item['id'] ?? null;
+            if (!$productId) {
+                continue;
+            }
             $variantId = $item['variant_id'] ?? null;
 
             $product = Product::select(['id', 'name', 'price', 'type', 'photo1'])->find($productId);

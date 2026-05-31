@@ -87,12 +87,20 @@ class OrderController extends Controller
         }
 
         $items = [];
-        foreach ($cart as $item) {
+        foreach ($cart as $key => $item) {
+            if (!isset($item['id']) && !isset($item['product_id'])) {
+                Log::error('OrderController: cart item missing id and product_id', [
+                    'cart_key' => $key,
+                    'item' => $item,
+                ]);
+                return back()->with('error', 'One or more cart items are invalid. Please remove and re-add them.');
+            }
+
+            $productId = (int) ($item['product_id'] ?? $item['id']);
             $itemData = [
-                'id' => (int) $item['id'],
-                'product_id' => (int) $item['id'],
-                'quantity' => (int) $item['quantity'],
-                'price' => (float) $item['price'],
+                'product_id' => $productId,
+                'quantity' => (int) ($item['quantity'] ?? 1),
+                'price' => (float) ($item['price'] ?? 0),
             ];
 
             if (!empty($item['variant_id'])) {

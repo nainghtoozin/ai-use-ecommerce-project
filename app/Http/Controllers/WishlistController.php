@@ -94,6 +94,7 @@ class WishlistController extends Controller
         } else {
             $cart[$product->id] = [
                 'id' => $product->id,
+                'product_id' => $product->id,
                 'name' => $product->name,
                 'price' => (float) $product->price,
                 'photo1' => $product->photo1,
@@ -139,6 +140,7 @@ class WishlistController extends Controller
             } else {
                 $cart[$product->id] = [
                     'id' => $product->id,
+                    'product_id' => $product->id,
                     'name' => $product->name,
                     'price' => (float) $product->price,
                     'photo1' => $product->photo1,

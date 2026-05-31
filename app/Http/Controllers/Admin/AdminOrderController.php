@@ -107,7 +107,7 @@ class AdminOrderController extends Controller
     public function updateOrderStatus(Request $request, string $id)
     {
         $request->validate([
-            'order_status' => 'required|in:pending,confirmed,shipped,delivered,cancelled',
+            'order_status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
         ]);
 
         try {
@@ -129,6 +129,11 @@ class AdminOrderController extends Controller
         try {
             $order = Order::with('user')->findOrFail($id);
 
+            if ($order->payment_status !== Order::PAYMENT_STATUS_VERIFIED) {
+                return redirect()->route('admin.orders.show', $id)
+                    ->with('error', 'Cannot confirm order. Payment must be verified first.');
+            }
+
             if (!$order->canConfirm()) {
                 return redirect()->route('admin.orders.show', $id)
                     ->with('error', 'This order cannot be confirmed.');
@@ -145,6 +150,30 @@ class AdminOrderController extends Controller
 
             return redirect()->route('admin.orders.show', $id)
                 ->with('error', 'Failed to confirm order.');
+        }
+    }
+
+    public function processOrder(string $id)
+    {
+        try {
+            $order = Order::with('user')->findOrFail($id);
+
+            if (!$order->canProcess()) {
+                return redirect()->route('admin.orders.show', $id)
+                    ->with('error', 'This order cannot be moved to processing.');
+            }
+
+            $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_PROCESSING);
+
+            ProcessOrderStatusChange::dispatch($order, 'processing');
+
+            return redirect()->route('admin.orders.show', $id)
+                ->with('success', 'Order is now being processed.');
+        } catch (\Exception $e) {
+            Log::error('Order processing failed: ' . $e->getMessage());
+
+            return redirect()->route('admin.orders.show', $id)
+                ->with('error', 'Failed to move order to processing.');
         }
     }
 
@@ -231,7 +260,6 @@ class AdminOrderController extends Controller
             }
 
             $order->update([
-                'order_status' => Order::ORDER_STATUS_VERIFIED,
                 'payment_status' => Order::PAYMENT_STATUS_VERIFIED,
                 'payment_verified_at' => now(),
                 'rejection_reason' => null,
@@ -266,7 +294,6 @@ class AdminOrderController extends Controller
             ]);
 
             $order->update([
-                'order_status' => Order::ORDER_STATUS_REJECTED,
                 'payment_status' => Order::PAYMENT_STATUS_REJECTED,
                 'rejection_reason' => $request->rejection_reason,
             ]);

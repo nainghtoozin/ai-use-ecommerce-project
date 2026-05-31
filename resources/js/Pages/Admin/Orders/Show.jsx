@@ -17,6 +17,7 @@ export default function AdminOrdersShow({ order }) {
     const orderStatusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
         confirmed: 'bg-blue-100 text-blue-800',
+        processing: 'bg-purple-100 text-purple-800',
         shipped: 'bg-indigo-100 text-indigo-800',
         delivered: 'bg-green-100 text-green-800',
         cancelled: 'bg-red-100 text-red-800',
@@ -32,10 +33,17 @@ export default function AdminOrdersShow({ order }) {
         rejected: 'bg-red-100 text-red-800',
     };
 
+    const workflowSteps = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+    const currentStepIndex = workflowSteps.indexOf(order.order_status);
+
     function handleConfirm() {
-        if (confirm('Confirm this order?')) {
+        if (confirm('Confirm this order? Stock will be deducted.')) {
             router.post(`/admin/orders/${order.id}/confirm`);
         }
+    }
+
+    function handleProcess() {
+        router.post(`/admin/orders/${order.id}/process`);
     }
 
     function handleShip() {
@@ -81,6 +89,117 @@ export default function AdminOrdersShow({ order }) {
         if (confirm('Delete this cancelled order?')) {
             router.delete(`/admin/orders/${order.id}`);
         }
+    }
+
+    function renderNextActionButton() {
+        if (order.order_status === 'cancelled' || order.order_status === 'delivered') {
+            return null;
+        }
+
+        if (order.order_status === 'pending') {
+            if (order.payment_status !== 'verified') {
+                return (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                        <p className="text-sm text-amber-700">
+                            Please verify payment before confirming this order.
+                        </p>
+                    </div>
+                );
+            }
+            return (
+                <button onClick={handleConfirm}
+                    className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+                    Confirm Order
+                </button>
+            );
+        }
+
+        if (order.order_status === 'confirmed') {
+            return (
+                <button onClick={handleProcess}
+                    className="w-full bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 text-sm font-medium transition-colors">
+                    Move to Processing
+                </button>
+            );
+        }
+
+        if (order.order_status === 'processing') {
+            return (
+                <button onClick={handleShip}
+                    className="w-full bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors">
+                    Mark as Shipped
+                </button>
+            );
+        }
+
+        if (order.order_status === 'shipped') {
+            return (
+                <button onClick={handleDeliver}
+                    className="w-full bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 text-sm font-medium transition-colors">
+                    Mark as Delivered
+                </button>
+            );
+        }
+
+        return null;
+    }
+
+    function renderPaymentActions() {
+        if (order.payment_status === 'verified') {
+            return (
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-green-700">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">Payment Verified</span>
+                    </div>
+                    {order.payment_verified_at && (
+                        <p className="text-sm text-gray-500">
+                            Verified At: {new Date(order.payment_verified_at).toLocaleString()}
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
+        if (order.payment_status === 'rejected') {
+            return (
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-red-700">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="font-medium">Payment Rejected</span>
+                    </div>
+                    {order.rejection_reason && (
+                        <p className="text-sm text-gray-600">Reason: {order.rejection_reason}</p>
+                    )}
+                </div>
+            );
+        }
+
+        if (order.payment_status === 'unpaid') {
+            return (
+                <button onClick={() => setMarkPaidOpen(true)}
+                    className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 text-sm font-medium transition-colors">
+                    Mark as Paid
+                </button>
+            );
+        }
+
+        return (
+            <div className="space-y-2">
+                <button onClick={handleVerifyPayment}
+                    className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors">
+                    Verify Payment
+                </button>
+                <button onClick={() => setRejectModalOpen(true)}
+                    className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
+                    Reject Payment
+                </button>
+            </div>
+        );
     }
 
     return (
@@ -198,10 +317,45 @@ export default function AdminOrdersShow({ order }) {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Order Status */}
+                        {/* Order Status with Progress Timeline */}
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Status</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Progress</h2>
+
                             <div className="space-y-3">
+                                {workflowSteps.map((step, index) => {
+                                    const isCompleted = currentStepIndex > index;
+                                    const isCurrent = currentStepIndex === index;
+                                    const isPending = currentStepIndex < index;
+
+                                    return (
+                                        <div key={step} className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${
+                                                isCompleted ? 'bg-green-600 text-white' :
+                                                isCurrent ? 'bg-blue-600 text-white ring-2 ring-blue-300' :
+                                                'bg-gray-200 text-gray-400'
+                                            }`}>
+                                                {isCompleted ? '✓' : index + 1}
+                                            </div>
+                                            <div>
+                                                <p className={`text-sm font-medium capitalize ${
+                                                    isCompleted ? 'text-green-700' :
+                                                    isCurrent ? 'text-blue-700' :
+                                                    'text-gray-400'
+                                                }`}>{step}</p>
+                                            </div>
+                                            {index < workflowSteps.length - 1 && (
+                                                <div className={`flex-1 h-0.5 mx-2 ${
+                                                    isCompleted ? 'bg-green-400' :
+                                                    isCurrent ? 'bg-blue-300' :
+                                                    'bg-gray-200'
+                                                }`}></div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Order Status:</span>
                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${orderStatusColors[order.order_status] || 'bg-gray-100 text-gray-800'}`}>
@@ -214,26 +368,20 @@ export default function AdminOrdersShow({ order }) {
                                         {order.payment_status}
                                     </span>
                                 </div>
-                                <div className="border-t pt-3">
+                                <div className="pt-2 border-t">
                                     <span className="text-sm text-gray-500">Order Date:</span>
                                     <p className="font-medium text-gray-900">{new Date(order.created_at).toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Payment Information */}
+                        {/* Payment Section */}
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Information</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment</h2>
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-sm text-gray-500">Payment Method:</p>
                                     <p className="font-medium text-gray-900">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</p>
-                                    {(order.paymentMethod?.account_name || order.payment_method?.account_name) && (
-                                        <p className="text-sm text-gray-500">Account: {order.paymentMethod?.account_name || order.payment_method?.account_name}</p>
-                                    )}
-                                    {(order.paymentMethod?.account_number || order.payment_method?.account_number) && (
-                                        <p className="text-sm text-gray-500">Number: {order.paymentMethod?.account_number || order.payment_method?.account_number}</p>
-                                    )}
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Total Payable:</span>
@@ -274,18 +422,6 @@ export default function AdminOrdersShow({ order }) {
                                         </button>
                                     </div>
                                 )}
-                                {order.payment_verified_at && (
-                                    <div>
-                                        <p className="text-sm text-gray-500">Verified At:</p>
-                                        <p className="font-medium text-green-700">{new Date(order.payment_verified_at).toLocaleString()}</p>
-                                    </div>
-                                )}
-                                {order.rejection_reason && (
-                                    <div>
-                                        <p className="text-sm text-gray-500">Rejection Reason:</p>
-                                        <p className="font-medium text-red-600">{order.rejection_reason}</p>
-                                    </div>
-                                )}
                                 {order.payment_proof && (
                                     <div>
                                         <p className="text-sm text-gray-500 mb-2">Payment Proof (Legacy):</p>
@@ -297,52 +433,38 @@ export default function AdminOrdersShow({ order }) {
                                         </a>
                                     </div>
                                 )}
+                                <div className="pt-3 border-t">
+                                    {renderPaymentActions()}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+                        {/* Next Action */}
+                        {(order.order_status !== 'delivered' && order.order_status !== 'cancelled') && (
+                            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Next Action</h2>
+                                {renderNextActionButton()}
+                            </div>
+                        )}
+
+                        {/* Danger Zone */}
+                        <div className="bg-white rounded-lg border border-red-200 p-6">
+                            <h2 className="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
                             <div className="space-y-3">
-                                {order.can_mark_as_paid && (
-                                    <button onClick={() => setMarkPaidOpen(true)} className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 text-sm font-medium">
-                                        Mark as Paid
-                                    </button>
-                                )}
-                                {order.can_confirm && (
-                                    <button onClick={handleConfirm} className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">
-                                        Confirm Order
-                                    </button>
-                                )}
-                                {order.can_ship && (
-                                    <button onClick={handleShip} className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-                                        Mark as Shipped
-                                    </button>
-                                )}
-                                {order.can_deliver && (
-                                    <button onClick={handleDeliver} className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-medium">
-                                        Mark as Delivered
-                                    </button>
-                                )}
-                                {(order.can_verify_payment || order.can_approve_payment) && (
-                                    <>
-                                        <button onClick={handleVerifyPayment} className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium">
-                                            Verify Payment
-                                        </button>
-                                        <button onClick={() => setRejectModalOpen(true)} className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium">
-                                            Reject Payment
-                                        </button>
-                                    </>
-                                )}
                                 {order.can_cancel && (
-                                    <button onClick={handleCancel} className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium">
+                                    <button onClick={handleCancel}
+                                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
                                         Cancel Order
                                     </button>
                                 )}
                                 {order.order_status === 'cancelled' && (
-                                    <button onClick={handleDelete} className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm font-medium">
+                                    <button onClick={handleDelete}
+                                        className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm font-medium transition-colors">
                                         Delete Order
                                     </button>
+                                )}
+                                {!order.can_cancel && order.order_status !== 'cancelled' && (
+                                    <p className="text-sm text-gray-500">No destructive actions available.</p>
                                 )}
                             </div>
                         </div>

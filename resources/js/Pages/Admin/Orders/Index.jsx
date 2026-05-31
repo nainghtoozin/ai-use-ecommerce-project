@@ -13,6 +13,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
     const orderStatusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
         confirmed: 'bg-blue-100 text-blue-800',
+        processing: 'bg-purple-100 text-purple-800',
         shipped: 'bg-indigo-100 text-indigo-800',
         completed: 'bg-green-100 text-green-800',
         delivered: 'bg-green-100 text-green-800',
@@ -60,6 +61,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                 <option value="">All</option>
                                 <option value="pending">Pending</option>
                                 <option value="confirmed">Confirmed</option>
+                                <option value="processing">Processing</option>
                                 <option value="shipped">Shipped</option>
                                 <option value="delivered">Delivered</option>
                                 <option value="cancelled">Cancelled</option>

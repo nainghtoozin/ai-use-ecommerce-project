@@ -20,6 +20,7 @@ class Order extends Model
     const ORDER_STATUS_VERIFIED = 'verified';
     const ORDER_STATUS_REJECTED = 'rejected';
     const ORDER_STATUS_CONFIRMED = 'confirmed';
+    const ORDER_STATUS_PROCESSING = 'processing';
     const ORDER_STATUS_SHIPPED = 'shipped';
     const ORDER_STATUS_DELIVERED = 'delivered';
     const ORDER_STATUS_CANCELLED = 'cancelled';
@@ -66,6 +67,7 @@ class Order extends Model
     protected $appends = [
         'can_cancel',
         'can_confirm',
+        'can_process',
         'can_ship',
         'can_deliver',
         'can_mark_as_paid',
@@ -124,17 +126,33 @@ class Order extends Model
 
     public function canCancel(): bool
     {
-        return in_array($this->order_status, [self::ORDER_STATUS_PENDING, self::ORDER_STATUS_CONFIRMED]);
+        return in_array($this->order_status, [
+            self::ORDER_STATUS_PENDING,
+            self::ORDER_STATUS_VERIFIED,
+            self::ORDER_STATUS_CONFIRMED,
+        ]);
     }
 
     public function canConfirm(): bool
     {
-        return in_array($this->order_status, [self::ORDER_STATUS_PENDING, self::ORDER_STATUS_VERIFIED]);
+        if ($this->payment_status !== self::PAYMENT_STATUS_VERIFIED) {
+            return false;
+        }
+
+        return in_array($this->order_status, [
+            self::ORDER_STATUS_PENDING,
+            self::ORDER_STATUS_VERIFIED,
+        ]);
+    }
+
+    public function canProcess(): bool
+    {
+        return $this->order_status === self::ORDER_STATUS_CONFIRMED;
     }
 
     public function canShip(): bool
     {
-        return $this->order_status === self::ORDER_STATUS_CONFIRMED;
+        return $this->order_status === self::ORDER_STATUS_PROCESSING;
     }
 
     public function canDeliver(): bool
@@ -209,6 +227,11 @@ class Order extends Model
     public function getCanConfirmAttribute(): bool
     {
         return $this->canConfirm();
+    }
+
+    public function getCanProcessAttribute(): bool
+    {
+        return $this->canProcess();
     }
 
     public function getCanShipAttribute(): bool
