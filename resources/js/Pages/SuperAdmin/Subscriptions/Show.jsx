@@ -2,6 +2,17 @@ import { useState } from 'react';
 import { Link, router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
+function daysSince(date) {
+    if (!date) return 0;
+    return Math.max(0, Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24)));
+}
+
+function daysUntil(date) {
+    if (!date) return null;
+    const diff = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : null;
+}
+
 export default function ShowSubscription({ subscription, history, usage, plans, intervals, currentInterval }) {
     const { props } = usePage();
     const flash = props?.flash || {};
@@ -61,6 +72,15 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
         });
     }
 
+    function handleRenewFromInterval() {
+        if (!window.confirm(`Renew for one more ${subscription.billing_interval || 'monthly'} cycle?`)) return;
+        setProcessing(true);
+        router.post(`/superadmin/subscriptions/${subscription.id}/renew-from-interval`, {}, {
+            preserveState: true,
+            onFinish: () => setProcessing(false),
+        });
+    }
+
     function handleCancel(e) {
         e.preventDefault();
         setProcessing(true);
@@ -106,6 +126,41 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                         </div>
                     )}
 
+                    {/* Expiry Warning Banner */}
+                    {subscription.status === 'expired' && (
+                        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+                            <div className="flex items-start">
+                                <div className="flex-shrink-0 text-red-400 text-lg">!</div>
+                                <div className="ml-3">
+                                    <p className="text-sm font-medium text-red-800">
+                                        Subscription Expired
+                                        {subscription.expires_at && ` — ${daysSince(subscription.expires_at)} day(s) since expiry`}
+                                    </p>
+                                    <p className="mt-1 text-sm text-red-700">
+                                        Merchant access is not currently blocked, but this subscription is inactive.
+                                        {subscription.plan?.isPaid && ' Renew to restore service.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {subscription.expires_at && daysUntil(subscription.expires_at) !== null && daysUntil(subscription.expires_at) <= 7 && subscription.status === 'active' && (
+                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                            <div className="flex items-start">
+                                <div className="flex-shrink-0 text-yellow-400 text-lg">!</div>
+                                <div className="ml-3">
+                                    <p className="text-sm font-medium text-yellow-800">
+                                        Expiring Soon — {daysUntil(subscription.expires_at)} day(s) remaining
+                                    </p>
+                                    <p className="mt-1 text-sm text-yellow-700">
+                                        This subscription will expire on {new Date(subscription.expires_at).toLocaleDateString()}.
+                                        Consider reaching out to the merchant about renewal.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Status + Actions */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -128,10 +183,19 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                                 )}
                                 {canRenew && (
                                     <button
-                                        onClick={() => setShowRenew(!showRenew)}
-                                        className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                        onClick={handleRenewFromInterval}
+                                        disabled={processing}
+                                        className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                                     >
-                                        Renew
+                                        Renew ({subscription.billing_interval || 'monthly'})
+                                    </button>
+                                )}
+                                {canRenew && (
+                                    <button
+                                        onClick={() => setShowRenew(!showRenew)}
+                                        className="px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                                    >
+                                        Custom Date
                                     </button>
                                 )}
                                 {canCancel && (
@@ -231,7 +295,8 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                     {/* Renew Form */}
                     {showRenew && (
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Renew Subscription</h3>
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">Renew with Custom Date</h3>
+                            <p className="text-sm text-gray-500 mb-4">Or use <strong>Renew ({subscription.billing_interval || 'monthly'})</strong> to auto-calculate from billing cycle.</p>
                             <form onSubmit={handleRenew} className="space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -312,6 +377,36 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    )}
+
+                    {/* Expiry Severity Gauge — shows how far into the billing cycle we are */}
+                    {subscription.starts_at && subscription.expires_at && subscription.status !== 'expired' && subscription.status !== 'canceled' && (
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">Billing Period Health</h3>
+                            <div className="space-y-2">
+                                {(() => {
+                                    const total = new Date(subscription.expires_at) - new Date(subscription.starts_at);
+                                    const elapsed = new Date() - new Date(subscription.starts_at);
+                                    const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((elapsed / total) * 100))) : 0;
+                                    const remaining = subscription.expires_at ? daysUntil(subscription.expires_at) : null;
+                                    let barColor = 'bg-green-500';
+                                    if (pct > 90) barColor = 'bg-red-500';
+                                    else if (pct > 75) barColor = 'bg-yellow-500';
+                                    else if (pct > 50) barColor = 'bg-blue-500';
+                                    return (
+                                        <>
+                                            <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                                <span>{pct}% of billing period used</span>
+                                                <span>{remaining !== null ? `${remaining} day(s) remaining` : '—'}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                <div className={`h-2.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }}></div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     )}
 

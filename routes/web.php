@@ -159,8 +159,25 @@ Route::middleware('auth')->group(function () {
 // ============================================================
 // ADMIN ROUTES
 // ============================================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.active'])->group(function () {
+//
+// Middleware layering:
+//   tenant.valid         — structural tenant check (tenant_id exists, record found)
+//                          Applied to ALL admin routes (account + operations).
+//                          Does NOT check subscription status or tenant suspension.
+//
+//   subscription.active  — subscription health check (status, expiry, suspension)
+//                          Applied ONLY to operations routes.
+//                          Expired or suspended merchants are redirected to dashboard.
+//
+// SuperAdmin always bypasses both middlewares.
+//
+// ============================================================
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid'])->group(function () {
+    // ── Account routes (accessible even when expired/suspended) ──
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+
+    // ── Operations routes (blocked when expired/suspended) ──
+    Route::middleware('subscription.active')->group(function () {
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
@@ -316,7 +333,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
     // PERMISSION ROUTES (read-only)
     // ============================================================
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-});
+    }); // ← ends subscription.active group
+}); // ← ends tenant.valid + admin group
 
 // ============================================================
 // SUPERADMIN ROUTES
@@ -345,6 +363,7 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
     Route::get('/subscriptions/{subscription}', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'show'])->name('subscriptions.show');
     Route::put('/subscriptions/{subscription}/change-plan', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'changePlan'])->name('subscriptions.change-plan');
     Route::post('/subscriptions/{subscription}/renew', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'renew'])->name('subscriptions.renew');
+    Route::post('/subscriptions/{subscription}/renew-from-interval', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'renewFromInterval'])->name('subscriptions.renew-from-interval');
     Route::post('/subscriptions/{subscription}/cancel', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
     Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
 });

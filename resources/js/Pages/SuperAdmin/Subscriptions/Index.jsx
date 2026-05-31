@@ -209,8 +209,22 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                                                     {sub.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : '—'}
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                {sub.expires_at ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-gray-900">{new Date(sub.expires_at).toLocaleDateString()}</span>
+                                                        {(() => {
+                                                            const daysRemaining = Math.ceil((new Date(sub.expires_at) - new Date()) / (1000 * 60 * 60 * 24));
+                                                            if (daysRemaining < 0) {
+                                                                return <span className="text-xs text-red-600 font-medium">{Math.abs(daysRemaining)} day(s) overdue</span>;
+                                                            }
+                                                            if (daysRemaining <= 7) {
+                                                                return <span className="text-xs text-yellow-600 font-medium">{daysRemaining} day(s) left</span>;
+                                                            }
+                                                            return <span className="text-xs text-gray-400">{daysRemaining} day(s) left</span>;
+                                                        })()}
+                                                    </div>
+                                                ) : <span className="text-gray-500">—</span>}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {new Date(sub.created_at).toLocaleDateString()}

@@ -172,6 +172,57 @@ class Subscription extends Model
         ]);
     }
 
+    /* ── Renewal via billing interval ── */
+
+    /**
+     * Renew the subscription by adding one billing interval.
+     *
+     * Active  → extends current expires_at by one billing cycle.
+     * Expired → starts fresh from today plus one billing cycle.
+     * Free plans → no-op (no expiry).
+     * Suspended tenant → reactivated.
+     */
+    public function renewFromInterval(?string $notes = null): void
+    {
+        if ($this->plan?->isFree()) {
+            return;
+        }
+
+        $interval = $this->billing_interval ?? 'monthly';
+
+        $baseDate = $this->expires_at?->isFuture()
+            ? $this->expires_at
+            : now();
+
+        $newExpiry = $this->plan?->calculateExpiryDate($baseDate, $interval);
+
+        if (!$newExpiry) {
+            return;
+        }
+
+        $note = sprintf(
+            "[%s] Renewed (%s) — %s → %s",
+            now()->toDateTimeString(),
+            $interval,
+            $baseDate->format('Y-m-d'),
+            $newExpiry->format('Y-m-d')
+        );
+
+        if ($notes) {
+            $note .= " — {$notes}";
+        }
+
+        $this->update([
+            'status' => 'active',
+            'expires_at' => $newExpiry,
+            'notes' => $this->notes ? $this->notes . "\n" . $note : $note,
+        ]);
+
+        if ($this->tenant->status === 'suspended') {
+            $this->tenant->update(['status' => 'active']);
+        }
+    }
+
     /**
      * Grace period used by markAsExpired. Number of days after expires_at
      * before the tenant is automatically suspended.

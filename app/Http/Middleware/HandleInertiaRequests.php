@@ -22,6 +22,8 @@ class HandleInertiaRequests extends Middleware
         $cart = $this->getCartData($request);
 
         $user = $request->user();
+        $subscriptionExpired = $user && $user->tenant ? $user->tenant->subscriptionExpired() : false;
+        $subscription = $user && $user->tenant && $user->tenant->subscription ? $user->tenant->subscription : null;
         $userData = $user ? [
             'id' => $user->id,
             'name' => $user->name,
@@ -34,6 +36,12 @@ class HandleInertiaRequests extends Middleware
             'is_superadmin' => $user->isSuperAdmin(),
             'tenant_id' => $user->tenant_id,
             'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+            'subscription_expired' => $subscriptionExpired,
+            'subscription' => $subscription ? [
+                'status' => $subscription->status,
+                'plan_name' => $subscription->plan?->name,
+                'expires_at' => $subscription->expires_at?->toDateString(),
+            ] : null,
         ] : null;
 
         $settingsModel = \App\Models\WebsiteInfo::first();
@@ -53,6 +61,8 @@ class HandleInertiaRequests extends Middleware
                 'slug' => $tenant->slug,
                 'logo' => $tenant->logo,
                 'settings' => $tenant->settings,
+                'status' => $tenant->status,
+                'subscription_expired' => $user && $user->tenant ? $user->tenant->subscriptionExpired() : false,
             ] : null,
             'cart' => $cart,
             'wishlist_count' => $wishlistEnabled && $user ? (int) $user->wishlistItems()->count() : 0,

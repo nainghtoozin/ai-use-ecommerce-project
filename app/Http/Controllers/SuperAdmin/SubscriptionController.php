@@ -175,6 +175,22 @@ class SubscriptionController extends Controller
             ->with('success', 'Subscription renewed until ' . $expiresAt->toFormattedDateString() . '.');
     }
 
+    public function renewFromInterval(Request $request, Subscription $subscription)
+    {
+        $validated = $request->validate([
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $subscription->renewFromInterval($validated['notes'] ?? null);
+
+        $expiry = $subscription->fresh()->expires_at;
+
+        return redirect()->route('superadmin.subscriptions.show', $subscription)
+            ->with('success', $expiry
+                ? 'Subscription renewed via ' . $subscription->billing_interval . ' cycle until ' . $expiry->toFormattedDateString() . '.'
+                : 'Subscription renewed.');
+    }
+
     public function cancel(Request $request, Subscription $subscription)
     {
         $validated = $request->validate([
