@@ -39,7 +39,7 @@ class CheckMaintenanceMode
 
         if (Auth::check()) {
             $user = Auth::user();
-            if ($user->can('bypass maintenance mode')) {
+            if ($user->isSuperAdmin() || $user->can('bypass maintenance mode') || session()->has('impersonator_id')) {
                 return $next($request);
             }
         }

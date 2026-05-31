@@ -63,6 +63,14 @@ class SubscriptionController extends Controller
         $plans = Plan::active()->ordered()->get(['id', 'name', 'slug', 'monthly_price', 'yearly_price']);
         $intervals = ['monthly', 'yearly'];
 
+        $tenantUsers = $subscription->tenant
+            ? \App\Models\User::where('tenant_id', $subscription->tenant_id)
+                ->with('roles')
+                ->orderBy('created_at', 'desc')
+                ->take(20)
+                ->get()
+            : collect();
+
         return Inertia::render('SuperAdmin/Subscriptions/Show', [
             'subscription' => $subscription,
             'history' => $history,
@@ -70,6 +78,7 @@ class SubscriptionController extends Controller
             'plans' => $plans,
             'intervals' => $intervals,
             'currentInterval' => $subscription->billing_interval ?? 'monthly',
+            'tenantUsers' => $tenantUsers,
         ]);
     }
 

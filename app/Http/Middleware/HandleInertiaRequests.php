@@ -24,6 +24,9 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $subscriptionExpired = $user && $user->tenant ? $user->tenant->subscriptionExpired() : false;
         $subscription = $user && $user->tenant && $user->tenant->subscription ? $user->tenant->subscription : null;
+        $isImpersonating = $user && session()->has('impersonator_id') && !$user->isSuperAdmin();
+        $impersonatorName = $isImpersonating ? session('impersonator_name') : null;
+
         $userData = $user ? [
             'id' => $user->id,
             'name' => $user->name,
@@ -42,6 +45,8 @@ class HandleInertiaRequests extends Middleware
                 'plan_name' => $subscription->plan?->name,
                 'expires_at' => $subscription->expires_at?->toDateString(),
             ] : null,
+            'is_impersonating' => $isImpersonating,
+            'impersonator_name' => $impersonatorName,
         ] : null;
 
         $settingsModel = \App\Models\WebsiteInfo::first();

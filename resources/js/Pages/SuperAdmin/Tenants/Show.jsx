@@ -1,4 +1,4 @@
-import { Link, Head } from '@inertiajs/react';
+import { Link, Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function ShowTenant({ tenant, users, stats }) {
@@ -103,6 +103,7 @@ export default function ShowTenant({ tenant, users, stats }) {
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
@@ -121,6 +122,23 @@ export default function ShowTenant({ tenant, users, stats }) {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        <button
+                                                            onClick={() => {
+                                                                if (window.confirm(`Log in as ${user.name}?`)) {
+                                                                    router.post(`/superadmin/impersonate/${user.id}`, {}, {
+                                                                        preserveScroll: true,
+                                                                    });
+                                                                }
+                                                            }}
+                                                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                            </svg>
+                                                            Login As User
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>

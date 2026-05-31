@@ -41,7 +41,7 @@ Route::get('/products', [ClientController::class, 'products'])->name('products.p
 Route::get('/maintenance', function () {
     $settings = \App\Models\WebsiteInfo::getSettings();
     return \Inertia\Inertia::render('Client/Maintenance', [
-        'message' => $settings->maintenance_message ?? 'We are currently performing scheduled maintenance. Please check back soon.',
+        'message' => $settings->maintenance_message ?? 'We are currently performing maintenance. Please try again later.',
         'siteName' => $settings->site_name ?? 'My Store',
         'logoUrl' => $settings->logo_url,
         'contactEmail' => $settings->contact_email ?? $settings->support_email ?? '',
@@ -339,10 +339,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
 }); // ← ends tenant.valid + admin group
 
 // ============================================================
+// IMPERSONATION LEAVE (before superadmin group to avoid route collision)
+// ============================================================
+Route::middleware('auth')->group(function () {
+    Route::post('/superadmin/impersonate/leave', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'leave'])->name('superadmin.impersonate.leave');
+});
+
+// ============================================================
 // SUPERADMIN ROUTES
 // ============================================================
 Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:superadmin'])->group(function () {
-    Route::redirect('/', '/superadmin/tenants')->name('dashboard');
+    Route::get('/', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
     Route::get('/tenants/create', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'create'])->name('tenants.create');
@@ -369,6 +376,8 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
     Route::post('/subscriptions/{subscription}/cancel', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
     Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
     Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
+
+    Route::post('/impersonate/{user}', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
 });
 
 // Auth

@@ -13,7 +13,7 @@ function daysUntil(date) {
     return diff > 0 ? diff : null;
 }
 
-export default function ShowSubscription({ subscription, history, usage, plans, intervals, currentInterval }) {
+export default function ShowSubscription({ subscription, history, usage, plans, intervals, currentInterval, tenantUsers }) {
     const { props } = usePage();
     const flash = props?.flash || {};
     const [showChangePlan, setShowChangePlan] = useState(false);
@@ -543,6 +543,59 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Users */}
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">
+                            Users ({tenantUsers.length})
+                        </h3>
+                        {tenantUsers.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {tenantUsers.map((user) => (
+                                            <tr key={user.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        {user.roles?.[0]?.name || 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <button
+                                                        onClick={() => {
+                                                            if (window.confirm(`Log in as ${user.name}?`)) {
+                                                                router.post(`/superadmin/impersonate/${user.id}`, {}, {
+                                                                    preserveScroll: true,
+                                                                });
+                                                            }
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                        </svg>
+                                                        Login As User
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500">No users associated with this tenant.</p>
+                        )}
                     </div>
 
                     {/* History */}

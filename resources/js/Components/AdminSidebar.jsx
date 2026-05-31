@@ -58,20 +58,48 @@ export default function AdminSidebar() {
     const isSuperAdmin = auth?.user?.is_superadmin;
 
     const menuSections = useMemo(() => {
-        const sections = [
+        if (isSuperAdmin) {
+            return [
+                {
+                    title: 'Main',
+                    items: [
+                        { label: 'Dashboard', href: '/superadmin', icon: 'LayoutDashboard' },
+                    ]
+                },
+                {
+                    title: 'Merchant Management',
+                    items: [
+                        { label: 'Merchants', href: '/superadmin/tenants', icon: 'Building2' },
+                    ]
+                },
+                {
+                    title: 'Subscription Management',
+                    items: [
+                        { label: 'Plans', href: '/superadmin/plans', icon: 'FileText' },
+                        { label: 'Subscriptions', href: '/superadmin/subscriptions', icon: 'CreditCard' },
+                    ]
+                },
+                {
+                    title: 'System Management',
+                    items: [
+                        { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
+                    ]
+                },
+                {
+                    title: 'Logs',
+                    items: [
+                        { label: 'Activity Logs', href: '/admin/activity-logs', icon: 'History' },
+                    ]
+                },
+            ];
+        }
+
+        return [
             {
                 title: 'Main',
                 items: [
                     ...(can('dashboard.view') ? [{ label: 'Dashboard', href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
                     { label: 'Billing', href: '/admin/billing', icon: 'CreditCard' },
-                ]
-            },
-            {
-                title: 'SaaS Management',
-                items: [
-                    { label: 'Merchants', href: '/superadmin/tenants', icon: 'Building2' },
-                    { label: 'Subscription Plans', href: '/superadmin/plans', icon: 'FileText' },
-                    { label: 'Subscriptions', href: '/superadmin/subscriptions', icon: 'CreditCard' },
                 ]
             },
             {
@@ -123,11 +151,6 @@ export default function AdminSidebar() {
                 ]
             }
         ];
-
-        return sections.filter(s => {
-            if (s.title === 'SaaS Management') return !!isSuperAdmin;
-            return s.items.length > 0;
-        });
     }, [userPermissions, isSuperAdmin]);
 
     function isActive(href) {
