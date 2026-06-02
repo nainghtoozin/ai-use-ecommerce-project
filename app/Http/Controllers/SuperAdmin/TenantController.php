@@ -77,23 +77,30 @@ class TenantController extends Controller
 
             $plan = \App\Models\Plan::find($validated['plan_id']) ?? \App\Models\Plan::free();
             $billingInterval = $plan?->defaultInterval() ?? 'monthly';
-            \App\Models\Subscription::create([
-                'tenant_id' => $tenant->id,
+            $subscription = new \App\Models\Subscription();
+            $subscription->tenant_id = $tenant->id;
+            $subscription->fill([
                 'plan_id' => $plan?->id,
                 'billing_interval' => $billingInterval,
                 'status' => in_array($tenant->status, ['trialing', 'active']) ? $tenant->status : 'active',
                 'starts_at' => now(),
                 'expires_at' => $plan?->calculateExpiryDate(now(), $billingInterval),
             ]);
+            $subscription->save();
 
             foreach (['admin', 'customer'] as $roleName) {
-                $role = Role::firstOrCreate([
-                    'name' => $roleName,
-                    'guard_name' => 'web',
-                    'tenant_id' => $tenant->id,
-                ]);
+                $role = Role::where('name', $roleName)
+                    ->where('guard_name', 'web')
+                    ->where('tenant_id', $tenant->id)
+                    ->first();
 
-                if ($role->wasRecentlyCreated) {
+                if (!$role) {
+                    $role = new Role();
+                    $role->name = $roleName;
+                    $role->guard_name = 'web';
+                    $role->tenant_id = $tenant->id;
+                    $role->save();
+
                     $globalRole = Role::where('name', $roleName)
                         ->whereNull('tenant_id')
                         ->first();

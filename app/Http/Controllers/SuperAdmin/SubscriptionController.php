@@ -108,8 +108,9 @@ class SubscriptionController extends Controller
         $plan = Plan::findOrFail($validated['plan_id']);
         $billingInterval = $validated['billing_interval'] ?? $plan->defaultInterval();
 
-        $subscription = Subscription::create([
-            'tenant_id' => $tenant->id,
+        $subscription = new Subscription();
+        $subscription->tenant_id = $tenant->id;
+        $subscription->fill([
             'plan_id' => $plan->id,
             'billing_interval' => $billingInterval,
             'status' => $validated['status'] ?? 'active',
@@ -118,6 +119,7 @@ class SubscriptionController extends Controller
             'trial_ends_at' => $validated['trial_ends_at'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
+        $subscription->save();
 
         if ($tenant->status === 'suspended') {
             $tenant->update(['status' => 'active']);
