@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'status',
+        'allow_cod',
         'profile_image',
         'notification_preferences',
     ];
@@ -41,6 +42,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_owner' => 'boolean',
+            'allow_cod' => 'boolean',
             'notification_preferences' => 'array',
             'plan_started_at' => 'datetime',
             'plan_expires_at' => 'datetime',

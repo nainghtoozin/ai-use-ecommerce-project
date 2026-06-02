@@ -22,6 +22,7 @@ class UpdateUserRequest extends FormRequest
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'role' => ['sometimes', 'string', 'exists:roles,name'],
             'status' => ['sometimes', 'string', 'in:active,suspended,banned'],
+            'allow_cod' => ['nullable', 'boolean'],
             'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }

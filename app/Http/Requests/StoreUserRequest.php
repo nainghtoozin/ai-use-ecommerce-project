@@ -20,6 +20,7 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'string', 'exists:roles,name'],
             'status' => ['required', 'string', 'in:active,suspended,banned'],
+            'allow_cod' => ['nullable', 'boolean'],
             'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }

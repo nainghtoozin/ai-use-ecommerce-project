@@ -78,7 +78,7 @@ class ComputeFullDashboardMetrics implements ShouldQueue
                 ->count(),
             'filteredVerifiedRevenue' => DB::table('orders')
                 ->where('tenant_id', $this->tenantId)
-                ->where('payment_status', 'verified')
+                ->where('payment_status', 'paid')
                 ->whereBetween('created_at', [$start, $end])
                 ->sum('total_amount'),
             'growthPercentage' => $this->calculateGrowthPercentage($currentRevenue, $previousRevenue),

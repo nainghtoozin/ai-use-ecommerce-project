@@ -51,10 +51,10 @@
                         default => 'secondary'
                     };
                     $paymentBadge = match($order->payment_status) {
-                        'verified' => 'success',
-                        'paid' => 'info',
-                        'unpaid' => 'secondary',
-                        'rejected' => 'danger',
+                        'paid' => 'success',
+                        'pending' => 'warning',
+                        'failed' => 'danger',
+                        'refunded' => 'info',
                         default => 'secondary'
                     };
                 @endphp

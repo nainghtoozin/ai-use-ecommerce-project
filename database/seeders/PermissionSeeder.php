@@ -61,6 +61,10 @@ class PermissionSeeder extends Seeder
             // Activity Logs
             'activity-logs.view',
 
+            // Super Admin Override
+            'orders.override-status',
+            'orders.override-payment',
+
             // Maintenance
             'bypass maintenance mode',
         ];

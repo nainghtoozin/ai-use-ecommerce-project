@@ -11,6 +11,7 @@ export default function UsersEdit({ user, roles }) {
         password_confirmation: '',
         role: user.roles?.[0]?.name || 'customer',
         status: user.status || 'active',
+        allow_cod: user.allow_cod ?? false,
         profile_image: null,
     });
 
@@ -119,11 +120,24 @@ export default function UsersEdit({ user, roles }) {
                                             <option value="banned">Banned</option>
                                         </select>
                                         {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
-                                    </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
+                                <div className="flex items-center gap-3 mt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="allow_cod"
+                                        checked={data.allow_cod}
+                                        onChange={(e) => setData('allow_cod', e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <label htmlFor="allow_cod" className="text-sm font-medium text-gray-700">
+                                        Allow COD
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
                                     <input
                                         type="file"
                                         accept="image/*"

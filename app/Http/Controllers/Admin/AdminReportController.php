@@ -491,13 +491,13 @@ class AdminReportController extends Controller
 
         return $query->select([
                 DB::raw('COALESCE(SUM(orders.total_amount), 0) as total_payment_amount'),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_VERIFIED . "' THEN orders.total_amount ELSE 0 END), 0) as verified_amount"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_VERIFIED . "' THEN 1 ELSE 0 END), 0) as verified_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_PAID . "' THEN orders.total_amount ELSE 0 END), 0) as verified_amount"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_PAID . "' THEN 1 ELSE 0 END), 0) as verified_count"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as pending_verification_count"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_VERIFIED . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN orders.total_amount ELSE 0 END), 0) as refunded_amount"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_VERIFIED . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as refunded_count"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_REJECTED . "' THEN 1 ELSE 0 END), 0) as failed_count"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_VERIFIED . "') THEN COALESCE(orders.paid_amount, orders.total_amount) ELSE 0 END), 0) as net_received"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN orders.total_amount ELSE 0 END), 0) as refunded_amount"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as refunded_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_FAILED . "' THEN 1 ELSE 0 END), 0) as failed_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_PAID . "' THEN COALESCE(orders.paid_amount, orders.total_amount) ELSE 0 END), 0) as net_received"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_method_id = {$codId} THEN 1 ELSE 0 END), 0) as cod_count"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_method_id = {$codId} THEN orders.total_amount ELSE 0 END), 0) as cod_amount"),
             ])
@@ -510,22 +510,18 @@ class AdminReportController extends Controller
     private function applyPaymentStatusFilter($query, string $status): void
     {
         match ($status) {
-            'paid' => $query->whereIn('orders.payment_status', [
-                Order::PAYMENT_STATUS_PAID,
-                Order::PAYMENT_STATUS_VERIFIED,
-            ]),
+            'paid' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_PAID),
             'pending' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_PENDING),
             'failed' => $query->where(function ($q) {
-                $q->where('orders.payment_status', Order::PAYMENT_STATUS_REJECTED)
+                $q->where('orders.payment_status', Order::PAYMENT_STATUS_FAILED)
                   ->orWhere(function ($q) {
                       $q->where('orders.order_status', Order::ORDER_STATUS_CANCELLED)
-                        ->where('orders.payment_status', '!=', Order::PAYMENT_STATUS_UNPAID);
+                        ->where('orders.payment_status', '!=', Order::PAYMENT_STATUS_PENDING);
                   });
             }),
             'refunded' => $query->where('orders.order_status', Order::ORDER_STATUS_CANCELLED)
                                ->whereIn('orders.payment_status', [
                                    Order::PAYMENT_STATUS_PAID,
-                                   Order::PAYMENT_STATUS_VERIFIED,
                                    Order::PAYMENT_STATUS_PENDING,
                                ]),
             default => null,
@@ -539,11 +535,11 @@ class AdminReportController extends Controller
     {
         match ($status) {
             'unchecked' => $query->whereIn('orders.payment_status', [
-                Order::PAYMENT_STATUS_UNPAID,
+                Order::PAYMENT_STATUS_PENDING,
                 Order::PAYMENT_STATUS_PAID,
             ]),
-            'verified' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_VERIFIED),
-            'rejected' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_REJECTED),
+            'paid' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_PAID),
+            'rejected' => $query->where('orders.payment_status', Order::PAYMENT_STATUS_FAILED),
             default => null,
         };
     }
@@ -579,8 +575,7 @@ class AdminReportController extends Controller
             }
 
             $order->update([
-                'order_status'    => Order::ORDER_STATUS_VERIFIED,
-                'payment_status'  => Order::PAYMENT_STATUS_VERIFIED,
+                'payment_status'  => Order::PAYMENT_STATUS_PAID,
                 'payment_verified_at' => now(),
                 'rejection_reason'    => null,
             ]);
@@ -611,8 +606,7 @@ class AdminReportController extends Controller
             ]);
 
             $order->update([
-                'order_status'   => Order::ORDER_STATUS_REJECTED,
-                'payment_status' => Order::PAYMENT_STATUS_REJECTED,
+                'payment_status'  => Order::PAYMENT_STATUS_FAILED,
                 'rejection_reason' => $validated['rejection_reason'] ?? null,
             ]);
 

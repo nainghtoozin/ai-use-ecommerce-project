@@ -13,7 +13,7 @@ return new class extends Migration
         }
 
         if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE orders MODIFY order_status ENUM('pending', 'paid', 'confirmed', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending'");
+            DB::statement("ALTER TABLE orders MODIFY order_status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending'");
         }
     }
 

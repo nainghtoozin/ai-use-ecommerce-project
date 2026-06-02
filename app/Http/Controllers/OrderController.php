@@ -82,6 +82,16 @@ class OrderController extends Controller
             }
         }
 
+        if (auth()->check()) {
+            $codMethods = \App\Models\PaymentMethod::where('type', 'cod')->pluck('id');
+            if ($codMethods->isNotEmpty() && $codMethods->contains($validated['payment_method_id'])) {
+                $user = auth()->user();
+                if (!$user || !$user->allow_cod) {
+                    return back()->with('error', 'COD payment is not available for your account.');
+                }
+            }
+        }
+
         $paymentScreenshotPath = null;
         if ($request->hasFile('payment_screenshot')) {
             $paymentScreenshotPath = $this->imageService->upload($request->file('payment_screenshot'), 'payment-proofs');
@@ -153,7 +163,7 @@ class OrderController extends Controller
             'delivery_fee' => $deliveryFee,
             'discount_amount' => $totalDiscount,
             'total_amount' => $totalAmount,
-            'payment_status' => $paymentScreenshotPath ? Order::PAYMENT_STATUS_PENDING : Order::PAYMENT_STATUS_UNPAID,
+            'payment_status' => Order::PAYMENT_STATUS_PENDING,
             'order_status' => Order::ORDER_STATUS_PENDING,
         ];
 

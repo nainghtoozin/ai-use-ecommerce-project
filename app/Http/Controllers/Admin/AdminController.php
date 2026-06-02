@@ -98,7 +98,7 @@ class AdminController extends Controller
             ->when(tenant(), fn($q, $t) => $q->where('orders.tenant_id', $t->id))
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('COUNT(*) as filtered_orders_count')
-            ->selectRaw("COALESCE(SUM(CASE WHEN payment_status = 'verified' OR order_status = 'confirmed' THEN total_amount ELSE 0 END), 0) as total_received_payments")
+            ->selectRaw("COALESCE(SUM(CASE WHEN payment_status = 'paid' OR order_status = 'confirmed' THEN total_amount ELSE 0 END), 0) as total_received_payments")
             ->selectRaw("COALESCE(SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END), 0) as filtered_pending_orders")
             ->selectRaw('COUNT(DISTINCT user_id) as filtered_customers')
             ->first();
@@ -123,7 +123,7 @@ class AdminController extends Controller
             ->whereBetween('orders.created_at', [$start, $end])
             ->whereNotNull('orders.payment_method_id')
             ->select('payment_methods.name', 'payment_methods.bank_name')
-            ->selectRaw("COALESCE(SUM(CASE WHEN orders.payment_status = 'verified' OR orders.order_status = 'confirmed' THEN orders.total_amount ELSE 0 END), 0) as total")
+            ->selectRaw("COALESCE(SUM(CASE WHEN orders.payment_status = 'paid' OR orders.order_status = 'confirmed' THEN orders.total_amount ELSE 0 END), 0) as total")
             ->groupBy('orders.payment_method_id', 'payment_methods.name', 'payment_methods.bank_name')
             ->orderByDesc(DB::raw('total'))
             ->get();

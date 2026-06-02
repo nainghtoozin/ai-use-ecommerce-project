@@ -36,6 +36,7 @@ class PaymentMethodUpdateRequest extends FormRequest
                     ->ignore($ignoreId)
                     ->where('tenant_id', Tenant::getCurrent()?->id),
             ],
+            'type' => 'required|string|in:bank_transfer,cod',
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',
             'qr_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',

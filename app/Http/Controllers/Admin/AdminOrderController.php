@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Events\PaymentVerified;
 use App\Events\PaymentRejected;
 use App\Services\OrderService;
+use App\Services\OrderWorkflow;
 use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,10 +19,12 @@ class AdminOrderController extends Controller
     use PerPageTrait;
 
     protected $orderService;
+    protected $orderWorkflow;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderService $orderService, OrderWorkflow $orderWorkflow)
     {
         $this->orderService = $orderService;
+        $this->orderWorkflow = $orderWorkflow;
     }
 
     public function index(Request $request)
@@ -127,17 +130,9 @@ class AdminOrderController extends Controller
     public function confirmOrder(string $id)
     {
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user', 'paymentMethod')->findOrFail($id);
 
-            if ($order->payment_status !== Order::PAYMENT_STATUS_VERIFIED) {
-                return redirect()->route('admin.orders.show', $id)
-                    ->with('error', 'Cannot confirm order. Payment must be verified first.');
-            }
-
-            if (!$order->canConfirm()) {
-                return redirect()->route('admin.orders.show', $id)
-                    ->with('error', 'This order cannot be confirmed.');
-            }
+            $this->orderWorkflow->assertCanConfirmOrder($order);
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_CONFIRMED);
 
@@ -149,7 +144,7 @@ class AdminOrderController extends Controller
             Log::error('Order confirmation failed: ' . $e->getMessage());
 
             return redirect()->route('admin.orders.show', $id)
-                ->with('error', 'Failed to confirm order.');
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -158,10 +153,7 @@ class AdminOrderController extends Controller
         try {
             $order = Order::with('user')->findOrFail($id);
 
-            if (!$order->canProcess()) {
-                return redirect()->route('admin.orders.show', $id)
-                    ->with('error', 'This order cannot be moved to processing.');
-            }
+            $this->orderWorkflow->assertCanProcessOrder($order);
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_PROCESSING);
 
@@ -173,7 +165,7 @@ class AdminOrderController extends Controller
             Log::error('Order processing failed: ' . $e->getMessage());
 
             return redirect()->route('admin.orders.show', $id)
-                ->with('error', 'Failed to move order to processing.');
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -182,10 +174,7 @@ class AdminOrderController extends Controller
         try {
             $order = Order::with('user')->findOrFail($id);
 
-            if (!$order->canShip()) {
-                return redirect()->route('admin.orders.show', $id)
-                    ->with('error', 'This order cannot be shipped.');
-            }
+            $this->orderWorkflow->assertCanShipOrder($order);
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_SHIPPED);
 
@@ -197,7 +186,7 @@ class AdminOrderController extends Controller
             Log::error('Order shipping failed: ' . $e->getMessage());
 
             return redirect()->route('admin.orders.show', $id)
-                ->with('error', 'Failed to ship order.');
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -206,10 +195,7 @@ class AdminOrderController extends Controller
         try {
             $order = Order::with('user')->findOrFail($id);
 
-            if (!$order->canDeliver()) {
-                return redirect()->route('admin.orders.show', $id)
-                    ->with('error', 'This order cannot be marked as delivered.');
-            }
+            $this->orderWorkflow->assertCanDeliverOrder($order);
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_DELIVERED);
 
@@ -221,7 +207,7 @@ class AdminOrderController extends Controller
             Log::error('Order delivery failed: ' . $e->getMessage());
 
             return redirect()->route('admin.orders.show', $id)
-                ->with('error', 'Failed to mark order as delivered.');
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -260,7 +246,7 @@ class AdminOrderController extends Controller
             }
 
             $order->update([
-                'payment_status' => Order::PAYMENT_STATUS_VERIFIED,
+                'payment_status' => Order::PAYMENT_STATUS_PAID,
                 'payment_verified_at' => now(),
                 'rejection_reason' => null,
             ]);
@@ -294,7 +280,7 @@ class AdminOrderController extends Controller
             ]);
 
             $order->update([
-                'payment_status' => Order::PAYMENT_STATUS_REJECTED,
+                'payment_status' => Order::PAYMENT_STATUS_FAILED,
                 'rejection_reason' => $request->rejection_reason,
             ]);
 

@@ -319,7 +319,7 @@ class ClientOrderController extends Controller
             'transaction_id' => 'nullable|string|max:100',
         ]);
 
-        if ($order->payment_status !== 'unpaid') {
+        if ($order->payment_status !== Order::PAYMENT_STATUS_PENDING) {
             return redirect()->back()->with('error', 'You cannot upload payment proof for this order.');
         }
 
@@ -328,7 +328,7 @@ class ClientOrderController extends Controller
 
             $order->update([
                 'payment_proof' => $path,
-                'payment_status' => 'paid',
+                'payment_status' => Order::PAYMENT_STATUS_PAID,
                 'transaction_id' => $request->transaction_id,
             ]);
 
@@ -375,12 +375,12 @@ class ClientOrderController extends Controller
             ->where('user_id', auth()->id())
             ->findOrFail($id);
 
-        if ($order->payment_status !== 'unpaid') {
+        if ($order->payment_status !== Order::PAYMENT_STATUS_PENDING) {
             return redirect()->back()->with('error', 'You have already confirmed payment for this order.');
         }
 
         $order->update([
-            'payment_status' => 'paid',
+            'payment_status' => Order::PAYMENT_STATUS_PAID,
             'transaction_id' => $request->transaction_id ?? null,
         ]);
 

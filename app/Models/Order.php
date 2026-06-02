@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\TenantAware;
+use App\Services\OrderWorkflow;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -10,15 +11,12 @@ class Order extends Model
 {
     use HasFactory, TenantAware;
 
-    const PAYMENT_STATUS_UNPAID = 'unpaid';
-    const PAYMENT_STATUS_PAID = 'paid';
     const PAYMENT_STATUS_PENDING = 'pending';
-    const PAYMENT_STATUS_VERIFIED = 'verified';
-    const PAYMENT_STATUS_REJECTED = 'rejected';
+    const PAYMENT_STATUS_PAID = 'paid';
+    const PAYMENT_STATUS_FAILED = 'failed';
+    const PAYMENT_STATUS_REFUNDED = 'refunded';
 
     const ORDER_STATUS_PENDING = 'pending';
-    const ORDER_STATUS_VERIFIED = 'verified';
-    const ORDER_STATUS_REJECTED = 'rejected';
     const ORDER_STATUS_CONFIRMED = 'confirmed';
     const ORDER_STATUS_PROCESSING = 'processing';
     const ORDER_STATUS_SHIPPED = 'shipped';
@@ -128,36 +126,28 @@ class Order extends Model
     {
         return in_array($this->order_status, [
             self::ORDER_STATUS_PENDING,
-            self::ORDER_STATUS_VERIFIED,
             self::ORDER_STATUS_CONFIRMED,
         ]);
     }
 
     public function canConfirm(): bool
     {
-        if ($this->payment_status !== self::PAYMENT_STATUS_VERIFIED) {
-            return false;
-        }
-
-        return in_array($this->order_status, [
-            self::ORDER_STATUS_PENDING,
-            self::ORDER_STATUS_VERIFIED,
-        ]);
+        return app(OrderWorkflow::class)->canConfirmOrder($this);
     }
 
     public function canProcess(): bool
     {
-        return $this->order_status === self::ORDER_STATUS_CONFIRMED;
+        return app(OrderWorkflow::class)->canProcessOrder($this);
     }
 
     public function canShip(): bool
     {
-        return $this->order_status === self::ORDER_STATUS_PROCESSING;
+        return app(OrderWorkflow::class)->canShipOrder($this);
     }
 
     public function canDeliver(): bool
     {
-        return $this->order_status === self::ORDER_STATUS_SHIPPED;
+        return app(OrderWorkflow::class)->canDeliverOrder($this);
     }
 
     public function canVerifyPayment(): bool
@@ -177,7 +167,7 @@ class Order extends Model
 
     public function canMarkAsPaid(): bool
     {
-        return $this->payment_status === self::PAYMENT_STATUS_UNPAID;
+        return $this->payment_status === self::PAYMENT_STATUS_PENDING;
     }
 
     public function isPaymentAmountCorrect(): bool

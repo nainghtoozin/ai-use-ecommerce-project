@@ -123,9 +123,11 @@
                         <span class="px-3 py-1 rounded-full text-sm font-semibold 
                             @if($order->order_status == 'pending') bg-yellow-100 text-yellow-800
                             @elseif($order->order_status == 'confirmed') bg-blue-100 text-blue-800
-                            @elseif($order->order_status == 'shipped') bg-purple-100 text-purple-800
+                            @elseif($order->order_status == 'processing') bg-purple-100 text-purple-800
+                            @elseif($order->order_status == 'shipped') bg-indigo-100 text-indigo-800
                             @elseif($order->order_status == 'delivered') bg-green-100 text-green-800
-                            @else bg-red-100 text-red-800 @endif">
+                            @elseif($order->order_status == 'cancelled') bg-red-100 text-red-800
+                            @endif">
                             {{ ucfirst($order->order_status) }}
                         </span>
                     </div>
@@ -133,11 +135,11 @@
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">Payment Status:</span>
                         <span class="px-3 py-1 rounded-full text-sm font-semibold 
-                            @if($order->payment_status == 'unpaid') bg-gray-100 text-gray-800
-                            @elseif($order->payment_status == 'paid') bg-orange-100 text-orange-800
-                            @elseif($order->payment_status == 'pending') bg-yellow-100 text-yellow-800
-                            @elseif($order->payment_status == 'verified') bg-green-100 text-green-800
-                            @else bg-red-100 text-red-800 @endif">
+                            @if($order->payment_status == 'pending') bg-yellow-100 text-yellow-800
+                            @elseif($order->payment_status == 'paid') bg-green-100 text-green-800
+                            @elseif($order->payment_status == 'failed') bg-red-100 text-red-800
+                            @elseif($order->payment_status == 'refunded') bg-purple-100 text-purple-800
+                            @else bg-gray-100 text-gray-800 @endif">
                             {{ ucfirst($order->payment_status) }}
                         </span>
                     </div>
@@ -211,20 +213,6 @@
                     </div>
                     @endif
 
-                    @if($order->payment_verified_at)
-                    <div>
-                        <span class="text-gray-600 text-sm">Verified At:</span>
-                        <p class="font-medium">{{ $order->payment_verified_at->format('Y-m-d H:i:s') }}</p>
-                    </div>
-                    @endif
-
-                    @if($order->rejection_reason)
-                    <div>
-                        <span class="text-gray-600 text-sm">Rejection Reason:</span>
-                        <p class="font-medium text-red-600">{{ $order->rejection_reason }}</p>
-                    </div>
-                    @endif
-
                     @if($order->payment_proof)
                     <div>
                         <span class="text-gray-600 text-sm">Payment Proof (Legacy):</span>
@@ -239,69 +227,138 @@
                     </div>
                     @endif
                 </div>
+
+                <div class="pt-3 border-t">
+                    @if($order->payment_status == 'paid')
+                        <div class="flex items-center gap-2 text-green-700">
+                            <span class="font-medium">Payment Verified</span>
+                        </div>
+                        @if($order->payment_verified_at)
+                            <p class="text-sm text-gray-500">
+                                Verified At: {{ $order->payment_verified_at->format('Y-m-d H:i:s') }}
+                            </p>
+                        @endif
+                    @elseif($order->payment_status == 'failed')
+                        <div class="flex items-center gap-2 text-red-700">
+                            <span class="font-medium">Payment Failed</span>
+                        </div>
+                        @if($order->rejection_reason)
+                            <p class="text-sm text-gray-600">Reason: {{ $order->rejection_reason }}</p>
+                        @endif
+                    @elseif($order->payment_status == 'refunded')
+                        <div class="flex items-center gap-2 text-purple-700">
+                            <span class="font-medium">Payment Refunded</span>
+                        </div>
+                    @elseif($order->payment_status == 'pending' && $order->canVerifyPayment())
+                        <div class="space-y-2">
+                            <form action="{{ route('admin.orders.verify-payment', $order->id) }}" method="POST" onsubmit="return confirm('Verify this payment?')">
+                                @csrf
+                                <button type="submit" class="w-full bg-emerald-500 text-white px-4 py-2 rounded-md hover:bg-emerald-600">
+                                    Verify Payment
+                                </button>
+                            </form>
+                            <button type="button" onclick="document.getElementById('rejectPaymentModal').classList.remove('hidden')"
+                                    class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
+                                Reject Payment
+                            </button>
+                        </div>
+                    @endif
+                </div>
             </div>
 
+            @php
+                $nextAction = null;
+                if ($order->canConfirm()) $nextAction = 'confirm';
+                elseif ($order->canProcess()) $nextAction = 'process';
+                elseif ($order->canShip()) $nextAction = 'ship';
+                elseif ($order->canDeliver()) $nextAction = 'deliver';
+            @endphp
+
+            @if($nextAction)
             <div class="bg-white rounded-md shadow p-6">
-                <h3 class="text-lg font-semibold mb-4">Actions</h3>
+                <h3 class="text-lg font-semibold mb-4">Next Action</h3>
+                @if($nextAction == 'confirm')
+                    <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                            Confirm Order
+                        </button>
+                    </form>
+                @elseif($nextAction == 'process')
+                    <form action="{{ route('admin.orders.process', $order->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="w-full bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600">
+                            Move to Processing
+                        </button>
+                    </form>
+                @elseif($nextAction == 'ship')
+                    <form action="{{ route('admin.orders.ship', $order->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="w-full bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600">
+                            Mark as Shipped
+                        </button>
+                    </form>
+                @elseif($nextAction == 'deliver')
+                    <form action="{{ route('admin.orders.deliver', $order->id) }}" method="POST" onsubmit="return confirm('Mark as delivered?')">
+                        @csrf
+                        <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
+                            Mark as Delivered
+                        </button>
+                    </form>
+                @endif
+            </div>
+            @endif
+
+            <div class="bg-white rounded-md shadow p-6 border-red-200">
+                <h3 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h3>
                 <div class="space-y-3">
-                    @if($order->canMarkAsPaid())
-                        <button type="button" 
-                                onclick="document.getElementById('markAsPaidModal').classList.remove('hidden')"
-                                class="w-full bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">
-                            <i class="fa-solid fa-money-bill-wave"></i> Mark as Paid
-                        </button>
-                    @endif
-
-                    @if($order->canConfirm())
-                        <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
-                                <i class="fa-solid fa-check"></i> Confirm Order
-                            </button>
-                        </form>
-                    @endif
-
-                    @if($order->canShip())
-                        <form action="{{ route('admin.orders.ship', $order->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600">
-                                <i class="fa-solid fa-truck"></i> Mark as Shipped
-                            </button>
-                        </form>
-                    @endif
-
-                    @if($order->canDeliver())
-                        <form action="{{ route('admin.orders.deliver', $order->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
-                                <i class="fa-solid fa-check-circle"></i> Mark as Delivered
-                            </button>
-                        </form>
-                    @endif
-
-                    @if($order->canVerifyPayment() || $order->canApprovePayment())
-                        <form action="{{ route('admin.orders.verify-payment', $order->id) }}" method="POST" onsubmit="return confirm('Verify this payment?')">
-                            @csrf
-                            <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
-                                <i class="fa-solid fa-check"></i> Verify Payment
-                            </button>
-                        </form>
-                        <button type="button" onclick="document.getElementById('rejectPaymentModal').classList.remove('hidden')"
-                                class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
-                            <i class="fa-solid fa-times"></i> Reject Payment
-                        </button>
-                    @endif
-
                     @if($order->canCancel())
                         <form action="{{ route('admin.orders.cancel', $order->id) }}" method="POST">
                             @csrf
                             <button type="submit" class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600" onclick="return confirm('Are you sure you want to cancel this order? Stock will be restored.')">
-                                <i class="fa-solid fa-ban"></i> Cancel Order
+                                Cancel Order
                             </button>
                         </form>
                     @endif
+                    @if($order->order_status == 'cancelled')
+                        <form action="{{ route('admin.orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Delete this cancelled order?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+                                Delete Order
+                            </button>
+                        </form>
+                    @endif
+                    @if(!$order->canCancel() && $order->order_status != 'cancelled')
+                        <p class="text-sm text-gray-500">No destructive actions available.</p>
+                    @endif
                 </div>
             </div>
+
+            @canany(['orders.override-status', 'orders.override-payment'])
+            @php
+                $orderStatusOptions = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+                $paymentStatusOptions = ['pending', 'paid', 'failed', 'refunded'];
+            @endphp
+            <div class="bg-white rounded-md shadow p-6 border-orange-200">
+                <h3 class="text-lg font-semibold text-orange-700 mb-4">Super Admin Override</h3>
+                <p class="text-sm text-gray-500 mb-4">Force override order or payment status. All changes are logged.</p>
+                <div class="space-y-3">
+                    @can('orders.override-status')
+                    <button type="button" onclick="document.getElementById('overrideOrderModal').classList.remove('hidden')"
+                            class="w-full bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">
+                        Override Order Status
+                    </button>
+                    @endcan
+                    @can('orders.override-payment')
+                    <button type="button" onclick="document.getElementById('overridePaymentModal').classList.remove('hidden')"
+                            class="w-full bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">
+                        Override Payment Status
+                    </button>
+                    @endcan
+                </div>
+            </div>
+            @endcanany
         </div>
     </div>
 
@@ -338,48 +395,94 @@
     </div>
 </div>
 
-<!-- Mark as Paid Modal -->
-<div id="markAsPaidModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<!-- Override Order Status Modal -->
+@can('orders.override-status')
+<div id="overrideOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-lg p-6 w-96">
-        <h3 class="text-lg font-semibold mb-4">Mark as Paid</h3>
-        
-        <div class="mb-4 p-3 bg-gray-50 rounded-md">
-            <p class="text-sm text-gray-600">Payment Method:</p>
-            <p class="font-medium">{{ $order->paymentMethod->name ?? 'N/A' }}</p>
-            @if($order->paymentMethod)
-                @if($order->paymentMethod->account_number)
-                    <p class="text-sm text-gray-500 mt-1">Account: {{ $order->paymentMethod->account_number }}</p>
-                @endif
-                @if($order->paymentMethod->account_name)
-                    <p class="text-sm text-gray-500">Name: {{ $order->paymentMethod->account_name }}</p>
-                @endif
-            @endif
+        <h3 class="text-lg font-semibold mb-4">Override Order Status</h3>
+        <div class="mb-4 p-3 bg-orange-50 rounded-md border border-orange-200">
+            <p class="text-sm text-orange-700">
+                Current Order Status: <strong>{{ ucfirst($order->order_status) }}</strong>
+            </p>
         </div>
-
-        <form action="{{ route('admin.orders.mark-as-paid', $order->id) }}" method="POST">
+        <form action="{{ route('admin.orders.override-status', $order->id) }}" method="POST">
             @csrf
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Amount Received</label>
-                <input type="number" 
-                       name="paid_amount" 
-                       step="0.01" 
-                       min="0" 
-                       value="{{ $order->total_payable }}"
-                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                       required>
-                <p class="text-sm text-gray-500 mt-1">Total payable: {{ number_format($order->total_payable, 2) }}</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                <select name="new_status" required
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                    <option value="">Select status...</option>
+                    @foreach($orderStatusOptions as $status)
+                        @if($status !== $order->order_status)
+                            <option value="{{ $status }}">{{ ucfirst($status) }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reason <span class="text-red-500">*</span></label>
+                <textarea name="reason" rows="3" required
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          placeholder="Explain why this override is necessary..."></textarea>
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" 
-                        onclick="document.getElementById('markAsPaidModal').classList.add('hidden')"
+                        onclick="document.getElementById('overrideOrderModal').classList.add('hidden')"
                         class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
                     Cancel
                 </button>
-                <button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">
-                    Confirm Payment
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700">
+                    Confirm Override
                 </button>
             </div>
         </form>
     </div>
 </div>
+@endcan
+
+<!-- Override Payment Status Modal -->
+@can('orders.override-payment')
+<div id="overridePaymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+        <h3 class="text-lg font-semibold mb-4">Override Payment Status</h3>
+        <div class="mb-4 p-3 bg-orange-50 rounded-md border border-orange-200">
+            <p class="text-sm text-orange-700">
+                Current Payment Status: <strong>{{ ucfirst($order->payment_status) }}</strong>
+            </p>
+        </div>
+        <form action="{{ route('admin.orders.override-payment', $order->id) }}" method="POST">
+            @csrf
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                <select name="new_status" required
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                    <option value="">Select status...</option>
+                    @foreach($paymentStatusOptions as $status)
+                        @if($status !== $order->payment_status)
+                            <option value="{{ $status }}">{{ ucfirst($status) }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reason <span class="text-red-500">*</span></label>
+                <textarea name="reason" rows="3" required
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          placeholder="Explain why this override is necessary..."></textarea>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" 
+                        onclick="document.getElementById('overridePaymentModal').classList.add('hidden')"
+                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+                    Cancel
+                </button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700">
+                    Confirm Override
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endcan
+
 @endsection

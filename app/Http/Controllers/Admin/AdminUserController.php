@@ -123,6 +123,7 @@ class AdminUserController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'status' => $data['status'] ?? User::STATUS_ACTIVE,
+            'allow_cod' => $data['allow_cod'] ?? false,
         ]);
 
         $user->syncRoles([$data['role']]);
@@ -195,6 +196,11 @@ class AdminUserController extends Controller
             if (isset($data[$field])) {
                 $updateData[$field] = $data[$field];
             }
+        }
+
+        if (array_key_exists('allow_cod', $data)) {
+            $updateData['allow_cod'] = $data['allow_cod'];
+            $changes[] = 'allow_cod';
         }
 
         if (!empty($data['password'])) {

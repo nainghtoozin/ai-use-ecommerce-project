@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\City;
@@ -16,6 +17,7 @@ use App\Events\LowStockAlert;
 use App\Notifications\LowStockNotification;
 use App\Services\BroadcastService;
 use App\Services\CouponService;
+use App\Services\OrderWorkflow;
 use App\Services\PromotionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +38,8 @@ class OrderService
         Log::info('Order items:', $items);
 
         $this->validateStock($items);
+
+        $this->validateCodAccess($orderData);
 
         $order = DB::transaction(function () use ($orderData, $items, $couponData, $promotionData) {
             $deliveryFee = $this->getDeliveryFee(
@@ -87,7 +91,7 @@ class OrderService
                 'discount_amount' => $discountAmount,
                 'promotion_id' => $orderData['promotion_id'],
                 'promotion_code' => $orderData['promotion_code'],
-                'payment_status' => ! empty($orderData['payment_proof']) ? 'paid' : 'unpaid',
+                'payment_status' => ! empty($orderData['payment_proof']) ? Order::PAYMENT_STATUS_PAID : Order::PAYMENT_STATUS_PENDING,
                 'order_status' => 'pending',
             ]);
 
@@ -149,6 +153,28 @@ class OrderService
         });
 
         return $order;
+    }
+
+    private function validateCodAccess(array $orderData): void
+    {
+        $paymentMethodId = $orderData['payment_method_id'] ?? null;
+        $userId = $orderData['user_id'] ?? null;
+
+        if (!$paymentMethodId || !$userId) {
+            return;
+        }
+
+        $paymentMethod = PaymentMethod::find($paymentMethodId);
+
+        if (!$paymentMethod || $paymentMethod->type !== 'cod') {
+            return;
+        }
+
+        $user = \App\Models\User::find($userId);
+
+        if (!$user || !$user->allow_cod) {
+            throw new \InvalidArgumentException('COD payment is not available for your account.');
+        }
     }
 
     public function validateStock(array $items): void
@@ -452,10 +478,26 @@ class OrderService
 
         $this->validateTransition($oldStatus, $newStatus);
 
+        if ($oldStatus === 'pending' && $newStatus === 'confirmed') {
+            app(OrderWorkflow::class)->assertCanConfirmOrder($order);
+        }
+
+        if ($oldStatus === 'confirmed' && $newStatus === 'processing') {
+            app(OrderWorkflow::class)->assertCanProcessOrder($order);
+        }
+
+        if ($oldStatus === 'processing' && $newStatus === 'shipped') {
+            app(OrderWorkflow::class)->assertCanShipOrder($order);
+        }
+
+        if ($oldStatus === 'shipped' && $newStatus === 'delivered') {
+            app(OrderWorkflow::class)->assertCanDeliverOrder($order);
+        }
+
         DB::transaction(function () use ($order, $newStatus, $oldStatus) {
             $order->update(['order_status' => $newStatus]);
 
-            if (in_array($oldStatus, ['pending', 'verified']) && $newStatus === 'confirmed') {
+            if ($oldStatus === 'pending' && $newStatus === 'confirmed') {
                 $this->reduceStock($order);
             }
 
@@ -509,7 +551,6 @@ class OrderService
     {
         $valid = [
             'pending' => ['confirmed', 'cancelled'],
-            'verified' => ['confirmed', 'cancelled'],
             'confirmed' => ['processing', 'cancelled'],
             'processing' => ['shipped'],
             'shipped' => ['delivered'],

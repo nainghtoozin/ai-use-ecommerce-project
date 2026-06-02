@@ -20,13 +20,13 @@ return new class extends Migration
 
         Schema::table('orders', function (Blueprint $table) {
             if (! Schema::hasColumn('orders', 'payment_status')) {
-                $table->enum('payment_status', ['unpaid', 'paid', 'verified', 'rejected'])
-                    ->default('unpaid')
+                $table->enum('payment_status', ['pending', 'paid', 'failed', 'refunded'])
+                    ->default('pending')
                     ->after('payment_proof');
             }
 
             if (! Schema::hasColumn('orders', 'order_status')) {
-                $table->enum('order_status', ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'])
+                $table->enum('order_status', ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])
                     ->default('pending')
                     ->after('payment_status');
             }

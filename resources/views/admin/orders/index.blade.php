@@ -41,11 +41,10 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
                 <select name="payment_status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
                     <option value="">All</option>
-                    <option value="unpaid" {{ request('payment_status') === 'unpaid' ? 'selected' : '' }}>Unpaid</option>
-                    <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Paid</option>
                     <option value="pending" {{ request('payment_status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="verified" {{ request('payment_status') === 'verified' ? 'selected' : '' }}>Verified</option>
-                    <option value="rejected" {{ request('payment_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Paid</option>
+                    <option value="failed" {{ request('payment_status') === 'failed' ? 'selected' : '' }}>Failed</option>
+                    <option value="refunded" {{ request('payment_status') === 'refunded' ? 'selected' : '' }}>Refunded</option>
                 </select>
             </div>
 
@@ -98,11 +97,10 @@
                         'cancelled' => 'bg-red-100 text-red-800',
                     ];
                     $paymentStatusColors = [
-                        'unpaid' => 'bg-gray-100 text-gray-800',
-                        'paid' => 'bg-orange-100 text-orange-800',
                         'pending' => 'bg-yellow-100 text-yellow-800',
-                        'verified' => 'bg-green-100 text-green-800',
-                        'rejected' => 'bg-red-100 text-red-800',
+                        'paid' => 'bg-green-100 text-green-800',
+                        'failed' => 'bg-red-100 text-red-800',
+                        'refunded' => 'bg-purple-100 text-purple-800',
                     ];
                 @endphp
 

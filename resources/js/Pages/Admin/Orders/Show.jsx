@@ -5,11 +5,16 @@ import AdminLayout from '@/Layouts/AdminLayout';
 export default function AdminOrdersShow({ order }) {
     const { props } = usePage();
     const flash = props.flash || {};
-    const [markPaidOpen, setMarkPaidOpen] = useState(false);
-    const [paidAmount, setPaidAmount] = useState(order.total_payable || order.total_amount);
     const [imagePreview, setImagePreview] = useState(null);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [overrideModal, setOverrideModal] = useState(null);
+    const [overrideNewStatus, setOverrideNewStatus] = useState('');
+    const [overrideReason, setOverrideReason] = useState('');
+
+    const permissions = props.permissions || [];
+    const canOverrideStatus = permissions.includes('orders.override-status');
+    const canOverridePayment = permissions.includes('orders.override-payment');
 
     const cityName = order.city?.name;
     const townshipName = order.township?.name;
@@ -21,16 +26,13 @@ export default function AdminOrdersShow({ order }) {
         shipped: 'bg-indigo-100 text-indigo-800',
         delivered: 'bg-green-100 text-green-800',
         cancelled: 'bg-red-100 text-red-800',
-        verified: 'bg-emerald-100 text-emerald-800',
-        rejected: 'bg-gray-100 text-gray-800',
     };
 
     const paymentStatusColors = {
-        unpaid: 'bg-gray-100 text-gray-800',
-        paid: 'bg-orange-100 text-orange-800',
         pending: 'bg-yellow-100 text-yellow-800',
-        verified: 'bg-green-100 text-green-800',
-        rejected: 'bg-red-100 text-red-800',
+        paid: 'bg-green-100 text-green-800',
+        failed: 'bg-red-100 text-red-800',
+        refunded: 'bg-purple-100 text-purple-800',
     };
 
     const workflowSteps = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
@@ -79,33 +81,42 @@ export default function AdminOrdersShow({ order }) {
         });
     }
 
-    function handleMarkAsPaid(e) {
-        e.preventDefault();
-        router.post(`/admin/orders/${order.id}/mark-as-paid`, { paid_amount: paidAmount });
-        setMarkPaidOpen(false);
-    }
-
     function handleDelete() {
         if (confirm('Delete this cancelled order?')) {
             router.delete(`/admin/orders/${order.id}`);
         }
     }
 
-    function renderNextActionButton() {
-        if (order.order_status === 'cancelled' || order.order_status === 'delivered') {
-            return null;
-        }
+    function handleOverride() {
+        if (!overrideModal || !overrideNewStatus || !overrideReason.trim()) return;
 
-        if (order.order_status === 'pending') {
-            if (order.payment_status !== 'verified') {
-                return (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-                        <p className="text-sm text-amber-700">
-                            Please verify payment before confirming this order.
-                        </p>
-                    </div>
-                );
-            }
+        const endpoint = overrideModal === 'order_status'
+            ? `/admin/orders/${order.id}/override-status`
+            : `/admin/orders/${order.id}/override-payment`;
+
+        router.post(endpoint, {
+            new_status: overrideNewStatus,
+            reason: overrideReason,
+        }, {
+            onSuccess: () => {
+                setOverrideModal(null);
+                setOverrideNewStatus('');
+                setOverrideReason('');
+            },
+        });
+    }
+
+    function openOverrideModal(type) {
+        setOverrideModal(type);
+        setOverrideNewStatus('');
+        setOverrideReason('');
+    }
+
+    const orderStatusOptions = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const paymentStatusOptions = ['pending', 'paid', 'failed', 'refunded'];
+
+    function renderNextActionButton() {
+        if (order.can_confirm) {
             return (
                 <button onClick={handleConfirm}
                     className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
@@ -114,7 +125,7 @@ export default function AdminOrdersShow({ order }) {
             );
         }
 
-        if (order.order_status === 'confirmed') {
+        if (order.can_process) {
             return (
                 <button onClick={handleProcess}
                     className="w-full bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 text-sm font-medium transition-colors">
@@ -123,7 +134,7 @@ export default function AdminOrdersShow({ order }) {
             );
         }
 
-        if (order.order_status === 'processing') {
+        if (order.can_ship) {
             return (
                 <button onClick={handleShip}
                     className="w-full bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors">
@@ -132,7 +143,7 @@ export default function AdminOrdersShow({ order }) {
             );
         }
 
-        if (order.order_status === 'shipped') {
+        if (order.can_deliver) {
             return (
                 <button onClick={handleDeliver}
                     className="w-full bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 text-sm font-medium transition-colors">
@@ -145,7 +156,7 @@ export default function AdminOrdersShow({ order }) {
     }
 
     function renderPaymentActions() {
-        if (order.payment_status === 'verified') {
+        if (order.payment_status === 'paid') {
             return (
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-green-700">
@@ -163,14 +174,14 @@ export default function AdminOrdersShow({ order }) {
             );
         }
 
-        if (order.payment_status === 'rejected') {
+        if (order.payment_status === 'failed') {
             return (
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-red-700">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
-                        <span className="font-medium">Payment Rejected</span>
+                        <span className="font-medium">Payment Failed</span>
                     </div>
                     {order.rejection_reason && (
                         <p className="text-sm text-gray-600">Reason: {order.rejection_reason}</p>
@@ -179,27 +190,35 @@ export default function AdminOrdersShow({ order }) {
             );
         }
 
-        if (order.payment_status === 'unpaid') {
+        if (order.payment_status === 'refunded') {
             return (
-                <button onClick={() => setMarkPaidOpen(true)}
-                    className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 text-sm font-medium transition-colors">
-                    Mark as Paid
-                </button>
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-purple-700">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span className="font-medium">Payment Refunded</span>
+                    </div>
+                </div>
             );
         }
 
-        return (
-            <div className="space-y-2">
-                <button onClick={handleVerifyPayment}
-                    className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors">
-                    Verify Payment
-                </button>
-                <button onClick={() => setRejectModalOpen(true)}
-                    className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
-                    Reject Payment
-                </button>
-            </div>
-        );
+        if (order.payment_status === 'pending' && order.can_verify_payment) {
+            return (
+                <div className="space-y-2">
+                    <button onClick={handleVerifyPayment}
+                        className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors">
+                        Verify Payment
+                    </button>
+                    <button onClick={() => setRejectModalOpen(true)}
+                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
+                        Reject Payment
+                    </button>
+                </div>
+            );
+        }
+
+        return null;
     }
 
     return (
@@ -440,12 +459,15 @@ export default function AdminOrdersShow({ order }) {
                         </div>
 
                         {/* Next Action */}
-                        {(order.order_status !== 'delivered' && order.order_status !== 'cancelled') && (
-                            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Next Action</h2>
-                                {renderNextActionButton()}
-                            </div>
-                        )}
+                        {(() => {
+                            const button = renderNextActionButton();
+                            return button ? (
+                                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Next Action</h2>
+                                    {button}
+                                </div>
+                            ) : null;
+                        })()}
 
                         {/* Danger Zone */}
                         <div className="bg-white rounded-lg border border-red-200 p-6">
@@ -468,6 +490,28 @@ export default function AdminOrdersShow({ order }) {
                                 )}
                             </div>
                         </div>
+
+                        {/* Super Admin Override */}
+                        {(canOverrideStatus || canOverridePayment) && (
+                            <div className="bg-white rounded-lg border border-orange-200 p-6">
+                                <h2 className="text-lg font-semibold text-orange-700 mb-4">Super Admin Override</h2>
+                                <p className="text-sm text-gray-500 mb-4">Force override order or payment status. All changes are logged.</p>
+                                <div className="space-y-3">
+                                    {canOverrideStatus && (
+                                        <button onClick={() => openOverrideModal('order_status')}
+                                            className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 text-sm font-medium transition-colors">
+                                            Override Order Status
+                                        </button>
+                                    )}
+                                    {canOverridePayment && (
+                                        <button onClick={() => openOverrideModal('payment_status')}
+                                            className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 text-sm font-medium transition-colors">
+                                            Override Payment Status
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -515,44 +559,55 @@ export default function AdminOrdersShow({ order }) {
                 </div>
             )}
 
-            {/* Mark as Paid Modal */}
-            {markPaidOpen && (
+            {/* Override Confirmation Modal */}
+            {overrideModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg shadow-lg p-6 w-96">
-                        <h3 className="text-lg font-semibold mb-4">Mark as Paid</h3>
-                        <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                            <p className="text-sm text-gray-600">Payment Method:</p>
-                            <p className="font-medium">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</p>
-                            {(order.paymentMethod?.account_number || order.payment_method?.account_number) && (
-                                <p className="text-sm text-gray-500 mt-1">Account: {order.paymentMethod?.account_number || order.payment_method?.account_number}</p>
-                            )}
-                            {(order.paymentMethod?.account_name || order.payment_method?.account_name) && (
-                                <p className="text-sm text-gray-500">Name: {order.paymentMethod?.account_name || order.payment_method?.account_name}</p>
-                            )}
+                        <h3 className="text-lg font-semibold mb-4">
+                            Override {overrideModal === 'order_status' ? 'Order Status' : 'Payment Status'}
+                        </h3>
+                        <div className="mb-4 p-3 bg-orange-50 rounded-md border border-orange-200">
+                            <p className="text-sm text-orange-700">
+                                Current {overrideModal === 'order_status' ? 'Order' : 'Payment'} Status: <strong>{overrideModal === 'order_status' ? order.order_status : order.payment_status}</strong>
+                            </p>
                         </div>
-                        <form onSubmit={handleMarkAsPaid}>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Amount Received</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={paidAmount}
-                                    onChange={(e) => setPaidAmount(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                                    required
-                                />
-                                <p className="text-sm text-gray-500 mt-1">Total payable: {Number(order.total_payable || order.total_amount).toLocaleString()} MMK</p>
-                            </div>
-                            <div className="flex justify-end gap-3">
-                                <button type="button" onClick={() => setMarkPaidOpen(false)} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm">
-                                    Confirm Payment
-                                </button>
-                            </div>
-                        </form>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                            <select
+                                value={overrideNewStatus}
+                                onChange={(e) => setOverrideNewStatus(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            >
+                                <option value="">Select status...</option>
+                                {(overrideModal === 'order_status' ? orderStatusOptions : paymentStatusOptions)
+                                    .filter(s => s !== (overrideModal === 'order_status' ? order.order_status : order.payment_status))
+                                    .map(s => (
+                                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Reason <span className="text-red-500">*</span></label>
+                            <textarea
+                                value={overrideReason}
+                                onChange={(e) => setOverrideReason(e.target.value)}
+                                rows={3}
+                                placeholder="Explain why this override is necessary..."
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            />
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => { setOverrideModal(null); setOverrideReason(''); setOverrideNewStatus(''); }}
+                                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm">
+                                Cancel
+                            </button>
+                            <button onClick={handleOverride}
+                                disabled={!overrideNewStatus || !overrideReason.trim()}
+                                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                                Confirm Override
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -34,7 +34,7 @@ class AdminPromotionReportController extends Controller
         $categoryId = $request->input('category_id');
 
         $orderBase = Order::whereBetween('created_at', [$startDate, $endDate])
-            ->whereNotIn('order_status', ['cancelled', 'rejected']);
+            ->whereNotIn('order_status', ['cancelled']);
 
         if ($productId) {
             $orderBase->whereHas('items', fn($q) => $q->where('product_id', $productId));
@@ -158,7 +158,7 @@ class AdminPromotionReportController extends Controller
             )
             ->where('orders.tenant_id', tenant()?->id)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->whereNotIn('orders.order_status', ['cancelled', 'rejected'])
+            ->whereNotIn('orders.order_status', ['cancelled'])
             ->groupBy('order_coupon.coupon_id', 'order_coupon.code', 'order_coupon.type')
             ->orderByDesc('total_discount');
 
@@ -208,7 +208,7 @@ class AdminPromotionReportController extends Controller
         )
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('discount_amount', '>', 0)
-            ->whereNotIn('order_status', ['cancelled', 'rejected'])
+            ->whereNotIn('order_status', ['cancelled'])
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date');
 
@@ -252,7 +252,7 @@ class AdminPromotionReportController extends Controller
                 $q->select(DB::raw(1))
                     ->from('orders')
                     ->whereColumn('orders.id', 'promotion_usages.order_id')
-                    ->whereNotIn('orders.order_status', ['cancelled', 'rejected']);
+                     ->whereNotIn('orders.order_status', ['cancelled']);
                 if ($productId) {
                     $q->whereExists(function ($sq) use ($productId) {
                         $sq->select(DB::raw(1))
@@ -294,7 +294,7 @@ class AdminPromotionReportController extends Controller
             $monthEnd = $start->copy()->endOfMonth();
 
             $orders = Order::whereBetween('created_at', [$monthStart, $monthEnd])
-                ->whereNotIn('order_status', ['cancelled', 'rejected']);
+                ->whereNotIn('order_status', ['cancelled']);
 
             $discounted = (clone $orders)->where('discount_amount', '>', 0);
 

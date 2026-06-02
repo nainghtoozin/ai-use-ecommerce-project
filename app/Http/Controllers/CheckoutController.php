@@ -39,6 +39,21 @@ class CheckoutController extends Controller
         }
 
         $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
+
+        if (auth()->check()) {
+            $user = auth()->user();
+            $paymentMethods = $paymentMethods->filter(function ($pm) use ($user) {
+                if ($pm->type === 'cod') {
+                    return $user->allow_cod;
+                }
+                return true;
+            })->values();
+        } else {
+            $paymentMethods = $paymentMethods->reject(function ($pm) {
+                return $pm->type === 'cod';
+            })->values();
+        }
+
         $cities = City::getActiveWithTownships();
 
         $cartItems = $this->getCartItems($cart);
