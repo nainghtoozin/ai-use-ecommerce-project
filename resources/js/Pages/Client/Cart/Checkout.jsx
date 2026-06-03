@@ -363,124 +363,135 @@ return (
 
                                                 {isSelected && (
                                                     <>
-                                                        <div className="mt-4 pt-4 border-t border-blue-200">
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                                <div className="space-y-3">
-                                                                    <div>
-                                                                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Account Name</p>
-                                                                        <p className="text-sm font-semibold text-gray-900 mt-0.5">{pm.account_name || 'N/A'}</p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Account Number</p>
-                                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                                            <p className="text-sm font-semibold text-gray-900">{pm.account_number || 'N/A'}</p>
-                                                                            {pm.account_number && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(pm.account_number, pm.id); }}
-                                                                                    className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-colors ${
-                                                                                        copiedId === pm.id
-                                                                                            ? 'bg-green-100 text-green-700'
-                                                                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                                                    }`}
-                                                                                >
-                                                                                    {copiedId === pm.id ? (
-                                                                                        <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Copied</>
-                                                                                    ) : (
-                                                                                        <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copy</>
+                                                        {pm.type === 'cod' ? (
+                                                            <div className="mt-4 pt-4 border-t border-blue-200">
+                                                                <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                                                                    <p className="text-sm text-green-800 font-medium">Cash on Delivery</p>
+                                                                    <p className="text-sm text-green-700 mt-1">Pay when your order is delivered.</p>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div className="mt-4 pt-4 border-t border-blue-200">
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                        <div className="space-y-3">
+                                                                            <div>
+                                                                                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Account Name</p>
+                                                                                <p className="text-sm font-semibold text-gray-900 mt-0.5">{pm.account_name || 'N/A'}</p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Account Number</p>
+                                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                                    <p className="text-sm font-semibold text-gray-900">{pm.account_number || 'N/A'}</p>
+                                                                                    {pm.account_number && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={(e) => { e.stopPropagation(); copyToClipboard(pm.account_number, pm.id); }}
+                                                                                            className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-colors ${
+                                                                                                copiedId === pm.id
+                                                                                                    ? 'bg-green-100 text-green-700'
+                                                                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                                                            }`}
+                                                                                        >
+                                                                                            {copiedId === pm.id ? (
+                                                                                                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Copied</>
+                                                                                            ) : (
+                                                                                                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copy</>
+                                                                                            )}
+                                                                                        </button>
                                                                                     )}
-                                                                                </button>
+                                                                                </div>
+                                                                            </div>
+                                                                            {pm.bank_name && (
+                                                                                <div>
+                                                                                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Bank</p>
+                                                                                    <p className="text-sm font-semibold text-gray-900 mt-0.5">{pm.bank_name}</p>
+                                                                                </div>
                                                                             )}
                                                                         </div>
+ {pm.qr_image_url && (
+                                                                              <div className="flex justify-center sm:justify-end items-start mt-3 sm:mt-0">
+                                                                                  <div className="text-center sm:text-right">
+                                                                                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Scan to Pay</p>
+                                                                                      <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(pm.qr_image_url); }} className="block">
+                                                                                          <img
+                                                                                              src={pm.qr_image_url}
+                                                                                              alt={`${pm.name} QR`}
+                                                                                              className="w-36 h-36 sm:w-44 sm:h-44 rounded-xl border border-gray-200 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                                                          />
+                                                                                      </button>
+                                                                                      <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(pm.qr_image_url); }}
+                                                                                          className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">
+                                                                                          Tap to enlarge
+                                                                                      </button>
+                                                                                  </div>
+                                                                              </div>
+                                                                          )}
                                                                     </div>
-                                                                    {pm.bank_name && (
-                                                                        <div>
-                                                                            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Bank</p>
-                                                                            <p className="text-sm font-semibold text-gray-900 mt-0.5">{pm.bank_name}</p>
-                                                                        </div>
-                                                                    )}
+                                                                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+                                                                        <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-2">How to Pay</p>
+                                                                        <ol className="text-xs text-blue-700 space-y-1.5 list-decimal list-inside leading-relaxed">
+                                                                            <li>Transfer the <strong>exact amount</strong> to the account above</li>
+                                                                            <li>Take a <strong>clear screenshot</strong> of your payment confirmation</li>
+                                                                            <li>Enter the <strong>sender account name</strong> and <strong>transaction ID</strong></li>
+                                                                            <li>Upload the screenshot below to complete your order</li>
+                                                                        </ol>
+                                                                    </div>
                                                                 </div>
-{pm.qr_image_url && (
-                                                                      <div className="flex justify-center sm:justify-end items-start mt-3 sm:mt-0">
-                                                                          <div className="text-center sm:text-right">
-                                                                              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Scan to Pay</p>
-                                                                              <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(pm.qr_image_url); }} className="block">
-                                                                                  <img
-                                                                                      src={pm.qr_image_url}
-                                                                                      alt={`${pm.name} QR`}
-                                                                                      className="w-36 h-36 sm:w-44 sm:h-44 rounded-xl border border-gray-200 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                                                  />
-                                                                              </button>
-                                                                              <button type="button" onClick={(e) => { e.stopPropagation(); setQrPreview(pm.qr_image_url); }}
-                                                                                  className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">
-                                                                                  Tap to enlarge
-                                                                              </button>
-                                                                          </div>
-                                                                      </div>
-                                                                  )}
-                                                            </div>
-                                                            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-                                                                <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-2">How to Pay</p>
-                                                                <ol className="text-xs text-blue-700 space-y-1.5 list-decimal list-inside leading-relaxed">
-                                                                    <li>Transfer the <strong>exact amount</strong> to the account above</li>
-                                                                    <li>Take a <strong>clear screenshot</strong> of your payment confirmation</li>
-                                                                    <li>Enter the <strong>sender account name</strong> and <strong>transaction ID</strong></li>
-                                                                    <li>Upload the screenshot below to complete your order</li>
-                                                                </ol>
-                                                            </div>
-                                                        </div>
 
-                                                        <div className="mt-4 pt-4 border-t border-blue-200 space-y-4">
-                                                            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Transfer Details</p>
-                                                            <div>
-                                                                <label htmlFor="payer_name" className="block text-sm font-medium text-gray-700 mb-1">Sender Account Name</label>
-                                                                <input id="payer_name" type="text" value={form.payer_name} onChange={(e) => updateField('payer_name', e.target.value)}
-                                                                    placeholder="Name on your bank/wallet account"
-                                                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                                                {formErrors.payer_name && <p className="mt-1 text-xs text-red-600">{formErrors.payer_name}</p>}
-                                                            </div>
-                                                            <div>
-                                                                <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
-                                                                <input id="transaction_id" type="text" value={form.transaction_id} onChange={(e) => updateField('transaction_id', e.target.value)}
-                                                                    placeholder="Transaction reference number"
-                                                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                                                {formErrors.transaction_id && <p className="mt-1 text-xs text-red-600">{formErrors.transaction_id}</p>}
-                                                            </div>
-                                                            <div>
-                                                                <label htmlFor="payment_screenshot" className="block text-sm font-medium text-gray-700 mb-1">Payment Screenshot</label>
-                                                                <input id="payment_screenshot" type="file" accept="image/jpeg,image/png,image/webp"
-                                                                    onChange={handleScreenshotFile}
-                                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-                                                                {fileError && <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{fileError}</p>}
-                                                                {selectedFileName && !fileError && (
-                                                                    <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                                                        {selectedFileName}
-                                                                    </p>
-                                                                )}
-                                                                {formErrors.payment_screenshot && <p className="mt-1 text-xs text-red-600">{formErrors.payment_screenshot}</p>}
-                                                                {screenshotPreview && (
-                                                                    <div className="mt-3 flex items-start gap-3">
-                                                                        <div className="relative">
-                                                                            <img src={screenshotPreview} alt="Payment Screenshot Preview" className="w-32 h-32 sm:w-36 sm:h-36 rounded-lg border border-gray-200 object-cover" />
-                                                                            <button type="button" onClick={handleRemoveFile}
-                                                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 shadow hover:bg-red-600 transition-colors">
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                                            </button>
-                                                                        </div>
+                                                                <div className="mt-4 pt-4 border-t border-blue-200 space-y-4">
+                                                                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Transfer Details</p>
+                                                                    <div>
+                                                                        <label htmlFor="payer_name" className="block text-sm font-medium text-gray-700 mb-1">Sender Account Name</label>
+                                                                        <input id="payer_name" type="text" value={form.payer_name} onChange={(e) => updateField('payer_name', e.target.value)}
+                                                                            placeholder="Name on your bank/wallet account"
+                                                                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                                                        {formErrors.payer_name && <p className="mt-1 text-xs text-red-600">{formErrors.payer_name}</p>}
                                                                     </div>
-                                                                )}
-                                                            </div>
+                                                                    <div>
+                                                                        <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+                                                                        <input id="transaction_id" type="text" value={form.transaction_id} onChange={(e) => updateField('transaction_id', e.target.value)}
+                                                                            placeholder="Transaction reference number"
+                                                                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                                                        {formErrors.transaction_id && <p className="mt-1 text-xs text-red-600">{formErrors.transaction_id}</p>}
+                                                                    </div>
+                                                                    <div>
+                                                                        <label htmlFor="payment_screenshot" className="block text-sm font-medium text-gray-700 mb-1">Payment Screenshot</label>
+                                                                        <input id="payment_screenshot" type="file" accept="image/jpeg,image/png,image/webp"
+                                                                            onChange={handleScreenshotFile}
+                                                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                                                                        {fileError && <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{fileError}</p>}
+                                                                        {selectedFileName && !fileError && (
+                                                                            <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                                                {selectedFileName}
+                                                                            </p>
+                                                                        )}
+                                                                        {formErrors.payment_screenshot && <p className="mt-1 text-xs text-red-600">{formErrors.payment_screenshot}</p>}
+                                                                        {screenshotPreview && (
+                                                                            <div className="mt-3 flex items-start gap-3">
+                                                                                <div className="relative">
+                                                                                    <img src={screenshotPreview} alt="Payment Screenshot Preview" className="w-32 h-32 sm:w-36 sm:h-36 rounded-lg border border-gray-200 object-cover" />
+                                                                                    <button type="button" onClick={handleRemoveFile}
+                                                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 shadow hover:bg-red-600 transition-colors">
+                                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
 
-                                                            <div className="flex items-start gap-2.5 bg-gray-50 rounded-lg px-4 py-3">
-                                                                <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                                </svg>
-                                                                <p className="text-xs text-gray-500 leading-relaxed">
-                                                                    Your payment proof will be reviewed by our team. We will notify you once your payment is verified.
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                                                    <div className="flex items-start gap-2.5 bg-gray-50 rounded-lg px-4 py-3">
+                                                                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                                        </svg>
+                                                                        <p className="text-xs text-gray-500 leading-relaxed">
+                                                                            Your payment proof will be reviewed by our team. We will notify you once your payment is verified.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </>
                                                 )}
                                             </div>

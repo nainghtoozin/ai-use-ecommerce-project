@@ -26,15 +26,27 @@ class PaymentMethodService
 
     public function createPaymentMethod(array $data): PaymentMethod
     {
+        $data = $this->normalizeNullableFields($data);
         $data = $this->handleQrImage($data);
         return PaymentMethod::create($data);
     }
 
     public function updatePaymentMethod(PaymentMethod $paymentMethod, array $data): PaymentMethod
     {
+        $data = $this->normalizeNullableFields($data);
         $data = $this->handleQrImage($data, $paymentMethod);
         $paymentMethod->update($data);
         return $paymentMethod->fresh();
+    }
+
+    private function normalizeNullableFields(array $data): array
+    {
+        foreach (['account_name', 'account_number', 'bank_name'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] === '') {
+                $data[$field] = null;
+            }
+        }
+        return $data;
     }
 
     private function handleQrImage(array $data, ?PaymentMethod $paymentMethod = null): array
