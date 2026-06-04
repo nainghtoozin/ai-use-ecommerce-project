@@ -117,6 +117,7 @@ class CouponService
             'code' => $coupon->code ?? 'AUTO',
             'type' => $coupon->type,
             'discount_amount' => $discountAmount,
+            'tenant_id' => $order->tenant_id ?? tenantId(),
         ]);
 
         $coupon->increment('used_count');

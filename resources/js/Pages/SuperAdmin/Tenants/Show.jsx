@@ -54,6 +54,27 @@ export default function ShowTenant({ tenant, users, stats }) {
                                     <dd className="text-sm font-medium text-gray-900">{tenant.slug}</dd>
                                 </div>
                                 <div>
+                                    <dt className="text-sm text-gray-500">Store URL</dt>
+                                    <dd className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                        <span>{tenant.store_url || '—'}</span>
+                                        {tenant.store_url && (
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(tenant.store_url);
+                                                    alert('Store URL copied!');
+                                                }}
+                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                                                title="Copy Store URL"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                                Copy Link
+                                            </button>
+                                        )}
+                                    </dd>
+                                </div>
+                                <div>
                                     <dt className="text-sm text-gray-500">Domain</dt>
                                     <dd className="text-sm font-medium text-gray-900">{tenant.domain || '—'}</dd>
                                 </div>

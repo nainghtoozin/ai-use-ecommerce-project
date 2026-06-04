@@ -64,6 +64,15 @@ export default function EditTenant({ tenant, plans, currentPlanId }) {
                                     {errors.slug && <p className="text-xs text-red-600 mt-1">{errors.slug}</p>}
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Store URL</label>
+                                    <input
+                                        type="text"
+                                        value={tenant.store_url ? `/store/${form.slug}` : '—'}
+                                        className="w-full rounded-lg border-gray-200 bg-gray-50 shadow-sm text-sm text-gray-500"
+                                        disabled
+                                    />
+                                </div>
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Custom Domain</label>
                                     <input
                                         type="text"

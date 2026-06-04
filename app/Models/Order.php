@@ -112,8 +112,8 @@ class Order extends Model
 
     public function coupons()
     {
-        return $this->belongsToMany(Coupon::class, 'order_coupon')
-            ->withPivot(['code', 'type', 'discount_amount'])
+        return $this->belongsToMany(Coupon::class, 'order_coupon', 'order_id', 'coupon_id')
+            ->withPivot(['code', 'type', 'discount_amount', 'tenant_id'])
             ->withTimestamps();
     }
 

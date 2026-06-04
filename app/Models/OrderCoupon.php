@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class OrderCoupon extends Pivot
 {
+    use TenantAware;
+
     protected $table = 'order_coupon';
 
     protected $fillable = [
@@ -14,6 +17,7 @@ class OrderCoupon extends Pivot
         'code',
         'type',
         'discount_amount',
+        'tenant_id',
     ];
 
     protected $casts = [

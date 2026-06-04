@@ -13,6 +13,7 @@ class Tenant extends Model
         'name',
         'slug',
         'domain',
+        'store_url',
         'email',
         'logo',
         'status',
@@ -27,6 +28,11 @@ class Tenant extends Model
         'expires_at' => 'datetime',
         'used_storage_bytes' => 'integer',
     ];
+
+    public function getStoreSlugAttribute(): string
+    {
+        return $this->slug;
+    }
 
     public function users()
     {

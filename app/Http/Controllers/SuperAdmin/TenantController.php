@@ -64,18 +64,20 @@ class TenantController extends Controller
         ]);
 
         $tenant = DB::transaction(function () use ($validated) {
+            $storeSlug = $validated['slug'];
             $tenant = Tenant::create([
                 'name' => $validated['name'],
-                'slug' => $validated['slug'],
+                'slug' => $storeSlug,
                 'domain' => $validated['domain'] ?? null,
+                'store_url' => '/store/' . $storeSlug,
                 'email' => $validated['email'] ?? null,
                 'status' => $validated['status'] ?? 'active',
-                'settings' => $validated['plan_id'] ? ['plan_id' => $validated['plan_id']] : null,
+                'settings' => isset($validated['plan_id']) && $validated['plan_id'] ? ['plan_id' => $validated['plan_id']] : null,
             ]);
 
             Tenant::clearDefaultCache();
 
-            $plan = \App\Models\Plan::find($validated['plan_id']) ?? \App\Models\Plan::free();
+            $plan = isset($validated['plan_id']) && $validated['plan_id'] ? \App\Models\Plan::find($validated['plan_id']) : \App\Models\Plan::free();
             $billingInterval = $plan?->defaultInterval() ?? 'monthly';
             $subscription = new \App\Models\Subscription();
             $subscription->tenant_id = $tenant->id;
@@ -195,10 +197,13 @@ class TenantController extends Controller
         $settings = $tenant->settings ?? [];
         $settings['plan_id'] = $validated['plan_id'] ?? null;
 
+        $slugChanged = $validated['slug'] !== $tenant->slug;
+
         $tenant->update([
             'name' => $validated['name'],
             'slug' => $validated['slug'],
             'domain' => $validated['domain'] ?? $tenant->domain,
+            'store_url' => $slugChanged ? '/store/' . $validated['slug'] : $tenant->store_url,
             'email' => $validated['email'] ?? $tenant->email,
             'status' => $validated['status'] ?? $tenant->status,
             'settings' => $settings,

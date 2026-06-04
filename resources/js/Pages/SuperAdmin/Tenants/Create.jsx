@@ -77,6 +77,11 @@ export default function CreateTenant({ plans }) {
                                             required
                                         />
                                         <p className="text-xs text-gray-400 mt-1">Used for subdomain: my-store.yourdomain.com</p>
+                                        {form.slug && (
+                                            <p className="text-xs text-blue-500 mt-1">
+                                                Store URL: /store/{form.slug}
+                                            </p>
+                                        )}
                                         {errors.slug && <p className="text-xs text-red-600 mt-1">{errors.slug}</p>}
                                     </div>
                                 </div>

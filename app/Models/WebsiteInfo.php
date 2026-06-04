@@ -109,6 +109,8 @@ class WebsiteInfo extends Model
                 'currency_code' => 'MMK',
                 'currency_symbol' => 'K',
                 'date_format' => 'Y-m-d',
+                'allow_registration' => true,
+                'maintenance_mode' => false,
             ]);
         });
     }

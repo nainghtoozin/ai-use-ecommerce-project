@@ -89,6 +89,19 @@ Route::prefix('client')->name('client.')->group(function () {
 });
 
 // ============================================================
+// STOREFRONT ROUTES (tenant-aware, public)
+// ============================================================
+Route::prefix('store/{store_slug}')->name('storefront.')->middleware('storefront')->group(function () {
+    Route::get('/', [\App\Http\Controllers\StorefrontController::class, 'index'])->name('index');
+    Route::get('/products', [\App\Http\Controllers\StorefrontController::class, 'products'])->name('products');
+    Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
+
+    // Store-based customer registration
+    Route::get('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'create'])->name('register');
+    Route::post('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'store']);
+});
+
+// ============================================================
 // AUTHENTICATED ROUTES
 // ============================================================
 Route::middleware('auth')->group(function () {

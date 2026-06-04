@@ -21,7 +21,21 @@ class RegisteredUserController extends Controller
         if (!$settings->allow_registration) {
             return redirect()->route('login')->with('error', 'Registration is currently disabled.');
         }
-        return Inertia::render('Auth/Register');
+
+        $tenant = \App\Models\Tenant::getCurrent();
+        if (!$tenant) {
+            return redirect()->route('login')
+                ->with('error', 'Please register from a specific store.');
+        }
+
+        return Inertia::render('Storefront/Register', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'store_url' => $tenant->store_url,
+            ],
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -29,6 +43,12 @@ class RegisteredUserController extends Controller
         $settings = \App\Models\WebsiteInfo::getSettings();
         if (!$settings->allow_registration) {
             return redirect()->route('login')->with('error', 'Registration is currently disabled.');
+        }
+
+        $tenant = \App\Models\Tenant::getCurrent();
+        if (!$tenant) {
+            return redirect()->route('login')
+                ->with('error', 'Please register from a specific store.');
         }
 
         $request->validate([
@@ -46,7 +66,7 @@ class RegisteredUserController extends Controller
         $customerRole = Role::firstOrCreate([
             'name' => 'customer',
             'guard_name' => 'web',
-            'tenant_id' => \App\Models\Tenant::getCurrent()?->id,
+            'tenant_id' => $tenant->id,
         ]);
 
         if ($customerRole->wasRecentlyCreated) {

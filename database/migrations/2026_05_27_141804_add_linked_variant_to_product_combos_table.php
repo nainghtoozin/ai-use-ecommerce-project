@@ -13,6 +13,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         DB::statement('
@@ -30,6 +34,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         DB::statement('

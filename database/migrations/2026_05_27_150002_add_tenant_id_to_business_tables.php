@@ -1,23 +1,23 @@
 <?php
 
-use App\Models\Tenant;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        $defaultTenantId = Tenant::getDefault()?->id;
+        $defaultTenantId = DB::table('tenants')->value('id');
 
         $addColumnIfNotExists = function (string $table, bool $hasId = true) {
-            $cols = DB::select('SHOW COLUMNS FROM ' . $table . ' WHERE Field = ?', ['tenant_id']);
-            if (count($cols) > 0) {
+            if (Schema::hasColumn($table, 'tenant_id')) {
                 return;
             }
-            $after = $hasId ? ' AFTER `id`' : '';
-            DB::statement('ALTER TABLE `' . $table . '` ADD `tenant_id` BIGINT UNSIGNED NULL' . $after);
-            DB::statement('ALTER TABLE `' . $table . '` ADD CONSTRAINT `' . $table . '_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE SET NULL');
+            Schema::table($table, function (Blueprint $table) {
+                $table->foreignId('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
+            });
         };
 
         $assignDefault = function (string $table) use ($defaultTenantId) {
@@ -39,26 +39,25 @@ return new class extends Migration
         ];
 
         foreach ($tablesWithId as $table) {
-            $addColumnIfNotExists($table, true);
-            $assignDefault($table);
+            if (Schema::hasTable($table)) {
+                $addColumnIfNotExists($table, true);
+                $assignDefault($table);
+            }
         }
 
         foreach ($pivotTablesNoId as $table) {
-            $addColumnIfNotExists($table, false);
-            $assignDefault($table);
+            if (Schema::hasTable($table)) {
+                $addColumnIfNotExists($table, false);
+                $assignDefault($table);
+            }
         }
 
         // Website infos — special handling with unique constraint
-        $cols = DB::select('SHOW COLUMNS FROM website_infos WHERE Field = ?', ['tenant_id']);
-        if (count($cols) === 0) {
-            DB::statement('ALTER TABLE `website_infos` ADD `tenant_id` BIGINT UNSIGNED NULL AFTER `id`');
-            DB::statement('ALTER TABLE `website_infos` ADD CONSTRAINT `website_infos_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE SET NULL');
-        }
-        $assignDefault('website_infos');
-        // Add unique constraint if it doesn't exist
-        $uniqueExists = DB::select("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'website_infos' AND CONSTRAINT_TYPE = 'UNIQUE' AND CONSTRAINT_NAME = 'website_infos_tenant_unique'");
-        if (count($uniqueExists) === 0) {
-            DB::statement('ALTER TABLE `website_infos` ADD UNIQUE KEY `website_infos_tenant_unique` (`tenant_id`)');
+        if (Schema::hasTable('website_infos') && !Schema::hasColumn('website_infos', 'tenant_id')) {
+            Schema::table('website_infos', function (Blueprint $table) {
+                $table->foreignId('tenant_id')->nullable()->unique()->constrained('tenants')->cascadeOnDelete();
+            });
+            $assignDefault('website_infos');
         }
     }
 
@@ -74,12 +73,17 @@ return new class extends Migration
         ];
 
         foreach ($tables as $table) {
-            DB::statement('ALTER TABLE `' . $table . '` DROP FOREIGN KEY IF EXISTS `' . $table . '_tenant_id_foreign`');
-            DB::statement('ALTER TABLE `' . $table . '` DROP COLUMN IF EXISTS `tenant_id`');
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'tenant_id')) {
+                Schema::table($table, function (Blueprint $table) {
+                    $table->dropConstrainedForeignId('tenant_id');
+                });
+            }
         }
 
-        DB::statement('ALTER TABLE `website_infos` DROP INDEX IF EXISTS `website_infos_tenant_unique`');
-        DB::statement('ALTER TABLE `website_infos` DROP FOREIGN KEY IF EXISTS `website_infos_tenant_id_foreign`');
-        DB::statement('ALTER TABLE `website_infos` DROP COLUMN IF EXISTS `tenant_id`');
+        if (Schema::hasTable('website_infos') && Schema::hasColumn('website_infos', 'tenant_id')) {
+            Schema::table('website_infos', function (Blueprint $table) {
+                $table->dropConstrainedForeignId('tenant_id');
+            });
+        }
     }
 };
