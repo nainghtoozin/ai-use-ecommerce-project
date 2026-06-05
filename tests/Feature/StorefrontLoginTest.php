@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
-class StorefrontRegistrationTest extends TestCase
+class StorefrontLoginTest extends TestCase
 {
     use DatabaseTransactions;
 
@@ -26,32 +26,11 @@ class StorefrontRegistrationTest extends TestCase
             \Inertia\Middleware::class,
         );
 
-        // Create default website settings with registration enabled
         WebsiteInfo::create([
             'allow_registration' => true,
             'maintenance_mode' => false,
         ]);
         Cache::forget('website_settings_default');
-    }
-
-    private function createTenantWithSettings(string $name, string $slug): Tenant
-    {
-        $tenant = Tenant::create([
-            'name' => $name,
-            'slug' => $slug,
-            'store_url' => "/store/{$slug}",
-            'status' => 'active',
-        ]);
-
-        // Create tenant-specific website settings
-        WebsiteInfo::create([
-            'tenant_id' => $tenant->id,
-            'allow_registration' => true,
-            'maintenance_mode' => false,
-        ]);
-        Cache::forget("website_settings_{$tenant->id}");
-
-        return $tenant;
     }
 
     private function createMinimalSchema(): void
@@ -87,16 +66,6 @@ class StorefrontRegistrationTest extends TestCase
                 $table->rememberToken();
                 $table->timestamps();
             },
-            'personal_access_tokens' => function ($table) {
-                $table->id();
-                $table->morphs('tokenable');
-                $table->string('name');
-                $table->string('token', 64)->unique();
-                $table->text('abilities')->nullable();
-                $table->timestamp('last_used_at')->nullable();
-                $table->timestamp('expires_at')->nullable();
-                $table->timestamps();
-            },
             'website_infos' => function ($table) {
                 $table->id();
                 $table->string('site_name')->nullable();
@@ -107,8 +76,8 @@ class StorefrontRegistrationTest extends TestCase
                 $table->string('currency_symbol')->nullable();
                 $table->string('date_format')->nullable();
                 $table->boolean('maintenance_mode')->default(false);
-                $table->boolean('enable_wishlist')->default(true);
                 $table->boolean('allow_registration')->default(true);
+                $table->boolean('enable_wishlist')->default(true);
                 $table->unsignedBigInteger('tenant_id')->nullable()->unique();
                 $table->timestamps();
             },
@@ -120,12 +89,11 @@ class StorefrontRegistrationTest extends TestCase
             }
         }
 
-        // Create permissions tables if not exist
         $tableNames = config('permission.table_names');
         if (!Schema::hasTable($tableNames['roles'])) {
             Schema::create($tableNames['roles'], function ($table) {
                 $table->bigIncrements('id');
-                $table->unsignedBigInteger('tenant_id')->nullable()->after('id');
+                $table->unsignedBigInteger('tenant_id')->nullable();
                 $table->string('name');
                 $table->string('guard_name');
                 $table->timestamps();
@@ -178,102 +146,157 @@ class StorefrontRegistrationTest extends TestCase
         }
     }
 
-    public function test_global_register_get_redirects_with_message(): void
+    private function createTenantWithSettings(string $name, string $slug): Tenant
     {
-        $response = $this->get('/register');
-
-        $response->assertRedirect(route('login'));
-        $response->assertSessionHas('error', 'Please register from a specific store.');
-    }
-
-    public function test_global_register_post_redirects_with_message(): void
-    {
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+        $tenant = Tenant::create([
+            'name' => $name,
+            'slug' => $slug,
+            'store_url' => "/store/{$slug}",
+            'status' => 'active',
         ]);
 
-        $response->assertRedirect(route('login'));
-        $response->assertSessionHas('error', 'Please register from a specific store.');
+        WebsiteInfo::create([
+            'tenant_id' => $tenant->id,
+            'allow_registration' => true,
+            'maintenance_mode' => false,
+        ]);
+        Cache::forget("website_settings_{$tenant->id}");
+
+        return $tenant;
     }
 
-    public function test_storefront_register_get_returns_ok(): void
+    private function createCustomerUser(Tenant $tenant, string $email = 'customer@test.com', string $password = 'password'): User
+    {
+        $user = new User();
+        $user->name = 'Test Customer';
+        $user->email = $email;
+        $user->password = Hash::make($password);
+        $user->tenant_id = $tenant->id;
+        $user->save();
+
+        $role = \App\Models\Role::firstOrCreate([
+            'name' => 'customer',
+            'guard_name' => 'web',
+            'tenant_id' => $tenant->id,
+        ]);
+
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    public function test_storefront_login_get_returns_ok(): void
     {
         $tenant = $this->createTenantWithSettings('Coca Cola', 'coca-cola');
 
-        $response = $this->get("/store/{$tenant->slug}/register");
+        $response = $this->get("/store/{$tenant->slug}/login");
 
         $response->assertOk();
     }
 
-    public function test_storefront_register_creates_user_with_tenant_and_customer_role(): void
+    public function test_storefront_login_without_tenant_redirects_to_global_login(): void
+    {
+        $response = $this->get('/store/no-such-store/login');
+
+        $response->assertNotFound();
+    }
+
+    public function test_customer_can_login_at_their_store(): void
     {
         $tenant = $this->createTenantWithSettings('May Fashion', 'may-fashion');
+        $this->createCustomerUser($tenant, 'customer@mayfashion.com');
 
-        $response = $this->post("/store/{$tenant->slug}/register", [
-            'name' => 'Store Customer',
+        $response = $this->post("/store/{$tenant->slug}/login", [
             'email' => 'customer@mayfashion.com',
             'password' => 'password',
-            'password_confirmation' => 'password',
         ]);
 
         $response->assertRedirect(route('storefront.index', ['store_slug' => $tenant->slug], absolute: false));
         $this->assertAuthenticated();
-
-        $user = User::where('email', 'customer@mayfashion.com')->first();
-        $this->assertNotNull($user);
-        $this->assertEquals($tenant->id, $user->tenant_id);
-        $this->assertTrue(Hash::check('password', $user->password));
-
-        $this->assertTrue($user->hasRole('customer'));
     }
 
-    public function test_storefront_register_creates_tenant_scoped_customer_role(): void
+    public function test_customer_cannot_login_at_different_store(): void
     {
         $tenantA = $this->createTenantWithSettings('Store A', 'store-a');
         $tenantB = $this->createTenantWithSettings('Store B', 'store-b');
 
-        // Register at Store A
-        $responseA = $this->post("/store/{$tenantA->slug}/register", [
-            'name' => 'User A',
-            'email' => 'usera@example.com',
+        $this->createCustomerUser($tenantA, 'customer@store-a.com');
+
+        // Try to log in at Store B with Store A's credentials
+        $response = $this->post("/store/{$tenantB->slug}/login", [
+            'email' => 'customer@store-a.com',
             'password' => 'password',
-            'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $responseA->assertRedirect(route('storefront.index', ['store_slug' => $tenantA->slug], absolute: false));
-
-        $this->post('/logout');
+        $response->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
 
-        // Register at Store B
-        $responseB = $this->post("/store/{$tenantB->slug}/register", [
-            'name' => 'User B',
-            'email' => 'userb@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+    public function test_storefront_login_rejects_invalid_credentials(): void
+    {
+        $tenant = $this->createTenantWithSettings('Test Store', 'test-store');
+        $this->createCustomerUser($tenant, 'customer@test.com');
+
+        $response = $this->post("/store/{$tenant->slug}/login", [
+            'email' => 'customer@test.com',
+            'password' => 'wrong-password',
         ]);
 
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_global_login_still_works_for_admin(): void
+    {
+        // Create a superadmin user (tenant_id = null)
+        $user = new User();
+        $user->name = 'Super Admin';
+        $user->email = 'admin@test.com';
+        $user->password = Hash::make('password');
+        $user->save();
+
+        $role = \App\Models\Role::firstOrCreate([
+            'name' => 'superadmin',
+            'guard_name' => 'web',
+            'tenant_id' => null,
+        ]);
+
+        $user->assignRole($role);
+
+        $response = $this->post('/login', [
+            'email' => 'admin@test.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
         $this->assertAuthenticated();
+    }
 
-        $userA = User::where('email', 'usera@example.com')->first();
-        $userB = User::where('email', 'userb@example.com')->first();
+    public function test_storefront_login_redirects_admin_to_admin_dashboard(): void
+    {
+        $tenant = $this->createTenantWithSettings('Store X', 'store-x');
 
-        $this->assertNotNull($userA, 'User A not found');
-        $this->assertNotNull($userB, 'User B not found');
+        $adminUser = new User();
+        $adminUser->name = 'Store Admin';
+        $adminUser->email = 'admin@store-x.com';
+        $adminUser->password = Hash::make('password');
+        $adminUser->tenant_id = $tenant->id;
+        $adminUser->save();
 
-        $this->assertEquals($tenantA->id, $userA->tenant_id);
-        $this->assertEquals($tenantB->id, $userB->tenant_id);
+        $adminRole = \App\Models\Role::firstOrCreate([
+            'name' => 'admin',
+            'guard_name' => 'web',
+            'tenant_id' => $tenant->id,
+        ]);
 
-        // Each user should have a tenant-scoped customer role
-        $rolesA = $userA->getRoleNames();
-        $rolesB = $userB->getRoleNames();
-        $this->assertCount(1, $rolesA);
-        $this->assertEquals('customer', $rolesA->first());
-        $this->assertCount(1, $rolesB);
-        $this->assertEquals('customer', $rolesB->first());
+        $adminUser->assignRole($adminRole);
+
+        $response = $this->post("/store/{$tenant->slug}/login", [
+            'email' => 'admin@store-x.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+        $this->assertAuthenticated();
     }
 }

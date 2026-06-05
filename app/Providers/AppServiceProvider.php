@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\CustomerAddress;
+use App\Models\Order;
 use App\Models\User;
+use App\Policies\CustomerAddressPolicy;
+use App\Policies\CustomerOrderPolicy;
 use App\Policies\UserPolicy;
 use App\Services\NotificationPreferenceService;
 use App\Services\OrderService;
@@ -36,5 +40,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Order::class, CustomerOrderPolicy::class);
+        Gate::policy(CustomerAddress::class, CustomerAddressPolicy::class);
     }
 }

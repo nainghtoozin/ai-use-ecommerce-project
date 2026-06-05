@@ -117,12 +117,12 @@ class AdminOrderController extends Controller
             $order = Order::findOrFail($id);
             $this->orderService->updateOrderStatus($order, $request->order_status);
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order status updated successfully.');
         } catch (\Exception $e) {
             Log::error('Order status update failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', 'Failed to update order status.');
         }
     }
@@ -138,12 +138,12 @@ class AdminOrderController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'confirmed', 'pending');
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order confirmed. Stock has been deducted.');
         } catch (\Exception $e) {
             Log::error('Order confirmation failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', $e->getMessage());
         }
     }
@@ -159,12 +159,12 @@ class AdminOrderController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'processing');
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order is now being processed.');
         } catch (\Exception $e) {
             Log::error('Order processing failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', $e->getMessage());
         }
     }
@@ -180,12 +180,12 @@ class AdminOrderController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'shipped');
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order marked as shipped.');
         } catch (\Exception $e) {
             Log::error('Order shipping failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', $e->getMessage());
         }
     }
@@ -201,12 +201,12 @@ class AdminOrderController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'delivered');
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order marked as delivered.');
         } catch (\Exception $e) {
             Log::error('Order delivery failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', $e->getMessage());
         }
     }
@@ -217,7 +217,7 @@ class AdminOrderController extends Controller
             $order = Order::with('user')->findOrFail($id);
 
             if (!$order->canCancel()) {
-                return redirect()->route('admin.orders.show', $id)
+                return admin_redirect('admin.orders.show', $id)
                     ->with('error', 'This order cannot be cancelled.');
             }
 
@@ -225,12 +225,12 @@ class AdminOrderController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'cancelled_by_admin');
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order cancelled. Stock has been restored.');
         } catch (\Exception $e) {
             Log::error('Order cancellation failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', 'Failed to cancel order.');
         }
     }
@@ -241,7 +241,7 @@ class AdminOrderController extends Controller
             $order = Order::with('user')->findOrFail($id);
 
             if (!$order->canApprovePayment()) {
-                return redirect()->route('admin.orders.show', $id)
+                return admin_redirect('admin.orders.show', $id)
                     ->with('error', 'This payment cannot be verified.');
             }
 
@@ -255,12 +255,12 @@ class AdminOrderController extends Controller
 
             event(new PaymentVerified($order));
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Payment verified successfully.');
         } catch (\Exception $e) {
             Log::error('Payment verification failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', 'Failed to verify payment.');
         }
     }
@@ -271,7 +271,7 @@ class AdminOrderController extends Controller
             $order = Order::with('user')->findOrFail($id);
 
             if (!$order->canRejectPayment()) {
-                return redirect()->route('admin.orders.show', $id)
+                return admin_redirect('admin.orders.show', $id)
                     ->with('error', 'This payment cannot be rejected.');
             }
 
@@ -288,12 +288,12 @@ class AdminOrderController extends Controller
 
             event(new PaymentRejected($order));
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Payment rejected.');
         } catch (\Exception $e) {
             Log::error('Payment rejection failed: ' . $e->getMessage());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', 'Failed to reject payment.');
         }
     }
@@ -310,7 +310,7 @@ class AdminOrderController extends Controller
             Log::info('canMarkAsPaid result: ' . ($order->canMarkAsPaid() ? 'true' : 'false'));
 
             if (!$order->canMarkAsPaid()) {
-                return redirect()->route('admin.orders.show', $id)
+                return admin_redirect('admin.orders.show', $id)
                     ->with('error', 'This order cannot be marked as paid. Current status: ' . $order->payment_status);
             }
 
@@ -321,12 +321,12 @@ class AdminOrderController extends Controller
                 'paid_amount' => $paidAmount,
             ]);
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order marked as paid.');
         } catch (\Exception $e) {
             Log::error('Mark as paid failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', 'Failed to mark as paid. Error: ' . $e->getMessage());
         }
     }
@@ -341,13 +341,13 @@ class AdminOrderController extends Controller
         $order = Order::findOrFail($id);
 
         if ($order->order_status !== Order::ORDER_STATUS_CANCELLED) {
-            return redirect()->route('admin.orders.index')
+            return admin_redirect('admin.orders.index')
                 ->with('error', 'Only cancelled orders can be deleted.');
         }
 
         $order->delete();
 
-        return redirect()->route('admin.orders.index')
+        return admin_redirect('admin.orders.index')
             ->with('success', 'Order deleted successfully.');
     }
 }

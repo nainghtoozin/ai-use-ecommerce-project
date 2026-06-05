@@ -83,7 +83,7 @@ class AdminPromotionController extends Controller
             $promotion->categories()->sync($data['category_ids']);
         }
 
-        return redirect()->route('admin.promotions.index')
+        return admin_redirect('admin.promotions.index')
             ->with('success', 'Promotion created successfully.');
     }
 
@@ -136,7 +136,7 @@ class AdminPromotionController extends Controller
             $promotion->categories()->sync($data['category_ids'] ?? []);
         }
 
-        return redirect()->route('admin.promotions.index')
+        return admin_redirect('admin.promotions.index')
             ->with('success', 'Promotion updated successfully.');
     }
 
@@ -147,7 +147,7 @@ class AdminPromotionController extends Controller
         $promotion->usages()->delete();
         $promotion->delete();
 
-        return redirect()->route('admin.promotions.index')
+        return admin_redirect('admin.promotions.index')
             ->with('success', 'Promotion deleted successfully.');
     }
 
@@ -184,7 +184,7 @@ class AdminPromotionController extends Controller
     {
         $promotion->update(['is_active' => !$promotion->is_active]);
 
-        return redirect()->route('admin.promotions.index')
+        return admin_redirect('admin.promotions.index')
             ->with('success', 'Promotion status toggled.');
     }
 
@@ -196,7 +196,7 @@ class AdminPromotionController extends Controller
         $newPromotion->usage_count = 0;
         $newPromotion->save();
 
-        return redirect()->route('admin.promotions.edit', $newPromotion->id)
+        return admin_redirect('admin.promotions.edit', $newPromotion->id)
             ->with('success', 'Promotion duplicated successfully.');
     }
 }

@@ -33,10 +33,10 @@ class AdminOrderOverrideController extends Controller
                 $request->reason
             );
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order status overridden successfully.');
         } catch (\Exception $e) {
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', $e->getMessage());
         }
     }
@@ -61,10 +61,10 @@ class AdminOrderOverrideController extends Controller
                 $request->reason
             );
 
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Payment status overridden successfully.');
         } catch (\Exception $e) {
-            return redirect()->route('admin.orders.show', $id)
+            return admin_redirect('admin.orders.show', $id)
                 ->with('error', $e->getMessage());
         }
     }

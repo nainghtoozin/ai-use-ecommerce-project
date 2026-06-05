@@ -35,7 +35,7 @@ class AdminCityController extends Controller
     public function store(CityStoreRequest $request): RedirectResponse
     {
         $this->locationService->createCity($request->validated());
-        return redirect()->route('admin.cities.index')
+        return admin_redirect('admin.cities.index')
             ->with('success', 'City created successfully.');
     }
 
@@ -49,14 +49,14 @@ class AdminCityController extends Controller
     public function update(CityUpdateRequest $request, City $city): RedirectResponse
     {
         $this->locationService->updateCity($city, $request->validated());
-        return redirect()->route('admin.cities.index')
+        return admin_redirect('admin.cities.index')
             ->with('success', 'City updated successfully.');
     }
 
     public function destroy(City $city): RedirectResponse
     {
         $this->locationService->deleteCity($city);
-        return redirect()->route('admin.cities.index')
+        return admin_redirect('admin.cities.index')
             ->with('success', 'City deleted successfully.');
     }
 
@@ -81,7 +81,7 @@ class AdminCityController extends Controller
             $stats['townships_skipped']
         );
 
-        return redirect()->route('admin.cities.index')
+        return admin_redirect('admin.cities.index')
             ->with('success', $message);
     }
 }

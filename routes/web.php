@@ -99,6 +99,28 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware('storefront
     // Store-based customer registration
     Route::get('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'store']);
+
+    // Store-based customer login
+    Route::get('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
+
+    // Store-based cart and checkout
+    Route::get('/cart', [\App\Http\Controllers\StorefrontCartController::class, 'index'])->name('cart');
+    Route::get('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'store'])->name('checkout.store');
+
+    // Store-based customer area (authenticated)
+    Route::middleware('auth')->prefix('customer')->name('customer.')->group(function () {
+        Route::get('/account', [\App\Http\Controllers\StorefrontCustomerController::class, 'account'])->name('account');
+        Route::get('/orders', [\App\Http\Controllers\StorefrontCustomerController::class, 'orders'])->name('orders');
+        Route::get('/orders/{order}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showOrder'])->name('orders.show');
+        Route::post('/orders/{order}/cancel', [\App\Http\Controllers\StorefrontCustomerController::class, 'cancelOrder'])->name('orders.cancel');
+        Route::post('/orders/{order}/upload-payment', [\App\Http\Controllers\StorefrontCustomerController::class, 'uploadPayment'])->name('orders.upload-payment');
+        Route::get('/addresses', [\App\Http\Controllers\StorefrontCustomerController::class, 'addresses'])->name('addresses');
+        Route::post('/addresses', [\App\Http\Controllers\StorefrontCustomerController::class, 'storeAddress'])->name('addresses.store');
+        Route::put('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'updateAddress'])->name('addresses.update');
+        Route::delete('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'destroyAddress'])->name('addresses.destroy');
+    });
 });
 
 // ============================================================
@@ -435,5 +457,8 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 
 Route::get('/api/locations', [App\Http\Controllers\Api\LocationController::class, 'getCities']);
 Route::get('/api/townships/{cityId}', [App\Http\Controllers\Api\LocationController::class, 'getTownships']);
+
+// Storefront Admin (safe migration — runs alongside /admin/*)
+require __DIR__ . '/storefront-admin.php';
 
 

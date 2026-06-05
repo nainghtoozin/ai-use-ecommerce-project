@@ -270,7 +270,7 @@ class AdminProductController extends Controller
             
         });
 
-        return redirect()->route('admin.products.index')
+        return admin_redirect('admin.products.index')
             ->with('success', 'Product created successfully!');
     }
 
@@ -447,7 +447,7 @@ class AdminProductController extends Controller
             
         });
 
-        return redirect()->route('admin.products.index')
+        return admin_redirect('admin.products.index')
             ->with('success', 'Product updated successfully.');
     }
 
@@ -475,7 +475,7 @@ class AdminProductController extends Controller
 
         
 
-        return redirect()->route('admin.products.index')
+        return admin_redirect('admin.products.index')
             ->with('success', 'Product deleted successfully!');
     }
 
@@ -529,7 +529,7 @@ class AdminProductController extends Controller
 
         
 
-        return redirect()->route('admin.products.index')
+        return admin_redirect('admin.products.index')
             ->with('success', "{$products->count()} product(s) deleted successfully.");
     }
 
@@ -556,7 +556,7 @@ class AdminProductController extends Controller
 
         
 
-        return redirect()->route('admin.products.index')
+        return admin_redirect('admin.products.index')
             ->with('success', "{$count} product(s) activated successfully.");
     }
 
@@ -583,7 +583,7 @@ class AdminProductController extends Controller
 
         
 
-        return redirect()->route('admin.products.index')
+        return admin_redirect('admin.products.index')
             ->with('success', "{$count} product(s) deactivated successfully.");
     }
 

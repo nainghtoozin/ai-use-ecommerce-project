@@ -37,7 +37,7 @@ class AdminNotificationSettingsController extends Controller
             ]
         );
 
-        return redirect()->route('admin.settings.notifications')
+        return admin_redirect('admin.settings.notifications')
             ->with('success', 'Notification settings updated successfully.');
     }
 

@@ -73,7 +73,7 @@ class AdminBillingController extends Controller
 
         $subscription->renewFromInterval('Self-service renewal by merchant.');
 
-        return redirect()->route('admin.billing')
+        return admin_redirect('admin.billing')
             ->with('success', 'Your subscription has been renewed!');
     }
 }

@@ -106,7 +106,7 @@ export default function StorefrontRegister() {
                             Back to store
                         </Link>
                         <Link
-                            href={route('login')}
+                            href={route('storefront.login', { store_slug: tenant.slug })}
                             className="underline text-gray-600 hover:text-gray-900"
                         >
                             Already registered?

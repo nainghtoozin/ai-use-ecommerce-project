@@ -138,7 +138,7 @@ class AdminUserController extends Controller
             'assigned_role' => $data['role'],
         ]);
 
-        return redirect()->route('admin.users.index')
+        return admin_redirect('admin.users.index')
             ->with('success', 'User created successfully.');
     }
 
@@ -253,7 +253,7 @@ class AdminUserController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.users.index')
+        return admin_redirect('admin.users.index')
             ->with('success', 'User updated successfully.');
     }
 
@@ -268,7 +268,7 @@ class AdminUserController extends Controller
         if ($user->hasRole('superadmin')) {
             $superadminCount = User::role('superadmin')->count();
             if ($superadminCount <= 1) {
-                return redirect()->route('admin.users.index')
+                return admin_redirect('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining superadmin.');
             }
         }
@@ -278,13 +278,13 @@ class AdminUserController extends Controller
                 ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
                 ->count();
             if ($adminCount <= 1) {
-                return redirect()->route('admin.users.index')
+                return admin_redirect('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining admin.');
             }
         }
 
         if (auth()->id() === $user->id) {
-            return redirect()->route('admin.users.index')
+            return admin_redirect('admin.users.index')
                 ->with('error', 'You cannot delete your own account.');
         }
 
@@ -294,7 +294,7 @@ class AdminUserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')
+        return admin_redirect('admin.users.index')
             ->with('success', 'User deleted successfully.');
     }
 
@@ -315,7 +315,7 @@ class AdminUserController extends Controller
             'suspended_by' => auth()->id(),
         ]);
 
-        return redirect()->route('admin.users.index')
+        return admin_redirect('admin.users.index')
             ->with('success', 'User suspended successfully.');
     }
 
@@ -336,7 +336,7 @@ class AdminUserController extends Controller
             'banned_by' => auth()->id(),
         ]);
 
-        return redirect()->route('admin.users.index')
+        return admin_redirect('admin.users.index')
             ->with('success', 'User banned successfully.');
     }
 
@@ -351,7 +351,7 @@ class AdminUserController extends Controller
             'activated_by' => auth()->id(),
         ]);
 
-        return redirect()->route('admin.users.index')
+        return admin_redirect('admin.users.index')
             ->with('success', 'User reactivated successfully.');
     }
 }

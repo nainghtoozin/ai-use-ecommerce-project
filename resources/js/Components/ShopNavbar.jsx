@@ -6,7 +6,23 @@ import NotificationBell from '@/Components/NotificationBell';
 
 export default function ShopNavbar() {
     const { props, url } = usePage();
-    const { auth, website_info, cart: serverCart } = props;
+    const { auth, website_info, cart: serverCart, tenant } = props;
+    const storeSlug = tenant?.slug;
+
+    function storeUrl(path) {
+        return storeSlug ? `/store/${storeSlug}${path}` : path;
+    }
+
+    function storeRoute(name, params) {
+        if (storeSlug) {
+            try {
+                return route(name, { ...params, store_slug: storeSlug });
+            } catch {
+                return `/${name}`;
+            }
+        }
+        return `/${name}`;
+    }
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -57,16 +73,16 @@ export default function ShopNavbar() {
     const logout = () => router.post('/logout');
 
     const navLinks = [
-        { label: 'Home', href: '/', icon: 'bi-house-door' },
-        { label: 'Products', href: '/products', icon: 'bi-grid' },
-        { label: 'My Orders', href: '/orders', icon: 'bi-receipt' },
+        { label: 'Home', href: storeUrl('/'), icon: 'bi-house-door' },
+        { label: 'Products', href: storeUrl('/products'), icon: 'bi-grid' },
+        ...(storeSlug ? [{ label: 'My Orders', href: `/store/${storeSlug}/customer/orders`, icon: 'bi-receipt' }] : [{ label: 'My Orders', href: '/orders', icon: 'bi-receipt' }]),
     ];
 
     return (
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
                 <div className="flex items-center justify-between h-14 lg:h-16 gap-2 lg:gap-4">
-                    <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+                    <Link href={storeUrl('/')} className="flex items-center gap-2 flex-shrink-0">
                         {logoUrl ? (
                             <img src={logoUrl} alt={siteName} className="h-8 w-auto lg:h-9" />
                         ) : (
@@ -111,7 +127,7 @@ export default function ShopNavbar() {
                             </Link>
                         )}
                         <Link
-                            href="/cart"
+                            href={storeUrl('/cart')}
                             className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Shopping Cart"
                         >
@@ -153,11 +169,11 @@ export default function ShopNavbar() {
                                                     <p className="text-xs text-gray-500 truncate">{auth.user.email}</p>
                                                 </div>
                                                 <div className="py-1">
-                                                    <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                    <Link href={storeUrl('/customer/account')} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                                         <i className="bi bi-person text-gray-400"></i>
                                                         My Profile
                                                     </Link>
-                                                    <Link href="/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                    <Link href={storeUrl('/customer/orders')} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                                         <i className="bi bi-receipt text-gray-400"></i>
                                                         My Orders
                                                     </Link>
@@ -176,7 +192,7 @@ export default function ShopNavbar() {
                         ) : (
                             <div className="hidden sm:flex items-center gap-2">
                                 <Link
-                                    href="/login"
+                                    href={storeUrl('/login')}
                                     className="px-3 lg:px-4 py-2 text-sm font-medium hover:text-white transition-colors"
                                     style={{ color: 'var(--theme-color, #3B82F6)' }}
                                     onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
@@ -186,7 +202,7 @@ export default function ShopNavbar() {
                                 </Link>
         {website_info?.allow_registration !== false && (
             <Link
-                href="/register"
+                href={storeUrl('/register')}
                 className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
                 style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
@@ -244,7 +260,7 @@ export default function ShopNavbar() {
                                 </Link>
                             )}
                             <Link
-                                href="/cart"
+                                href={storeUrl('/cart')}
                                 onClick={() => setMobileMenuOpen(false)}
                                 className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
                             >
@@ -261,14 +277,14 @@ export default function ShopNavbar() {
                         {!auth?.user && (
                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                                 <Link
-                                    href="/login"
+                                    href={storeUrl('/login')}
                                     className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                                 >
                                     Login
                                 </Link>
                                 {website_info?.allow_registration !== false && (
                                     <Link
-                                        href="/register"
+                                        href={storeUrl('/register')}
                                         className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
                                         style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                     >

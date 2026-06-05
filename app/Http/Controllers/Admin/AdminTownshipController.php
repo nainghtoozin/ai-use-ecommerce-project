@@ -47,7 +47,7 @@ class AdminTownshipController extends Controller
     {
         $this->locationService->createTownship($request->validated());
 
-        return redirect()->route('admin.townships.index')
+        return admin_redirect('admin.townships.index')
             ->with('success', 'Township created successfully.');
     }
 
@@ -64,7 +64,7 @@ class AdminTownshipController extends Controller
     {
         $this->locationService->updateTownship($township, $request->validated());
 
-        return redirect()->route('admin.townships.index')
+        return admin_redirect('admin.townships.index')
             ->with('success', 'Township updated successfully.');
     }
 
@@ -72,7 +72,7 @@ class AdminTownshipController extends Controller
     {
         $this->locationService->deleteTownship($township);
 
-        return redirect()->route('admin.townships.index')
+        return admin_redirect('admin.townships.index')
             ->with('success', 'Township deleted successfully.');
     }
 

@@ -34,7 +34,7 @@ class AdminPaymentMethodController extends Controller
     {
         $this->paymentMethodService->createPaymentMethod($request->validated());
 
-        return redirect()->route('admin.payment-methods.index')
+        return admin_redirect('admin.payment-methods.index')
             ->with('success', 'Payment method created successfully.');
     }
 
@@ -49,7 +49,7 @@ class AdminPaymentMethodController extends Controller
     {
         $this->paymentMethodService->updatePaymentMethod($paymentMethod, $request->validated());
 
-        return redirect()->route('admin.payment-methods.index')
+        return admin_redirect('admin.payment-methods.index')
             ->with('success', 'Payment method updated successfully.');
     }
 
@@ -57,7 +57,7 @@ class AdminPaymentMethodController extends Controller
     {
         $this->paymentMethodService->deletePaymentMethod($paymentMethod);
 
-        return redirect()->route('admin.payment-methods.index')
+        return admin_redirect('admin.payment-methods.index')
             ->with('success', 'Payment method deleted successfully.');
     }
 

@@ -76,7 +76,7 @@ class AdminCouponController extends Controller
             $coupon->categories()->sync($data['category_ids']);
         }
 
-        return redirect()->route('admin.coupons.index')
+        return admin_redirect('admin.coupons.index')
             ->with('success', 'Coupon created successfully.');
     }
 
@@ -127,7 +127,7 @@ class AdminCouponController extends Controller
             $coupon->categories()->sync($data['category_ids'] ?? []);
         }
 
-        return redirect()->route('admin.coupons.index')
+        return admin_redirect('admin.coupons.index')
             ->with('success', 'Coupon updated successfully.');
     }
 
@@ -137,7 +137,7 @@ class AdminCouponController extends Controller
         $coupon->categories()->detach();
         $coupon->delete();
 
-        return redirect()->route('admin.coupons.index')
+        return admin_redirect('admin.coupons.index')
             ->with('success', 'Coupon deleted successfully.');
     }
 

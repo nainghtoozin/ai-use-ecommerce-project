@@ -61,6 +61,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'tenant_id' => $tenant->id,
         ]);
 
         $customerRole = Role::firstOrCreate([
@@ -84,6 +85,10 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('client.dashboard', absolute: false));
+        if ($user->isAdmin()) {
+            return redirect()->intended(route('admin.dashboard', absolute: false));
+        }
+
+        return redirect()->route('storefront.index', ['store_slug' => $tenant->slug]);
     }
 }

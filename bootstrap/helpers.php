@@ -61,3 +61,22 @@ if (!function_exists('upgrade_hint')) {
         return \App\Services\FeatureGate::forUser()->getUpgradeHint($featureKey);
     }
 }
+
+if (!function_exists('admin_redirect')) {
+    function admin_redirect(string $route, mixed $parameters = [], int $status = 302, array $headers = []): \Illuminate\Http\RedirectResponse
+    {
+        $storeSlug = request()->route('store_slug');
+
+        if ($storeSlug) {
+            $route = 'storefront.' . $route;
+
+            if (!is_array($parameters)) {
+                $parameters = [$parameters];
+            }
+
+            $parameters = ['store_slug' => $storeSlug] + $parameters;
+        }
+
+        return redirect()->route($route, $parameters, $status, $headers);
+    }
+}

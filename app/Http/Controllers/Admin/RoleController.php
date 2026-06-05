@@ -82,7 +82,7 @@ class RoleController extends Controller
             'roles'
         );
 
-        return redirect()->route('admin.roles.index')
+        return admin_redirect('admin.roles.index')
             ->with('success', 'Role created successfully.');
     }
 
@@ -172,7 +172,7 @@ class RoleController extends Controller
             'roles'
         );
 
-        return redirect()->route('admin.roles.index')
+        return admin_redirect('admin.roles.index')
             ->with('success', 'Role updated successfully.');
     }
 
@@ -186,7 +186,7 @@ class RoleController extends Controller
             ->findOrFail($id);
 
         if (in_array($role->name, ['superadmin', 'admin', 'customer'])) {
-            return redirect()->route('admin.roles.index')
+            return admin_redirect('admin.roles.index')
                 ->with('error', "The '{$role->name}' role cannot be deleted.");
         }
 
@@ -195,7 +195,7 @@ class RoleController extends Controller
             ->count();
 
         if ($roleUserCount > 0) {
-            return redirect()->route('admin.roles.index')
+            return admin_redirect('admin.roles.index')
                 ->with('error', "Cannot delete role '{$role->name}' because it is assigned to {$roleUserCount} user(s). Please reassign them first.");
         }
 
@@ -211,7 +211,7 @@ class RoleController extends Controller
 
         $role->delete();
 
-        return redirect()->route('admin.roles.index')
+        return admin_redirect('admin.roles.index')
             ->with('success', "Role '{$roleName}' deleted successfully.");
     }
 

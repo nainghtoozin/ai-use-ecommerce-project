@@ -39,13 +39,13 @@ class AdminPromotionBannerController extends Controller
 
         $promotion = PromotionBanner::create($data);
 
-        return redirect()->route('admin.banners.index')
+        return admin_redirect('admin.banners.index')
             ->with('success', 'Banner created successfully!');
     }
 
     public function show(PromotionBanner $promotion)
     {
-        return redirect()->route('admin.banners.index');
+        return admin_redirect('admin.banners.index');
     }
 
     public function update(Request $request, PromotionBanner $promotion)
@@ -65,7 +65,7 @@ class AdminPromotionBannerController extends Controller
 
         $promotion->update($data);
 
-        return redirect()->route('admin.banners.index')
+        return admin_redirect('admin.banners.index')
             ->with('success', 'Banner updated successfully.');
     }
 
@@ -74,7 +74,7 @@ class AdminPromotionBannerController extends Controller
         $this->imageService->delete($promotion->image);
         $promotion->delete();
 
-        return redirect()->route('admin.banners.index')
+        return admin_redirect('admin.banners.index')
             ->with('success', 'Banner deleted successfully.');
     }
 
