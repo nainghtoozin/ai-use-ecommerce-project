@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
+use App\Http\Controllers\Admin\AdminOrderOverrideController;
 use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ChatController;

@@ -63,30 +63,30 @@ Route::prefix('store/{store_slug}/admin')
         Route::get('/products/type-select', [AdminProductController::class, 'typeSelect'])->name('products.type-select');
         Route::get('/products/create', [AdminProductController::class, 'create'])->name('products.create');
         Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
-        Route::get('/products/{product}', [AdminProductController::class, 'show'])->name('products.show');
-        Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
-        Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
-        Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
         Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');
+        Route::get('/products/{product}', [AdminProductController::class, 'show'])->name('products.show')->whereNumber('product');
+        Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit')->whereNumber('product');
+        Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update')->whereNumber('product');
+        Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy')->whereNumber('product');
         Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDestroy'])->name('products.bulk-delete');
         Route::post('/products/bulk-activate', [AdminProductController::class, 'bulkActivate'])->name('products.bulk-activate');
         Route::post('/products/bulk-deactivate', [AdminProductController::class, 'bulkDeactivate'])->name('products.bulk-deactivate');
 
         // Orders
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
-        Route::post('/orders/{order}/confirm', [AdminOrderController::class, 'confirmOrder'])->name('orders.confirm');
-        Route::post('/orders/{order}/process', [AdminOrderController::class, 'processOrder'])->name('orders.process');
-        Route::post('/orders/{order}/ship', [AdminOrderController::class, 'shipOrder'])->name('orders.ship');
-        Route::post('/orders/{order}/deliver', [AdminOrderController::class, 'deliverOrder'])->name('orders.deliver');
-        Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');
-        Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment');
-        Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment');
-        Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
-        Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status');
-        Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment');
-        Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+        Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show')->whereNumber('order');
+        Route::post('/orders/{order}/confirm', [AdminOrderController::class, 'confirmOrder'])->name('orders.confirm')->whereNumber('order');
+        Route::post('/orders/{order}/process', [AdminOrderController::class, 'processOrder'])->name('orders.process')->whereNumber('order');
+        Route::post('/orders/{order}/ship', [AdminOrderController::class, 'shipOrder'])->name('orders.ship')->whereNumber('order');
+        Route::post('/orders/{order}/deliver', [AdminOrderController::class, 'deliverOrder'])->name('orders.deliver')->whereNumber('order');
+        Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel')->whereNumber('order');
+        Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment')->whereNumber('order');
+        Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment')->whereNumber('order');
+        Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid')->whereNumber('order');
+        Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status')->whereNumber('order');
+        Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment')->whereNumber('order');
+        Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy')->whereNumber('order');
 
         // Notifications (admin)
         Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');
@@ -102,29 +102,29 @@ Route::prefix('store/{store_slug}/admin')
         Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
         Route::get('/categories/create', [AdminCategoryController::class, 'create'])->name('categories.create');
         Route::post('/categories', [AdminCategoryController::class, 'store'])->name('categories.store');
-        Route::get('/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit');
-        Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
-        Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::get('/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit')->whereNumber('category');
+        Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update')->whereNumber('category');
+        Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy')->whereNumber('category');
         Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
 
         // Banners
         Route::get('/banners', [AdminPromotionBannerController::class, 'index'])->name('banners.index');
         Route::get('/banners/create', [AdminPromotionBannerController::class, 'create'])->name('banners.create');
         Route::post('/banners', [AdminPromotionBannerController::class, 'store'])->name('banners.store');
-        Route::get('/banners/{promotion}/edit', [AdminPromotionBannerController::class, 'edit'])->name('banners.edit');
-        Route::put('/banners/{promotion}', [AdminPromotionBannerController::class, 'update'])->name('banners.update');
-        Route::delete('/banners/{promotion}', [AdminPromotionBannerController::class, 'destroy'])->name('banners.destroy');
+        Route::get('/banners/{promotion}/edit', [AdminPromotionBannerController::class, 'edit'])->name('banners.edit')->whereNumber('promotion');
+        Route::put('/banners/{promotion}', [AdminPromotionBannerController::class, 'update'])->name('banners.update')->whereNumber('promotion');
+        Route::delete('/banners/{promotion}', [AdminPromotionBannerController::class, 'destroy'])->name('banners.destroy')->whereNumber('promotion');
         Route::get('/banners/search', [AdminPromotionBannerController::class, 'search'])->name('banners.search');
 
         // Promotions
         Route::get('/promotions', [AdminPromotionController::class, 'index'])->name('promotions.index');
         Route::get('/promotions/create', [AdminPromotionController::class, 'create'])->name('promotions.create');
         Route::post('/promotions', [AdminPromotionController::class, 'store'])->name('promotions.store');
-        Route::get('/promotions/{promotion}/edit', [AdminPromotionController::class, 'edit'])->name('promotions.edit');
-        Route::put('/promotions/{promotion}', [AdminPromotionController::class, 'update'])->name('promotions.update');
-        Route::delete('/promotions/{promotion}', [AdminPromotionController::class, 'destroy'])->name('promotions.destroy');
-        Route::post('/promotions/{promotion}/toggle', [AdminPromotionController::class, 'toggle'])->name('promotions.toggle');
-        Route::post('/promotions/{promotion}/duplicate', [AdminPromotionController::class, 'duplicate'])->name('promotions.duplicate');
+        Route::get('/promotions/{promotion}/edit', [AdminPromotionController::class, 'edit'])->name('promotions.edit')->whereNumber('promotion');
+        Route::put('/promotions/{promotion}', [AdminPromotionController::class, 'update'])->name('promotions.update')->whereNumber('promotion');
+        Route::delete('/promotions/{promotion}', [AdminPromotionController::class, 'destroy'])->name('promotions.destroy')->whereNumber('promotion');
+        Route::post('/promotions/{promotion}/toggle', [AdminPromotionController::class, 'toggle'])->name('promotions.toggle')->whereNumber('promotion');
+        Route::post('/promotions/{promotion}/duplicate', [AdminPromotionController::class, 'duplicate'])->name('promotions.duplicate')->whereNumber('promotion');
         Route::get('/promotions/search', [AdminPromotionController::class, 'search'])->name('promotions.search');
 
         // Promotions Reports
@@ -135,49 +135,49 @@ Route::prefix('store/{store_slug}/admin')
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/sales', [AdminReportController::class, 'sales'])->name('sales');
             Route::post('/sales/clear-cache', [AdminReportController::class, 'clearCache'])->name('sales.clear-cache');
-            Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details');
+            Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details')->whereNumber('order');
             Route::get('/product-sales', [AdminReportController::class, 'productSales'])->name('product-sales');
             Route::get('/payments', [AdminReportController::class, 'payments'])->name('payments');
-            Route::post('/payments/{order}/verify', [AdminReportController::class, 'verifyPayment'])->name('payments.verify');
-            Route::post('/payments/{order}/reject', [AdminReportController::class, 'rejectPayment'])->name('payments.reject');
+            Route::post('/payments/{order}/verify', [AdminReportController::class, 'verifyPayment'])->name('payments.verify')->whereNumber('order');
+            Route::post('/payments/{order}/reject', [AdminReportController::class, 'rejectPayment'])->name('payments.reject')->whereNumber('order');
         });
 
         // Coupons
         Route::get('/coupons', [AdminCouponController::class, 'index'])->name('coupons.index');
         Route::get('/coupons/create', [AdminCouponController::class, 'create'])->name('coupons.create');
         Route::post('/coupons', [AdminCouponController::class, 'store'])->name('coupons.store');
-        Route::get('/coupons/{coupon}/edit', [AdminCouponController::class, 'edit'])->name('coupons.edit');
-        Route::put('/coupons/{coupon}', [AdminCouponController::class, 'update'])->name('coupons.update');
-        Route::delete('/coupons/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy');
+        Route::get('/coupons/{coupon}/edit', [AdminCouponController::class, 'edit'])->name('coupons.edit')->whereNumber('coupon');
+        Route::put('/coupons/{coupon}', [AdminCouponController::class, 'update'])->name('coupons.update')->whereNumber('coupon');
+        Route::delete('/coupons/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy')->whereNumber('coupon');
         Route::get('/coupons/search', [AdminCouponController::class, 'search'])->name('coupons.search');
 
         // Payment Methods
         Route::get('/payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
         Route::get('/payment-methods/create', [AdminPaymentMethodController::class, 'create'])->name('payment-methods.create');
         Route::post('/payment-methods', [AdminPaymentMethodController::class, 'store'])->name('payment-methods.store');
-        Route::get('/payment-methods/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('payment-methods.edit');
-        Route::put('/payment-methods/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('payment-methods.update');
-        Route::delete('/payment-methods/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
-        Route::post('/payment-methods/{paymentMethod}/toggle', [AdminPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
+        Route::get('/payment-methods/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('payment-methods.edit')->whereNumber('paymentMethod');
+        Route::put('/payment-methods/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('payment-methods.update')->whereNumber('paymentMethod');
+        Route::delete('/payment-methods/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('payment-methods.destroy')->whereNumber('paymentMethod');
+        Route::post('/payment-methods/{paymentMethod}/toggle', [AdminPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle')->whereNumber('paymentMethod');
 
         // Cities
         Route::get('/cities', [AdminCityController::class, 'index'])->name('cities.index');
         Route::get('/cities/create', [AdminCityController::class, 'create'])->name('cities.create');
         Route::post('/cities', [AdminCityController::class, 'store'])->name('cities.store');
-        Route::get('/cities/{city}/edit', [AdminCityController::class, 'edit'])->name('cities.edit');
-        Route::put('/cities/{city}', [AdminCityController::class, 'update'])->name('cities.update');
-        Route::delete('/cities/{city}', [AdminCityController::class, 'destroy'])->name('cities.destroy');
-        Route::post('/cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle');
+        Route::get('/cities/{city}/edit', [AdminCityController::class, 'edit'])->name('cities.edit')->whereNumber('city');
+        Route::put('/cities/{city}', [AdminCityController::class, 'update'])->name('cities.update')->whereNumber('city');
+        Route::delete('/cities/{city}', [AdminCityController::class, 'destroy'])->name('cities.destroy')->whereNumber('city');
+        Route::post('/cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle')->whereNumber('city');
         Route::post('/locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
 
         // Townships
         Route::get('/townships', [AdminTownshipController::class, 'index'])->name('townships.index');
         Route::get('/townships/create', [AdminTownshipController::class, 'create'])->name('townships.create');
         Route::post('/townships', [AdminTownshipController::class, 'store'])->name('townships.store');
-        Route::get('/townships/{township}/edit', [AdminTownshipController::class, 'edit'])->name('townships.edit');
-        Route::put('/townships/{township}', [AdminTownshipController::class, 'update'])->name('townships.update');
-        Route::delete('/townships/{township}', [AdminTownshipController::class, 'destroy'])->name('townships.destroy');
-        Route::post('/townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
+        Route::get('/townships/{township}/edit', [AdminTownshipController::class, 'edit'])->name('townships.edit')->whereNumber('township');
+        Route::put('/townships/{township}', [AdminTownshipController::class, 'update'])->name('townships.update')->whereNumber('township');
+        Route::delete('/townships/{township}', [AdminTownshipController::class, 'destroy'])->name('townships.destroy')->whereNumber('township');
+        Route::post('/townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle')->whereNumber('township');
 
         // Website Info
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
@@ -194,26 +194,26 @@ Route::prefix('store/{store_slug}/admin')
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
         Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
-        Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
-        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
-        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
-        Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('users.suspend');
-        Route::post('/users/{user}/ban', [AdminUserController::class, 'ban'])->name('users.ban');
-        Route::post('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show')->whereNumber('user');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit')->whereNumber('user');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update')->whereNumber('user');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy')->whereNumber('user');
+        Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('users.suspend')->whereNumber('user');
+        Route::post('/users/{user}/ban', [AdminUserController::class, 'ban'])->name('users.ban')->whereNumber('user');
+        Route::post('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate')->whereNumber('user');
 
         // Activity Logs
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-        Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
+        Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show'])->name('activity-logs.show')->whereNumber('activityLog');
 
         // Roles
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
         Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
-        Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
-        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
-        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show')->whereNumber('role');
+        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit')->whereNumber('role');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update')->whereNumber('role');
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy')->whereNumber('role');
 
         // Permissions (read-only)
         Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
