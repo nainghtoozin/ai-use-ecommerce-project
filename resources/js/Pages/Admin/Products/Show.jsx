@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
 import {
     Eye,
@@ -100,7 +101,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link
-                            href="/admin/products"
+                            href={adminUrl('/admin/products')}
                             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5 text-gray-500" />
@@ -117,7 +118,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                     </div>
                     <div className="flex items-center gap-2">
                         <Link
-                            href={`/admin/products/${product.id}/edit`}
+                            href={adminUrl(`/admin/products/${product.id}/edit`)}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             <Edit3 className="w-4 h-4" />
@@ -335,7 +336,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                             <p className="text-sm font-medium text-gray-900">No variants defined</p>
                                             <p className="text-sm text-gray-500 mt-1">This variable product has no variants yet.</p>
                                             <Link
-                                                href={`/admin/products/${product.id}/edit`}
+                                                href={adminUrl(`/admin/products/${product.id}/edit`)}
                                                 className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                                             >
                                                 <Edit3 className="w-4 h-4" />
@@ -419,7 +420,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     <p className="text-sm font-medium text-gray-900">No components added</p>
                                     <p className="text-sm text-gray-500 mt-1">This combo product has no items yet.</p>
                                     <Link
-                                        href={`/admin/products/${product.id}/edit`}
+                                        href={adminUrl(`/admin/products/${product.id}/edit`)}
                                         className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
                                     >
                                         <Edit3 className="w-4 h-4" />
@@ -479,7 +480,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                         {safeRelatedCombos.map((combo) => (
                                             <Link
                                                 key={combo.id}
-                                                href={`/admin/products/${combo.id}`}
+                                                href={adminUrl(`/admin/products/${combo.id}`)}
                                                 className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
                                             >
                                                 <div className="flex items-center gap-3">
@@ -696,14 +697,14 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         <div className="sticky bottom-4">
                             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-3">
                                 <Link
-                                    href={`/admin/products/${product.id}/edit`}
+                                    href={adminUrl(`/admin/products/${product.id}/edit`)}
                                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                                 >
                                     <Edit3 className="w-4 h-4" />
                                     Edit Product
                                 </Link>
                                 <Link
-                                    href="/admin/products"
+                                    href={adminUrl('/admin/products')}
                                     className="w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors text-center block"
                                 >
                                     Back to Products
@@ -751,7 +752,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                             </button>
                             {!product.has_orders && (
                                 <button
-                                    onClick={() => router.delete(`/admin/products/${product.id}`, {
+                                    onClick={() => router.delete(adminUrl(`/admin/products/${product.id}`), {
                                         onSuccess: () => setDeleteModalOpen(false),
                                     })}
                                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
 
 export default function AdminOrdersIndex({ orders, filters = {}, showPagination = true, warning = null }) {
@@ -32,12 +33,12 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
 
     function handleFilter(e) {
         e.preventDefault();
-        router.get('/admin/orders', filterForm, { preserveState: true, preserveScroll: true });
+        router.get(adminUrl('/admin/orders'), filterForm, { preserveState: true, preserveScroll: true });
     }
 
     function handleDelete(id) {
         if (confirm('Are you sure you want to delete this cancelled order?')) {
-            router.delete(`/admin/orders/${id}`);
+            router.delete(adminUrl(`/admin/orders/${id}`));
         }
     }
 
@@ -96,7 +97,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                     <div className="flex justify-end mt-4 gap-2">
                         <button
                             type="button"
-                            onClick={() => { setFilterForm({ order_status: '', payment_status: '', search: '' }); router.get('/admin/orders'); }}
+                            onClick={() => { setFilterForm({ order_status: '', payment_status: '', search: '' }); router.get(adminUrl('/admin/orders')); }}
                             className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
                         >
                             Clear
@@ -155,7 +156,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                     orders.data.map((order) => (
                                         <tr key={order.id} className="hover:bg-gray-50">
                                             <td className="px-4 py-4">
-                                                <Link href={`/admin/orders/${order.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                                                <Link href={adminUrl(`/admin/orders/${order.id}`)} className="text-sm font-medium text-blue-600 hover:underline">
                                                     #{order.id}
                                                 </Link>
                                                 <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
@@ -184,7 +185,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                             </td>
                                             <td className="px-4 py-4 text-right text-sm">
                                                 <div className="flex justify-end gap-2">
-                                                    <Link href={`/admin/orders/${order.id}`} className="text-blue-600 hover:text-blue-800">View</Link>
+                                                    <Link href={adminUrl(`/admin/orders/${order.id}`)} className="text-blue-600 hover:text-blue-800">View</Link>
                                                     {order.order_status === 'cancelled' && (
                                                         <button onClick={() => handleDelete(order.id)} className="text-red-600 hover:text-red-800">Delete</button>
                                                     )}

@@ -3,6 +3,7 @@ import { useForm, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ImageUpload from '@/Components/ImageUpload';
 import { assetUrl } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 const PRESET_COLORS = [
   { name: 'Blue', value: '#3B82F6' },
@@ -204,7 +205,7 @@ export default function SettingsEdit({ settings = {} }) {
     }
 
     formData.append('_method', 'PUT');
-    router.post('/admin/website-info/edit', formData, {
+    router.post(adminUrl('/admin/website-info/edit'), formData, {
       forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {

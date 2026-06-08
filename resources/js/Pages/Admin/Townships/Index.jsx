@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function TownshipsIndex({ townships, cities = [] }) {
     const [cityFilter, setCityFilter] = useState('');
@@ -8,19 +9,19 @@ export default function TownshipsIndex({ townships, cities = [] }) {
     function handleFilterChange(value) {
         setCityFilter(value);
         if (value) {
-            router.get('/admin/townships', { city_id: value }, { preserveState: true });
+            router.get(adminUrl('/admin/townships'), { city_id: value }, { preserveState: true });
         } else {
-            router.get('/admin/townships', {}, { preserveState: true });
+            router.get(adminUrl('/admin/townships'), {}, { preserveState: true });
         }
     }
 
     function handleToggle(id) {
-        router.post(`/admin/townships/${id}/toggle`);
+        router.post(adminUrl(`/admin/townships/${id}/toggle`));
     }
 
     function handleDelete(id) {
         if (confirm('Delete this township?')) {
-            router.delete(`/admin/townships/${id}`);
+            router.delete(adminUrl(`/admin/townships/${id}`));
         }
     }
 
@@ -30,7 +31,7 @@ export default function TownshipsIndex({ townships, cities = [] }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">Townships</h1>
-                    <Link href="/admin/townships/create" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                    <Link href={adminUrl('/admin/townships/create')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         Add Township
                     </Link>
@@ -74,7 +75,7 @@ export default function TownshipsIndex({ townships, cities = [] }) {
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm">
                                         <div className="flex justify-end gap-2">
-                                            <Link href={`/admin/townships/${township.id}/edit`} className="text-blue-600 hover:text-blue-800">Edit</Link>
+                                            <Link href={adminUrl(`/admin/townships/${township.id}/edit`)} className="text-blue-600 hover:text-blue-800">Edit</Link>
                                             <button onClick={() => handleDelete(township.id)} className="text-red-600 hover:text-red-800">Delete</button>
                                         </div>
                                     </td>

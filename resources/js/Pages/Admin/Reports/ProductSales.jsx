@@ -1,6 +1,7 @@
 import { memo, useState, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import {
     DollarSign, ShoppingBag, TrendingUp, AlertTriangle, XCircle,
     Search, Filter, FileText, Package, ChevronDown,
@@ -166,7 +167,7 @@ function FilterForm({ form, setForm, onSubmit, onReset, categories }) {
 }
 
 export default function ProductSalesReport({ products, summary, top_selling, slow_moving, categories, filters }) {
-    const baseUrl = '/admin/reports/product-sales';
+    const baseUrl = adminUrl('/admin/reports/product-sales');
     const today = new Date().toISOString().split('T')[0];
 
     const [form, setForm] = useState({

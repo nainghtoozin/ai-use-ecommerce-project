@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Link, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function UsersEdit({ user, roles }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -20,7 +21,7 @@ export default function UsersEdit({ user, roles }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        put(`/admin/users/${user.id}`, {
+        put(adminUrl(`/admin/users/${user.id}`), {
             onSuccess: () => {
                 // redirect handled by server
             },
@@ -157,7 +158,7 @@ export default function UsersEdit({ user, roles }) {
                                 </div>
 
                                 <div className="flex items-center justify-end gap-4">
-                                    <Link href="/admin/users" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    <Link href={adminUrl('/admin/users')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                                         Cancel
                                     </Link>
                                     <button

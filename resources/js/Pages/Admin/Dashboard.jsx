@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import { useState } from 'react';
 
 const paymentMethodStyles = {
@@ -76,12 +77,12 @@ export default function AdminDashboard({
             return;
         }
         setShowCustomDate(false);
-        router.get('/admin/dashboard', { period }, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/dashboard'), { period }, { preserveState: true, replace: true });
     };
 
     const handleCustomDateSubmit = () => {
         if (!customStartDate || !customEndDate) return;
-        router.get('/admin/dashboard', {
+        router.get(adminUrl('/admin/dashboard'), {
             period: 'custom',
             start_date: customStartDate,
             end_date: customEndDate,
@@ -197,7 +198,7 @@ export default function AdminDashboard({
                                 </div>
                             </div>
                             <Link
-                                href="/admin/billing"
+                                href={adminUrl('/admin/billing')}
                                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
                             >
                                 {subscriptionStatus === 'suspended' ? 'Contact Support' : 'Renew Now'}
@@ -361,7 +362,7 @@ export default function AdminDashboard({
                     <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200">
                         <div className="flex items-center justify-between p-5 border-b border-gray-100">
                             <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
-                            <Link href="/admin/orders" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            <Link href={adminUrl('/admin/orders')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                                 View All <i className="bi bi-arrow-right ml-1"></i>
                             </Link>
                         </div>
@@ -388,7 +389,7 @@ export default function AdminDashboard({
                                             <tr
                                                 key={order.id}
                                                 className="hover:bg-gray-50 transition-colors cursor-pointer"
-                                                onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                                                onClick={() => window.location.href = adminUrl(`/admin/orders/${order.id}`)}
                                             >
                                                 <td className="px-5 py-4">
                                                     <span className="text-sm font-medium text-gray-900">#{order.id}</span>
@@ -445,7 +446,7 @@ export default function AdminDashboard({
                                                 <p className="text-xs text-red-600">Out of stock</p>
                                             </div>
                                             <Link
-                                                href={`/admin/products/${product.id}/edit`}
+                                                href={adminUrl(`/admin/products/${product.id}/edit`)}
                                                 className="text-xs text-red-600 hover:text-red-700 font-medium"
                                             >
                                                 Restock
@@ -482,7 +483,7 @@ export default function AdminDashboard({
                                                 <p className="text-xs text-amber-600">Only {product.stock} left</p>
                                             </div>
                                             <Link
-                                                href={`/admin/products/${product.id}/edit`}
+                                                href={adminUrl(`/admin/products/${product.id}/edit`)}
                                                 className="text-xs text-amber-600 hover:text-amber-700 font-medium"
                                             >
                                                 Update

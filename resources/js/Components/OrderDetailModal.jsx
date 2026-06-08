@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Printer, Copy, Check, Package, User, CreditCard, Wallet, Image, Link, AlertCircle, Maximize2 } from 'lucide-react';
+import { adminUrl } from '@/Utils/adminUrl';
 
 const styleId = 'order-detail-modal-styles';
 if (!document.getElementById(styleId)) {
@@ -240,7 +241,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
         setError(null);
         setLightboxImage(null);
 
-        fetch(`/admin/reports/sales/order/${orderId}`)
+        fetch(adminUrl(`/admin/reports/sales/order/${orderId}`))
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to load order details');
                 return res.json();

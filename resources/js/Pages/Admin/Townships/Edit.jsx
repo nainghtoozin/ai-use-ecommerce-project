@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function TownshipEdit({ township, cities = [] }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -11,7 +12,7 @@ export default function TownshipEdit({ township, cities = [] }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        put(`/admin/townships/${township.id}`);
+        put(adminUrl(`/admin/townships/${township.id}`));
     }
 
     return (
@@ -19,7 +20,7 @@ export default function TownshipEdit({ township, cities = [] }) {
             <Head title={`Edit ${township.name}`} />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href="/admin/townships" className="text-sm text-blue-600 hover:underline">&larr; Back to Townships</Link>
+                    <Link href={adminUrl('/admin/townships')} className="text-sm text-blue-600 hover:underline">&larr; Back to Townships</Link>
                     <h1 className="text-2xl font-bold text-gray-900 mt-2">Edit Township</h1>
                 </div>
 
@@ -58,7 +59,7 @@ export default function TownshipEdit({ township, cities = [] }) {
                         </div>
 
                         <div className="flex justify-end gap-3">
-                            <Link href="/admin/townships" className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</Link>
+                            <Link href={adminUrl('/admin/townships')} className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</Link>
                             <button type="submit" disabled={processing}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                                 {processing ? 'Updating...' : 'Update Township'}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function PromotionCreate({ products, categories }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -48,7 +49,7 @@ export default function PromotionCreate({ products, categories }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post('/admin/promotions');
+        post(adminUrl('/admin/promotions'));
     }
 
     function toggleProduct(id) {
@@ -76,7 +77,7 @@ export default function PromotionCreate({ products, categories }) {
             <Head title="Create Promotion" />
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href="/admin/promotions" className="text-sm text-blue-600 hover:underline">&larr; Back to Promotions</Link>
+                    <Link href={adminUrl('/admin/promotions')} className="text-sm text-blue-600 hover:underline">&larr; Back to Promotions</Link>
                     <h1 className="text-2xl font-bold text-gray-900 mt-2">Create Promotion</h1>
                 </div>
 
@@ -417,7 +418,7 @@ export default function PromotionCreate({ products, categories }) {
 
                     {/* Form Actions */}
                     <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <Link href="/admin/promotions"
+                        <Link href={adminUrl('/admin/promotions')}
                             className="w-full sm:w-auto px-5 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors text-center">
                             <svg className="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                             Back to List

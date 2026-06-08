@@ -3,6 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import ProductFormMain from '@/Components/ProductForm/ProductFormMain';
 import SidebarSection from '@/Components/ProductForm/SidebarSection';
 import useProductForm from '@/Components/ProductForm/useProductForm';
+import { adminUrl } from '@/Utils/adminUrl';
 
 const TYPE_LABELS = {
     single: 'Single Product',
@@ -89,7 +90,7 @@ export default function ProductEdit({ product, categories, selectableProducts = 
                                     comboItems={comboItems}
                                     onSubmit={(e) => { e?.preventDefault?.(); submit(); }}
                                     onCancel={cancel}
-                                    onDeleteUrl={`/admin/products/${product.id}`}
+                                    onDeleteUrl={adminUrl(`/admin/products/${product.id}`)}
                                 />
                             </div>
                         </div>

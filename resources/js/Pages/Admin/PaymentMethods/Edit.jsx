@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function PaymentMethodEdit({ paymentMethod }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -43,7 +44,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
         }
         formData.append('is_active', data.is_active ? '1' : '0');
 
-        router.post(`/admin/payment-methods/${paymentMethod.id}`, formData, {
+        router.post(adminUrl(`/admin/payment-methods/${paymentMethod.id}`), formData, {
             forceFormData: true,
             preserveScroll: true,
             preserveState: false,
@@ -69,7 +70,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
             <Head title={`Edit ${paymentMethod.name}`} />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href="/admin/payment-methods" className="text-sm text-blue-600 hover:underline">&larr; Back to Payment Methods</Link>
+                    <Link href={adminUrl('/admin/payment-methods')} className="text-sm text-blue-600 hover:underline">&larr; Back to Payment Methods</Link>
                     <h1 className="text-2xl font-bold text-gray-900 mt-2">Edit Payment Method</h1>
                 </div>
 
@@ -146,7 +147,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                         </div>
 
                         <div className="flex justify-end gap-3">
-                            <Link href="/admin/payment-methods" className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</Link>
+                            <Link href={adminUrl('/admin/payment-methods')} className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</Link>
                             <button type="submit" disabled={processing}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                                 {processing ? 'Updating...' : 'Update Payment Method'}

@@ -1,6 +1,7 @@
 import { Link, Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function UsersShow({ user, activities }) {
     const { props } = usePage();
@@ -25,7 +26,7 @@ export default function UsersShow({ user, activities }) {
 
     function confirmDelete() {
         if (window.confirm(`Are you sure you want to delete "${user.name}"? This action cannot be undone.`)) {
-            router.delete(`/admin/users/${user.id}`);
+            router.delete(adminUrl(`/admin/users/${user.id}`));
         }
     }
 
@@ -61,7 +62,7 @@ export default function UsersShow({ user, activities }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Link href={`/admin/users/${user.id}/edit`} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                    <Link href={adminUrl(`/admin/users/${user.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
                                         <i className="bi bi-pencil mr-1"></i> Edit
                                     </Link>
                                     {(isSuperAdmin || !user.is_owner) && (
@@ -131,7 +132,7 @@ export default function UsersShow({ user, activities }) {
                     </div>
 
                     <div className="flex justify-start">
-                        <Link href="/admin/users" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <Link href={adminUrl('/admin/users')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                             <i className="bi bi-arrow-left mr-1"></i> Back to Users
                         </Link>
                     </div>

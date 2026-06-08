@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import usePusherNotifications from '@/Hooks/usePusherNotifications';
 import { timeAgo, groupNotificationsByDate } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 function BellIcon({ hasUnread }) {
     return (
@@ -155,7 +156,7 @@ export default function NotificationBell({ isAdmin = false }) {
 
                     <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 flex items-center justify-between">
                         <Link
-                            href={isAdmin ? '/admin/notifications' : '/notifications'}
+                            href={isAdmin ? adminUrl('/admin/notifications') : '/notifications'}
                             onClick={() => setOpen(false)}
                             className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
                         >
@@ -171,7 +172,7 @@ export default function NotificationBell({ isAdmin = false }) {
                                 </button>
                             )}
                             <Link
-                                href={isAdmin ? '/admin/orders' : '/orders'}
+                                href={isAdmin ? adminUrl('/admin/orders') : '/orders'}
                                 onClick={() => setOpen(false)}
                                 className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                             >

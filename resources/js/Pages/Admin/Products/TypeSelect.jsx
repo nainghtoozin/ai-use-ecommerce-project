@@ -1,5 +1,6 @@
 import { router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import ProductTypeSelector from '@/Components/ProductType/ProductTypeSelector';
 
 export default function ProductTypeSelect({
@@ -8,11 +9,11 @@ export default function ProductTypeSelect({
     featureStatus = {},
 }) {
     const handleTypeSelect = (type) => {
-        router.get(`/admin/products/create?type=${type}`);
+        router.get(adminUrl(`/admin/products/create?type=${type}`));
     };
 
     const handleBack = () => {
-        router.visit('/admin/products');
+        router.visit(adminUrl('/admin/products'));
     };
 
     return (

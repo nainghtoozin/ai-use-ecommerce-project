@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
 import { assetUrl } from '@/Utils/helpers';
 
@@ -16,7 +17,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
 
     function handleSearch(e) {
         e.preventDefault();
-        router.get('/admin/users', {
+        router.get(adminUrl('/admin/users'), {
             search,
             role: roleFilter,
             status: statusFilter,
@@ -27,29 +28,29 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
         const params = { search, role: roleFilter, status: statusFilter, [type]: value };
         if (type === 'role') setRoleFilter(value);
         if (type === 'status') setStatusFilter(value);
-        router.get('/admin/users', params, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/users'), params, { preserveState: true, replace: true });
     }
 
     function confirmDelete(user) {
         if (window.confirm(`Are you sure you want to delete "${user.name}"? This action cannot be undone.`)) {
-            router.delete(`/admin/users/${user.id}`);
+            router.delete(adminUrl(`/admin/users/${user.id}`));
         }
     }
 
     function handleSuspend(user) {
         if (window.confirm(`Suspend "${user.name}"? They will not be able to log in.`)) {
-            router.post(`/admin/users/${user.id}/suspend`);
+            router.post(adminUrl(`/admin/users/${user.id}/suspend`));
         }
     }
 
     function handleBan(user) {
         if (window.confirm(`Ban "${user.name}"? They will not be able to log in.`)) {
-            router.post(`/admin/users/${user.id}/ban`);
+            router.post(adminUrl(`/admin/users/${user.id}/ban`));
         }
     }
 
     function handleActivate(user) {
-        router.post(`/admin/users/${user.id}/activate`);
+        router.post(adminUrl(`/admin/users/${user.id}/activate`));
     }
 
     const statusBadge = (status) => {
@@ -90,7 +91,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                     </button>
                                 </form>
                                 <Link
-                                    href="/admin/users/create"
+                                    href={adminUrl('/admin/users/create')}
                                     className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
                                 >
                                     <i className="bi bi-plus-lg"></i> Create User
@@ -174,10 +175,10 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Link href={`/admin/users/${user.id}`} className="text-blue-600 hover:text-blue-900">
+                                                        <Link href={adminUrl(`/admin/users/${user.id}`)} className="text-blue-600 hover:text-blue-900">
                                                             <i className="bi bi-eye"></i>
                                                         </Link>
-                                                        <Link href={`/admin/users/${user.id}/edit`} className="text-indigo-600 hover:text-indigo-900">
+                                                        <Link href={adminUrl(`/admin/users/${user.id}/edit`)} className="text-indigo-600 hover:text-indigo-900">
                                                             <i className="bi bi-pencil"></i>
                                                         </Link>
                                                         {(isSuperAdmin || !user.is_owner) && user.status === 'active' && (

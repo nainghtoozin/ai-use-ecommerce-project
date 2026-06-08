@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 function formatDate(dateStr) {
     if (!dateStr) return '-';
@@ -20,19 +21,19 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
 
     function handleSearch(e) {
         e.preventDefault();
-        router.get('/admin/promotions/search', { query: search }, { preserveState: true });
+        router.get(adminUrl('/admin/promotions/search'), { query: search }, { preserveState: true });
     }
 
     function handleToggle(id) {
-        router.post(`/admin/promotions/${id}/toggle`);
+        router.post(adminUrl(`/admin/promotions/${id}/toggle`));
     }
 
     function handleDuplicate(id) {
-        router.post(`/admin/promotions/${id}/duplicate`);
+        router.post(adminUrl(`/admin/promotions/${id}/duplicate`));
     }
 
     function handleDelete(id) {
-        router.delete(`/admin/promotions/${id}`);
+        router.delete(adminUrl(`/admin/promotions/${id}`));
         setDeleteTarget(null);
     }
 
@@ -67,7 +68,7 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">Promotions</h1>
-                    <Link href="/admin/promotions/create" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium">
+                    <Link href={adminUrl('/admin/promotions/create')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         Add Promotion
                     </Link>
@@ -98,7 +99,7 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                     </div>
                     <button type="submit" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Search</button>
                     {query && (
-                        <button type="button" onClick={() => { setSearch(''); router.get('/admin/promotions'); }} className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">Clear</button>
+                        <button type="button" onClick={() => { setSearch(''); router.get(adminUrl('/admin/promotions')); }} className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">Clear</button>
                     )}
                 </form>
 
@@ -125,7 +126,7 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                                             <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             <p className="text-gray-500 text-sm font-medium">No promotions found</p>
                                             <p className="text-gray-400 text-xs mt-1">Get started by creating your first promotion.</p>
-                                            <Link href="/admin/promotions/create" className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Promotion</Link>
+                                            <Link href={adminUrl('/admin/promotions/create')} className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Promotion</Link>
                                         </td>
                                     </tr>
                                 ) : promotions.data.map((p) => {
@@ -233,7 +234,7 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                                                         title={p.is_active ? 'Deactivate' : 'Activate'}>
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={p.is_active ? 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z' : 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z'} /></svg>
                                                     </button>
-                                                    <Link href={`/admin/promotions/${p.id}/edit`}
+                                                    <Link href={adminUrl(`/admin/promotions/${p.id}/edit`)}
                                                         className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
                                                         title="Edit">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>

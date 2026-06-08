@@ -1,6 +1,7 @@
 import { memo, useState, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import {
     DollarSign, ShoppingCart, Clock, CheckCircle, XCircle, Receipt,
     Search, Filter, FileText, Eye,
@@ -330,7 +331,7 @@ function Pagination({ meta, baseUrl }) {
 }
 
 export default function SalesReport({ orders, summary, filters }) {
-    const baseUrl = '/admin/reports/sales';
+    const baseUrl = adminUrl('/admin/reports/sales');
     const [selectedOrderId, setSelectedOrderId] = useState(null);
 
     const handleCloseModal = useCallback(() => setSelectedOrderId(null), []);

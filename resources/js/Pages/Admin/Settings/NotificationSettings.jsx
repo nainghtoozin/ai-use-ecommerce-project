@@ -1,5 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function NotificationSettings({ settings = {} }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -8,7 +9,7 @@ export default function NotificationSettings({ settings = {} }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post('/admin/settings/notifications');
+        post(adminUrl('/admin/settings/notifications'));
     }
 
     return (

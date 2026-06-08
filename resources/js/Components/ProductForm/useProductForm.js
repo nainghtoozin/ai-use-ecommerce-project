@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function useProductForm({ product = null, productType = 'single' } = {}) {
     const isEdit = !!product;
@@ -114,7 +115,7 @@ export default function useProductForm({ product = null, productType = 'single' 
 
         if (isEdit) {
             form.append('_method', 'PUT');
-            router.post(`/admin/products/${product.id}`, form, {
+            router.post(adminUrl(`/admin/products/${product.id}`), form, {
                 forceFormData: true,
                 preserveScroll: true,
                 onError: (pageErrors) => {
@@ -127,7 +128,7 @@ export default function useProductForm({ product = null, productType = 'single' 
                 },
             });
         } else {
-            router.post('/admin/products', form, {
+            router.post(adminUrl('/admin/products'), form, {
                 forceFormData: true,
                 preserveScroll: true,
                 onError: (pageErrors) => {
@@ -143,7 +144,7 @@ export default function useProductForm({ product = null, productType = 'single' 
     }, [isEdit, product?.id, buildPayload]);
 
     const cancel = useCallback(() => {
-        router.visit('/admin/products');
+        router.visit(adminUrl('/admin/products'));
     }, []);
 
     return {

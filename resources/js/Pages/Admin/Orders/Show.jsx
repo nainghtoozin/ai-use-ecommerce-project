@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function AdminOrdersShow({ order }) {
     const { props } = usePage();
@@ -40,38 +41,38 @@ export default function AdminOrdersShow({ order }) {
 
     function handleConfirm() {
         if (confirm('Confirm this order? Stock will be deducted.')) {
-            router.post(`/admin/orders/${order.id}/confirm`);
+            router.post(adminUrl(`/admin/orders/${order.id}/confirm`));
         }
     }
 
     function handleProcess() {
-        router.post(`/admin/orders/${order.id}/process`);
+        router.post(adminUrl(`/admin/orders/${order.id}/process`));
     }
 
     function handleShip() {
-        router.post(`/admin/orders/${order.id}/ship`);
+        router.post(adminUrl(`/admin/orders/${order.id}/ship`));
     }
 
     function handleDeliver() {
         if (confirm('Mark as delivered?')) {
-            router.post(`/admin/orders/${order.id}/deliver`);
+            router.post(adminUrl(`/admin/orders/${order.id}/deliver`));
         }
     }
 
     function handleCancel() {
         if (confirm('Are you sure you want to cancel this order? Stock will be restored.')) {
-            router.post(`/admin/orders/${order.id}/cancel`);
+            router.post(adminUrl(`/admin/orders/${order.id}/cancel`));
         }
     }
 
     function handleVerifyPayment() {
         if (confirm('Verify this payment?')) {
-            router.post(`/admin/orders/${order.id}/verify-payment`);
+            router.post(adminUrl(`/admin/orders/${order.id}/verify-payment`));
         }
     }
 
     function handleRejectPayment() {
-        router.post(`/admin/orders/${order.id}/reject-payment`, {
+        router.post(adminUrl(`/admin/orders/${order.id}/reject-payment`), {
             rejection_reason: rejectionReason,
         }, {
             onSuccess: () => {
@@ -83,7 +84,7 @@ export default function AdminOrdersShow({ order }) {
 
     function handleDelete() {
         if (confirm('Delete this cancelled order?')) {
-            router.delete(`/admin/orders/${order.id}`);
+            router.delete(adminUrl(`/admin/orders/${order.id}`));
         }
     }
 
@@ -91,8 +92,8 @@ export default function AdminOrdersShow({ order }) {
         if (!overrideModal || !overrideNewStatus || !overrideReason.trim()) return;
 
         const endpoint = overrideModal === 'order_status'
-            ? `/admin/orders/${order.id}/override-status`
-            : `/admin/orders/${order.id}/override-payment`;
+            ? adminUrl(`/admin/orders/${order.id}/override-status`)
+            : adminUrl(`/admin/orders/${order.id}/override-payment`);
 
         router.post(endpoint, {
             new_status: overrideNewStatus,
@@ -238,7 +239,7 @@ export default function AdminOrdersShow({ order }) {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href="/admin/orders" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-2">
+                    <Link href={adminUrl('/admin/orders')} className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-2">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         Back to Orders
                     </Link>

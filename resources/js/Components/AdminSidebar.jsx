@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 import {
     LayoutDashboard, Package, Tags, Megaphone,
     BarChart3, ShoppingBag, Receipt,
@@ -155,11 +156,14 @@ export default function AdminSidebar() {
 
     function isActive(href) {
         if (href === '/') return url === '/';
-        const hrefPath = href.replace(/\/+$/, '');
-        const urlPath = url.replace(/\/+$/, '');
-        if (urlPath === hrefPath) return true;
-        if (urlPath.startsWith(hrefPath + '/')) return true;
-        return false;
+        const candidates = [href, adminUrl(href)];
+        return candidates.some(candidate => {
+            const hrefPath = candidate.replace(/\/+$/, '');
+            const urlPath = url.replace(/\/+$/, '');
+            if (urlPath === hrefPath) return true;
+            if (urlPath.startsWith(hrefPath + '/')) return true;
+            return false;
+        });
     }
 
     const [openSections, setOpenSections] = useState({});
@@ -286,10 +290,10 @@ export default function AdminSidebar() {
                                             {section.items.map((item) => {
                                                 const active = isActive(item.href);
                                                 return (
-                                                    <Link
-                                                        key={item.href}
-                                                        href={item.href}
-                                                        onClick={() => setSidebarOpen(false)}
+                                                <Link
+                                                    key={item.href}
+                                                    href={adminUrl(item.href)}
+                                                    onClick={() => setSidebarOpen(false)}
                                                         className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative ${active
                                                                 ? 'text-white shadow-md'
                                                                 : 'text-slate-400 hover:text-white hover:bg-slate-800'

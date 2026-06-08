@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import axios from 'axios';
 import { timeAgo, notificationIcon, notificationType, notificationColor } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 function normalizeNotification(n, overrides = {}) {
     const title = overrides.title || n.title || 'Notification';
@@ -176,8 +177,8 @@ export default function usePusherNotifications() {
         if (notification.actionUrl) {
             router.visit(notification.actionUrl);
         } else if (notification.orderId) {
-            const isAdmin = window.location.pathname.startsWith('/admin');
-            router.visit(isAdmin ? `/admin/orders/${notification.orderId}` : `/client/orders/${notification.orderId}`);
+            const isAdmin = window.location.pathname.startsWith('/admin') || /^\/store\/[^/]+\/admin\//.test(window.location.pathname);
+            router.visit(isAdmin ? adminUrl(`/admin/orders/${notification.orderId}`) : `/client/orders/${notification.orderId}`);
         }
     }, []);
 

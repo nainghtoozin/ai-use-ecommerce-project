@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import axios from 'axios';
 import { assetUrl } from '@/Utils/helpers';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function AppLayout({ children, header = null }) {
     const { props, url } = usePage();
@@ -82,10 +83,14 @@ export default function AppLayout({ children, header = null }) {
     function isActive(href) {
         if (href === '/' && url === '/') return true;
         if (href !== '/') {
-            const hrefPath = href.replace(/\/+$/, '');
-            const urlPath = url.replace(/\/+$/, '');
-            if (urlPath === hrefPath) return true;
-            if (urlPath.startsWith(hrefPath + '/')) return true;
+            const candidates = [href, adminUrl(href)];
+            return candidates.some(candidate => {
+                const hrefPath = candidate.replace(/\/+$/, '');
+                const urlPath = url.replace(/\/+$/, '');
+                if (urlPath === hrefPath) return true;
+                if (urlPath.startsWith(hrefPath + '/')) return true;
+                return false;
+            });
         }
         return false;
     }
@@ -149,7 +154,7 @@ export default function AppLayout({ children, header = null }) {
                                 {menu.map((item) => (
                                     <Link
                                         key={item.href}
-                                        href={item.href}
+                                        href={isAdmin ? adminUrl(item.href) : item.href}
                                         onClick={() => setSidebarOpen(false)}
                                         className={`
                                             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors

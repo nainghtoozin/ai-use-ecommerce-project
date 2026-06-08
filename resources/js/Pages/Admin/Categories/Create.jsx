@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function CategoryCreate() {
     const { data, setData, post, processing, errors } = useForm({
@@ -9,7 +10,7 @@ export default function CategoryCreate() {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post('/admin/categories');
+        post(adminUrl('/admin/categories'));
     }
 
     return (
@@ -17,7 +18,7 @@ export default function CategoryCreate() {
             <Head title="Create Category" />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href="/admin/categories" className="text-sm text-blue-600 hover:underline">&larr; Back to Categories</Link>
+                    <Link href={adminUrl('/admin/categories')} className="text-sm text-blue-600 hover:underline">&larr; Back to Categories</Link>
                     <h1 className="text-2xl font-bold text-gray-900 mt-2">Create Category</h1>
                 </div>
 
@@ -38,7 +39,7 @@ export default function CategoryCreate() {
                         </div>
 
                         <div className="flex justify-end gap-3">
-                            <Link href="/admin/categories" className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</Link>
+                            <Link href={adminUrl('/admin/categories')} className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</Link>
                             <button type="submit" disabled={processing}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                                 {processing ? 'Creating...' : 'Create Category'}

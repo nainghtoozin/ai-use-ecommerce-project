@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function Reports({ promotions, products, categories }) {
     const [filters, setFilters] = useState({
@@ -36,7 +37,7 @@ export default function Reports({ promotions, products, categories }) {
             if (f.promotion_id) params.promotion_id = f.promotion_id;
             if (f.product_id) params.product_id = f.product_id;
             if (f.category_id) params.category_id = f.category_id;
-            const res = await axios.get('/admin/promotions/reports/data', { params });
+            const res = await axios.get(adminUrl('/admin/promotions/reports/data'), { params });
             setData(res.data);
         } catch (e) {
             console.error('Failed to fetch report data', e);

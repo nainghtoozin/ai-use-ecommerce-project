@@ -1,5 +1,6 @@
 import { Link, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function ActivityLogsShow({ log }) {
     return (
@@ -68,7 +69,7 @@ export default function ActivityLogsShow({ log }) {
                             </dl>
 
                             <div className="mt-6">
-                                <Link href="/admin/activity-logs" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                <Link href={adminUrl('/admin/activity-logs')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                                     <i className="bi bi-arrow-left mr-1"></i> Back to Logs
                                 </Link>
                             </div>

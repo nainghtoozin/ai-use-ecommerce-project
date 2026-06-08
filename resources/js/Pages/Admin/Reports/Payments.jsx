@@ -1,6 +1,7 @@
 import { memo, useState, useCallback, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import {
     DollarSign, CheckCircle, Clock, ArrowLeftRight, XCircle, Banknote,
     Search, Filter, FileText, Eye, ChevronDown, CreditCard, Landmark,
@@ -372,7 +373,7 @@ function ScreenshotPreview({ url, fallbackText }) {
 }
 
 export default function PaymentReport({ orders, summary, paymentMethods, codMethodId, filters }) {
-    const baseUrl = '/admin/reports/payments';
+    const baseUrl = adminUrl('/admin/reports/payments');
     const today = new Date().toISOString().split('T')[0];
 
     const [form, setForm] = useState({
@@ -422,7 +423,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
 
     const handleVerify = useCallback((order) => {
         setProcessing(true);
-        router.post(`/admin/reports/payments/${order.id}/verify`, {}, {
+        router.post(adminUrl(`/admin/reports/payments/${order.id}/verify`), {}, {
             preserveScroll: true,
             onSuccess: () => {
                 setVerifyTarget(null);
@@ -439,7 +440,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
 
     const handleRejectConfirm = useCallback((order) => {
         setProcessing(true);
-        router.post(`/admin/reports/payments/${order.id}/reject`, {
+        router.post(adminUrl(`/admin/reports/payments/${order.id}/reject`), {
             rejection_reason: rejectionReason,
         }, {
             preserveScroll: true,
@@ -691,7 +692,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                                                 <span>Done</span>
                                                             </span>
                                                         )}
-                                                        <Link href={`/admin/orders/${order.id}`}
+                                                        <Link href={adminUrl(`/admin/orders/${order.id}`)}
                                                             className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-lg transition-colors whitespace-nowrap">
                                                             <Eye className="w-3.5 h-3.5" />
                                                             <span className="hidden sm:inline">View</span>

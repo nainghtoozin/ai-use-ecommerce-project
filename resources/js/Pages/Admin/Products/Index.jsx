@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
 import {
     Package,
@@ -81,14 +82,14 @@ function InlineActions({ product, onDelete }) {
     return (
         <div className="flex items-center gap-2 whitespace-nowrap">
             <Link
-                href={`/admin/products/${product.id}`}
+                href={adminUrl(`/admin/products/${product.id}`)}
                 className="text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
             >
                 View
             </Link>
             <span className="text-gray-300 select-none">|</span>
             <Link
-                href={`/admin/products/${product.id}/edit`}
+                href={adminUrl(`/admin/products/${product.id}/edit`)}
                 className="text-xs font-medium text-gray-500 hover:text-amber-600 transition-colors"
             >
                 Edit
@@ -152,15 +153,15 @@ export default function AdminProductsIndex({ products, categories, filters = {},
 
         if (bulkAction === 'delete') {
             if (!confirm(`Are you sure you want to delete ${selectedIds.length} product(s)?`)) return;
-            router.post('/admin/products/bulk-delete', formData, {
+            router.post(adminUrl('/admin/products/bulk-delete'), formData, {
                 onSuccess: () => { setSelectedIds([]); setShowConfirmModal(false); }
             });
         } else if (bulkAction === 'activate') {
-            router.post('/admin/products/bulk-activate', formData, {
+            router.post(adminUrl('/admin/products/bulk-activate'), formData, {
                 onSuccess: () => { setSelectedIds([]); setShowConfirmModal(false); }
             });
         } else if (bulkAction === 'deactivate') {
-            router.post('/admin/products/bulk-deactivate', formData, {
+            router.post(adminUrl('/admin/products/bulk-deactivate'), formData, {
                 onSuccess: () => { setSelectedIds([]); setShowConfirmModal(false); }
             });
         }
@@ -178,7 +179,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
         if (newFilters.stock) query.stock = newFilters.stock;
 
         setIsFiltering(true);
-        router.get('/admin/products', query, {
+        router.get(adminUrl('/admin/products'), query, {
             replace: true,
             preserveScroll: true,
             preserveState: true,
@@ -222,7 +223,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
         setStatus('');
         setStock('');
 
-        router.get('/admin/products', {}, {
+        router.get(adminUrl('/admin/products'), {}, {
             replace: true,
             preserveScroll: true,
             preserveState: true,
@@ -239,7 +240,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
 
     function confirmDelete() {
         if (productToDelete) {
-            router.delete(`/admin/products/${productToDelete.id}`, {
+            router.delete(adminUrl(`/admin/products/${productToDelete.id}`), {
                 onSuccess: () => { setDeleteModalOpen(false); setProductToDelete(null); }
             });
         }
@@ -262,7 +263,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                         </p>
                     </div>
                     <Link
-                        href="/admin/products/type-select"
+                        href={adminUrl('/admin/products/type-select')}
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
                     >
                         <Plus className="w-4 h-4" />
@@ -448,7 +449,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                                 </p>
                                                 {!hasFilters && (
                                                     <Link
-                                                        href="/admin/products/type-select"
+                                                        href={adminUrl('/admin/products/type-select')}
                                                         className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                                                     >
                                                         <Plus className="w-4 h-4" />
@@ -476,7 +477,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
 
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
-                                                        <Link href={`/admin/products/${product.id}`} className="flex-shrink-0">
+                                                        <Link href={adminUrl(`/admin/products/${product.id}`)} className="flex-shrink-0">
                                                             {product.photo1_url ? (
                                                                 <img
                                                                     src={product.photo1_url}
@@ -491,7 +492,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                                         </Link>
                                                         <div className="min-w-0 flex-1">
                                                             <Link
-                                                                href={`/admin/products/${product.id}`}
+                                                                href={adminUrl(`/admin/products/${product.id}`)}
                                                                 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors truncate block"
                                                             >
                                                                 {product.name}

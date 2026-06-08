@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import PerPageSelect from '@/Components/PerPageSelect';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function ActivityLogsIndex({ logs, filters, showPagination = true }) {
     const [logFilter, setLogFilter] = useState(filters?.log_name || '');
@@ -11,7 +12,7 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
         const params = { log_name: logFilter, event: eventFilter, [type]: value };
         if (type === 'log_name') setLogFilter(value);
         if (type === 'event') setEventFilter(value);
-        router.get('/admin/activity-logs', params, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/activity-logs'), params, { preserveState: true, replace: true });
     }
 
     const eventBadge = (event) => {

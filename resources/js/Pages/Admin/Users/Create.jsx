@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm, Link, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function UsersCreate({ roles }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -18,7 +19,7 @@ export default function UsersCreate({ roles }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post('/admin/users', {
+        post(adminUrl('/admin/users'), {
             onSuccess: () => {
                 // redirect handled by server
             },
@@ -151,7 +152,7 @@ export default function UsersCreate({ roles }) {
                                 </div>
 
                                 <div className="flex items-center justify-end gap-4">
-                                    <Link href="/admin/users" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    <Link href={adminUrl('/admin/users')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                                         Cancel
                                     </Link>
                                     <button
