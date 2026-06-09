@@ -28,7 +28,7 @@ class StorefrontController extends Controller
         $sort = $request->input('sort', 'latest');
 
         $products = Product::active()
-            ->with('category')
+            ->with(['category', 'brand'])
             ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
         if ($query) {
@@ -82,7 +82,7 @@ class StorefrontController extends Controller
         $inStock = $request->boolean('in_stock');
 
         $products = Product::active()
-            ->with('category')
+            ->with(['category', 'brand'])
             ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
         if ($query) {
@@ -144,7 +144,7 @@ class StorefrontController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
-        $product->loadMissing('category');
+        $product->loadMissing(['category', 'brand']);
         if ($product->isVariable()) {
             $product->loadMissing(['variants' => fn($q) => $q->active()]);
         }

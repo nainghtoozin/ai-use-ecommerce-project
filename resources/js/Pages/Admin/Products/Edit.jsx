@@ -17,7 +17,7 @@ const TYPE_STYLES = {
     combo: 'bg-orange-100 text-orange-700',
 };
 
-export default function ProductEdit({ product, categories, selectableProducts = [] }) {
+export default function ProductEdit({ product, categories, units = [], brands = [], selectableProducts = [] }) {
     const {
         formData,
         setData,
@@ -77,22 +77,17 @@ export default function ProductEdit({ product, categories, selectableProducts = 
                             />
                         </div>
 
-                        <div className="w-full lg:w-80 flex-shrink-0">
-                            <div className="lg:sticky lg:top-4">
-                                <SidebarSection
-                                    data={formData}
-                                    setData={setData}
-                                    errors={errors}
-                                    categories={categories}
-                                    processing={processing}
-                                    isEdit
-                                    variants={variants}
-                                    comboItems={comboItems}
-                                    onSubmit={(e) => { e?.preventDefault?.(); submit(); }}
-                                    onCancel={cancel}
-                                    onDeleteUrl={adminUrl(`/admin/products/${product.id}`)}
-                                />
-                            </div>
+                        <div className="w-full lg:w-64 flex-shrink-0">
+                            <SidebarSection
+                                processing={processing}
+                                isEdit
+                                onSubmit={(e) => { e?.preventDefault?.(); submit(); }}
+                                onCancel={cancel}
+                                onDeleteUrl={adminUrl(`/admin/products/${product.id}`)}
+                                data={formData}
+                                photo1File={photo1File}
+                                existingPhoto1Url={existingPhoto1Url}
+                            />
                         </div>
                     </div>
                 </form>

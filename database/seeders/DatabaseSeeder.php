@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             OrderSeeder::class,
+            UnitSeeder::class,
+            BrandSeeder::class,
 
             // Must run last: backfills any records created above that lack tenant_id
             TenantSeeder::class,

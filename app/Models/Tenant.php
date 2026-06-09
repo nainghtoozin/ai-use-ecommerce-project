@@ -54,6 +54,11 @@ class Tenant extends Model
         return $this->hasMany(Category::class);
     }
 
+    public function brands()
+    {
+        return $this->hasMany(Brand::class);
+    }
+
     public function subscriptionPlan()
     {
         return $this->belongsTo(Plan::class, 'subscription_plan_id');

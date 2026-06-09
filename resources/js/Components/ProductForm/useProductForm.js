@@ -2,6 +2,14 @@ import { useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import { adminUrl } from '@/Utils/adminUrl';
 
+function slugify(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 export default function useProductForm({ product = null, productType = 'single' } = {}) {
     const isEdit = !!product;
 
@@ -17,10 +25,10 @@ export default function useProductForm({ product = null, productType = 'single' 
         sku: product?.sku || '',
         barcode: product?.barcode || '',
         low_stock_alert: product?.low_stock_alert ?? 5,
-        track_inventory: product?.track_inventory ?? true,
-        continue_selling_when_out_of_stock: product?.continue_selling_when_out_of_stock ?? false,
         category_id: product?.category_id || '',
-        status: product?.status || 'draft',
+        brand_id: product?.brand_id || '',
+        unit_id: product?.unit_id || '',
+        status: product?.status || 'active',
         product_type: product?.type || productType,
         meta_title: product?.meta_title || '',
         meta_description: product?.meta_description || '',
@@ -59,7 +67,13 @@ export default function useProductForm({ product = null, productType = 'single' 
     const [processing, setProcessing] = useState(false);
 
     const setData = useCallback((field, value) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        setFormData((prev) => {
+            const next = { ...prev, [field]: value };
+            if (field === 'name' && !prev.slug) {
+                next.slug = slugify(value);
+            }
+            return next;
+        });
         if (errors[field]) {
             setErrors((prev) => {
                 const next = { ...prev };
@@ -72,12 +86,19 @@ export default function useProductForm({ product = null, productType = 'single' 
     const buildPayload = useCallback(() => {
         const form = new FormData();
         form.append('name', formData.name);
+        form.append('slug', formData.slug || slugify(formData.name));
         form.append('sku', formData.sku || '');
+        form.append('barcode', formData.barcode || '');
+        form.append('short_description', formData.short_description || '');
         form.append('description', formData.description || '');
         form.append('price', formData.price);
         form.append('base_price', formData.base_price);
+        form.append('cost_price', formData.cost_price || '');
         form.append('stock', formData.stock);
+        form.append('low_stock_alert', formData.low_stock_alert ?? 5);
         form.append('category_id', formData.category_id);
+        form.append('brand_id', formData.brand_id || '');
+        form.append('unit_id', formData.unit_id || '');
         form.append('status', formData.status);
         form.append('type', formData.product_type || 'single');
 

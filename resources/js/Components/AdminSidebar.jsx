@@ -11,14 +11,14 @@ import {
     Bell, Globe, BellRing, Send, Settings,
     Store, User, LogOut, Menu, X,
     ChevronLeft, ChevronRight, ChevronDown,
-    FileText,
+    FileText, Ruler, Layers,
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'admin_sidebar_section_';
 
 export default function AdminSidebar() {
     const { props, url } = usePage();
-    const { auth, website_info } = props;
+    const { auth, website_info, tenant } = props;
     const userPermissions = auth?.user?.permissions;
     const can = (perm) => userPermissions?.includes(perm);
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,6 +48,8 @@ export default function AdminSidebar() {
         'Send': Send,
         'Settings': Settings,
         'FileText': FileText,
+        'Ruler': Ruler,
+        'Layers': Layers,
     };
 
     const Icon = ({ name, className = '' }) => {
@@ -108,6 +110,8 @@ export default function AdminSidebar() {
                 items: [
                     ...(can('products.view') ? [{ label: 'Products', href: '/admin/products', icon: 'Package' }] : []),
                     ...(can('categories.view') ? [{ label: 'Categories', href: '/admin/categories', icon: 'Tags' }] : []),
+                    ...(can('brands.view') ? [{ label: 'Brands', href: '/admin/brands', icon: 'Layers' }] : []),
+                    ...(can('units.view') ? [{ label: 'Units', href: '/admin/units', icon: 'Ruler' }] : []),
                     { label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' },
                 ]
             },

@@ -278,9 +278,10 @@ class ProductService
     public function sanitizeData(array $data, string $type): array
     {
         $allowed = [
-            'name', 'description', 'price', 'base_price', 'stock',
-            'category_id', 'status', 'type', 'photo1', 'photo2',
-            'sku', 'barcode', 'low_stock_alert',
+            'name', 'slug', 'description', 'short_description',
+            'price', 'base_price', 'cost_price', 'stock',
+            'category_id', 'brand_id', 'unit_id', 'status', 'type',
+            'photo1', 'photo2', 'sku', 'barcode', 'low_stock_alert',
         ];
 
         // Type-specific allowed fields

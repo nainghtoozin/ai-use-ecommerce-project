@@ -344,6 +344,11 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                             {product.category.name}
                         </p>
                     )}
+                    {product.brand?.name && (
+                        <p className="text-xs text-gray-400 mb-1">
+                            {product.brand.name}
+                        </p>
+                    )}
                     <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-theme transition-colors min-h-[2.5rem]">
                         {product.name}
                     </h3>

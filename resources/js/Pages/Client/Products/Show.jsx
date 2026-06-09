@@ -219,6 +219,9 @@ export default function ProductShow({ product, promotion, detail }) {
 
                     <div>
                         <p className="text-sm text-gray-500 mb-1">{product.category?.name || ''}</p>
+                        {product.brand && (
+                            <p className="text-xs text-gray-400 mb-1">{product.brand.name}</p>
+                        )}
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
 
                         {isCombo ? (

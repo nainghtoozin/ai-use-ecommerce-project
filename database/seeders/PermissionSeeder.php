@@ -65,6 +65,18 @@ class PermissionSeeder extends Seeder
             'orders.override-status',
             'orders.override-payment',
 
+            // Unit Management
+            'units.view',
+            'units.create',
+            'units.update',
+            'units.delete',
+
+            // Brand Management
+            'brands.view',
+            'brands.create',
+            'brands.update',
+            'brands.delete',
+
             // Maintenance
             'bypass maintenance mode',
         ];

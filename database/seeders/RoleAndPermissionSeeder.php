@@ -36,8 +36,20 @@ class RoleAndPermissionSeeder extends Seeder
         'payments.verify',
         'activity-logs.view',
 
-        // Maintenance
-        'bypass maintenance mode',
+            // Unit Management
+            'units.view',
+            'units.create',
+            'units.update',
+            'units.delete',
+
+            // Brand Management
+            'brands.view',
+            'brands.create',
+            'brands.update',
+            'brands.delete',
+
+            // Maintenance
+            'bypass maintenance mode',
     ];
 
     private array $customerPermissions = [

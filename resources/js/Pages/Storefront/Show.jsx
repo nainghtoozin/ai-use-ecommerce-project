@@ -59,6 +59,9 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                         {product.category && (
                             <p className="text-sm text-indigo-600 font-medium">{product.category.name}</p>
                         )}
+                        {product.brand && (
+                            <p className="text-xs text-gray-500 mt-1">{product.brand.name}</p>
+                        )}
                         <h1 className="mt-2 text-2xl font-bold text-gray-900">{product.name}</h1>
 
                         <p className="mt-4 text-3xl font-bold text-gray-900">

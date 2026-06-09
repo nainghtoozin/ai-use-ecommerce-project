@@ -20,6 +20,7 @@ export default function AdminHeader() {
         if (path.includes('orders')) return 'Orders';
         if (path.includes('promotions')) return 'Promotions';
         if (path.includes('payment-methods')) return 'Payment Methods';
+        if (path.includes('units')) return 'Units';
         if (path.includes('cities')) return 'Cities';
         if (path.includes('townships')) return 'Townships';
         if (path.includes('website-info')) return 'Website Info';

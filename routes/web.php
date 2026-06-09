@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCityController;
+use App\Http\Controllers\Admin\AdminUnitController;
+use App\Http\Controllers\Admin\AdminBrandController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
@@ -321,6 +323,24 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
     Route::put('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'update'])->name('coupons.update');
     Route::delete('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'destroy'])->name('coupons.destroy');
     Route::get('/coupons/search', [\App\Http\Controllers\Admin\AdminCouponController::class, 'search'])->name('coupons.search');
+
+    // Units
+    Route::get('/units', [AdminUnitController::class, 'index'])->name('units.index');
+    Route::get('/units/search', [AdminUnitController::class, 'search'])->name('units.search');
+    Route::get('/units/create', [AdminUnitController::class, 'create'])->name('units.create');
+    Route::post('/units', [AdminUnitController::class, 'store'])->name('units.store');
+    Route::get('/units/{unit}/edit', [AdminUnitController::class, 'edit'])->name('units.edit');
+    Route::put('/units/{unit}', [AdminUnitController::class, 'update'])->name('units.update');
+    Route::delete('/units/{unit}', [AdminUnitController::class, 'destroy'])->name('units.destroy');
+
+    // Brands
+    Route::get('/brands', [AdminBrandController::class, 'index'])->name('brands.index');
+    Route::get('/brands/search', [AdminBrandController::class, 'search'])->name('brands.search');
+    Route::get('/brands/create', [AdminBrandController::class, 'create'])->name('brands.create');
+    Route::post('/brands', [AdminBrandController::class, 'store'])->name('brands.store');
+    Route::get('/brands/{brand}/edit', [AdminBrandController::class, 'edit'])->name('brands.edit');
+    Route::put('/brands/{brand}', [AdminBrandController::class, 'update'])->name('brands.update');
+    Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy'])->name('brands.destroy');
 
     // Website Info (now uses SettingsController)
     Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');

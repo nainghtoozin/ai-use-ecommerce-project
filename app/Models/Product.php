@@ -22,8 +22,9 @@ class Product extends Model
     const TYPE_COMBO = ProductType::COMBO;
 
     protected $fillable = [
-        'name', 'sku', 'description', 'price', 'base_price', 'category_id',
-        'stock', 'photo1', 'photo2', 'status', 'type',
+        'name', 'slug', 'sku', 'barcode', 'short_description', 'description',
+        'price', 'base_price', 'cost_price', 'category_id', 'brand_id', 'unit_id',
+        'stock', 'low_stock_alert', 'photo1', 'photo2', 'status', 'type',
     ];
 
     protected $casts = [
@@ -161,6 +162,16 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
     }
 
     public function promotions()

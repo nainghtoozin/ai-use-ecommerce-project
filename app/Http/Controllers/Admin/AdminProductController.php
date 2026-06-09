@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
+use App\Models\Brand;
 use App\Models\ProductVariant;
 use App\Enums\ProductType;
 use App\Models\ActivityLog;
@@ -31,7 +33,7 @@ class AdminProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $query = Product::with(['category', 'unit', 'brand']);
 
         // Eager load active variant stock sum to avoid N+1 on effective_stock
         $query->withSum(['variants as variant_total_stock' => function ($q) {
@@ -53,6 +55,10 @@ class AdminProductController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->input('category_id'));
+        }
+
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->input('brand_id'));
         }
 
         if ($request->filled('type')) {
@@ -121,15 +127,20 @@ class AdminProductController extends Controller
         }
 
         $categories = Category::all();
+        $units = Unit::all();
+        $brands = Brand::all();
 
         return Inertia::render('Admin/Products/Index', [
             'products' => $products,
             'categories' => $categories,
+            'units' => $units,
+            'brands' => $brands,
             'showPagination' => $showPagination,
             'warning' => $warning,
             'filters' => [
                 'search' => $request->input('search', ''),
                 'category_id' => $request->input('category_id', ''),
+                'brand_id' => $request->input('brand_id', ''),
                 'type' => $request->input('type', ''),
                 'status' => $request->input('status', ''),
                 'stock' => $request->input('stock', ''),
@@ -178,8 +189,13 @@ class AdminProductController extends Controller
                 ]);
         }
 
+        $units = Unit::all();
+        $brands = Brand::all();
+
         return Inertia::render('Admin/Products/Create', [
             'categories' => $categories,
+            'units' => $units,
+            'brands' => $brands,
             'productType' => $productType,
             'selectableProducts' => $selectableProducts,
         ]);
@@ -304,16 +320,21 @@ class AdminProductController extends Controller
                 ]);
         }
 
+        $units = Unit::all();
+        $brands = Brand::all();
+
         return Inertia::render('Admin/Products/Edit', [
-            'product' => $product->load(['category', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant']),
+            'product' => $product->load(['category', 'unit', 'brand', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant']),
             'categories' => $categories,
+            'units' => $units,
+            'brands' => $brands,
             'selectableProducts' => $selectableProducts,
         ]);
     }
 
     public function show(Product $product)
     {
-        $product->load(['category', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant', 'orderItems']);
+        $product->load(['category', 'unit', 'brand', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant', 'orderItems']);
 
         // Append price range for variable products
         if ($product->isVariable()) {
@@ -591,7 +612,7 @@ class AdminProductController extends Controller
     {
         $query = $request->input('query');
 
-        $products = Product::with('category')
+        $products = Product::with(['category', 'unit', 'brand'])
             ->where('name', 'like', "%{$query}%")
             ->latest()
             ->paginate(10);

@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCityController;
+use App\Http\Controllers\Admin\AdminUnitController;
+use App\Http\Controllers\Admin\AdminBrandController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminOrderOverrideController;
@@ -106,6 +108,24 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update')->whereNumber('category');
         Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy')->whereNumber('category');
         Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
+
+        // Units
+        Route::get('/units', [AdminUnitController::class, 'index'])->name('units.index');
+        Route::get('/units/create', [AdminUnitController::class, 'create'])->name('units.create');
+        Route::post('/units', [AdminUnitController::class, 'store'])->name('units.store');
+        Route::get('/units/{unit}/edit', [AdminUnitController::class, 'edit'])->name('units.edit')->whereNumber('unit');
+        Route::put('/units/{unit}', [AdminUnitController::class, 'update'])->name('units.update')->whereNumber('unit');
+        Route::delete('/units/{unit}', [AdminUnitController::class, 'destroy'])->name('units.destroy')->whereNumber('unit');
+        Route::get('/units/search', [AdminUnitController::class, 'search'])->name('units.search');
+
+        // Brands
+        Route::get('/brands', [AdminBrandController::class, 'index'])->name('brands.index');
+        Route::get('/brands/create', [AdminBrandController::class, 'create'])->name('brands.create');
+        Route::post('/brands', [AdminBrandController::class, 'store'])->name('brands.store');
+        Route::get('/brands/{brand}/edit', [AdminBrandController::class, 'edit'])->name('brands.edit')->whereNumber('brand');
+        Route::put('/brands/{brand}', [AdminBrandController::class, 'update'])->name('brands.update')->whereNumber('brand');
+        Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy'])->name('brands.destroy')->whereNumber('brand');
+        Route::get('/brands/search', [AdminBrandController::class, 'search'])->name('brands.search');
 
         // Banners
         Route::get('/banners', [AdminPromotionBannerController::class, 'index'])->name('banners.index');

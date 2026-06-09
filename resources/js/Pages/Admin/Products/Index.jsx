@@ -13,7 +13,6 @@ import {
     Trash2,
     Tag,
     DollarSign,
-    BarChart3,
     CheckCircle,
     XCircle,
     AlertCircle,
@@ -106,12 +105,13 @@ function InlineActions({ product, onDelete }) {
     );
 }
 
-export default function AdminProductsIndex({ products, categories, filters = {}, showPagination = true, warning = null }) {
+export default function AdminProductsIndex({ products, categories, brands = [], filters = {}, showPagination = true, warning = null }) {
     const { url } = usePage();
     const params = new URLSearchParams(url.split('?')[1] || '');
 
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || '');
+    const [brandId, setBrandId] = useState(filters.brand_id || '');
     const [type, setType] = useState(filters.type || '');
     const [status, setStatus] = useState(filters.status || '');
     const [stock, setStock] = useState(filters.stock || '');
@@ -121,7 +121,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [bulkAction, setBulkAction] = useState('');
 
-    const hasFilters = search || categoryId || type || status || stock;
+    const hasFilters = search || categoryId || brandId || type || status || stock;
     const currentPageIds = products?.data?.map(p => p.id) || [];
     const allSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedIds.includes(id));
 
@@ -174,6 +174,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
         const query = {};
         if (newFilters.search) query.search = newFilters.search;
         if (newFilters.category_id) query.category_id = newFilters.category_id;
+        if (newFilters.brand_id) query.brand_id = newFilters.brand_id;
         if (newFilters.type) query.type = newFilters.type;
         if (newFilters.status) query.status = newFilters.status;
         if (newFilters.stock) query.stock = newFilters.stock;
@@ -199,7 +200,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
         }
 
         searchTimeout.current = setTimeout(() => {
-            navigateToFilters({ search, category_id: categoryId, type, status, stock });
+            navigateToFilters({ search, category_id: categoryId, brand_id: brandId, type, status, stock });
         }, 400);
 
         return () => {
@@ -213,12 +214,13 @@ export default function AdminProductsIndex({ products, categories, filters = {},
     useEffect(() => {
         if (isInitialMount.current) return;
 
-        navigateToFilters({ search, category_id: categoryId, type, status, stock });
-    }, [categoryId, type, status, stock]);
+        navigateToFilters({ search, category_id: categoryId, brand_id: brandId, type, status, stock });
+    }, [categoryId, brandId, type, status, stock]);
 
     function resetFilters() {
         setSearch('');
         setCategoryId('');
+        setBrandId('');
         setType('');
         setStatus('');
         setStock('');
@@ -300,6 +302,17 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                 <option value="">All Categories</option>
                                 {categories?.map((cat) => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={brandId}
+                                onChange={(e) => setBrandId(e.target.value)}
+                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                                <option value="">All Brands</option>
+                                {brands?.map((brand) => (
+                                    <option key={brand.id} value={brand.id}>{brand.name}</option>
                                 ))}
                             </select>
 
@@ -426,8 +439,8 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                     <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
                                     <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="hidden xl:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventory</th>
                                     <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -505,6 +518,12 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                                                         {product.category.name}
                                                                     </span>
                                                                 )}
+                                                                {product.brand && (
+                                                                    <span className="text-xs text-gray-400 flex items-center gap-0.5">
+                                                                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                                        {product.brand.name}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -514,6 +533,24 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                                     <span className="inline-block max-w-[120px] truncate text-sm font-mono text-gray-500 whitespace-nowrap" title={product.sku_display || ''}>
                                                         {product.sku_display || '—'}
                                                     </span>
+                                                </td>
+
+                                                <td className="hidden md:table-cell px-4 py-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        {product.type === 'variable' ? (
+                                                            <span className="text-sm font-medium text-gray-900">
+                                                                {inventory.total}{product.unit?.short_name ? ` ${product.unit.short_name}` : ''} ({inventory.variantCount} Variant{inventory.variantCount !== 1 ? 's' : ''})
+                                                            </span>
+                                                        ) : product.type === 'combo' ? (
+                                                            <span className="text-sm font-medium text-gray-900">
+                                                                {inventory.total > 0 ? `${inventory.total} Bundle${inventory.total !== 1 ? 's' : ''}` : 'Bundle Product'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-sm font-medium text-gray-900">
+                                                                {inventory.total}{product.unit?.short_name ? ` ${product.unit.short_name}` : ''}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 <td className="hidden lg:table-cell px-4 py-3">
@@ -533,37 +570,7 @@ export default function AdminProductsIndex({ products, categories, filters = {},
                                                             </span>
                                                         )}
                                                         {product.type === 'single' && (
-                                                            <span className="text-sm text-gray-400">—</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-
-                                                <td className="hidden xl:table-cell px-4 py-3">
-                                                    <div className="space-y-1">
-                                                        {inventory.type === 'variable' ? (
-                                                            <>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <BarChart3 className="w-3.5 h-3.5 text-gray-400" />
-                                                                    <span className="text-sm font-medium text-gray-900">{inventory.total}</span>
-                                                                    <span className="text-xs text-gray-400">total units</span>
-                                                                </div>
-                                                                <div className="text-xs text-gray-500">{inventory.variantCount} variant{inventory.variantCount !== 1 ? 's' : ''}</div>
-                                                            </>
-                                                        ) : inventory.type === 'combo' ? (
-                                                            <>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <BarChart3 className="w-3.5 h-3.5 text-gray-400" />
-                                                                    <span className="text-sm font-medium text-gray-900">{inventory.total}</span>
-                                                                    <span className="text-xs text-gray-400">possible</span>
-                                                                </div>
-                                                                <div className="text-xs text-gray-500">Based on components</div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="flex items-center gap-1.5">
-                                                                <BarChart3 className="w-3.5 h-3.5 text-gray-400" />
-                                                                <span className="text-sm font-medium text-gray-900">{inventory.total}</span>
-                                                                <span className="text-xs text-gray-400">units</span>
-                                                            </div>
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">Single</span>
                                                         )}
                                                     </div>
                                                 </td>

@@ -17,7 +17,7 @@ const TYPE_STYLES = {
     combo: 'bg-orange-100 text-orange-700',
 };
 
-export default function ProductCreate({ categories, productType = 'single', selectableProducts = [] }) {
+export default function ProductCreate({ categories, units = [], brands = [], productType = 'single', selectableProducts = [] }) {
     const {
         formData,
         setData,
@@ -77,20 +77,14 @@ export default function ProductCreate({ categories, productType = 'single', sele
                             />
                         </div>
 
-                        <div className="w-full lg:w-80 flex-shrink-0">
-                            <div className="lg:sticky lg:top-4">
-                                <SidebarSection
-                                    data={formData}
-                                    setData={setData}
-                                    errors={errors}
-                                    categories={categories}
-                                    processing={processing}
-                                    variants={variants}
-                                    comboItems={comboItems}
-                                    onSubmit={(e) => { e?.preventDefault?.(); submit(); }}
-                                    onCancel={cancel}
-                                />
-                            </div>
+                        <div className="w-full lg:w-64 flex-shrink-0">
+                            <SidebarSection
+                                processing={processing}
+                                onSubmit={(e) => { e?.preventDefault?.(); submit(); }}
+                                onCancel={cancel}
+                                data={formData}
+                                photo1File={photo1File}
+                            />
                         </div>
                     </div>
                 </form>

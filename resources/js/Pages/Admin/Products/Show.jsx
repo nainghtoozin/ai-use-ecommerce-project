@@ -32,9 +32,9 @@ const TYPE_COLORS = {
 };
 
 const TYPE_LABELS = {
-    single: 'Single Product',
-    variable: 'Variable Product',
-    combo: 'Combo Product',
+    single: '📦 Single',
+    variable: '⚙️ Variable',
+    combo: '🎁 Bundle',
 };
 
 function formatPrice(price) {
@@ -393,7 +393,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                             <div>
                                                 <p className="text-xs text-gray-500 mb-1">Stock</p>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-lg font-semibold text-gray-900">{product.stock}</span>
+                                                    <span className="text-lg font-semibold text-gray-900">{product.stock} {product.unit?.short_name || ''}</span>
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                                                         product.stock === 0 ? 'bg-red-100 text-red-700' :
                                                         product.stock < 10 ? 'bg-amber-100 text-amber-700' :
@@ -453,7 +453,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                                 <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
                                                 <p className="text-xs text-gray-500">Total Units</p>
                                             </div>
-                                            <p className="text-xl font-bold text-gray-900">{totalStock}</p>
+                                            <p className="text-xl font-bold text-gray-900">{totalStock} {product.unit?.short_name || ''}</p>
                                         </div>
                                         <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
                                             <div className="flex items-center gap-2 mb-1">
@@ -551,7 +551,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-gray-600">Total Units</span>
-                                            <span className="text-lg font-bold text-gray-900">{totalStock}</span>
+                                            <span className="text-lg font-bold text-gray-900">{totalStock} {product.unit?.short_name || ''}</span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-gray-600">Variants</span>
@@ -603,7 +603,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-gray-600">Stock</span>
-                                            <span className="text-lg font-bold text-gray-900">{product.stock}</span>
+                                            <span className="text-lg font-bold text-gray-900">{product.stock} {product.unit?.short_name || ''}</span>
                                         </div>
                                         <hr className="border-gray-100" />
                                         <div className="flex items-center justify-between">
@@ -633,6 +633,24 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                         <div className="flex items-center gap-2">
                                             <Tag className="w-4 h-4 text-gray-400" />
                                             <span className="text-sm text-gray-700">{product.category.name}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {product.unit && (
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Unit</p>
+                                        <div className="flex items-center gap-2">
+                                            <Package className="w-4 h-4 text-gray-400" />
+                                            <span className="text-sm text-gray-700">{product.unit.short_name}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {product.brand && (
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Brand</p>
+                                        <div className="flex items-center gap-2">
+                                            <Layers className="w-4 h-4 text-gray-400" />
+                                            <span className="text-sm text-gray-700">{product.brand.name}</span>
                                         </div>
                                     </div>
                                 )}
