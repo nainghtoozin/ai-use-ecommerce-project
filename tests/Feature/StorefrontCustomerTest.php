@@ -271,7 +271,8 @@ class StorefrontCustomerTest extends TestCase
 
         $response = $this->get("/store/{$tenantB->slug}/customer/account");
 
-        $response->assertForbidden();
+        $response->assertRedirect(route('storefront.login', ['store_slug' => $tenantB->slug], absolute: false));
+        $this->assertGuest();
     }
 
     public function test_customer_can_view_orders_page(): void
@@ -420,7 +421,8 @@ class StorefrontCustomerTest extends TestCase
 
         $response = $this->get("/store/{$tenantB->slug}/customer/addresses");
 
-        $response->assertForbidden();
+        $response->assertRedirect(route('storefront.login', ['store_slug' => $tenantB->slug], absolute: false));
+        $this->assertGuest();
     }
 
     private function createOrder(User $user, Tenant $tenant): Order

@@ -35,9 +35,11 @@ use Illuminate\Support\Facades\Route;
 //   storefront     — resolves tenant from URL store_slug parameter
 //   auth           — requires authentication
 //   role:admin     — requires admin role (superadmin bypasses)
-//   tenant.valid   — structural tenant check (user has a valid tenant)
+//   tenant.valid    — structural tenant check (user has a valid tenant)
+//   tenant.access   — cross-tenant guard (user.tenant_id === current tenant id)
+//   tenant.binding  — validates route model binding tenant_id matches current tenant
 //
-//   tenant.active  — tenant health check (status + subscription expiry)
+//   tenant.active   — tenant health check (status + subscription expiry)
 //                    Applied ONLY to operations routes (inner group).
 //
 // NOTE: Controllers redirect to route('admin.*') after operations.
@@ -48,7 +50,7 @@ use Illuminate\Support\Facades\Route;
 // ============================================================
 Route::prefix('store/{store_slug}/admin')
     ->name('storefront.admin.')
-    ->middleware(['storefront', 'auth', 'role:admin', 'tenant.valid'])
+    ->middleware(['storefront', 'auth', 'role:admin', 'tenant.valid', 'tenant.access', 'tenant.binding'])
     ->group(function () {
 
     // ── Account routes (accessible even when subscription expired) ──

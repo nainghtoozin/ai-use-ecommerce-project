@@ -13,6 +13,7 @@ use App\Http\Middleware\TenantIsValid;
 use App\Http\Middleware\SubscriptionIsActive;
 use App\Http\Middleware\EnsureTenantIsActive;
 use App\Http\Middleware\Storefront;
+use App\Http\Middleware\CheckTenantAccess;
 use App\Models\User;
 use App\Policies\UserPolicy;
 
@@ -38,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.valid' => TenantIsValid::class,
             'subscription.active' => SubscriptionIsActive::class,
             'storefront' => Storefront::class,
+            'tenant.access' => CheckTenantAccess::class,
+            'tenant.binding' => \App\Http\Middleware\ValidateTenantBinding::class,
         ]);
 
         $middleware->web(append: [

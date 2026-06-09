@@ -6,7 +6,7 @@ import { adminUrl } from '@/Utils/adminUrl';
 
 export default function AppLayout({ children, header = null }) {
     const { props, url } = usePage();
-    const { auth, flash, website_info, cart } = props;
+    const { auth, flash, website_info, cart, tenant } = props;
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -51,7 +51,11 @@ export default function AppLayout({ children, header = null }) {
         }
     };
 
-    const logout = () => router.post('/logout');
+    const storeSlug = tenant?.slug || null;
+    const logout = () => router.post('/logout', {
+        context: auth?.user?.is_superadmin ? 'superadmin' : (auth?.user?.is_admin ? 'admin' : ''),
+        store_slug: storeSlug,
+    });
 
     const isAdmin = auth?.user?.is_admin;
     const logoUrl = assetUrl(website_info?.logo);

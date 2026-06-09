@@ -296,7 +296,7 @@ class StorefrontLoginTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('admin.dashboard', absolute: false));
+        $response->assertRedirect(route('storefront.admin.dashboard', ['store_slug' => $tenant->slug], absolute: false));
         $this->assertAuthenticated();
     }
 }

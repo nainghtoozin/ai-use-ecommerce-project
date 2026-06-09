@@ -93,7 +93,7 @@ class StorefrontLoginController extends Controller
         );
 
         if ($user->isAdmin()) {
-            return redirect()->intended(route('admin.dashboard', absolute: false));
+            return redirect()->intended(route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]));
         }
 
         return redirect()->intended(route('storefront.index', ['store_slug' => $tenant->slug]));

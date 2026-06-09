@@ -56,6 +56,11 @@ class HandleInertiaRequests extends Middleware
         $wishlistEnabled = $settingsModel && ($settingsModel->enable_wishlist ?? true);
 
         $tenant = Tenant::getCurrent();
+        // Only share tenant on pages with an explicit store_slug in the URL.
+        // This prevents /store/default/... links on the root domain landing page.
+        if ($tenant && !$request->route('store_slug')) {
+            $tenant = null;
+        }
 
         return array_merge(parent::share($request), [
             'auth' => [

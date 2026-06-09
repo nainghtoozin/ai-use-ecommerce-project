@@ -70,7 +70,7 @@ export default function ShopNavbar() {
         return false;
     }
 
-    const logout = () => router.post('/logout');
+    const logout = () => router.post('/logout', { context: storeSlug ? 'storefront' : '', store_slug: storeSlug });
 
     const navLinks = [
         { label: 'Home', href: storeUrl('/'), icon: 'bi-house-door' },
@@ -189,7 +189,7 @@ export default function ShopNavbar() {
                                     )}
                                 </div>
                             </>
-                        ) : (
+                        ) : storeSlug ? (
                             <div className="hidden sm:flex items-center gap-2">
                                 <Link
                                     href={storeUrl('/login')}
@@ -212,6 +212,21 @@ export default function ShopNavbar() {
             </Link>
         )}
         </div>
+                        ) : (
+                            <div className="hidden sm:flex items-center gap-2">
+                                <Link href="/register" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                                    Create Store
+                                </Link>
+                                <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                                    Merchant Login
+                                </Link>
+                                <Link href="/contact" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
+                                    style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
+                                    Contact Us
+                                </Link>
+                            </div>
                         )}
 
                         <button
@@ -274,7 +289,7 @@ export default function ShopNavbar() {
                             </Link>
                         </div>
 
-                        {!auth?.user && (
+                        {!auth?.user && storeSlug && (
                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                                 <Link
                                     href={storeUrl('/login')}
@@ -291,6 +306,17 @@ export default function ShopNavbar() {
                                         Register
                                     </Link>
                                 )}
+                            </div>
+                        )}
+                        {!auth?.user && !storeSlug && (
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
+                                <Link href="/login" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Merchant Login
+                                </Link>
+                                <Link href="/register" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
+                                    style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
+                                    Create Store
+                                </Link>
                             </div>
                         )}
                     </div>

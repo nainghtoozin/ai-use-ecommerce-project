@@ -82,6 +82,11 @@ class ImpersonationController extends Controller
 
         request()->session()->regenerate();
 
+        $tenant = $user->tenant;
+        if ($tenant) {
+            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug])
+                ->with('success', "Logged in as {$user->name}.");
+        }
         return redirect()->route('admin.dashboard')
             ->with('success', "Logged in as {$user->name}.");
     }

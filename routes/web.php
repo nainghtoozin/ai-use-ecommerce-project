@@ -94,7 +94,7 @@ Route::prefix('client')->name('client.')->group(function () {
 // ============================================================
 // STOREFRONT ROUTES (tenant-aware, public)
 // ============================================================
-Route::prefix('store/{store_slug}')->name('storefront.')->middleware('storefront')->group(function () {
+Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefront', 'tenant.binding'])->group(function () {
     Route::get('/', [\App\Http\Controllers\StorefrontController::class, 'index'])->name('index');
     Route::get('/products', [\App\Http\Controllers\StorefrontController::class, 'products'])->name('products');
     Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
@@ -107,13 +107,17 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware('storefront
     Route::get('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('login');
     Route::post('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
+    // Store-based admin login
+    Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('admin.login');
+    Route::post('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
+
     // Store-based cart and checkout
     Route::get('/cart', [\App\Http\Controllers\StorefrontCartController::class, 'index'])->name('cart');
     Route::get('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'store'])->name('checkout.store');
 
     // Store-based customer area (authenticated)
-    Route::middleware('auth')->prefix('customer')->name('customer.')->group(function () {
+    Route::middleware(['auth', 'tenant.access'])->prefix('customer')->name('customer.')->group(function () {
         Route::get('/account', [\App\Http\Controllers\StorefrontCustomerController::class, 'account'])->name('account');
         Route::get('/orders', [\App\Http\Controllers\StorefrontCustomerController::class, 'orders'])->name('orders');
         Route::get('/orders/{order}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showOrder'])->name('orders.show');
@@ -124,6 +128,19 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware('storefront
         Route::put('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'updateAddress'])->name('addresses.update');
         Route::delete('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'destroyAddress'])->name('addresses.destroy');
     });
+});
+
+// ============================================================
+// LOGIN PAGES (guest-only, no tenant logic)
+// ============================================================
+Route::middleware('guest')->group(function () {
+    // SuperAdmin login page
+    Route::get('/superadmin/login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'create'])
+        ->name('superadmin.login');
+
+    // Legacy admin login page (fallback when no store slug)
+    Route::get('/admin/login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'create'])
+        ->name('admin.login');
 });
 
 // ============================================================
@@ -215,7 +232,7 @@ Route::middleware('auth')->group(function () {
 //   or the tenant.active middleware (operations routes).
 //
 // ============================================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid', 'tenant.binding'])->group(function () {
     // ── Account routes (accessible even when subscription expired) ──
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');

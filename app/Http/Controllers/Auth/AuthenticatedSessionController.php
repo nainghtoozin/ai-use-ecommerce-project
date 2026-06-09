@@ -27,6 +27,14 @@ class AuthenticatedSessionController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
+        // Root /login is for SuperAdmin only.
+        // Tenant users (customers and admins) must login through their store URL.
+        if ($user && $user->tenant_id && !$user->isSuperAdmin()) {
+            return back()->withErrors([
+                'email' => 'Please login through your store URL.',
+            ])->onlyInput('email');
+        }
+
         if ($user && !$user->isActive()) {
             if ($user->isSuspended()) {
                 return back()->withErrors([
@@ -66,6 +74,10 @@ class AuthenticatedSessionController extends Controller
         );
 
         if ($user->isAdmin()) {
+            $tenant = \App\Models\Tenant::getCurrent();
+            if ($tenant) {
+                return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]);
+            }
             return redirect()->route('admin.dashboard');
         }
 
@@ -86,12 +98,49 @@ class AuthenticatedSessionController extends Controller
             );
         }
 
+        $isSuperAdmin = $user && $user->isSuperAdmin();
+        $tenant = $user ? \App\Models\Tenant::getCurrent() : null;
+        $storeSlug = $request->input('store_slug') ?: ($tenant ? $tenant->slug : null);
+        $context = $request->input('context');
+
+        // Determine context from POST data or referrer or user role
+        if (!$context) {
+            $referrer = $request->header('referer');
+            if ($referrer) {
+                if ($isSuperAdmin && str_contains($referrer, '/superadmin/')) {
+                    $context = 'superadmin';
+                } elseif ($storeSlug && str_contains($referrer, "/store/{$storeSlug}/admin/")) {
+                    $context = 'admin';
+                } elseif ($storeSlug && str_contains($referrer, "/store/{$storeSlug}/")) {
+                    $context = 'storefront';
+                }
+            }
+        }
+
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
+        return match ($context) {
+            'superadmin' => redirect()->route('superadmin.login'),
+            'admin' => $storeSlug
+                ? redirect()->route('storefront.admin.login', ['store_slug' => $storeSlug])
+                : redirect()->route('admin.login'),
+            'storefront' => $storeSlug
+                ? redirect()->route('storefront.index', ['store_slug' => $storeSlug])
+                : redirect('/'),
+            default => $this->fallbackLogoutRedirect($isSuperAdmin, $storeSlug),
+        };
+    }
+
+    private function fallbackLogoutRedirect(bool $isSuperAdmin, ?string $storeSlug): RedirectResponse
+    {
+        if ($isSuperAdmin) {
+            return redirect()->route('superadmin.login');
+        }
+        if ($storeSlug) {
+            return redirect()->route('storefront.index', ['store_slug' => $storeSlug]);
+        }
         return redirect('/');
     }
 }
