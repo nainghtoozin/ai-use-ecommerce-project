@@ -60,6 +60,143 @@ export default function AdminSidebar() {
 
     const isSuperAdmin = auth?.user?.is_superadmin;
 
+    const menuSections = useMemo(() => {
+        if (isSuperAdmin) {
+            return [
+                {
+                    title: 'Main',
+                    items: [
+                        { label: 'Dashboard', href: '/superadmin', icon: 'LayoutDashboard' },
+                    ]
+                },
+                {
+                    title: 'Merchant Management',
+                    items: [
+                        { label: 'Merchants', href: '/superadmin/tenants', icon: 'Building2' },
+                    ]
+                },
+                {
+                    title: 'Subscription Management',
+                    items: [
+                        { label: 'Plans', href: '/superadmin/plans', icon: 'FileText' },
+                        { label: 'Subscriptions', href: '/superadmin/subscriptions', icon: 'CreditCard' },
+                    ]
+                },
+                {
+                    title: 'System Management',
+                    items: [
+                        { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
+                    ]
+                },
+                {
+                    title: 'Logs',
+                    items: [
+                        { label: 'Activity Logs', href: '/admin/activity-logs', icon: 'History' },
+                    ]
+                },
+            ];
+        }
+
+        return [
+            {
+                title: 'Main',
+                items: [
+                    ...(can('dashboard.view') ? [{ label: 'Dashboard', href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
+                    { label: 'Billing', href: '/admin/billing', icon: 'CreditCard' },
+                ]
+            },
+            {
+                title: 'Catalog',
+                items: [
+                    ...(can('products.view') ? [{ label: 'Products', href: '/admin/products', icon: 'Package' }] : []),
+                    ...(can('categories.view') ? [{ label: 'Categories', href: '/admin/categories', icon: 'Tags' }] : []),
+                    ...(can('brands.view') ? [{ label: 'Brands', href: '/admin/brands', icon: 'Layers' }] : []),
+                    ...(can('units.view') ? [{ label: 'Units', href: '/admin/units', icon: 'Ruler' }] : []),
+                    { label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' },
+                ]
+            },
+            {
+                title: 'Orders',
+                items: [
+                    ...(can('orders.view') ? [{ label: 'Orders', href: '/admin/orders', icon: 'ShoppingCart' }] : []),
+                    ...(can('payments.view') ? [{ label: 'Payment Methods', href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
+                ]
+            },
+            {
+                title: 'Reports',
+                items: [
+                    { label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' },
+                    { label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' },
+                    { label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' },
+                ]
+            },
+            {
+                title: 'Locations',
+                items: [
+                    { label: 'Cities', href: '/admin/cities', icon: 'Building2' },
+                    { label: 'Townships', href: '/admin/townships', icon: 'MapPin' },
+                ]
+            },
+            {
+                title: 'System',
+                items: [
+                    ...(can('users.view') ? [{ label: 'Users', href: '/admin/users', icon: 'Users' }] : []),
+                    ...(can('roles.view') ? [{ label: 'Roles & Permissions', href: '/admin/roles', icon: 'ShieldCheck' }] : []),
+                    ...(can('activity-logs.view') ? [{ label: 'Activity Logs', href: '/admin/activity-logs', icon: 'History' }] : []),
+                    { label: 'Notifications', href: '/admin/notifications', icon: 'Bell' },
+                ]
+            },
+            {
+                title: 'Configuration',
+                items: [
+                    { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
+                    { label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' },
+                    { label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' },
+                    { label: 'Settings', href: '/admin/settings', icon: 'Settings' },
+                ]
+            }
+        ];
+    }, [userPermissions, isSuperAdmin]);
+
+    function isActive(href) {
+        if (href === '/') return url === '/';
+        const candidates = [href, adminUrl(href)];
+        return candidates.some(candidate => {
+            const hrefPath = candidate.replace(/\/+$/, '');
+            const urlPath = url.replace(/\/+$/, '');
+            if (urlPath === hrefPath) return true;
+            if (urlPath.startsWith(hrefPath + '/')) return true;
+            return false;
+        });
+    }
+
+    const [openSections, setOpenSections] = useState({});
+
+    useEffect(() => {
+        setOpenSections(prev => {
+            const next = { ...prev };
+            menuSections.forEach(section => {
+                if (next[section.title] === undefined) {
+                    const saved = localStorage.getItem(STORAGE_PREFIX + section.title);
+                    next[section.title] = saved !== null ? saved === 'true' : section.title === 'Main';
+                }
+                const sectionHasActive = section.items.some(item => isActive(item.href));
+                if (sectionHasActive) {
+                    next[section.title] = true;
+                }
+            });
+            return next;
+        });
+    }, [url, menuSections]);
+
+    const toggleSection = (title) => {
+        setOpenSections(prev => {
+            const next = { ...prev, [title]: !prev[title] };
+            localStorage.setItem(STORAGE_PREFIX + title, next[title]);
+            return next;
+        });
+    };
+
     const storeSlug = tenant?.slug;
     const logout = () => router.post('/logout', {
         context: isSuperAdmin ? 'superadmin' : 'admin',
