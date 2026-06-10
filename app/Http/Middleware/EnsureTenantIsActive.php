@@ -25,6 +25,12 @@ class EnsureTenantIsActive
             abort(403, 'Store not found.');
         }
 
+        // Pending — owner has not verified email yet
+        if ($tenant->status === 'pending') {
+            return redirect()->route('admin.suspended')
+                ->with('error', 'Please verify your email first.');
+        }
+
         // Suspended — block all operations, redirect to suspension page
         if ($tenant->status === 'suspended') {
             return redirect()->route('admin.suspended');

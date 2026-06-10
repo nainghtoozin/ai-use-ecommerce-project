@@ -18,6 +18,7 @@ class Tenant extends Model
         'logo',
         'status',
         'settings',
+        'activated_at',
         'subscription_plan_id',
         'expires_at',
         'used_storage_bytes',
@@ -25,6 +26,7 @@ class Tenant extends Model
 
     protected $casts = [
         'settings' => 'array',
+        'activated_at' => 'datetime',
         'expires_at' => 'datetime',
         'used_storage_bytes' => 'integer',
     ];

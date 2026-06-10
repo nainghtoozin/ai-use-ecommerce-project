@@ -59,6 +59,13 @@ class StorefrontLoginController extends Controller
                 ])->onlyInput('email');
             }
 
+            // Pending — owner has not verified email; block admin login
+            if ($user->tenant && $user->tenant->status === 'pending' && !$user->isSuperAdmin() && $user->isAdmin()) {
+                return back()->withErrors([
+                    'email' => 'Please verify your email first.',
+                ])->onlyInput('email');
+            }
+
             if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
                 return back()->withErrors([
                     'email' => 'Your account has been suspended. Please contact support.',

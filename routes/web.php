@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminOrderOverrideController;
 use App\Http\Controllers\Admin\AdminReportController;
+use App\Http\Controllers\CreateStoreController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\WishlistController;
@@ -40,6 +41,26 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [ClientController::class, 'index'])->name('home');
 Route::get('/dashboard', [ClientController::class, 'index'])->name('client.dashboard');
 Route::get('/products', [ClientController::class, 'products'])->name('products.page');
+Route::get('/create-store', [CreateStoreController::class, 'index'])->name('create-store');
+Route::post('/create-store', [CreateStoreController::class, 'store'])->name('create-store.store');
+Route::get('/store-registration/success', [CreateStoreController::class, 'success'])->name('create-store.success');
+
+// ============================================================
+// DEV TOOL — test email sending (local only)
+// ============================================================
+if (app()->environment('local')) {
+    Route::get('/test-email', function () {
+        $to = request('to', 'test@example.com');
+        \Illuminate\Support\Facades\Mail::raw(
+            'This is a test email from ' . config('app.name') . '.',
+            function ($message) use ($to) {
+                $message->to($to)
+                    ->subject('Test Email — ' . config('app.name') . ' at ' . now()->format('Y-m-d H:i:s'));
+            }
+        );
+        return response()->json(['message' => 'Test email sent to ' . $to, 'to' => $to]);
+    })->name('test-email');
+}
 
 Route::get('/maintenance', function () {
     $settings = \App\Models\WebsiteInfo::getSettings();
@@ -110,6 +131,9 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     // Store-based admin login
     Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('admin.login');
     Route::post('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
+
+    // Onboarding completion (after email verification)
+    Route::get('/onboarding/complete', [\App\Http\Controllers\CreateStoreController::class, 'onboarding'])->name('onboarding.complete');
 
     // Store-based cart and checkout
     Route::get('/cart', [\App\Http\Controllers\StorefrontCartController::class, 'index'])->name('cart');
