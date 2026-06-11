@@ -11,7 +11,7 @@ export default function FeaturedCategories({ categories }) {
             <div className="flex items-center justify-between mb-2">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900">Categories</h2>
                 <Link
-                    href={(tenant?.slug ? `/store/${tenant.slug}` : '') + '/products'}
+                    href={tenant ? `/store/${tenant.slug}/products` : '/?categories=all'}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                 >
                     View All &rarr;
@@ -21,7 +21,7 @@ export default function FeaturedCategories({ categories }) {
                 {categories.slice(0, 6).map((category) => (
                     <Link
                         key={category.id}
-                        href={(tenant?.slug ? `/store/${tenant.slug}` : '') + `/products?category=${category.id}`}
+                        href={tenant ? `/store/${tenant.slug}/products?category=${category.id}` : `/?category=${category.id}`}
                         className="group flex flex-col items-center gap-2 p-4 sm:p-5 bg-white rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
                     >
                         <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">

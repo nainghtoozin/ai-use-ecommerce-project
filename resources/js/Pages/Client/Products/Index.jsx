@@ -113,7 +113,7 @@ export default function ClientProductIndex({ products, categories, searchQuery, 
                 </>
             )}
 
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <section id="products-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="mb-6 sm:mb-8">
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
                         <div className="flex-1">

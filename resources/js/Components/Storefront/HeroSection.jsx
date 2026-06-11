@@ -34,7 +34,7 @@ export default function HeroSection({ store, websiteInfo }) {
                     )}
                     <div className="mt-3 flex flex-wrap gap-2">
                         <a
-                            href={`/store/${tenant.slug}#products-section`}
+                            href={tenant ? `/store/${tenant.slug}#products-section` : '#products-section'}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-indigo-700 font-semibold text-xs sm:text-sm rounded-lg hover:bg-indigo-50 transition-all shadow-md"
                         >
                             Shop Now
@@ -43,7 +43,7 @@ export default function HeroSection({ store, websiteInfo }) {
                             </svg>
                         </a>
                         <a
-                            href={`/store/${tenant.slug}#categories-section`}
+                            href={tenant ? `/store/${tenant.slug}#categories-section` : '#categories-section'}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-white/30 text-white font-semibold text-xs sm:text-sm rounded-lg hover:bg-white/10 transition-all"
                         >
                             Browse Categories
