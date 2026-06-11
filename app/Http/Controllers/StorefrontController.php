@@ -46,6 +46,7 @@ class StorefrontController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
+        $hasProducts = Product::active()->exists();
         $categories = Category::orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('Storefront/Index', [
@@ -60,6 +61,7 @@ class StorefrontController extends Controller
             'products' => Inertia::scroll(fn () => $products->paginate(8)->through(function ($product) use ($promotions) {
                 return $this->enrichProductWithPromotion($product, $promotions);
             })),
+            'hasProducts' => $hasProducts,
             'categories' => $categories,
             'searchQuery' => $query,
             'filters' => [

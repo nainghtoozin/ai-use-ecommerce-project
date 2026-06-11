@@ -9,7 +9,7 @@ export default function ShopLayout({ children }) {
             <div className="min-h-screen flex flex-col bg-gray-50">
                 <ShopNavbar />
                 <main className="flex-1">
-                    <div className="py-6 lg:py-8">
+                    <div className="py-2">
                         {children}
                     </div>
                 </main>

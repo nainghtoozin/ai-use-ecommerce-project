@@ -45,12 +45,24 @@ class ClientController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
+        $allPromotionBanners = PromotionBanner::active()->latest()->get();
+        $featuredCategories = Category::withCount('products')->orderBy('products_count', 'desc')->take(6)->get();
+        $latestProducts = Product::active()->latest()->take(8)->with(['category', 'variants' => fn($q) => $q->active()])->get();
+        $featuredProducts = Product::active()->whereNotNull('photo1')->latest()->take(8)->with(['category', 'variants' => fn($q) => $q->active()])->get();
+        $bestsellerProducts = Product::active()->withCount('orderItems')->orderBy('order_items_count', 'desc')->take(8)->with(['category', 'variants' => fn($q) => $q->active()])->get();
+        $hasProducts = Product::active()->exists();
+
         return Inertia::render('Client/Products/Index', [
             'products' => Inertia::scroll(fn () => $products->paginate(8)->through(function ($product) use ($promotions) {
                 return $this->enrichProductWithPromotion($product, $promotions);
             })),
+            'featuredCategories' => $featuredCategories,
+            'latestProducts' => Inertia::defer(fn () => $latestProducts->map(fn ($p) => $this->enrichProductWithPromotion($p, $promotions))),
+            'featuredProducts' => Inertia::defer(fn () => $featuredProducts->map(fn ($p) => $this->enrichProductWithPromotion($p, $promotions))),
+            'bestsellerProducts' => Inertia::defer(fn () => $bestsellerProducts->map(fn ($p) => $this->enrichProductWithPromotion($p, $promotions))),
+            'promotionBanners' => $allPromotionBanners,
+            'hasProducts' => $hasProducts,
             'categories' => fn () => Category::all(),
-            'banners' => fn () => PromotionBanner::active()->latest()->get(),
             'searchQuery' => $query,
             'filters' => [
                 'category_id' => $categoryId,
