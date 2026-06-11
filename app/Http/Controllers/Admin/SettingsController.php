@@ -27,7 +27,11 @@ class SettingsController extends Controller
 
     public function update(UpdateWebsiteSettingsRequest $request)
     {
-        $info = WebsiteInfo::firstOrCreate(['id' => 1]);
+        $info = WebsiteInfo::firstWhere('tenant_id', tenant()->id);
+        if (!$info) {
+            $info = new WebsiteInfo();
+            $info->tenant_id = tenant()->id;
+        }
 
         $imageFields = ['logo', 'favicon', 'og_image', 'hero_image', 'footer_logo', 'about_image'];
 
