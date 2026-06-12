@@ -72,11 +72,16 @@ export default function ShopNavbar() {
 
     const logout = () => router.post('/logout', { context: storeSlug ? 'storefront' : '', store_slug: storeSlug });
 
-    const navLinks = [
-        { label: 'Home', href: storeUrl('/'), icon: 'bi-house-door' },
-        { label: 'Products', href: storeUrl('/products'), icon: 'bi-grid' },
-        ...(storeSlug ? [{ label: 'My Orders', href: `/store/${storeSlug}/customer/orders`, icon: 'bi-receipt' }] : [{ label: 'My Orders', href: '/orders', icon: 'bi-receipt' }]),
-    ];
+    const navLinks = storeSlug
+        ? [
+            { label: 'Home', href: storeUrl('/'), icon: 'bi-house-door' },
+            { label: 'Products', href: storeUrl('/products'), icon: 'bi-grid' },
+            { label: 'My Orders', href: `/store/${storeSlug}/customer/orders`, icon: 'bi-receipt' },
+        ]
+        : [
+            { label: 'Features', href: '/#features', icon: 'bi-star' },
+            { label: 'How It Works', href: '/#how-it-works', icon: 'bi-gear' },
+        ];
 
     return (
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -112,7 +117,7 @@ export default function ShopNavbar() {
                     </div>
 
                     <div className="flex items-center gap-1">
-                        {website_info?.enable_wishlist !== false && (
+                        {storeSlug && website_info?.enable_wishlist !== false && (
                             <Link
                                 href="/wishlist"
                                 className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -126,18 +131,20 @@ export default function ShopNavbar() {
                                 )}
                             </Link>
                         )}
-                        <Link
-                            href={storeUrl('/cart')}
-                            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Shopping Cart"
-                        >
-                            <i className="bi bi-cart3 text-xl"></i>
-                            {cartCount > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
-                                    {cartCount > 99 ? '99+' : cartCount}
-                                </span>
-                            )}
-                        </Link>
+                        {storeSlug && (
+                            <Link
+                                href={storeUrl('/cart')}
+                                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Shopping Cart"
+                            >
+                                <i className="bi bi-cart3 text-xl"></i>
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                        {cartCount > 99 ? '99+' : cartCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
 
                         {auth?.user ? (
                             <>
@@ -259,7 +266,7 @@ export default function ShopNavbar() {
                                     {item.label}
                                 </Link>
                             ))}
-                            {website_info?.enable_wishlist !== false && (
+                            {storeSlug && website_info?.enable_wishlist !== false && (
                                 <Link
                                     href="/wishlist"
                                     onClick={() => setMobileMenuOpen(false)}
@@ -274,19 +281,21 @@ export default function ShopNavbar() {
                                     )}
                                 </Link>
                             )}
-                            <Link
-                                href={storeUrl('/cart')}
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
-                            >
-                                <i className="bi bi-cart3"></i>
-                                Cart
-                                {cartCount > 0 && (
-                                    <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </Link>
+                            {storeSlug && (
+                                <Link
+                                    href={storeUrl('/cart')}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                >
+                                    <i className="bi bi-cart3"></i>
+                                    Cart
+                                    {cartCount > 0 && (
+                                        <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                            {cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
                         </div>
 
                         {!auth?.user && storeSlug && (
