@@ -1,220 +1,155 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import { InfiniteScroll } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
-import ProductCard from '@/Components/ProductCard';
-import BackToTopButton from '@/Components/BackToTopButton';
-import HeroSection from '@/Components/Storefront/HeroSection';
-import FeaturedCategories from '@/Components/Storefront/FeaturedCategories';
-import FeaturedProducts from '@/Components/Storefront/FeaturedProducts';
-import PromotionBanner from '@/Components/Storefront/PromotionBanner';
-import StoreFeatures from '@/Components/Storefront/StoreFeatures';
-import { useCart } from '@/Hooks/useCart';
+import HomepageHero from '@/Components/Storefront/HomepageHero';
 
-export default function ClientProductIndex({ products, categories, searchQuery, filters: initFilters = {}, featuredCategories, latestProducts, featuredProducts, bestsellerProducts, promotionBanners, hasProducts }) {
-    const { props } = usePage();
-    const { website_info } = props;
-    const { addToCart, addingId } = useCart();
-    const [query, setQuery] = useState(searchQuery || '');
-    const [selectedCategory, setSelectedCategory] = useState(initFilters.category_id || '');
-    const [sortBy, setSortBy] = useState(initFilters.sort || 'latest');
-    const [loading, setLoading] = useState(false);
-    const debounceRef = useRef(null);
+export default function ClientProductIndex() {
+    const { website_info } = usePage().props;
+    const siteName = website_info?.site_name || 'My Store';
 
-    useEffect(() => {
-        setQuery(searchQuery || '');
-        setSelectedCategory(initFilters.category_id || '');
-        setSortBy(initFilters.sort || 'latest');
-    }, [searchQuery, initFilters]);
+    const features = [
+        {
+            icon: 'bi-shop',
+            title: 'Custom Storefront',
+            description: 'Get your own branded online store with a unique URL. Customize colors, logo, and layout to match your brand.',
+        },
+        {
+            icon: 'bi-credit-card',
+            title: 'Payment Ready',
+            description: 'Accept payments from customers with multiple payment methods. Track orders from checkout to delivery.',
+        },
+        {
+            icon: 'bi-box-seam',
+            title: 'Inventory Management',
+            description: 'Manage products, stock levels, variants, and categories from a powerful admin dashboard.',
+        },
+        {
+            icon: 'bi-percent',
+            title: 'Promotions & Coupons',
+            description: 'Create discounts, coupon codes, and promotional campaigns to boost your sales and attract customers.',
+        },
+        {
+            icon: 'bi-graph-up',
+            title: 'Sales Reports',
+            description: 'Track your store performance with detailed sales reports, payment logs, and product analytics.',
+        },
+        {
+            icon: 'bi-chat-dots',
+            title: 'Customer Communication',
+            description: 'Built-in chat and notification system to stay connected with your customers throughout the order process.',
+        },
+    ];
 
-    useEffect(() => {
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-    }, []);
-
-    const applyFilters = useCallback((q, cat, sort) => {
-        setLoading(true);
-        const params = {};
-        if (q) params.query = q;
-        if (cat) params.category = cat;
-        if (sort && sort !== 'latest') params.sort = sort;
-        router.get('/', params, {
-            preserveState: true, preserveScroll: true,
-            only: ['products', 'searchQuery', 'filters'],
-            reset: ['products'], replace: true,
-            onFinish: () => setLoading(false),
-        });
-    }, []);
-
-    const handleQueryChange = useCallback((value) => {
-        setQuery(value);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => applyFilters(value, selectedCategory, sortBy), 400);
-    }, [selectedCategory, sortBy, applyFilters]);
-
-    const handleCategoryChange = useCallback((categoryId) => {
-        setSelectedCategory(categoryId);
-        applyFilters(query, categoryId, sortBy);
-    }, [query, sortBy, applyFilters]);
-
-    const handleSortChange = useCallback((sort) => {
-        setSortBy(sort);
-        applyFilters(query, selectedCategory, sort);
-    }, [query, selectedCategory, applyFilters]);
-
-    const handleAddToCart = useCallback(async (productId) => {
-        await addToCart(productId, 1);
-    }, [addToCart]);
-
-    const clearFilters = useCallback(() => {
-        setQuery(''); setSelectedCategory(''); setSortBy('latest'); setLoading(true);
-        router.get('/', {}, {
-            preserveState: true, preserveScroll: true,
-            only: ['products', 'searchQuery', 'filters'],
-            reset: ['products'], replace: true,
-        });
-    }, []);
-
-    const hasMore = (products?.current_page ?? 1) < (products?.last_page ?? 1);
-    const productCount = products?.data?.length ?? 0;
-    const hasActiveFilters = query || selectedCategory || sortBy !== 'latest';
+    const steps = [
+        {
+            step: '1',
+            title: 'Create Your Store',
+            description: 'Sign up with your store name and details. It takes less than 5 minutes to get started.',
+        },
+        {
+            step: '2',
+            title: 'Add Your Products',
+            description: 'Upload product photos, set prices, manage inventory, and organize categories from your admin panel.',
+        },
+        {
+            step: '3',
+            title: 'Start Selling',
+            description: 'Share your store URL with customers. Accept orders, manage deliveries, and grow your business.',
+        },
+    ];
 
     return (
         <ShopLayout>
-            <Head title="Shop" />
+            <Head title={siteName} />
 
-            <HeroSection websiteInfo={website_info} />
+            <HomepageHero websiteInfo={website_info} />
 
-            {!hasActiveFilters && (
-                <>
-                    <PromotionBanner banners={promotionBanners} />
-                    <FeaturedCategories categories={featuredCategories} />
-                    <FeaturedProducts
-                        products={latestProducts}
-                        title="Latest Products"
-                        subtitle="Newly added items"
-                        onAddToCart={handleAddToCart}
-                        addingId={addingId}
-                    />
-                    <FeaturedProducts
-                        products={featuredProducts}
-                        title="Featured Products"
-                        subtitle="Top picks for you"
-                        onAddToCart={handleAddToCart}
-                        addingId={addingId}
-                    />
-                    <FeaturedProducts
-                        products={bestsellerProducts}
-                        title="Best Sellers"
-                        subtitle="Most popular items"
-                        onAddToCart={handleAddToCart}
-                        addingId={addingId}
-                    />
-                    <StoreFeatures />
-                </>
-            )}
-
-            <section id="products-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="mb-6 sm:mb-8">
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-                        <div className="flex-1">
-                            <input type="text" value={query}
-                                onChange={(e) => handleQueryChange(e.target.value)}
-                                placeholder="Search products..."
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                        </div>
-                        <div className="flex gap-2">
-                            <select value={selectedCategory} onChange={(e) => handleCategoryChange(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="">All Categories</option>
-                                {categories?.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                            <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="latest">Latest</option>
-                                <option value="price_asc">Price: Low to High</option>
-                                <option value="price_desc">Price: High to Low</option>
-                                <option value="name">Name A-Z</option>
-                            </select>
-                        </div>
+            <section className="py-16 sm:py-20 lg:py-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-14">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                            Everything You Need to Sell Online
+                        </h2>
+                        <p className="mt-4 text-gray-500 text-lg">
+                            Powerful tools designed for Myanmar e-commerce merchants.
+                        </p>
                     </div>
-
-                    {hasActiveFilters && (
-                        <div className="flex items-center gap-2 mb-4 flex-wrap">
-                            <span className="text-sm text-gray-500">Active filters:</span>
-                            {query && (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
-                                    Search: {query}
-                                    <button onClick={() => handleQueryChange('')} className="hover:text-indigo-900">&times;</button>
-                                </span>
-                            )}
-                            {selectedCategory && (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
-                                    {categories?.find(c => c.id == selectedCategory)?.name}
-                                    <button onClick={() => handleCategoryChange('')} className="hover:text-indigo-900">&times;</button>
-                                </span>
-                            )}
-                            <button onClick={clearFilters} className="text-sm text-red-600 hover:text-red-800 ml-2">Clear all</button>
-                        </div>
-                    )}
-                </div>
-
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {Array(8).fill(null).map((_, i) => (
-                            <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
-                                <div className="aspect-square bg-gray-200"></div>
-                                <div className="p-4">
-                                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                                    <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                                    <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                        {features.map((feature) => (
+                            <div
+                                key={feature.title}
+                                className="group bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 hover:shadow-lg hover:border-indigo-200 transition-all duration-200"
+                            >
+                                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center mb-4 group-hover:bg-indigo-600 transition-colors duration-200">
+                                    <i className={`bi ${feature.icon} text-xl text-indigo-600 group-hover:text-white transition-colors duration-200`}></i>
                                 </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                    {feature.title}
+                                </h3>
+                                <p className="text-sm text-gray-500 leading-relaxed">
+                                    {feature.description}
+                                </p>
                             </div>
                         ))}
                     </div>
-                ) : productCount === 0 && hasActiveFilters ? (
-                    <div className="text-center py-12 sm:py-16 bg-white rounded-xl border border-gray-200">
-                        <svg className="w-12 h-12 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <h3 className="mt-4 text-lg font-medium text-gray-900">No products found</h3>
-                        <p className="mt-2 text-gray-500">Try adjusting your search or filter criteria.</p>
-                        <button onClick={clearFilters} className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">View all products</button>
-                    </div>
-                ) : productCount > 0 ? (
-                    <>
-                        <div className="mb-4 sm:mb-6">
-                            <p className="text-sm sm:text-base text-gray-500">{productCount} Products Available</p>
-                        </div>
-                        <InfiniteScroll data="products" onlyNext preserveUrl
-                            loading={() => (
-                                <div className="mt-8 flex justify-center items-center py-4">
-                                    <div className="flex items-center gap-2 text-gray-500">
-                                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        <span>Loading more products...</span>
-                                    </div>
-                                </div>
-                            )}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                                {products.data.map((product) => (
-                                    <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} addingId={addingId} />
-                                ))}
-                            </div>
-                        </InfiniteScroll>
-                        {!hasMore && productCount > 0 && (
-                            <div className="mt-8 flex justify-center items-center py-4">
-                                <p className="text-gray-400 text-sm">You've reached the end</p>
-                            </div>
-                        )}
-                    </>
-                ) : !hasActiveFilters && !hasProducts ? null : null}
+                </div>
             </section>
 
-            <BackToTopButton />
+            <section className="py-16 sm:py-20 bg-gray-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-14">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                            How It Works
+                        </h2>
+                        <p className="mt-4 text-gray-500 text-lg">
+                            Get your store online in three simple steps.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
+                        {steps.map((item) => (
+                            <div key={item.step} className="text-center">
+                                <div className="w-16 h-16 rounded-full bg-indigo-600 text-white text-2xl font-bold flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-200">
+                                    {item.step}
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                    {item.title}
+                                </h3>
+                                <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+                                    {item.description}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            <section className="py-16 sm:py-20 lg:py-24">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 sm:p-12 lg:p-16 shadow-xl">
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+                            Ready to Start Selling?
+                        </h2>
+                        <p className="mt-4 text-lg text-indigo-100 max-w-lg mx-auto">
+                            Join merchants across Myanmar. Create your store today — no credit card required.
+                        </p>
+                        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link
+                                href="/create-store"
+                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-indigo-700 font-bold text-base rounded-xl hover:bg-indigo-50 transition-all shadow-lg"
+                            >
+                                <i className="bi bi-plus-circle"></i>
+                                Create Your Store
+                            </Link>
+                            <Link
+                                href="/login"
+                                className="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white font-semibold text-base rounded-xl hover:bg-white/10 transition-all"
+                            >
+                                <i className="bi bi-box-arrow-in-right"></i>
+                                Merchant Login
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </ShopLayout>
     );
 }

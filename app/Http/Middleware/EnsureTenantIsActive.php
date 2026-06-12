@@ -25,20 +25,22 @@ class EnsureTenantIsActive
             abort(403, 'Store not found.');
         }
 
+        $storeSlug = $request->route('store_slug');
+
         // Pending — owner has not verified email yet
         if ($tenant->status === 'pending') {
-            return redirect()->route('admin.suspended')
+            return $this->redirectToSuspended($storeSlug)
                 ->with('error', 'Please verify your email first.');
         }
 
         // Suspended — block all operations, redirect to suspension page
         if ($tenant->status === 'suspended') {
-            return redirect()->route('admin.suspended');
+            return $this->redirectToSuspended($storeSlug);
         }
 
         // Banned or inactive — block all operations
         if (! in_array($tenant->status, ['active', 'trialing'])) {
-            return redirect()->route('admin.suspended')
+            return $this->redirectToSuspended($storeSlug)
                 ->with('error', 'Your account is currently restricted. Please contact support.');
         }
 
@@ -64,7 +66,23 @@ class EnsureTenantIsActive
         }
 
         // Expired — redirect to dashboard (accessible via tenant.valid only, outside tenant.active)
-        return redirect()->route('admin.dashboard')
+        return $this->redirectToDashboard($storeSlug)
             ->with('error', 'Your subscription has expired. Please renew to restore access to all features.');
+    }
+
+    private function redirectToSuspended(?string $storeSlug): \Illuminate\Http\RedirectResponse
+    {
+        if ($storeSlug) {
+            return redirect()->route('storefront.admin.suspended', ['store_slug' => $storeSlug]);
+        }
+        return redirect()->route('admin.suspended');
+    }
+
+    private function redirectToDashboard(?string $storeSlug): \Illuminate\Http\RedirectResponse
+    {
+        if ($storeSlug) {
+            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $storeSlug]);
+        }
+        return redirect()->route('admin.dashboard');
     }
 }

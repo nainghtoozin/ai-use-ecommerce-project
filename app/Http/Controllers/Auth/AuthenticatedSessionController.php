@@ -103,17 +103,14 @@ class AuthenticatedSessionController extends Controller
         $storeSlug = $request->input('store_slug') ?: ($tenant ? $tenant->slug : null);
         $context = $request->input('context');
 
-        // Determine context from POST data or referrer or user role
+        // Determine context from POST data or user role
         if (!$context) {
-            $referrer = $request->header('referer');
-            if ($referrer) {
-                if ($isSuperAdmin && str_contains($referrer, '/superadmin/')) {
-                    $context = 'superadmin';
-                } elseif ($storeSlug && str_contains($referrer, "/store/{$storeSlug}/admin/")) {
-                    $context = 'admin';
-                } elseif ($storeSlug && str_contains($referrer, "/store/{$storeSlug}/")) {
-                    $context = 'storefront';
-                }
+            if ($isSuperAdmin) {
+                $context = 'superadmin';
+            } elseif ($storeSlug && $user && $user->isAdmin()) {
+                $context = 'admin';
+            } elseif ($storeSlug) {
+                $context = 'storefront';
             }
         }
 

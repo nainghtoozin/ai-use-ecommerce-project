@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function RolesIndex({ roles, filters }) {
     const { auth } = usePage().props;
@@ -13,7 +14,7 @@ export default function RolesIndex({ roles, filters }) {
 
     function handleSearch(e) {
         e.preventDefault();
-        router.get('/admin/roles', { search }, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/roles'), { search }, { preserveState: true, replace: true });
     }
 
     function confirmDelete(role) {
@@ -23,7 +24,7 @@ export default function RolesIndex({ roles, filters }) {
             return;
         }
         if (window.confirm(`Are you sure you want to delete "${role.name}"? This action cannot be undone.`)) {
-            router.delete(`/admin/roles/${role.id}`);
+            router.delete(adminUrl(`/admin/roles/${role.id}`));
         }
     }
 
@@ -53,7 +54,7 @@ export default function RolesIndex({ roles, filters }) {
                                 </form>
                                 {canCreate && (
                                     <Link
-                                        href="/admin/roles/create"
+                                        href={adminUrl('/admin/roles/create')}
                                         className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
                                     >
                                         <i className="bi bi-plus-lg"></i> Create Role
@@ -99,11 +100,11 @@ export default function RolesIndex({ roles, filters }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{role.created_at}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Link href={`/admin/roles/${role.id}`} className="text-blue-600 hover:text-blue-900">
+                                                        <Link href={adminUrl(`/admin/roles/${role.id}`)} className="text-blue-600 hover:text-blue-900">
                                                             <i className="bi bi-eye"></i>
                                                         </Link>
                                                         {canUpdate && (
-                                                            <Link href={`/admin/roles/${role.id}/edit`} className="text-indigo-600 hover:text-indigo-900">
+                                                            <Link href={adminUrl(`/admin/roles/${role.id}/edit`)} className="text-indigo-600 hover:text-indigo-900">
                                                                 <i className="bi bi-pencil"></i>
                                                             </Link>
                                                         )}

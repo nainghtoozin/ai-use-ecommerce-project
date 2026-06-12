@@ -3,7 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import ProductGrid from '@/Components/ProductGrid';
 import BackToTopButton from '@/Components/BackToTopButton';
-import HeroSection from '@/Components/Storefront/HeroSection';
+import StorefrontHero from '@/Components/Storefront/StorefrontHero';
 import EmptyStoreState from '@/Components/Storefront/EmptyStoreState';
 import { useCart } from '@/Hooks/useCart';
 
@@ -77,7 +77,7 @@ export default function StoreIndex({ tenant, products, categories, searchQuery, 
         <ShopLayout>
             <Head title={tenant.name} />
 
-            <HeroSection store={tenant} websiteInfo={website_info} />
+            <StorefrontHero store={tenant} websiteInfo={website_info} />
 
             {!hasProducts && !hasActiveFilters ? (
                 <EmptyStoreState storeName={tenant.name} />

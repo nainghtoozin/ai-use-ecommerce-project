@@ -8,7 +8,6 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Promotion;
-use App\Models\PromotionBanner;
 use App\Models\PaymentMethod;
 use App\Models\City;
 use App\Services\ProductService;
@@ -22,53 +21,7 @@ class ClientController extends Controller
 
     public function index(Request $request)
     {
-        $query = $request->input('query', '');
-        $categoryId = $request->input('category', '');
-        $sort = $request->input('sort', 'latest');
-
-        $products = Product::active()
-            ->with(['category', 'brand'])
-            ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
-
-        if ($query) {
-            $products->where('name', 'LIKE', "%{$query}%");
-        }
-
-        if ($categoryId) {
-            $products->where('category_id', $categoryId);
-        }
-
-        $this->applySorting($products, $sort);
-
-        $promotions = Promotion::valid()->automatic()
-            ->with(['products', 'categories'])
-            ->orderBy('priority', 'desc')
-            ->get();
-
-        $allPromotionBanners = PromotionBanner::active()->latest()->get();
-        $featuredCategories = Category::withCount('products')->orderBy('products_count', 'desc')->take(6)->get();
-        $latestProducts = Product::active()->latest()->take(8)->with(['category', 'variants' => fn($q) => $q->active()])->get();
-        $featuredProducts = Product::active()->whereNotNull('photo1')->latest()->take(8)->with(['category', 'variants' => fn($q) => $q->active()])->get();
-        $bestsellerProducts = Product::active()->withCount('orderItems')->orderBy('order_items_count', 'desc')->take(8)->with(['category', 'variants' => fn($q) => $q->active()])->get();
-        $hasProducts = Product::active()->exists();
-
-        return Inertia::render('Client/Products/Index', [
-            'products' => Inertia::scroll(fn () => $products->paginate(8)->through(function ($product) use ($promotions) {
-                return $this->enrichProductWithPromotion($product, $promotions);
-            })),
-            'featuredCategories' => $featuredCategories,
-            'latestProducts' => Inertia::defer(fn () => $latestProducts->map(fn ($p) => $this->enrichProductWithPromotion($p, $promotions))),
-            'featuredProducts' => Inertia::defer(fn () => $featuredProducts->map(fn ($p) => $this->enrichProductWithPromotion($p, $promotions))),
-            'bestsellerProducts' => Inertia::defer(fn () => $bestsellerProducts->map(fn ($p) => $this->enrichProductWithPromotion($p, $promotions))),
-            'promotionBanners' => $allPromotionBanners,
-            'hasProducts' => $hasProducts,
-            'categories' => fn () => Category::all(),
-            'searchQuery' => $query,
-            'filters' => [
-                'category_id' => $categoryId,
-                'sort' => $sort,
-            ],
-        ]);
+        return Inertia::render('Client/Products/Index');
     }
 
     public function products(Request $request)

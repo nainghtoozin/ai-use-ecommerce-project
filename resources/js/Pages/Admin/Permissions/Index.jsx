@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function PermissionsIndex({ permissions, grouped, filters }) {
     const [search, setSearch] = useState(filters?.search || '');
 
     function handleSearch(e) {
         e.preventDefault();
-        router.get('/admin/permissions', { search }, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/permissions'), { search }, { preserveState: true, replace: true });
     }
 
     return (

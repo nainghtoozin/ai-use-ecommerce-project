@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm, Link, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function RolesEdit({ role, permission_groups }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -10,7 +11,7 @@ export default function RolesEdit({ role, permission_groups }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        put(`/admin/roles/${role.id}`, {
+        put(adminUrl(`/admin/roles/${role.id}`), {
             onSuccess: () => {},
         });
     }
@@ -123,7 +124,7 @@ export default function RolesEdit({ role, permission_groups }) {
                                 </div>
 
                                 <div className="flex items-center justify-end gap-4">
-                                    <Link href="/admin/roles" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    <Link href={adminUrl('/admin/roles')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                                         Cancel
                                     </Link>
                                     <button

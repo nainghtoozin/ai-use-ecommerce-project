@@ -1,10 +1,11 @@
 import { Link, Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function RolesShow({ role, grouped_permissions }) {
     function confirmDelete() {
         if (window.confirm(`Are you sure you want to delete "${role.name}"? This action cannot be undone.`)) {
-            router.delete(`/admin/roles/${role.id}`);
+            router.delete(adminUrl(`/admin/roles/${role.id}`));
         }
     }
 
@@ -27,7 +28,7 @@ export default function RolesShow({ role, grouped_permissions }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Link href={`/admin/roles/${role.id}/edit`} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                    <Link href={adminUrl(`/admin/roles/${role.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
                                         <i className="bi bi-pencil mr-1"></i> Edit
                                     </Link>
                                     <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
@@ -87,7 +88,7 @@ export default function RolesShow({ role, grouped_permissions }) {
                     </div>
 
                     <div className="flex justify-start">
-                        <Link href="/admin/roles" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <Link href={adminUrl('/admin/roles')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                             <i className="bi bi-arrow-left mr-1"></i> Back to Roles
                         </Link>
                     </div>

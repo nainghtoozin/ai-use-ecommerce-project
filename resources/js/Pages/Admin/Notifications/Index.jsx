@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import axios from 'axios';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 import { timeAgo, notificationIcon, groupNotificationsByDate } from '@/Utils/helpers';
 
 function CheckIcon() {
@@ -163,7 +164,7 @@ export default function AdminNotificationsIndex({ notifications, unread_count })
                                 Admin notifications for new orders, payment proofs, and stock alerts will appear here.
                             </p>
                             <Link
-                                href="/admin/orders"
+                                href={adminUrl('/admin/orders')}
                                 className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
                             >
                                 View orders

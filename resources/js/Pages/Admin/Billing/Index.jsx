@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 const statusConfig = {
     active:    { label: 'Active',        bg: 'bg-emerald-50 border-emerald-200',      badge: 'bg-emerald-100 text-emerald-700',  icon: 'bi-check-circle-fill' },
@@ -19,7 +20,7 @@ export default function AdminBillingIndex({ subscription }) {
     };
 
     const handleRenew = () => {
-        router.post('/admin/billing/renew', {}, {
+        router.post(adminUrl('/admin/billing/renew'), {}, {
             preserveScroll: true,
         });
     };

@@ -25,9 +25,11 @@ class SubscriptionIsActive
             abort(403, 'Store not found.');
         }
 
+        $storeSlug = $request->route('store_slug');
+
         // Suspended tenant — block operations (same restriction as expired)
         if ($tenant->status !== 'active') {
-            return redirect()->route('admin.dashboard')
+            return $this->redirectToDashboard($storeSlug)
                 ->with('error', 'Your account is currently suspended. Please contact support for assistance.');
         }
 
@@ -53,7 +55,15 @@ class SubscriptionIsActive
         }
 
         // Expired — redirect to dashboard (which is accessible via TenantIsValid only)
-        return redirect()->route('admin.dashboard')
+        return $this->redirectToDashboard($storeSlug)
             ->with('error', 'Your subscription has expired. Please renew to restore access to all features.');
+    }
+
+    private function redirectToDashboard(?string $storeSlug): \Illuminate\Http\RedirectResponse
+    {
+        if ($storeSlug) {
+            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $storeSlug]);
+        }
+        return redirect()->route('admin.dashboard');
     }
 }

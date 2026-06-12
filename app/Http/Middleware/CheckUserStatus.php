@@ -33,6 +33,10 @@ class CheckUserStatus
 
             if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
                 if ($user->hasRole('admin')) {
+                    $storeSlug = $request->route('store_slug');
+                    if ($storeSlug) {
+                        return redirect()->route('storefront.admin.suspended', ['store_slug' => $storeSlug]);
+                    }
                     return redirect()->route('admin.suspended');
                 }
 
