@@ -162,7 +162,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
     const deliveryFee = city?.delivery_fee || 0;
     const totalDiscount = Number(localDiscount) || 0;
     const total = Number(subtotal) + Number(deliveryFee) - totalDiscount;
-    const totalItems = cartItems?.reduce((s, i) => s + i.quantity, 0) || 0;
+    const totalItems = Array.isArray(cartItems) ? cartItems.reduce((s, i) => s + i.quantity, 0) : 0;
 
     function handleSubmit(e) {
         e.preventDefault();

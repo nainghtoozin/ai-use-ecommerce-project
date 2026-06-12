@@ -85,7 +85,7 @@ class StorefrontCheckoutController extends Controller
                 'logo' => $tenant->logo,
                 'status' => $tenant->status,
             ],
-            'cartItems' => $cartItems,
+            'cartItems' => array_values($cartItems),
             'subtotal' => $subtotal,
             'paymentMethods' => $paymentMethods,
             'cities' => $cities,
