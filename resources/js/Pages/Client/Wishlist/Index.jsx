@@ -6,13 +6,17 @@ import BackToTopButton from '@/Components/BackToTopButton';
 import { useCart } from '@/Hooks/useCart';
 import { useWishlist } from '@/Hooks/useWishlist';
 
+const LOW_STOCK_THRESHOLD = 10;
+
 function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId }) {
     const [added, setAdded] = useState(false);
     const product = item.product;
 
     if (!product) return null;
 
-    const isOutOfStock = product.stock === 0;
+    const effectiveStock = product.effective_stock ?? product.stock ?? 0;
+    const isOutOfStock = effectiveStock <= 0;
+    const isLowStock = !isOutOfStock && effectiveStock < LOW_STOCK_THRESHOLD;
     const hasPromotion = product.promotion_price && product.promotion_price < product.price;
     const displayPrice = hasPromotion ? product.promotion_price : product.price;
     const originalPrice = hasPromotion ? product.price : null;
@@ -23,84 +27,100 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
         setTimeout(() => setAdded(false), 2000);
     };
 
+    const productTypeLabel = product.is_variable ? 'Multiple Options' : product.is_combo ? 'Bundle' : 'Single';
+
     return (
-        <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col">
+        <div className="group relative bg-white rounded-xl border border-gray-100/80 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col">
             <Link href={`/client/product/${product.id}`} className="block">
-                <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                <div className="relative h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-100 overflow-hidden">
                     {product.photo1_url ? (
                         <img
                             src={product.photo1_url}
                             alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                     ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <i className="bi bi-image text-4xl text-gray-300"></i>
+                            <i className="bi bi-image text-2xl text-gray-300"></i>
                         </div>
                     )}
 
-                    {isOutOfStock && (
+                    {isOutOfStock ? (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <span className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-full">
+                            <span className="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-full">
                                 Out of Stock
                             </span>
+                        </div>
+                    ) : (
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 text-gray-700 text-[10px] font-medium rounded-full shadow-sm z-10">
+                            {productTypeLabel}
                         </div>
                     )}
 
                     {hasPromotion && (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-sm">
+                        <div className="absolute top-11 left-2 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm">
                             {product.promotion_badge}
                         </div>
                     )}
                 </div>
             </Link>
 
-            <div className="p-4 flex-1 flex flex-col">
-                <Link href={`/client/product/${product.id}`} className="flex-1">
-                    {product.category?.name && (
-                        <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
-                            {product.category.name}
-                        </p>
-                    )}
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors min-h-[2.5rem]">
+            <div className="p-3 flex flex-col gap-0">
+                <Link href={`/client/product/${product.id}`}>
+                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
                         {product.name}
                     </h3>
+                    {product.brand?.name && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                            {product.brand.name}
+                        </p>
+                    )}
                 </Link>
 
-                <div className="mt-2 flex items-baseline gap-2 flex-wrap">
-                    <span className="text-lg font-bold text-gray-900">
-                        {Number(displayPrice).toLocaleString()}
-                    </span>
-                    <span className="text-xs text-gray-400 font-medium">MMK</span>
-                    {originalPrice && (
-                        <span className="text-sm text-gray-400 line-through w-full sm:w-auto">
-                            {Number(originalPrice).toLocaleString()} MMK
+                <div className="mt-1.5">
+                    <div className="flex items-baseline gap-1 flex-wrap">
+                        <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
+                            {Number(displayPrice).toLocaleString()}
                         </span>
-                    )}
+                        <span className="text-[10px] text-gray-400 font-medium">MMK</span>
+                        {originalPrice && (
+                            <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
+                                {Number(originalPrice).toLocaleString()} MMK
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <div className="mt-4 space-y-2">
+                {!isOutOfStock && (
+                    <p className={`text-[11px] font-medium mt-1 leading-tight ${
+                        isLowStock ? 'text-orange-600' : 'text-green-600'
+                    }`}>
+                        {isLowStock ? 'Low Stock' : 'In Stock'}
+                    </p>
+                )}
+
+                <div className="mt-2.5 space-y-1.5">
                     {isOutOfStock ? (
                         <button
                             disabled
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-400 rounded-xl text-sm font-medium cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
                         >
-                            <ShoppingCart className="w-4 h-4" />
+                            <ShoppingCart className="w-3.5 h-3.5" />
                             Out of Stock
                         </button>
                     ) : (
                         <button
                             onClick={handleAddToCart}
                             disabled={addingId === product.id}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                                 added
                                     ? 'bg-green-600 text-white'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-md hover:shadow-lg'
+                                    : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-sm hover:shadow'
                             }`}
                         >
                             {addingId === product.id ? (
                                 <>
-                                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
@@ -108,14 +128,14 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
                                 </>
                             ) : added ? (
                                 <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
                                     Added to Cart
                                 </>
                             ) : (
                                 <>
-                                    <ShoppingCart className="w-4 h-4" />
+                                    <ShoppingCart className="w-3.5 h-3.5" />
                                     Add to Cart
                                 </>
                             )}
@@ -125,15 +145,15 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
                     <button
                         onClick={() => onRemove(item.product_id)}
                         disabled={processingId === product.id}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-500 rounded-xl text-sm font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 text-gray-500 rounded-lg text-xs font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
                     >
                         {processingId === product.id ? (
-                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
                         ) : (
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                         )}
                         Remove
                     </button>
@@ -145,16 +165,16 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
 
 function SkeletonGrid() {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
-                    <div className="aspect-square bg-gray-200" />
-                    <div className="p-4">
-                        <div className="h-3 bg-gray-200 rounded w-1/3 mb-2" />
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-3" />
-                        <div className="h-10 bg-gray-200 rounded-xl mb-2" />
-                        <div className="h-10 bg-gray-200 rounded-xl" />
+                <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+                    <div className="h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-200" />
+                    <div className="p-3">
+                        <div className="h-2.5 bg-gray-200 rounded w-1/3 mb-1.5" />
+                        <div className="h-3.5 bg-gray-200 rounded w-3/4 mb-1.5" />
+                        <div className="h-3.5 bg-gray-200 rounded w-1/2 mb-2" />
+                        <div className="h-9 bg-gray-200 rounded-lg mb-1.5" />
+                        <div className="h-9 bg-gray-200 rounded-lg" />
                     </div>
                 </div>
             ))}
@@ -278,7 +298,7 @@ export default function WishlistIndex({ wishlistItems = [] }) {
                 {wishlistItems.length === 0 ? (
                     <EmptyState />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                         {wishlistItems.map((item) => (
                             <WishlistItemCard
                                 key={item.id}
