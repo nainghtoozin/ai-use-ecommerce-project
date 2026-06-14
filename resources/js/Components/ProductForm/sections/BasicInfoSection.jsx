@@ -24,7 +24,8 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 setData('slug', generated);
             }
         }
-    }, [data.name]);
+        isGeneratingSlug.current = false;
+    }, []);
 
     useEffect(() => {
         setData('status', status);
@@ -49,7 +50,7 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                             value={data.name}
                             onChange={(e) => {
                                 setData('name', e.target.value);
-                                if (!data.slug || isGeneratingSlug.current) {
+                                if (!data.slug) {
                                     setData('slug', slugify(e.target.value));
                                 }
                             }}

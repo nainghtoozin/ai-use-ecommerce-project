@@ -280,6 +280,18 @@ class AdminProductController extends Controller
                 $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
             }
 
+            if ($request->hasFile('gallery_images')) {
+                $galleryPaths = [];
+                foreach ($request->file('gallery_images') as $file) {
+                    $galleryPaths[] = $this->imageService->upload($file, 'products/gallery');
+                }
+                $data['gallery_images'] = $galleryPaths;
+            }
+
+            if ($request->hasFile('seo_image')) {
+                $data['seo_image'] = $this->imageService->upload($request->file('seo_image'), 'products');
+            }
+
             $product = Product::create($data);
 
             // Auto-generate SKU if left empty
@@ -477,6 +489,34 @@ class AdminProductController extends Controller
                 $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
             }
 
+            // Handle gallery images
+            $galleryPaths = json_decode($request->input('existing_gallery_images', '[]'), true) ?? [];
+
+            // Delete removed images from storage
+            $oldGallery = $product->gallery_images ?? [];
+            foreach ($oldGallery as $oldPath) {
+                if (!in_array($oldPath, $galleryPaths)) {
+                    $this->imageService->delete($oldPath);
+                }
+            }
+
+            // Upload new gallery images
+            if ($request->hasFile('gallery_images')) {
+                foreach ($request->file('gallery_images') as $file) {
+                    $galleryPaths[] = $this->imageService->upload($file, 'products/gallery');
+                }
+            }
+
+            $data['gallery_images'] = $galleryPaths;
+
+            if ($request->hasFile('seo_image')) {
+                $this->imageService->delete($product->seo_image);
+                $data['seo_image'] = $this->imageService->upload($request->file('seo_image'), 'products');
+            } elseif ($request->input('remove_seo_image')) {
+                $this->imageService->delete($product->seo_image);
+                $data['seo_image'] = null;
+            }
+
             $product->update($data);
 
             // Auto-generate SKU if it was empty and is still empty after update
@@ -583,6 +623,14 @@ class AdminProductController extends Controller
 
             $this->imageService->delete($product->photo1);
             $this->imageService->delete($product->photo2);
+
+            if ($product->gallery_images) {
+                foreach ($product->gallery_images as $path) {
+                    $this->imageService->delete($path);
+                }
+            }
+
+            $this->imageService->delete($product->seo_image);
 
             $product->delete();
         });

@@ -38,6 +38,12 @@ class StoreProductRequest extends FormRequest
             'combo_items'     => 'nullable|json',
             'photo1'          => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo2'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'gallery_images'  => 'nullable|array|max:10',
+            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'seo_title'       => 'nullable|string|max:255',
+            'seo_description' => 'nullable|string|max:500',
+            'seo_keywords'    => 'nullable|string|max:500',
+            'seo_image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'variant_images'  => 'nullable|array',
             'variant_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];

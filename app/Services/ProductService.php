@@ -281,7 +281,8 @@ class ProductService
             'name', 'slug', 'description', 'short_description',
             'price', 'base_price', 'cost_price', 'stock',
             'category_id', 'brand_id', 'unit_id', 'status', 'type',
-            'photo1', 'photo2', 'sku', 'barcode', 'low_stock_alert',
+            'photo1', 'photo2', 'gallery_images', 'sku', 'barcode', 'low_stock_alert',
+            'seo_title', 'seo_description', 'seo_keywords', 'seo_image',
         ];
 
         // Type-specific allowed fields
@@ -729,6 +730,12 @@ class ProductService
                 }
             }
             $data['option_keys'] = array_values(array_unique($keys));
+
+            $names = [];
+            foreach ($data['option_keys'] as $key) {
+                $names[$key] = ucwords(str_replace('_', ' ', preg_replace('/^option(\d+)$/', 'Option $1', $key)));
+            }
+            $data['option_names'] = $names;
 
             $values = [];
             foreach ($data['option_keys'] as $key) {

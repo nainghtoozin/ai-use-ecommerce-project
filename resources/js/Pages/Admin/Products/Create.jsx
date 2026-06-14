@@ -29,6 +29,14 @@ export default function ProductCreate({ categories, units = [], brands = [], pro
         setPhoto1File,
         photo2File,
         setPhoto2File,
+        galleryFiles,
+        setGalleryFiles,
+        removedGalleryImages,
+        setRemovedGalleryImages,
+        seoImageFile,
+        setSeoImageFile,
+        removeSeoImage,
+        setRemoveSeoImage,
         errors,
         processing,
         submit,
@@ -69,6 +77,14 @@ export default function ProductCreate({ categories, units = [], brands = [], pro
                                 setPhoto1File={setPhoto1File}
                                 photo2File={photo2File}
                                 setPhoto2File={setPhoto2File}
+                                galleryFiles={galleryFiles}
+                                setGalleryFiles={setGalleryFiles}
+                                removedGalleryImages={removedGalleryImages}
+                                setRemovedGalleryImages={setRemovedGalleryImages}
+                                seoImageFile={seoImageFile}
+                                setSeoImageFile={setSeoImageFile}
+                                removeSeoImage={removeSeoImage}
+                                setRemoveSeoImage={setRemoveSeoImage}
                                 variants={variants}
                                 setVariants={setVariants}
                                 comboItems={comboItems}

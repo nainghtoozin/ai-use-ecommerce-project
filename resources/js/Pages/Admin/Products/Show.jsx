@@ -146,44 +146,39 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 <h3 className="text-sm font-semibold text-gray-900">Images</h3>
                             </div>
                             <div className="px-5 py-5">
-                                {(product.photo1_url || product.photo2_url) ? (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {product.photo1_url && (
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-2 font-medium">Featured Image</p>
-                                                <img
-                                                    src={product.photo1_url}
-                                                    alt={product.name}
-                                                    className="w-full h-48 object-cover rounded-lg border border-gray-200"
-                                                />
+                                <div>
+                                    {product.photo1_url ? (
+                                        <div className="mb-4">
+                                            <p className="text-xs text-gray-500 mb-2 font-medium">Featured Image</p>
+                                            <img
+                                                src={product.photo1_url}
+                                                alt={product.name}
+                                                className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 mb-4">
+                                            <Eye className="w-8 h-8 text-gray-300 mb-2" />
+                                            <p className="text-sm text-gray-400">No featured image</p>
+                                        </div>
+                                    )}
+
+                                    {(product.gallery_images_url || product.gallery_images)?.length > 0 && (
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-2 font-medium">Gallery Images ({product.gallery_images.length})</p>
+                                            <div className="grid grid-cols-4 gap-3">
+                                                {(product.gallery_images_url || product.gallery_images).map((url, idx) => (
+                                                    <img
+                                                        key={idx}
+                                                        src={url}
+                                                        alt={`Gallery ${idx + 1}`}
+                                                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                                    />
+                                                ))}
                                             </div>
-                                        )}
-                                        {product.photo2_url ? (
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-2 font-medium">Gallery Image</p>
-                                                <img
-                                                    src={product.photo2_url}
-                                                    alt={product.name}
-                                                    className="w-full h-48 object-cover rounded-lg border border-gray-200"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50">
-                                                <Eye className="w-8 h-8 text-gray-300 mb-2" />
-                                                <p className="text-sm text-gray-400">No gallery image</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {[0, 1].map(i => (
-                                            <div key={i} className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50">
-                                                <Eye className="w-8 h-8 text-gray-300 mb-2" />
-                                                <p className="text-sm text-gray-400">{i === 0 ? 'No featured image' : 'No gallery image'}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -658,7 +653,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         </div>
 
                         {/* SEO */}
-                        {(product.meta_title || product.meta_description) && (
+                        {(product.seo_title || product.seo_description || product.seo_keywords || product.seo_image_url) && (
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="px-4 py-3 border-b border-gray-100">
                                     <div className="flex items-center gap-2">
@@ -667,16 +662,28 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     </div>
                                 </div>
                                 <div className="px-4 py-4 space-y-3">
-                                    {product.meta_title && (
+                                    {product.seo_title && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-1">Meta Title</p>
-                                            <p className="text-sm text-gray-700">{product.meta_title}</p>
+                                            <p className="text-xs text-gray-500 mb-1">SEO Title</p>
+                                            <p className="text-sm text-gray-700">{product.seo_title}</p>
                                         </div>
                                     )}
-                                    {product.meta_description && (
+                                    {product.seo_description && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-1">Meta Description</p>
-                                            <p className="text-sm text-gray-700">{product.meta_description}</p>
+                                            <p className="text-xs text-gray-500 mb-1">SEO Description</p>
+                                            <p className="text-sm text-gray-700">{product.seo_description}</p>
+                                        </div>
+                                    )}
+                                    {product.seo_keywords && (
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">SEO Keywords</p>
+                                            <p className="text-sm text-gray-700">{product.seo_keywords}</p>
+                                        </div>
+                                    )}
+                                    {product.seo_image_url && (
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">SEO Image</p>
+                                            <img src={product.seo_image_url} alt="SEO" className="w-24 h-24 rounded-lg object-cover border border-gray-200 mt-1" />
                                         </div>
                                     )}
                                 </div>

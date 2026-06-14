@@ -24,11 +24,12 @@ class Product extends Model
     protected $fillable = [
         'name', 'slug', 'sku', 'barcode', 'short_description', 'description',
         'price', 'base_price', 'cost_price', 'category_id', 'brand_id', 'unit_id',
-        'stock', 'low_stock_alert', 'photo1', 'photo2', 'status', 'type',
+        'stock', 'low_stock_alert', 'photo1', 'photo2', 'gallery_images', 'seo_title', 'seo_description', 'seo_keywords', 'seo_image', 'status', 'type',
     ];
 
     protected $casts = [
         'price' => 'float',
+        'gallery_images' => 'array',
     ];
 
     protected $attributes = [
@@ -36,7 +37,7 @@ class Product extends Model
         'type' => ProductType::SINGLE,
     ];
 
-    protected $appends = ['photo1_url', 'photo2_url', 'has_orders', 'is_variable', 'is_combo', 'is_single', 'effective_stock', 'total_variant_stock', 'variant_count', 'inventory_summary', 'sku_display', 'stock_status', 'price_range', 'display_price_label', 'display_price_summary'];
+    protected $appends = ['photo1_url', 'photo2_url', 'gallery_images_url', 'seo_image_url', 'has_orders', 'is_variable', 'is_combo', 'is_single', 'effective_stock', 'total_variant_stock', 'variant_count', 'inventory_summary', 'sku_display', 'stock_status', 'price_range', 'display_price_label', 'display_price_summary'];
 
     /* ── Scopes ── */
 
@@ -793,6 +794,24 @@ class Product extends Model
         }
 
         return asset('storage/' . $this->photo2);
+    }
+
+    public function getGalleryImagesUrlAttribute(): array
+    {
+        $images = $this->gallery_images ?? [];
+
+        return array_map(function ($path) {
+            if (empty($path)) return null;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+            return asset('storage/' . $path);
+        }, $images);
+    }
+
+    public function getSeoImageUrlAttribute(): ?string
+    {
+        if (empty($this->seo_image)) return null;
+        if (str_starts_with($this->seo_image, 'http://') || str_starts_with($this->seo_image, 'https://')) return $this->seo_image;
+        return asset('storage/' . $this->seo_image);
     }
 
     public function getHasOrdersAttribute(): bool

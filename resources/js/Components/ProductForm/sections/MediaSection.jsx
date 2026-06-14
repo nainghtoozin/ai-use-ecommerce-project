@@ -1,50 +1,42 @@
 import { useState, useCallback, useRef } from 'react';
 import MediaDropzone from '../media/MediaDropzone';
 import ImageThumbnail from '../media/ImageThumbnail';
+import getImagePreviewUrl from '@/Utils/getImagePreviewUrl';
 
 export default function MediaSection({
     errors,
     photo1File,
     setPhoto1File,
-    photo2File,
-    setPhoto2File,
     existingPhoto1Url = null,
-    existingPhoto2Url = null,
+    existingGalleryImages = [],
+    galleryFiles,
+    setGalleryFiles,
+    removedGalleryImages,
+    setRemovedGalleryImages,
 }) {
-    const [galleryFiles, setGalleryFiles] = useState([]);
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const dragItemRef = useRef(null);
 
     const MAX_IMAGES = 10;
-    const totalImages = [photo1File, photo2File, ...galleryFiles].filter(Boolean).length;
-    const hasExisting2 = existingPhoto2Url && !photo2File;
 
-    const handleSecondaryChange = useCallback((file) => {
-        setPhoto2File(file);
-    }, [setPhoto2File]);
+    const existingCount = existingGalleryImages.filter(
+        (_, idx) => !removedGalleryImages.includes(existingGalleryImages[idx])
+    ).length;
 
-    const handleSecondaryRemove = useCallback(() => {
-        setPhoto2File('remove');
-    }, [setPhoto2File]);
+    const totalImages = existingCount + galleryFiles.length;
 
     const handleGalleryAdd = useCallback((files) => {
         setGalleryFiles((prev) => [...prev, ...files]);
-    }, []);
+    }, [setGalleryFiles]);
 
-    const handleGalleryRemove = useCallback((index) => {
-        const removed = galleryFiles[index];
+    const handleNewGalleryRemove = useCallback((index) => {
         setGalleryFiles((prev) => prev.filter((_, i) => i !== index));
-        if (removed && photo1File === removed) {
-            setPhoto1File(null);
-        }
-    }, [galleryFiles, photo1File, setPhoto1File]);
+    }, [setGalleryFiles]);
 
-    const handleSetFeatured = useCallback((index) => {
-        const file = galleryFiles[index];
-        if (file) {
-            setPhoto1File(file);
-        }
-    }, [galleryFiles, setPhoto1File]);
+    const handleExistingRemove = useCallback((index) => {
+        const path = existingGalleryImages[index];
+        setRemovedGalleryImages((prev) => [...prev, path]);
+    }, [existingGalleryImages, setRemovedGalleryImages]);
 
     const handleDragStart = (index) => {
         dragItemRef.current = index;
@@ -82,22 +74,20 @@ export default function MediaSection({
                 <div>
                     <h4 className="text-sm font-semibold text-gray-900">
                         Gallery Images
-                        {galleryFiles.length > 0 && (
+                        {totalImages > 0 && (
                             <span className="ml-1.5 text-xs font-normal text-gray-400">
-                                ({galleryFiles.length}/{MAX_IMAGES})
+                                ({totalImages}/{MAX_IMAGES})
                             </span>
                         )}
                     </h4>
                     <p className="text-xs text-gray-500 mt-0.5">Maximum 10 images</p>
                 </div>
-                {galleryFiles.length > 0 && (
+                {totalImages > 0 && (
                     <button
                         type="button"
                         onClick={() => {
                             setGalleryFiles([]);
-                            if (photo1File && galleryFiles.includes(photo1File)) {
-                                setPhoto1File(null);
-                            }
+                            setRemovedGalleryImages([...existingGalleryImages]);
                         }}
                         className="text-xs text-red-600 hover:text-red-700 font-medium"
                     >
@@ -106,76 +96,81 @@ export default function MediaSection({
                 )}
             </div>
 
-            {hasExisting2 && (
-                <div className="flex gap-3 mb-4">
-                    <div className="w-24 h-24 flex-shrink-0">
-                        <img
-                            src={existingPhoto2Url}
-                            alt="Gallery"
-                            className="w-24 h-24 rounded-lg object-cover border border-gray-200"
-                        />
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <p className="text-sm font-medium text-gray-700">Current gallery image</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Uploaded previously</p>
-                        <div className="mt-2 flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const input = document.createElement('input');
-                                    input.type = 'file';
-                                    input.accept = 'image/*';
-                                    input.onchange = (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) handleSecondaryChange(file);
-                                    };
-                                    input.click();
-                                }}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+            {/* Existing Gallery Images */}
+            {existingGalleryImages.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                    {existingGalleryImages.map((path, index) => {
+                        const isRemoved = removedGalleryImages.includes(path);
+                        return (
+                            <div
+                                key={index}
+                                className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-150 ${
+                                    isRemoved
+                                        ? 'border-red-300 opacity-50'
+                                        : 'border-gray-200'
+                                }`}
                             >
-                                Replace
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSecondaryRemove}
-                                className="text-xs text-red-600 hover:text-red-700 font-medium"
-                            >
-                                Remove
-                            </button>
-                        </div>
-                    </div>
+                                <img
+                                    src={getImagePreviewUrl(path)}
+                                    alt={`Gallery ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                />
+                                {!isRemoved && (
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExistingRemove(index)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 transition-colors shadow-sm"
+                                            title="Remove image"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
+                                {isRemoved && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className="text-xs font-medium text-red-600 bg-white/90 px-2 py-1 rounded-md">Removed</span>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-                {galleryFiles.map((file, index) => (
-                    <div
-                        key={index}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={() => handleDrop(index)}
-                        className={`transition-all duration-150 ${dragOverIndex === index ? 'scale-95 opacity-50' : ''}`}
-                    >
-                        <ImageThumbnail
-                            file={file}
-                            index={index}
-                            onRemove={handleGalleryRemove}
-                            isFeatured={photo1File === file}
-                            canSetFeatured={true}
-                            onSetFeatured={handleSetFeatured}
-                        />
-                    </div>
-                ))}
-            </div>
+            {/* New Gallery Uploads */}
+            {galleryFiles.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                    {galleryFiles.map((file, index) => (
+                        <div
+                            key={index}
+                            draggable
+                            onDragStart={() => handleDragStart(index)}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={() => handleDrop(index)}
+                            className={`transition-all duration-150 ${dragOverIndex === index ? 'scale-95 opacity-50' : ''}`}
+                        >
+                            <ImageThumbnail
+                                file={file}
+                                index={index}
+                                onRemove={handleNewGalleryRemove}
+                                isFeatured={false}
+                                canSetFeatured={false}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {totalImages < MAX_IMAGES && (
                 <MediaDropzone
                     onFilesAdd={handleGalleryAdd}
                     maxFiles={MAX_IMAGES}
                     existingCount={totalImages}
-                    error={errors.photo2}
+                    error={errors.gallery_images}
                 />
             )}
 

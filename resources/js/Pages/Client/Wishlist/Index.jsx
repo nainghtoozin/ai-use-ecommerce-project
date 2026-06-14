@@ -67,6 +67,11 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
 
             <div className="p-3 flex flex-col gap-0">
                 <Link href={`/client/product/${product.id}`}>
+                    {product.category?.name && (
+                        <span className="inline-block max-w-[8rem] truncate px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded-full mb-1">
+                            {product.category.name}
+                        </span>
+                    )}
                     <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
                         {product.name}
                     </h3>

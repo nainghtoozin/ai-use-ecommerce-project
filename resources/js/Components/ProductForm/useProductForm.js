@@ -32,7 +32,13 @@ export default function useProductForm({ product = null, productType = 'single' 
         product_type: product?.type || productType,
         meta_title: product?.meta_title || '',
         meta_description: product?.meta_description || '',
+        seo_title: product?.seo_title || '',
+        seo_description: product?.seo_description || '',
+        seo_keywords: product?.seo_keywords || '',
+        seo_image: product?.seo_image || '',
         tags: product?.tags || '',
+        gallery_images: product?.gallery_images || [],
+        gallery_images_url: product?.gallery_images_url || [],
         existing_combo_items: product?.combo_items || [],
     });
 
@@ -67,6 +73,10 @@ export default function useProductForm({ product = null, productType = 'single' 
 
     const [photo1File, setPhoto1File] = useState(null);
     const [photo2File, setPhoto2File] = useState(null);
+    const [galleryFiles, setGalleryFiles] = useState([]);
+    const [removedGalleryImages, setRemovedGalleryImages] = useState([]);
+    const [seoImageFile, setSeoImageFile] = useState(null);
+    const [removeSeoImage, setRemoveSeoImage] = useState(false);
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
 
@@ -138,8 +148,30 @@ export default function useProductForm({ product = null, productType = 'single' 
         if (photo1File) form.append('photo1', photo1File);
         if (photo2File) form.append('photo2', photo2File);
 
+        form.append('seo_title', formData.seo_title || '');
+        form.append('seo_description', formData.seo_description || '');
+        form.append('seo_keywords', formData.seo_keywords || '');
+
+        if (seoImageFile) {
+            form.append('seo_image', seoImageFile);
+        }
+
+        if (removeSeoImage) {
+            form.append('remove_seo_image', '1');
+        }
+
+        // Gallery images
+        const existingToKeep = (formData.gallery_images || []).filter(
+            (path) => !removedGalleryImages.includes(path)
+        );
+        form.append('existing_gallery_images', JSON.stringify(existingToKeep));
+
+        galleryFiles.forEach((file) => {
+            form.append('gallery_images[]', file);
+        });
+
         return form;
-    }, [formData, variants, comboItems, photo1File, photo2File]);
+    }, [formData, variants, comboItems, photo1File, photo2File, galleryFiles, removedGalleryImages, seoImageFile, removeSeoImage]);
 
     const submit = useCallback((onSuccess) => {
         setProcessing(true);
@@ -191,6 +223,14 @@ export default function useProductForm({ product = null, productType = 'single' 
         setPhoto1File,
         photo2File,
         setPhoto2File,
+        galleryFiles,
+        setGalleryFiles,
+        removedGalleryImages,
+        setRemovedGalleryImages,
+        seoImageFile,
+        setSeoImageFile,
+        removeSeoImage,
+        setRemoveSeoImage,
         errors,
         processing,
         submit,

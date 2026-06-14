@@ -341,7 +341,7 @@ class CartController extends Controller
                 'name' => $product->name,
                 'variant_name' => $variantName,
                 'price' => (float) $price,
-                'photo1' => $product->photo1,
+                'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
             ];
         }

@@ -20,14 +20,15 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
         return null;
     }, [selectedVariant]);
 
-    const displayStock = useMemo(() => {
-        if (selectedVariant) {
-            const stock = Number(selectedVariant.stock ?? 0);
-            if (stock <= 0) return 'Out of Stock';
-            if (stock <= (selectedVariant.low_stock_threshold ?? 5)) return `Only ${stock} left`;
-            return `${stock} in stock`;
-        }
-        return null;
+    function getStatusLabel(stock, threshold) {
+        if (stock <= 0) return { label: 'Out of Stock', color: 'text-red-500' };
+        if (stock <= threshold) return { label: 'Low Stock', color: 'text-orange-500' };
+        return { label: 'In Stock', color: 'text-green-600' };
+    }
+
+    const selectedStatus = useMemo(() => {
+        if (!selectedVariant) return null;
+        return getStatusLabel(Number(selectedVariant.stock ?? 0), selectedVariant.low_stock_threshold ?? 5);
     }, [selectedVariant]);
 
     const maxQuantity = selectedVariant ? Number(selectedVariant.stock ?? 0) : 1;
@@ -120,8 +121,8 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                         <span className="text-sm font-semibold text-gray-900 block">
                                                             {v.price != null ? Number(v.price).toLocaleString() : '—'} MMK
                                                         </span>
-                                                        <span className={`text-xs ${inStock ? 'text-green-600' : 'text-red-500'}`}>
-                                                            {inStock ? `${Number(v.stock)} in stock` : 'Out of stock'}
+                                                        <span className={`text-[10px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
+                                                            {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'Low Stock' : 'In Stock') : 'Out of Stock'}
                                                         </span>
                                                     </div>
                                                 </label>
@@ -144,8 +145,8 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-gray-500">Stock</p>
-                                    <p className={`text-sm font-medium ${Number(selectedVariant.stock ?? 0) > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {displayStock}
+                                    <p className={`text-sm font-medium ${selectedStatus.color}`}>
+                                        {selectedStatus.label}
                                     </p>
                                 </div>
                             </div>

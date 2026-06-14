@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import CollapseCard from '@/Components/CollapseCard';
 import BasicInfoSection from './sections/BasicInfoSection';
-import PricingSection from './sections/PricingSection';
-import InventorySection from './sections/InventorySection';
 import DescriptionSection from './sections/DescriptionSection';
 import MediaSection from './sections/MediaSection';
 import SEOSection from './sections/SEOSection';
@@ -19,6 +17,14 @@ export default function ProductFormMain({
     setPhoto1File,
     photo2File,
     setPhoto2File,
+    galleryFiles,
+    setGalleryFiles,
+    removedGalleryImages,
+    setRemovedGalleryImages,
+    seoImageFile,
+    setSeoImageFile,
+    removeSeoImage,
+    setRemoveSeoImage,
     variants,
     setVariants,
     existingPhoto1Url,
@@ -31,7 +37,6 @@ export default function ProductFormMain({
     const [descOpen, setDescOpen] = useState(false);
     const [seoOpen, setSeoOpen] = useState(false);
 
-    const isSingle = data.product_type === 'single';
     const isVariable = data.product_type === 'variable';
     const isCombo = data.product_type === 'combo';
 
@@ -42,7 +47,7 @@ export default function ProductFormMain({
 
     const estimatedCost = comboItemsWithSubtotals.reduce((sum, item) => sum + (item.subtotal || 0), 0);
     const descCharCount = (data.description || '').length;
-    const hasSeoData = data.meta_title || data.meta_description;
+    const hasSeoData = data.seo_title || data.seo_description || data.seo_keywords;
 
     return (
         <div className="space-y-6">
@@ -54,21 +59,6 @@ export default function ProductFormMain({
                 setPhoto1File={setPhoto1File}
                 existingPhoto1Url={existingPhoto1Url}
             />
-
-            {isSingle && (
-                <>
-                    <PricingSection
-                        data={data}
-                        setData={setData}
-                        errors={errors}
-                    />
-                    <InventorySection
-                        data={data}
-                        setData={setData}
-                        errors={errors}
-                    />
-                </>
-            )}
 
             {isVariable && (
                 <VariantSection
@@ -113,10 +103,12 @@ export default function ProductFormMain({
                     errors={errors}
                     photo1File={photo1File}
                     setPhoto1File={setPhoto1File}
-                    photo2File={photo2File}
-                    setPhoto2File={setPhoto2File}
                     existingPhoto1Url={existingPhoto1Url}
-                    existingPhoto2Url={existingPhoto2Url}
+                    existingGalleryImages={data.gallery_images || []}
+                    galleryFiles={galleryFiles}
+                    setGalleryFiles={setGalleryFiles}
+                    removedGalleryImages={removedGalleryImages}
+                    setRemovedGalleryImages={setRemovedGalleryImages}
                 />
             </CollapseCard>
 
@@ -145,6 +137,11 @@ export default function ProductFormMain({
                     data={data}
                     setData={setData}
                     errors={errors}
+                    seoImageFile={seoImageFile}
+                    setSeoImageFile={setSeoImageFile}
+                    removeSeoImage={removeSeoImage}
+                    setRemoveSeoImage={setRemoveSeoImage}
+                    existingSeoImageUrl={data.seo_image || null}
                 />
             </CollapseCard>
         </div>
