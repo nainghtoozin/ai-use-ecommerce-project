@@ -172,8 +172,8 @@ export default function ProductShow({ product, promotion, detail }) {
                 {product.seo_keywords && <meta name="keywords" content={product.seo_keywords} />}
                 <meta property="og:title" content={product.seo_title || product.name} />
                 <meta property="og:description" content={product.seo_description || product.short_description || ''} />
-                {product.seo_image && <meta property="og:image" content={assetUrl(product.seo_image)} />}
-                {product.seo_image && <meta name="twitter:image" content={assetUrl(product.seo_image)} />}
+                <meta property="og:image" content={assetUrl(product.seo_image || product.photo1_url)} />
+                <meta name="twitter:image" content={assetUrl(product.seo_image || product.photo1_url)} />
             </Head>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">

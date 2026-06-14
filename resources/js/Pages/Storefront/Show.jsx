@@ -31,6 +31,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
     const variants = detail?.variants ?? [];
     const optionKeys = detail?.option_keys ?? [];
     const optionValues = detail?.option_values ?? {};
+    const optionNames = detail?.option_names ?? {};
 
     const images = [product.photo1, ...(product.gallery_images_url || product.gallery_images || [])].filter(Boolean);
 
@@ -189,8 +190,8 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                 {product.seo_keywords && <meta name="keywords" content={product.seo_keywords} />}
                 <meta property="og:title" content={`${product.seo_title || product.name} - ${tenant.name}`} />
                 <meta property="og:description" content={product.seo_description || product.short_description || ''} />
-                {product.seo_image && <meta property="og:image" content={assetUrl(product.seo_image)} />}
-                {product.seo_image && <meta name="twitter:image" content={assetUrl(product.seo_image)} />}
+                <meta property="og:image" content={assetUrl(product.seo_image || product.photo1_url)} />
+                <meta name="twitter:image" content={assetUrl(product.seo_image || product.photo1_url)} />
             </Head>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-24 lg:pb-8">
@@ -263,58 +264,105 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                     </div>
 
                     <div className="flex flex-col">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {product.category && (
-                                <Link
-                                    href={`/store/${tenant.slug}/products?category=${product.category.id}`}
-                                    className="inline-flex items-center px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold hover:bg-indigo-100 transition-colors border border-indigo-200"
-                                >
-                                    {product.category.name}
-                                </Link>
-                            )}
-                            {renderStockBadge()}
-                        </div>
+                        {/* Product Information Card */}
+                        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                                {product.name}
+                            </h1>
 
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                            {product.name}
-                        </h1>
-
-                        {product.brand && (
-                            <p className="text-sm text-gray-500 mt-1.5 flex items-center gap-1">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                {product.brand.name}
-                            </p>
-                        )}
-
-                        <div className="mt-4 sm:mt-5 flex items-baseline gap-3 flex-wrap">
-                            {isVariable && !allOptionsSelected ? (
-                                <span className="text-2xl sm:text-3xl text-gray-400 font-medium">Select options</span>
-                            ) : (
-                                <>
-                                    <span className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-                                        {priceDisplay}{currency}
-                                    </span>
-                                    {originalPrice > 0 && originalPrice > currentPrice && (
-                                        <>
-                                            <span className="text-lg sm:text-xl text-gray-400 line-through">
-                                                {Number(originalPrice).toLocaleString()}{currency}
-                                            </span>
-                                            <span className="px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs sm:text-sm font-bold">
-                                                Save {discountPercent}%
-                                            </span>
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        {product.description && (
-                            <div className="mt-5">
-                                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                                    {product.description}
-                                </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-full">
+                                    {product.category?.name || 'Uncategorized'}
+                                </span>
+                                <span className="text-sm text-gray-400">{product.brand?.name || 'Generic Brand'}</span>
                             </div>
-                        )}
+
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-500">
+                                    Type: <span className="font-semibold text-gray-700">{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
+                                </span>
+                                {!isVariable && (
+                                    <span className="text-xs text-gray-500">
+                                        SKU: <span className="font-medium text-gray-700">{product.sku || 'SKU not available'}</span>
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-100">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        {isVariable && !allOptionsSelected ? (
+                                            <span className="text-xl sm:text-2xl text-gray-300 font-medium">Select options</span>
+                                        ) : (
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                                                    {priceDisplay}{currency}
+                                                </span>
+                                                {originalPrice > 0 && originalPrice > currentPrice && (
+                                                    <>
+                                                        <span className="text-base sm:text-lg text-gray-400 line-through">
+                                                            {Number(originalPrice).toLocaleString()}{currency}
+                                                        </span>
+                                                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
+                                                            Save {discountPercent}%
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        {renderStockBadge()}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-gray-500 pt-1 border-t border-gray-100">
+                                Unit: <span className="font-medium text-gray-700">{product.unit?.name || 'Standard Unit'}</span>
+                            </p>
+                        </div>
+
+                        {/* Short Description */}
+                        <div className="mt-4">
+                            <p className="text-sm text-gray-500 leading-relaxed line-clamp-3">
+                                {product.short_description || 'No short description available for this product.'}
+                            </p>
+                        </div>
+
+                        {/* Product Specifications Card */}
+                        <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4 space-y-2.5">
+                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Product Specifications</h3>
+                            <div className="space-y-1.5 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Category</span>
+                                    <span className="font-medium text-gray-800 text-right">{product.category?.name || 'Uncategorized'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Brand</span>
+                                    <span className="font-medium text-gray-800 text-right">{product.brand?.name || 'Generic Brand'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">SKU</span>
+                                    <span className="font-medium text-gray-800 text-right">{product.sku || 'SKU not available'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Unit</span>
+                                    <span className="font-medium text-gray-800 text-right">{product.unit?.name || 'Standard Unit'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Type</span>
+                                    <span className="font-medium text-gray-800 text-right">{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Description Section */}
+                        <div className="mt-6">
+                            <h2 className="text-base font-bold text-gray-900 mb-2">Product Description</h2>
+                            <div className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+                                {product.description || 'Detailed product information will be available soon.'}
+                            </div>
+                        </div>
 
                         <div className="mt-6 border-t border-gray-200 pt-6 space-y-6">
                             {isVariable && optionKeys.length > 0 && (
@@ -322,7 +370,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                     {optionKeys.map((key, keyIdx) => (
                                         <div key={key}>
                                             <label className="text-sm font-semibold text-gray-900 capitalize block mb-2.5">
-                                                {key}
+                                                {optionNames[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                                             </label>
                                             <div className="flex flex-wrap gap-2">
                                                 {(optionValues[key] || []).map((value) => {
