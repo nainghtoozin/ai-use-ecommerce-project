@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Plus, Minus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, X, Camera } from 'lucide-react';
 
 export default function VariantTable({ options, variants, setVariants, errors = {} }) {
     const [expandedId, setExpandedId] = useState(null);
@@ -35,6 +35,10 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                 compare_price: existing?.compare_price || '',
                 stock: existing?.stock ?? 0,
                 options: combo,
+                imageFile: existing?.imageFile || null,
+                existingImage: existing?.existingImage || null,
+                existingImageUrl: existing?.existingImageUrl || null,
+                imageRemoved: existing?.imageRemoved || false,
             };
         });
     };
@@ -129,6 +133,7 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Variant</th>
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-14">Image</th>
                                 <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-32">
                                     <div className="flex items-center gap-1">
                                         SKU
@@ -211,6 +216,74 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 </div>
                                             </div>
                                         </td>
+
+                                        <td className="px-3 py-3 align-middle">
+                                            <div className="relative w-10 h-10">
+                                                <input
+                                                    type="file"
+                                                    accept="image/jpeg,image/png,image/webp"
+                                                    className="hidden"
+                                                    id={`variant-image-${variant.id}`}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const updated = [...variants];
+                                                            updated[index] = {
+                                                                ...updated[index],
+                                                                imageFile: file,
+                                                                imageRemoved: false,
+                                                            };
+                                                            setVariants(updated);
+                                                        }
+                                                        e.target.value = '';
+                                                    }}
+                                                />
+                                                <label
+                                                    htmlFor={`variant-image-${variant.id}`}
+                                                    className={`block w-10 h-10 rounded-md border-2 border-dashed cursor-pointer overflow-hidden ${
+                                                        variant.imageFile || variant.existingImageUrl
+                                                            ? 'border-transparent'
+                                                            : 'border-gray-300 hover:border-violet-400'
+                                                    }`}
+                                                >
+                                                    {variant.imageFile ? (
+                                                        <img
+                                                            src={URL.createObjectURL(variant.imageFile)}
+                                                            alt="Preview"
+                                                            className="w-full h-full object-cover rounded-md"
+                                                        />
+                                                    ) : variant.existingImageUrl && !variant.imageRemoved ? (
+                                                        <img
+                                                            src={variant.existingImageUrl}
+                                                            alt="Variant"
+                                                            className="w-full h-full object-cover rounded-md"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gray-50 hover:bg-violet-50 transition-colors rounded-md">
+                                                            <Camera className="w-4 h-4 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                </label>
+                                                {(variant.imageFile || (variant.existingImageUrl && !variant.imageRemoved)) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const updated = [...variants];
+                                                            updated[index] = {
+                                                                ...updated[index],
+                                                                imageFile: null,
+                                                                imageRemoved: updated[index].existingImageUrl ? true : false,
+                                                            };
+                                                            setVariants(updated);
+                                                        }}
+                                                        className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                                                    >
+                                                        <X className="w-2.5 h-2.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+
                                         <td className="px-3 py-3">
                                             <input
                                                 type="text"

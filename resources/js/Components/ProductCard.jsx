@@ -192,11 +192,14 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     );
 });
 
-const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId = null }) {
+const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVariant, addingId = null }) {
     const { props } = usePage();
-    const { auth, website_info, wishlisted_ids = [] } = props;
+    const { auth, website_info, wishlisted_ids = [], tenant } = props;
     const wishlistEnabled = website_info?.enable_wishlist !== false;
     const { toggleWishlist } = useWishlist();
+    const productUrl = tenant?.slug
+        ? `/store/${tenant.slug}/products/${product.id}`
+        : `/client/product/${product.id}`;
 
     const [imageLoaded, setImageLoaded] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
@@ -226,6 +229,13 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
         e.stopPropagation();
         if (addingId === product.id) return;
 
+        if (product.is_variable) {
+            if (onSelectVariant) {
+                onSelectVariant(product);
+            }
+            return;
+        }
+
         setIsAdding(true);
         if (onAddToCart) {
             await onAddToCart(product.id);
@@ -238,7 +248,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
         e.stopPropagation();
 
         if (!auth?.user) {
-            router.visit('/login');
+            router.visit(tenant?.slug ? `/store/${tenant.slug}/login` : '/login');
             return;
         }
 
@@ -255,7 +265,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 20px 40px rgba(var(--theme-color-rgb, 59, 130, 246), 0.12)'; e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; }}
              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.12)'; }}
         >
-            <Link href={`/client/product/${product.id}`} className="block">
+            <Link href={productUrl} className="block">
                 <div className="relative aspect-square bg-gray-100 overflow-hidden">
                     {product.photo1_url ? (
                         <>
@@ -338,7 +348,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
             </Link>
 
             <div className="p-4 flex-1 flex flex-col">
-                <Link href={`/client/product/${product.id}`} className="flex-1">
+                <Link href={productUrl} className="flex-1">
                     {product.category?.name && (
                         <p className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
                             {product.category.name}
@@ -391,7 +401,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, addingId =
                         </button>
                     )}
                     <Link
-                        href={`/client/product/${product.id}`}
+                        href={productUrl}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl text-sm font-semibold transition-all duration-200"
                         style={{ borderColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.2)', color: 'var(--theme-color, #3B82F6)' }}
                         onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; e.currentTarget.style.backgroundColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.06)'; }}

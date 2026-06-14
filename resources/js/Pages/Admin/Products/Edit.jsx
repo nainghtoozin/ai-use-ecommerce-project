@@ -87,6 +87,7 @@ export default function ProductEdit({ product, categories, units = [], brands = 
                                 data={formData}
                                 photo1File={photo1File}
                                 existingPhoto1Url={existingPhoto1Url}
+                                variants={variants}
                             />
                         </div>
                     </div>

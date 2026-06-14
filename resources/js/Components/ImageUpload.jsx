@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Upload, X, Image } from 'lucide-react';
 import getImagePreviewUrl from '@/utils/getImagePreviewUrl';
 
 export default function ImageUpload({
@@ -9,19 +10,11 @@ export default function ImageUpload({
     error = null,
     accept = 'image/*',
     maxSize = 2,
-    previewSize = 'md',
 }) {
     const [isDragging, setIsDragging] = useState(false);
     const inputRef = useRef(null);
 
     const previewUrl = getImagePreviewUrl(value);
-
-    const previewSizes = {
-        sm: 'w-24 h-24',
-        md: 'w-40 h-40',
-        lg: 'w-64 h-64',
-        full: 'w-full h-64',
-    };
 
     useEffect(() => {
         return () => {
@@ -90,36 +83,34 @@ export default function ImageUpload({
                 </label>
             )}
 
-            <div className="flex items-start gap-4">
-                <div className={`${previewSizes[previewSize]} flex-shrink-0 relative group`}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Preview */}
+                <div className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-50 group">
                     {previewUrl ? (
-                        <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                        <>
                             <img
                                 src={previewUrl}
-                                alt={label || 'Preview'}
+                                alt="Preview"
                                 className="w-full h-full object-cover"
                             />
                             <button
                                 type="button"
                                 onClick={handleRemove}
-                                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-600 hover:text-red-600 rounded-full w-8 h-8 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all"
                             >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <X className="w-4 h-4" />
                             </button>
-                        </div>
+                        </>
                     ) : (
-                        <div className={`w-full h-full ${previewSizes[previewSize]} rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center`}>
-                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                            <Image className="w-12 h-12 mb-2" />
+                            <span className="text-sm">No image</span>
                         </div>
                     )}
                 </div>
 
-                <div className="flex-1 min-w-0">
+                {/* Upload Area */}
+                <div className="flex flex-col">
                     <input
                         ref={inputRef}
                         type="file"
@@ -135,33 +126,31 @@ export default function ImageUpload({
                         onDrop={handleDrop}
                         onClick={handleClick}
                         className={`
-                            relative border-2 border-dashed rounded-lg p-4 cursor-pointer transition-colors
+                            flex-1 min-h-[200px] border-2 border-dashed rounded-xl p-6
+                            flex flex-col items-center justify-center cursor-pointer transition-all
                             ${isDragging
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                                ? 'border-blue-500 bg-blue-50 scale-[1.02]'
+                                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/50'
                             }
                             ${error ? 'border-red-300 bg-red-50' : ''}
                         `}
                     >
-                        <div className="text-center">
-                            <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3" />
-                            </svg>
-                            <p className="mt-1 text-sm text-gray-600">
-                                <span className="font-medium text-blue-600 hover:text-blue-500">
-                                    Click to upload
-                                </span>
-                                {' '}or drag and drop
-                            </p>
-                            <p className="mt-1 text-xs text-gray-400">
-                                PNG, JPG, WEBP up to {maxSize}MB
-                            </p>
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-colors ${isDragging ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                            <Upload className={`w-6 h-6 ${isDragging ? 'text-blue-600' : 'text-gray-400'}`} />
                         </div>
+                        <p className="text-sm text-gray-700 font-medium">
+                            <span className="text-blue-600 hover:text-blue-500">
+                                Click to upload
+                            </span>
+                            {' '}or drag and drop
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                            PNG, JPG, WEBP up to {maxSize}MB
+                        </p>
                     </div>
 
                     {error && (
-                        <p className="mt-1 text-sm text-red-600">{error}</p>
+                        <p className="mt-2 text-sm text-red-600">{error}</p>
                     )}
                 </div>
             </div>

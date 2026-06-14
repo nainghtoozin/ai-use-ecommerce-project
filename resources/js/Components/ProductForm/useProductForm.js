@@ -54,6 +54,10 @@ export default function useProductForm({ product = null, productType = 'single' 
                       stock: v.stock ?? 0,
                       options,
                       status: v.status || 'active',
+                      imageFile: null,
+                      existingImage: v.image || null,
+                      existingImageUrl: v.image_url || null,
+                      imageRemoved: false,
                   };
               })
             : []
@@ -103,14 +107,21 @@ export default function useProductForm({ product = null, productType = 'single' 
         form.append('type', formData.product_type || 'single');
 
         if (formData.product_type === 'variable') {
-            const sanitizedVariants = variants.map((v) => ({
-                ...(v.id && typeof v.id === 'number' ? { id: v.id } : {}),
-                sku: v.sku || '',
-                price: v.price !== '' ? v.price : null,
-                compare_price: v.compare_price !== '' ? v.compare_price : null,
-                stock: parseInt(v.stock) || 0,
-                options: v.options || [],
-            }));
+            const sanitizedVariants = variants.map((v, index) => {
+                if (v.imageFile) {
+                    form.append(`variant_images[${index}]`, v.imageFile);
+                }
+                return {
+                    ...(v.id && typeof v.id === 'number' ? { id: v.id } : {}),
+                    sku: v.sku || '',
+                    price: v.price !== '' ? v.price : null,
+                    compare_price: v.compare_price !== '' ? v.compare_price : null,
+                    stock: parseInt(v.stock) || 0,
+                    options: v.options || [],
+                    existing_image: v.imageFile ? null : (v.imageRemoved ? null : (v.existingImage || null)),
+                    image_removed: v.imageRemoved || false,
+                };
+            });
             form.append('variants', JSON.stringify(sanitizedVariants));
         }
 

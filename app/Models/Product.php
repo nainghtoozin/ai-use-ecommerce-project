@@ -36,7 +36,7 @@ class Product extends Model
         'type' => ProductType::SINGLE,
     ];
 
-    protected $appends = ['photo1_url', 'photo2_url', 'has_orders', 'is_variable', 'is_combo', 'is_single', 'effective_stock', 'variant_count', 'inventory_summary', 'sku_display', 'stock_status', 'price_range', 'display_price_label', 'display_price_summary'];
+    protected $appends = ['photo1_url', 'photo2_url', 'has_orders', 'is_variable', 'is_combo', 'is_single', 'effective_stock', 'total_variant_stock', 'variant_count', 'inventory_summary', 'sku_display', 'stock_status', 'price_range', 'display_price_label', 'display_price_summary'];
 
     /* ── Scopes ── */
 
@@ -811,6 +811,17 @@ class Product extends Model
             return $this->variants->count();
         }
         return $this->variants()->count();
+    }
+
+    public function getTotalVariantStockAttribute(): int
+    {
+        if ($this->isVariable()) {
+            if ($this->relationLoaded('variants')) {
+                return (int) $this->variants->sum('stock');
+            }
+            return (int) $this->variants()->sum('stock');
+        }
+        return 0;
     }
 
     public function getInventorySummaryAttribute(): array

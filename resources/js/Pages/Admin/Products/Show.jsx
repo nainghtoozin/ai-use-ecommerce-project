@@ -33,8 +33,8 @@ const TYPE_COLORS = {
 
 const TYPE_LABELS = {
     single: '📦 Single',
-    variable: '⚙️ Variable',
-    combo: '🎁 Bundle',
+    variable: '🎨 Variable',
+    combo: '🧩 Bundle',
 };
 
 function formatPrice(price) {
@@ -550,8 +550,8 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 {isVariable ? (
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Total Units</span>
-                                            <span className="text-lg font-bold text-gray-900">{totalStock} {product.unit?.short_name || ''}</span>
+                                            <span className="text-sm text-gray-600">Total Variant Stock</span>
+                                            <span className="text-lg font-bold text-gray-900">{totalStock} pcs</span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-gray-600">Variants</span>

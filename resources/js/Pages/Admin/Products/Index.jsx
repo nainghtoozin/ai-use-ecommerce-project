@@ -11,11 +11,12 @@ import {
     Search,
     Filter,
     Trash2,
-    Tag,
     DollarSign,
     CheckCircle,
     XCircle,
     AlertCircle,
+    Eye,
+    Pencil,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -24,12 +25,10 @@ function formatPrice(price) {
 
 function formatStockForProduct(product) {
     if (product.type === 'variable') {
-        const total = product.variant_total_stock ?? product.effective_stock ?? 0;
-        const count = product.active_variant_count ?? product.variant_count ?? 0;
+        const total = product.variant_total_stock ?? product.total_variant_stock ?? product.effective_stock ?? 0;
         return {
             type: 'variable',
             total,
-            variantCount: count,
             status: total <= 0 ? 'out_of_stock' : total < 10 ? 'low_stock' : 'in_stock',
         };
     }
@@ -57,49 +56,30 @@ const STOCK_STYLES = {
     out_of_stock: { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-600/10', dot: 'bg-red-500', label: 'Out of Stock' },
 };
 
-function getTypeBadge(product) {
-    if (product.type === 'variable') {
-        return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-purple-600/10">
-                <Layers className="w-3 h-3" />
-                Variable
-            </span>
-        );
-    }
-    if (product.type === 'combo') {
-        return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-orange-600/10">
-                <Gift className="w-3 h-3" />
-                Combo
-            </span>
-        );
-    }
-    return null;
-}
-
 function InlineActions({ product, onDelete }) {
     return (
-        <div className="flex items-center gap-2 whitespace-nowrap">
+        <div className="flex items-center gap-1 whitespace-nowrap">
             <Link
                 href={adminUrl(`/admin/products/${product.id}`)}
-                className="text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                title="View"
             >
-                View
+                <Eye className="w-4 h-4" />
             </Link>
-            <span className="text-gray-300 select-none">|</span>
             <Link
                 href={adminUrl(`/admin/products/${product.id}/edit`)}
-                className="text-xs font-medium text-gray-500 hover:text-amber-600 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                title="Edit"
             >
-                Edit
+                <Pencil className="w-4 h-4" />
             </Link>
-            <span className="text-gray-300 select-none">|</span>
             <button
                 type="button"
                 onClick={() => onDelete(product)}
-                className="text-xs font-medium text-gray-500 hover:text-red-600 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                title="Delete"
             >
-                Delete
+                <Trash2 className="w-4 h-4" />
             </button>
         </div>
     );
@@ -116,6 +96,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
     const [status, setStatus] = useState(filters.status || '');
     const [stock, setStock] = useState(filters.stock || '');
     const [isFiltering, setIsFiltering] = useState(false);
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -275,13 +256,21 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
 
                 {/* Filters */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                    <button
+                        type="button"
+                        onClick={() => setFiltersOpen(!filtersOpen)}
+                        className="w-full px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between hover:bg-gray-100/50 transition-colors"
+                    >
                         <div className="flex items-center gap-2">
                             <Filter className="w-4 h-4 text-gray-400" />
                             <h3 className="text-sm font-medium text-gray-700">Filters</h3>
                         </div>
-                    </div>
-                    <div className="p-4">
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${filtersOpen ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div className={`transition-all duration-200 ease-in-out overflow-hidden ${filtersOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className="p-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                             <div className="lg:col-span-2 relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -369,12 +358,8 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                     </button>
                                 )}
                             </div>
-                            <p className="text-sm text-gray-500">
-                                {hasFilters
-                                    ? `${productCount} result${productCount !== 1 ? 's' : ''} found`
-                                    : `${productCount} product${productCount !== 1 ? 's' : ''}`}
-                            </p>
                         </div>
+                    </div>
                     </div>
                 </div>
 
@@ -417,9 +402,14 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                     </div>
                 )}
 
-                {/* Per Page & Warning */}
-                <div className="flex justify-between items-center">
-                    <PerPageSelect />
+                {/* Per Page, Product Count & Warning */}
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                    <div className="flex items-center gap-4">
+                        <PerPageSelect />
+                        <span className="text-sm text-gray-500">
+                            {productCount} product{productCount !== 1 ? 's' : ''}
+                        </span>
+                    </div>
                     {warning && <p className="text-sm text-amber-600">{warning}</p>}
                 </div>
 
@@ -437,19 +427,22 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
                                     </th>
+                                    <th className="w-[80px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                     <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
                                     <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
                                     <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                     <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="w-[100px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-white z-10">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {!products?.data?.length ? (
                                     <tr>
-                                        <td colSpan="8" className="px-4 py-16 text-center">
+                                        <td colSpan="11" className="px-4 py-16 text-center">
                                             <div className="flex flex-col items-center">
                                                 <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
                                                     <Package className="w-8 h-8 text-gray-300" />
@@ -489,44 +482,28 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                 </td>
 
                                                 <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <Link href={adminUrl(`/admin/products/${product.id}`)} className="flex-shrink-0">
-                                                            {product.photo1_url ? (
-                                                                <img
-                                                                    src={product.photo1_url}
-                                                                    alt={product.name}
-                                                                    className="w-11 h-11 rounded-lg object-cover border border-gray-200 group-hover:border-gray-300 transition-colors"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-11 h-11 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center group-hover:bg-gray-150 transition-colors">
-                                                                    <Package className="w-5 h-5 text-gray-300" />
-                                                                </div>
-                                                            )}
-                                                        </Link>
-                                                        <div className="min-w-0 flex-1">
-                                                            <Link
-                                                                href={adminUrl(`/admin/products/${product.id}`)}
-                                                                className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors truncate block"
-                                                            >
-                                                                {product.name}
-                                                            </Link>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                {getTypeBadge(product)}
-                                                                {product.category && (
-                                                                    <span className="text-xs text-gray-400 flex items-center gap-0.5">
-                                                                        <Tag className="w-3 h-3" />
-                                                                        {product.category.name}
-                                                                    </span>
-                                                                )}
-                                                                {product.brand && (
-                                                                    <span className="text-xs text-gray-400 flex items-center gap-0.5">
-                                                                        <span className="w-1 h-1 rounded-full bg-gray-300" />
-                                                                        {product.brand.name}
-                                                                    </span>
-                                                                )}
+                                                    <Link href={adminUrl(`/admin/products/${product.id}`)}>
+                                                        {product.photo1_url ? (
+                                                            <img
+                                                                src={product.photo1_url}
+                                                                alt={product.name}
+                                                                className="w-11 h-11 rounded-lg object-cover border border-gray-200 group-hover:border-gray-300 transition-colors"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-11 h-11 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center group-hover:bg-gray-150 transition-colors">
+                                                                <Package className="w-5 h-5 text-gray-300" />
                                                             </div>
-                                                        </div>
-                                                    </div>
+                                                        )}
+                                                    </Link>
+                                                </td>
+
+                                                <td className="px-4 py-3">
+                                                    <Link
+                                                        href={adminUrl(`/admin/products/${product.id}`)}
+                                                        className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors truncate block"
+                                                    >
+                                                        {product.name}
+                                                    </Link>
                                                 </td>
 
                                                 <td className="hidden md:table-cell px-4 py-3">
@@ -536,14 +513,22 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                 </td>
 
                                                 <td className="hidden md:table-cell px-4 py-3">
+                                                    <span className="text-sm text-gray-700">{product.category?.name ?? '-'}</span>
+                                                </td>
+
+                                                <td className="hidden md:table-cell px-4 py-3">
+                                                    <span className="text-sm text-gray-700">{product.brand?.name ?? '-'}</span>
+                                                </td>
+
+                                                <td className="hidden md:table-cell px-4 py-3">
                                                     <div className="flex items-center gap-1.5">
                                                         {product.type === 'variable' ? (
                                                             <span className="text-sm font-medium text-gray-900">
-                                                                {inventory.total}{product.unit?.short_name ? ` ${product.unit.short_name}` : ''} ({inventory.variantCount} Variant{inventory.variantCount !== 1 ? 's' : ''})
+                                                                {inventory.total} pcs
                                                             </span>
                                                         ) : product.type === 'combo' ? (
                                                             <span className="text-sm font-medium text-gray-900">
-                                                                {inventory.total > 0 ? `${inventory.total} Bundle${inventory.total !== 1 ? 's' : ''}` : 'Bundle Product'}
+                                                                Bundle
                                                             </span>
                                                         ) : (
                                                             <span className="text-sm font-medium text-gray-900">
@@ -556,30 +541,31 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                 <td className="hidden lg:table-cell px-4 py-3">
                                                     <div className="flex items-center gap-1.5 whitespace-nowrap">
                                                         {product.type === 'variable' && (
-                                                            <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
-                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700">Variable</span>
-                                                                <span className="text-gray-400">·</span>
-                                                                <span>{product.active_variant_count || 0} variant{product.active_variant_count !== 1 ? 's' : ''}</span>
-                                                            </span>
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-purple-600/10">🎨 Variable</span>
                                                         )}
                                                         {product.type === 'combo' && (
                                                             <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
-                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700">Combo</span>
-                                                                <span className="text-gray-400">·</span>
-                                                                <span>Bundle</span>
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700">🧩 Bundle</span>
                                                             </span>
                                                         )}
                                                         {product.type === 'single' && (
-                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">Single</span>
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">📦 Single</span>
                                                         )}
                                                     </div>
                                                 </td>
 
-                                                <td className="hidden sm:table-cell px-4 py-3">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-                                                        <span className="text-sm font-medium text-gray-900">{formatPrice(product.price)}</span>
-                                                        <span className="text-xs text-gray-400">MMK</span>
+                                                <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1">
+                                                        <DollarSign className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                                        {product.type === 'variable' && product.price_range ? (
+                                                            <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                                                {formatPrice(product.price_range[0])} - {formatPrice(product.price_range[1])} MMK
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                                                {formatPrice(product.price)} MMK
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </td>
 
@@ -590,7 +576,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                     </span>
                                                 </td>
 
-                                                <td className="px-4 py-3 align-middle">
+                                                <td className="px-4 py-3 align-middle sticky right-0 bg-white z-10">
                                                     <InlineActions product={product} onDelete={openDeleteModal} />
                                                 </td>
                                             </tr>

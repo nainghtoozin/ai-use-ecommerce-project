@@ -214,13 +214,35 @@ class AdminProductController extends Controller
         // Enforce plan product limit
         SubscriptionLimitService::for()->assertCanCreateProduct();
 
-        // Combo products don't need stock (derived from components)
-        if ($data['type'] === ProductType::COMBO) {
+        // Combo and variable products don't need product-level stock
+        if ($data['type'] === ProductType::COMBO || $data['type'] === ProductType::VARIABLE) {
             $data['stock'] = 0;
         }
 
         if (!isset($data['status'])) {
             $data['status'] = Product::STATUS_ACTIVE;
+        }
+
+        // Derive product-level pricing from variants for variable products
+        if ($data['type'] === ProductType::VARIABLE && $request->filled('variants')) {
+            $variantsRaw = json_decode($request->input('variants'), true);
+            if (is_array($variantsRaw) && !empty($variantsRaw)) {
+                $prices = collect($variantsRaw)->pluck('price')->filter(fn($v) => is_numeric($v) && $v !== '')->map(fn($v) => (float) $v);
+                $comparePrices = collect($variantsRaw)->pluck('compare_price')->filter(fn($v) => is_numeric($v) && $v !== '')->map(fn($v) => (float) $v);
+
+                $data['price'] = $prices->min() ?? 0;
+                $data['base_price'] = $comparePrices->min() ?? $data['price'];
+            }
+        }
+
+        // Combo products: base_price mirrors the bundle sale price
+        if ($data['type'] === ProductType::COMBO) {
+            $data['base_price'] = $data['price'] ?? 0;
+        }
+
+        // Defensive fallback: ensure base_price is never null before DB insert
+        if (!isset($data['base_price']) || $data['base_price'] === null || $data['base_price'] === '') {
+            $data['base_price'] = $data['price'] ?? 0;
         }
 
         // Sanitize data to remove type-inapplicable fields
@@ -233,6 +255,8 @@ class AdminProductController extends Controller
                 $variantsPayload = null;
             }
         }
+
+        $variantImages = $request->file('variant_images', []);
 
         $comboItemsPayload = null;
         if ($request->filled('combo_items')) {
@@ -247,7 +271,7 @@ class AdminProductController extends Controller
             $this->validateComboItems($comboItemsPayload);
         }
 
-        DB::transaction(function () use ($data, $request, $variantsPayload, $comboItemsPayload) {
+        DB::transaction(function () use ($data, $request, $variantsPayload, $variantImages, $comboItemsPayload) {
             if ($request->hasFile('photo1')) {
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
             }
@@ -267,6 +291,18 @@ class AdminProductController extends Controller
             }
 
             if ($product->isVariable() && $variantsPayload) {
+                // Process variant images
+                foreach ($variantsPayload as $index => &$variantData) {
+                    if (isset($variantImages[$index])) {
+                        $variantData['image'] = $this->imageService->upload($variantImages[$index], 'products');
+                    } elseif (!empty($variantData['existing_image'])) {
+                        $variantData['image'] = $variantData['existing_image'];
+                    } else {
+                        $variantData['image'] = null;
+                    }
+                }
+                unset($variantData);
+
                 $normalized = $this->normalizeVariants($variantsPayload);
                 $this->productService->syncVariants($product, $normalized);
 
@@ -376,9 +412,32 @@ class AdminProductController extends Controller
             $data = $this->productService->sanitizeData($data, $data['type']);
         }
 
-        // Combo products don't need stock (derived from components)
-        if (isset($data['type']) && $data['type'] === ProductType::COMBO) {
+        // Combo and variable products don't need product-level stock
+        if (isset($data['type']) && ($data['type'] === ProductType::COMBO || $data['type'] === ProductType::VARIABLE)) {
             $data['stock'] = 0;
+        }
+
+        // Derive product-level pricing from variants for variable products
+        $incomingType = $data['type'] ?? $product->type;
+        if ($incomingType === ProductType::VARIABLE && $request->filled('variants')) {
+            $variantsRaw = json_decode($request->input('variants'), true);
+            if (is_array($variantsRaw) && !empty($variantsRaw)) {
+                $prices = collect($variantsRaw)->pluck('price')->filter(fn($v) => is_numeric($v) && $v !== '')->map(fn($v) => (float) $v);
+                $comparePrices = collect($variantsRaw)->pluck('compare_price')->filter(fn($v) => is_numeric($v) && $v !== '')->map(fn($v) => (float) $v);
+
+                $data['price'] = $prices->min() ?? 0;
+                $data['base_price'] = $comparePrices->min() ?? $data['price'];
+            }
+        }
+
+        // Combo products: base_price mirrors price
+        if ($incomingType === ProductType::COMBO) {
+            $data['base_price'] = $data['price'] ?? $product->price;
+        }
+
+        // Defensive fallback: ensure base_price is never null before DB update
+        if (array_key_exists('base_price', $data) && ($data['base_price'] === null || $data['base_price'] === '')) {
+            $data['base_price'] = $data['price'] ?? $product->price;
         }
 
         $variantsPayload = null;
@@ -388,6 +447,8 @@ class AdminProductController extends Controller
                 $variantsPayload = null;
             }
         }
+
+        $variantImages = $request->file('variant_images', []);
 
         $comboItemsPayload = null;
         if ($request->filled('combo_items')) {
@@ -405,7 +466,7 @@ class AdminProductController extends Controller
             $this->validateComboItems($comboItemsPayload);
         }
 
-        DB::transaction(function () use ($data, $request, $product, $variantsPayload, $comboItemsPayload, $effectiveType) {
+        DB::transaction(function () use ($data, $request, $product, $variantsPayload, $variantImages, $comboItemsPayload, $effectiveType) {
             if ($request->hasFile('photo1')) {
                 $this->imageService->delete($product->photo1);
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
@@ -431,6 +492,38 @@ class AdminProductController extends Controller
                 // null means no variant data was sent, leave variants unchanged
                 if (is_array($variantsPayload)) {
                     if (!empty($variantsPayload)) {
+                        // Process variant images
+                        foreach ($variantsPayload as $index => &$variantData) {
+                            // Delete old image if removed
+                            if (!empty($variantData['image_removed'])) {
+                                if (!empty($variantData['id'])) {
+                                    $oldVariant = $product->variants()->find($variantData['id']);
+                                    if ($oldVariant && $oldVariant->image) {
+                                        $this->imageService->delete($oldVariant->image);
+                                    }
+                                }
+                                $variantData['image'] = null;
+                            }
+                            // Upload new image
+                            elseif (isset($variantImages[$index])) {
+                                // Delete old image first if variant exists
+                                if (!empty($variantData['id'])) {
+                                    $oldVariant = $product->variants()->find($variantData['id']);
+                                    if ($oldVariant && $oldVariant->image) {
+                                        $this->imageService->delete($oldVariant->image);
+                                    }
+                                }
+                                $variantData['image'] = $this->imageService->upload($variantImages[$index], 'products');
+                            }
+                            // Keep existing image
+                            elseif (!empty($variantData['existing_image'])) {
+                                $variantData['image'] = $variantData['existing_image'];
+                            } else {
+                                $variantData['image'] = null;
+                            }
+                        }
+                        unset($variantData);
+
                         $normalized = $this->normalizeVariants($variantsPayload);
                         $this->productService->syncVariants($product, $normalized);
 
@@ -661,6 +754,7 @@ class AdminProductController extends Controller
                 'cost_price' => isset($variant['cost_price']) && $variant['cost_price'] !== '' ? (float) $variant['cost_price'] : null,
                 'stock' => isset($variant['stock']) ? (int) $variant['stock'] : 0,
                 'attributes' => $attributes,
+                'image' => $variant['image'] ?? null,
                 'status' => $variant['status'] ?? ProductVariant::STATUS_ACTIVE,
             ];
         }

@@ -10,6 +10,7 @@ export default function ComboBuilder({
     selectableProducts = [],
     comboPrice = 0,
     existingComboItems = [],
+    hideSummary = false,
 }) {
     const [localItems, setLocalItems] = useState([]);
 
@@ -152,7 +153,7 @@ export default function ComboBuilder({
             </div>
 
             {/* Summary */}
-            {itemsWithSubtotals.length > 0 && (
+            {!hideSummary && itemsWithSubtotals.length > 0 && (
                 <ComboSummary
                     items={itemsWithSubtotals}
                     comboPrice={comboPrice}

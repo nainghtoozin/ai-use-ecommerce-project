@@ -32,8 +32,19 @@ export default function MediaSection({
     }, []);
 
     const handleGalleryRemove = useCallback((index) => {
+        const removed = galleryFiles[index];
         setGalleryFiles((prev) => prev.filter((_, i) => i !== index));
-    }, []);
+        if (removed && photo1File === removed) {
+            setPhoto1File(null);
+        }
+    }, [galleryFiles, photo1File, setPhoto1File]);
+
+    const handleSetFeatured = useCallback((index) => {
+        const file = galleryFiles[index];
+        if (file) {
+            setPhoto1File(file);
+        }
+    }, [galleryFiles, setPhoto1File]);
 
     const handleDragStart = (index) => {
         dragItemRef.current = index;
@@ -82,7 +93,12 @@ export default function MediaSection({
                 {galleryFiles.length > 0 && (
                     <button
                         type="button"
-                        onClick={() => setGalleryFiles([])}
+                        onClick={() => {
+                            setGalleryFiles([]);
+                            if (photo1File && galleryFiles.includes(photo1File)) {
+                                setPhoto1File(null);
+                            }
+                        }}
                         className="text-xs text-red-600 hover:text-red-700 font-medium"
                     >
                         Clear all
@@ -146,6 +162,9 @@ export default function MediaSection({
                             file={file}
                             index={index}
                             onRemove={handleGalleryRemove}
+                            isFeatured={photo1File === file}
+                            canSetFeatured={true}
+                            onSetFeatured={handleSetFeatured}
                         />
                     </div>
                 ))}

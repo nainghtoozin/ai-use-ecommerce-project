@@ -84,6 +84,7 @@ export default function ProductCreate({ categories, units = [], brands = [], pro
                                 onCancel={cancel}
                                 data={formData}
                                 photo1File={photo1File}
+                                variants={variants}
                             />
                         </div>
                     </div>

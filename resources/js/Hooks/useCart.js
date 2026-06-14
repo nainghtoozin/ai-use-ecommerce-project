@@ -8,7 +8,7 @@ export function useCart() {
     
     const cartCount = props.cart?.count || 0;
     
-    const addToCart = useCallback(async (productId, quantity = 1) => {
+    const addToCart = useCallback(async (productId, quantity = 1, variantId = null) => {
         setAddingId(productId);
         setLoading(true);
         
@@ -19,7 +19,7 @@ export function useCart() {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 },
-                body: JSON.stringify({ product_id: productId, quantity }),
+                body: JSON.stringify({ product_id: productId, quantity, variant_id: variantId }),
             });
             
             const data = await response.json();

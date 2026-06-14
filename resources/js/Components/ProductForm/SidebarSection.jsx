@@ -22,12 +22,25 @@ export default function SidebarSection({
     data = {},
     photo1File = null,
     existingPhoto1Url = null,
+    variants = [],
 }) {
     const { units = [], categories = [], brands = [] } = usePage().props;
 
     const category = categories.find(c => c.id == data.category_id);
     const unit = units.find(u => u.id == data.unit_id);
     const brand = brands.find(b => b.id == data.brand_id);
+
+    const variantPrices = variants
+        .map(v => parseFloat(v.price))
+        .filter(p => !isNaN(p) && p > 0);
+    const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : 0;
+    const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : 0;
+    const hasPriceRange = variantPrices.length > 0 && minPrice !== maxPrice;
+
+    function formatPrice(price) {
+        return Number(price).toLocaleString() + ' MMK';
+    }
+
     const photoPreview = photo1File
         ? URL.createObjectURL(photo1File)
         : existingPhoto1Url
@@ -88,8 +101,26 @@ export default function SidebarSection({
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Stock</p>
-                        <p className="text-sm font-medium text-gray-900">{data.stock ?? 0}</p>
+                        <p className="text-xs text-gray-500 mb-0.5">{data.product_type === 'combo' ? 'Bundle Price' : 'Stock'}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                            {data.product_type === 'variable'
+                                ? `${variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0)} pcs`
+                                : data.product_type === 'combo'
+                                    ? `${data.price ? formatPrice(data.price) : '—'}`
+                                    : `${data.stock ?? 0}${unit ? ` ${unit.short_name}` : ''}`
+                            }
+                        </p>
+                        {data.product_type === 'variable' && variants.length > 0 && (
+                            <>
+                                <p className="text-xs text-gray-400 mt-0.5">Variants: {variants.length}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                    Price Range: {hasPriceRange
+                                        ? `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
+                                        : formatPrice(minPrice || data.price || 0)
+                                    }
+                                </p>
+                            </>
+                        )}
                     </div>
 
                     <div>
@@ -114,8 +145,7 @@ export default function SidebarSection({
 
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-3">
                 <button
-                    type="button"
-                    onClick={onSubmit}
+                    type="submit"
                     disabled={processing}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >

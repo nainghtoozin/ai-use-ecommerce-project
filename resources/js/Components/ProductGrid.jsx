@@ -48,6 +48,7 @@ export default function ProductGrid({
     hasMore,
     loading,
     onAddToCart,
+    onSelectVariant,
     addingId,
     onClearFilters,
 }) {
@@ -95,6 +96,7 @@ export default function ProductGrid({
                             key={product.id}
                             product={product}
                             onAddToCart={handleAddToCart}
+                            onSelectVariant={onSelectVariant}
                             addingId={addingId}
                         />
                     ))}

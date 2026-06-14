@@ -30,6 +30,9 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
         setData('status', status);
     }, [status]);
 
+    const isVariable = data.product_type === 'variable';
+    const isSingle = data.product_type === 'single';
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
@@ -37,7 +40,7 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
             </div>
 
             <div className="px-6 py-6 space-y-6">
-                {/* Name + SKU + Barcode row */}
+                {/* Name + SKU row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div className="lg:col-span-2">
                         <FormInput
@@ -145,96 +148,119 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                     rows={2}
                 />
 
+                {/* Combo: inline Description */}
+                {data.product_type === 'combo' && (
+                    <>
+                        {/* Divider */}
+                        <div className="border-t border-gray-100" />
+
+                        <FormTextarea
+                            label="Description"
+                            name="description"
+                            value={data.description || ''}
+                            onChange={(e) => setData('description', e.target.value)}
+                            placeholder="Detailed description of the bundle..."
+                            error={errors.description}
+                            rows={4}
+                        />
+                    </>
+                )}
+
                 {/* Divider */}
                 <div className="border-t border-gray-100" />
 
-                {/* Pricing row */}
+                {/* Primary Product Image (all product types) */}
                 <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Pricing</h4>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <FormInput
-                            label="Sales Price"
-                            name="price"
-                            type="number"
-                            value={data.price}
-                            onChange={(e) => setData('price', e.target.value)}
-                            placeholder="0.00"
-                            error={errors.price}
-                            required
-                            step="0.01"
-                            min="0"
-                        />
-                        <FormInput
-                            label="Compare at Price"
-                            name="base_price"
-                            type="number"
-                            value={data.base_price}
-                            onChange={(e) => setData('base_price', e.target.value)}
-                            placeholder="0.00"
-                            error={errors.base_price}
-                            step="0.01"
-                            min="0"
-                            helpText="Original price before discount"
-                        />
-                        <FormInput
-                            label="Cost Per Item"
-                            name="cost_price"
-                            type="number"
-                            value={data.cost_price || ''}
-                            onChange={(e) => setData('cost_price', e.target.value)}
-                            placeholder="0.00"
-                            error={errors.cost_price}
-                            step="0.01"
-                            min="0"
-                            helpText="Customers won't see this price"
-                        />
-                    </div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Primary Product Image <span className="text-red-500">*</span></h4>
+                    <ImageUpload
+                        name="photo1"
+                        label=""
+                        value={photo1File || existingPhoto1Url}
+                        onChange={setPhoto1File}
+                        error={errors.photo1}
+                    />
                 </div>
 
-                {/* Divider */}
-                <div className="border-t border-gray-100" />
+                {isSingle && (
+                    <>
+                        {/* Divider */}
+                        <div className="border-t border-gray-100" />
 
-                {/* Primary Image + Inventory row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-4">Primary Product Image</h4>
-                        <ImageUpload
-                            name="photo1"
-                            label=""
-                            value={photo1File || existingPhoto1Url}
-                            onChange={setPhoto1File}
-                            error={errors.photo1}
-                            previewSize="lg"
-                        />
-                    </div>
-
-                    <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-4">Inventory</h4>
-                        <div className="space-y-4">
-                            <FormInput
-                                label="Quantity In Stock"
-                                name="stock"
-                                type="number"
-                                value={data.stock}
-                                onChange={(e) => setData('stock', e.target.value)}
-                                placeholder="0"
-                                error={errors.stock}
-                                min="0"
-                            />
-                            <FormInput
-                                label="Low Stock Alert Threshold"
-                                name="low_stock_alert"
-                                type="number"
-                                value={data.low_stock_alert ?? 5}
-                                onChange={(e) => setData('low_stock_alert', e.target.value)}
-                                placeholder="5"
-                                error={errors.low_stock_alert}
-                                min="0"
-                                helpText="Receive alert when stock drops below this number"
-                            />
+                        {/* Pricing row */}
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-900 mb-4">Pricing</h4>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                <FormInput
+                                    label="Sales Price"
+                                    name="price"
+                                    type="number"
+                                    value={data.price}
+                                    onChange={(e) => setData('price', e.target.value)}
+                                    placeholder="0.00"
+                                    error={errors.price}
+                                    required
+                                    step="0.01"
+                                    min="0"
+                                />
+                                <FormInput
+                                    label="Compare at Price"
+                                    name="base_price"
+                                    type="number"
+                                    value={data.base_price}
+                                    onChange={(e) => setData('base_price', e.target.value)}
+                                    placeholder="0.00"
+                                    error={errors.base_price}
+                                    step="0.01"
+                                    min="0"
+                                    helpText="Original price before discount"
+                                />
+                                <FormInput
+                                    label="Cost Per Item"
+                                    name="cost_price"
+                                    type="number"
+                                    value={data.cost_price || ''}
+                                    onChange={(e) => setData('cost_price', e.target.value)}
+                                    placeholder="0.00"
+                                    error={errors.cost_price}
+                                    step="0.01"
+                                    min="0"
+                                    helpText="Customers won't see this price"
+                                />
+                            </div>
                         </div>
-                    </div>
-                </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-gray-100" />
+
+                        {/* Inventory */}
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-900 mb-4">Inventory</h4>
+                            <div className="space-y-4 max-w-md">
+                                <FormInput
+                                    label="Quantity In Stock"
+                                    name="stock"
+                                    type="number"
+                                    value={data.stock}
+                                    onChange={(e) => setData('stock', e.target.value)}
+                                    placeholder="0"
+                                    error={errors.stock}
+                                    min="0"
+                                />
+                                <FormInput
+                                    label="Low Stock Alert Threshold"
+                                    name="low_stock_alert"
+                                    type="number"
+                                    value={data.low_stock_alert ?? 5}
+                                    onChange={(e) => setData('low_stock_alert', e.target.value)}
+                                    placeholder="5"
+                                    error={errors.low_stock_alert}
+                                    min="0"
+                                    helpText="Receive alert when stock drops below this number"
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* Divider */}
                 <div className="border-t border-gray-100" />

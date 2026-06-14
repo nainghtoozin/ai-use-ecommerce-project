@@ -5,6 +5,7 @@ import ProductGrid from '@/Components/ProductGrid';
 import BackToTopButton from '@/Components/BackToTopButton';
 import StorefrontHero from '@/Components/Storefront/StorefrontHero';
 import EmptyStoreState from '@/Components/Storefront/EmptyStoreState';
+import VariantSelectModal from '@/Components/VariantSelectModal';
 import { useCart } from '@/Hooks/useCart';
 
 export default function StoreIndex({ tenant, products, categories, searchQuery, filters: initFilters = {}, hasProducts }) {
@@ -14,6 +15,7 @@ export default function StoreIndex({ tenant, products, categories, searchQuery, 
     const [selectedCategory, setSelectedCategory] = useState(initFilters.category_id || '');
     const [sortBy, setSortBy] = useState(initFilters.sort || 'latest');
     const [loading, setLoading] = useState(false);
+    const [variableProduct, setVariableProduct] = useState(null);
     const debounceRef = useRef(null);
 
     useEffect(() => {
@@ -70,6 +72,20 @@ export default function StoreIndex({ tenant, products, categories, searchQuery, 
         await addToCart(productId, 1);
     }, [addToCart]);
 
+    const handleSelectVariant = useCallback((product) => {
+        setVariableProduct(product);
+    }, []);
+
+    const handleModalAddToCart = useCallback(async (variantId, quantity) => {
+        if (!variableProduct) return;
+        await addToCart(variableProduct.id, quantity, variantId);
+        setVariableProduct(null);
+    }, [variableProduct, addToCart]);
+
+    const handleModalClose = useCallback(() => {
+        setVariableProduct(null);
+    }, []);
+
     const hasMore = (products?.current_page ?? 1) < (products?.last_page ?? 1);
     const hasActiveFilters = query || selectedCategory || sortBy !== 'latest';
 
@@ -118,10 +134,19 @@ export default function StoreIndex({ tenant, products, categories, searchQuery, 
                         hasMore={hasMore}
                         loading={loading}
                         onAddToCart={handleAddToCart}
+                        onSelectVariant={handleSelectVariant}
                         addingId={addingId}
                         onClearFilters={clearFilters}
                     />
                 </section>
+            )}
+
+            {variableProduct && (
+                <VariantSelectModal
+                    product={variableProduct}
+                    onClose={handleModalClose}
+                    onAddToCart={handleModalAddToCart}
+                />
             )}
 
             <BackToTopButton />
