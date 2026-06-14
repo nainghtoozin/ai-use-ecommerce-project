@@ -25,6 +25,11 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
+    const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+
+    const displayDescription = product.description || 'Detailed product information will be available soon.';
+    const isLongDescription = product.description && product.description.length > 500;
+    const truncatedDescription = isLongDescription ? product.description.slice(0, 500) + '...' : displayDescription;
 
     const isVariable = !!product.is_variable;
     const isCombo = !!product.is_combo;
@@ -207,14 +212,14 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                     <span className="text-gray-900 truncate max-w-[200px]">{product.name}</span>
                 </nav>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6 lg:gap-10">
                     <div>
-                        <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 group">
+                        <div className="relative bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 min-h-[200px] max-h-[280px] md:aspect-square md:max-h-[450px]">
                             {mainImage ? (
                                 <img
                                     src={assetUrl(mainImage)}
                                     alt={product.name}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className="w-full h-full object-contain"
                                 />
                             ) : (
                                 <div className="flex items-center justify-center h-full">
@@ -265,24 +270,24 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
 
                     <div className="flex flex-col">
                         {/* Product Information Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+                            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
                                 {product.name}
                             </h1>
 
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-full">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-full">
                                     {product.category?.name || 'Uncategorized'}
                                 </span>
-                                <span className="text-sm text-gray-400">{product.brand?.name || 'Generic Brand'}</span>
+                                <span>{product.brand?.name || 'Generic Brand'}</span>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs text-gray-500">
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span>
                                     Type: <span className="font-semibold text-gray-700">{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
                                 </span>
                                 {!isVariable && (
-                                    <span className="text-xs text-gray-500">
+                                    <span>
                                         SKU: <span className="font-medium text-gray-700">{product.sku || 'SKU not available'}</span>
                                     </span>
                                 )}
@@ -329,44 +334,9 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                             </p>
                         </div>
 
-                        {/* Product Specifications Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4 space-y-2.5">
-                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Product Specifications</h3>
-                            <div className="space-y-1.5 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Category</span>
-                                    <span className="font-medium text-gray-800 text-right">{product.category?.name || 'Uncategorized'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Brand</span>
-                                    <span className="font-medium text-gray-800 text-right">{product.brand?.name || 'Generic Brand'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">SKU</span>
-                                    <span className="font-medium text-gray-800 text-right">{product.sku || 'SKU not available'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Unit</span>
-                                    <span className="font-medium text-gray-800 text-right">{product.unit?.name || 'Standard Unit'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Type</span>
-                                    <span className="font-medium text-gray-800 text-right">{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Description Section */}
-                        <div className="mt-6">
-                            <h2 className="text-base font-bold text-gray-900 mb-2">Product Description</h2>
-                            <div className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
-                                {product.description || 'Detailed product information will be available soon.'}
-                            </div>
-                        </div>
-
-                        <div className="mt-6 border-t border-gray-200 pt-6 space-y-6">
+                        <div className="mt-4 border-t border-gray-200 pt-4 space-y-4">
                             {isVariable && optionKeys.length > 0 && (
-                                <div className="space-y-5">
+                                <div className="space-y-3">
                                     {optionKeys.map((key, keyIdx) => (
                                         <div key={key}>
                                             <label className="text-sm font-semibold text-gray-900 capitalize block mb-2.5">
@@ -422,9 +392,9 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                             )}
 
                             {isCombo && detail?.combo_summary && (
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <h3 className="text-sm font-semibold text-gray-900">What's Included</h3>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                         {(detail.combo_summary.items || []).map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3 border border-gray-100">
                                                 <div className="w-10 h-10 rounded-lg bg-gray-200 overflow-hidden shrink-0">
@@ -446,7 +416,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                 </div>
                             )}
 
-                            <div className="border-t border-gray-100 pt-6">
+                            <div className="border-t border-gray-100 pt-4">
                                 {renderQuantityAndCart()}
                                 <div className="flex flex-wrap items-center gap-4 mt-4 text-xs sm:text-sm text-gray-500">
                                     <span className="flex items-center gap-1.5">
@@ -461,6 +431,46 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                         7-day returns
                                     </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Description Section */}
+                        <div className="mt-4">
+                            <h2 className="text-base font-bold text-gray-900 mb-2">Product Description</h2>
+                            <div className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+                                {truncatedDescription}
+                            </div>
+                            {isLongDescription && (
+                                <button onClick={() => setShowDescriptionModal(true)} className="mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                                    Read More
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Product Specifications Card */}
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4">
+                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Product Specifications</h3>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Category</span>
+                                    <span className="font-medium text-gray-800">{product.category?.name || 'Uncategorized'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">SKU</span>
+                                    <span className="font-medium text-gray-800">{product.sku || 'SKU not available'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Brand</span>
+                                    <span className="font-medium text-gray-800">{product.brand?.name || 'Generic Brand'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Unit</span>
+                                    <span className="font-medium text-gray-800">{product.unit?.name || 'Standard Unit'}</span>
+                                </div>
+                                <div className="flex justify-between col-span-2">
+                                    <span className="text-gray-500">Type</span>
+                                    <span className="font-medium text-gray-800">{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
                                 </div>
                             </div>
                         </div>
@@ -479,6 +489,25 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                     </div>
                 )}
             </div>
+
+            {/* Description Modal */}
+            {showDescriptionModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDescriptionModal(false)}>
+                    <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-bold text-gray-900">Product Description</h3>
+                            <button onClick={() => setShowDescriptionModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="px-6 py-4 overflow-y-auto max-h-[80vh] text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                            {product.description}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
                 <div className="flex items-center justify-between gap-3">

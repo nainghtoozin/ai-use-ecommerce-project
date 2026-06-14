@@ -36,6 +36,11 @@ export default function ProductShow({ product, promotion, detail }) {
     const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
     const [selectedOptions, setSelectedOptions] = useState({});
+    const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+
+    const displayDescription = product.description || 'Detailed product information will be available soon.';
+    const isLongDescription = product.description && product.description.length > 500;
+    const truncatedDescription = isLongDescription ? product.description.slice(0, 500) + '...' : displayDescription;
 
     const isVariable = !!product.is_variable;
     const isCombo = !!product.is_combo;
@@ -189,15 +194,15 @@ export default function ProductShow({ product, promotion, detail }) {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 sm:pb-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[45%_55%] gap-6 lg:gap-10">
                     {/* Left: Product Gallery */}
                     {images.length > 0 && (
-                        <div className="space-y-3 w-full md:max-w-[400px] lg:max-w-[500px]">
-                            <div className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden border border-gray-100 max-h-[500px]">
+                        <div className="space-y-3 w-full">
+                            <div className="relative bg-gray-50 rounded-xl overflow-hidden border border-gray-100 min-h-[200px] max-h-[280px] md:aspect-square md:max-h-[450px]">
                                 <img
                                     src={assetUrl(images[activeImage])}
                                     alt={product.name}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain"
                                 />
 
                                 {isCombo && (
@@ -241,24 +246,24 @@ export default function ProductShow({ product, promotion, detail }) {
                     <div className={images.length > 0 ? 'flex flex-col gap-0' : 'md:col-span-2 flex flex-col gap-0'}>
 
                         {/* Product Information Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+                            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
                                 {product.name}
                             </h1>
 
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-full">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-full">
                                     {product.category?.name || 'Uncategorized'}
                                 </span>
-                                <span className="text-sm text-gray-400">{product.brand?.name || 'Generic Brand'}</span>
+                                <span>{product.brand?.name || 'Generic Brand'}</span>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs text-gray-500">
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span>
                                     Type: <span className={`font-semibold ${isCombo ? 'text-purple-600' : isVariable ? 'text-blue-600' : 'text-gray-700'}`}>{productType}</span>
                                 </span>
                                 {!isVariable && (
-                                    <span className="text-xs text-gray-500">
+                                    <span>
                                         SKU: <span className="font-medium text-gray-700">{displaySku || 'SKU not available'}</span>
                                     </span>
                                 )}
@@ -321,46 +326,10 @@ export default function ProductShow({ product, promotion, detail }) {
                             </p>
                         </div>
 
-                        {/* Product Details Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4 space-y-2.5">
-                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Product Details</h3>
-                            <div className="space-y-1.5 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Category</span>
-                                    <span className="font-medium text-gray-800 text-right">{product.category?.name || 'Uncategorized'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Brand</span>
-                                    <span className="font-medium text-gray-800 text-right">{product.brand?.name || 'Generic Brand'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">SKU</span>
-                                    <span className="font-medium text-gray-800 text-right">{displaySku || 'SKU not available'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Unit</span>
-                                    <span className="font-medium text-gray-800 text-right">{unitName}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Type</span>
-                                    <span className="font-medium text-gray-800 text-right">{productType}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Description Section */}
-                        <div className="mt-6">
-                            <h2 className="text-base font-bold text-gray-900 mb-2">Product Description</h2>
-                            <div className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
-                                {product.description || 'Detailed product information will be available soon.'}
-                            </div>
-                        </div>
-
                         {/* Variable: Available Options */}
                         {isVariable && optionKeys.length > 0 && (
-                            <div className="mt-5 space-y-3">
+                            <div className="mt-3 space-y-2">
                                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available Options</h3>
-                                <p className="text-[11px] text-gray-400 font-medium">Please select all options</p>
                                 {optionKeys.map((key) => {
                                     const displayName = optionNames[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                                     return (
@@ -401,7 +370,7 @@ export default function ProductShow({ product, promotion, detail }) {
 
                         {/* Combo: Bundle Includes */}
                         {isCombo && detail?.combo_summary?.items?.length > 0 && (
-                            <div className="mt-5 space-y-2">
+                            <div className="mt-3 space-y-2">
                                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Bundle Includes</h3>
                                 <div className="space-y-1.5">
                                     {detail.combo_summary.items.map((item, idx) => (
@@ -421,7 +390,7 @@ export default function ProductShow({ product, promotion, detail }) {
                         )}
 
                         {/* Add to Cart Section */}
-                        <div className="mt-6 pt-5 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-gray-100">
                             {availableStock > 0 ? (
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3">
@@ -489,6 +458,46 @@ export default function ProductShow({ product, promotion, detail }) {
                                 </button>
                             )}
                         </div>
+
+                        {/* Description Section */}
+                        <div className="mt-4">
+                            <h2 className="text-base font-bold text-gray-900 mb-2">Product Description</h2>
+                            <div className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+                                {truncatedDescription}
+                            </div>
+                            {isLongDescription && (
+                                <button onClick={() => setShowDescriptionModal(true)} className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                                    Read More
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Product Specifications Card */}
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4">
+                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Product Specifications</h3>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Category</span>
+                                    <span className="font-medium text-gray-800">{product.category?.name || 'Uncategorized'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">SKU</span>
+                                    <span className="font-medium text-gray-800">{displaySku || 'SKU not available'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Brand</span>
+                                    <span className="font-medium text-gray-800">{product.brand?.name || 'Generic Brand'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Unit</span>
+                                    <span className="font-medium text-gray-800">{unitName}</span>
+                                </div>
+                                <div className="flex justify-between col-span-2">
+                                    <span className="text-gray-500">Type</span>
+                                    <span className="font-medium text-gray-800">{productType}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -505,6 +514,25 @@ export default function ProductShow({ product, promotion, detail }) {
                     </div>
                 )}
             </div>
+
+            {/* Description Modal */}
+            {showDescriptionModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDescriptionModal(false)}>
+                    <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-bold text-gray-900">Product Description</h3>
+                            <button onClick={() => setShowDescriptionModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="px-6 py-4 overflow-y-auto max-h-[80vh] text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                            {product.description}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Sticky Mobile Add to Cart Bar */}
             {showStickyBar && (
