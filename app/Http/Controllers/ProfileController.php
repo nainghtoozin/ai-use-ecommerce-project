@@ -34,6 +34,12 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
+        $storeSlug = $request->route('store_slug');
+        if ($storeSlug) {
+            return Redirect::route('storefront.admin.profile.edit', ['store_slug' => $storeSlug])
+                ->with('status', 'profile-updated');
+        }
+
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 

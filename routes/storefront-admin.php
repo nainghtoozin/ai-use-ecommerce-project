@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TelegramIntegrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,11 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing', [AdminBillingController::class, 'index'])->name('billing');
     Route::post('/billing/renew', [AdminBillingController::class, 'renew'])->name('billing.renew');
     Route::get('/suspended', fn () => \Inertia\Inertia::render('Admin/Suspended'))->name('suspended');
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ── Operations routes (blocked when expired/suspended) ──
     Route::middleware('tenant.active')->group(function () {

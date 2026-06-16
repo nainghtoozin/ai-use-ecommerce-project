@@ -341,7 +341,7 @@ export default function AdminSidebar() {
                     {!collapsed && (
                         <div className="mt-3 flex gap-2">
                             <Link
-                                href="/profile"
+                                href={adminUrl('/profile')}
                                 className="flex-1 text-center px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"
                             >
                                 <User className="w-3.5 h-3.5 inline mr-1" />Profile

@@ -20,8 +20,13 @@
  */
 export function adminUrl(path, storeSlug = null) {
     const slug = storeSlug || detectStoreSlug();
-    if (slug && path.startsWith('/admin/')) {
-        return path.replace('/admin/', `/store/${slug}/admin/`);
+    if (slug) {
+        if (path.startsWith('/admin/')) {
+            return path.replace('/admin/', `/store/${slug}/admin/`);
+        }
+        if (path === '/profile') {
+            return `/store/${slug}/admin/profile`;
+        }
     }
     return path;
 }

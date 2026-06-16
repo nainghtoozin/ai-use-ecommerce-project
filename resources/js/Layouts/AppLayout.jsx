@@ -190,7 +190,7 @@ export default function AppLayout({ children, header = null }) {
                                     </div>
                                 </div>
                                 <div className="mt-3 flex gap-2">
-                                    <Link href="/profile" className="flex-1 text-center px-3 py-1.5 text-xs bg-gray-800 rounded hover:bg-gray-700 transition-colors">
+                                    <Link href={adminUrl('/profile')} className="flex-1 text-center px-3 py-1.5 text-xs bg-gray-800 rounded hover:bg-gray-700 transition-colors">
                                         Profile
                                     </Link>
                                     <button onClick={logout} className="flex-1 text-center px-3 py-1.5 text-xs bg-red-600/20 text-red-400 rounded hover:bg-red-600/30 transition-colors">
@@ -299,7 +299,7 @@ export default function AppLayout({ children, header = null }) {
                                                     </button>
                                                     {mobileMenuOpen && (
                                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                                                            <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                            <Link href={adminUrl('/profile')} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                                 Profile
                                                             </Link>
                                                             <button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">

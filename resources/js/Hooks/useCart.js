@@ -1,6 +1,12 @@
 import { useState, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
 
+function cartUrl(path) {
+    if (typeof window === 'undefined') return path;
+    const match = window.location.pathname.match(/^\/store\/([^/]+)\//);
+    return match ? `/store/${match[1]}${path}` : path;
+}
+
 export function useCart() {
     const { props } = usePage();
     const [loading, setLoading] = useState(false);
@@ -13,7 +19,7 @@ export function useCart() {
         setLoading(true);
         
         try {
-            const response = await fetch('/cart/add', {
+            const response = await fetch(cartUrl('/cart/add'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,7 +49,7 @@ export function useCart() {
         setLoading(true);
         
         try {
-            const response = await fetch(`/cart/${productId}`, {
+            const response = await fetch(cartUrl(`/cart/${productId}`), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -66,7 +72,7 @@ export function useCart() {
         setLoading(true);
         
         try {
-            const response = await fetch(`/cart/${productId}`, {
+            const response = await fetch(cartUrl(`/cart/${productId}`), {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
@@ -87,7 +93,7 @@ export function useCart() {
         setLoading(true);
         
         try {
-            const response = await fetch('/cart/clear', {
+            const response = await fetch(cartUrl('/cart/clear'), {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,

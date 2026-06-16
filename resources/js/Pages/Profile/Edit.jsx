@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { adminUrl } from '@/Utils/adminUrl';
 import ShopLayout from '@/Layouts/ShopLayout';
 
 const NOTIFICATION_LABELS = {
@@ -37,7 +38,7 @@ export default function ProfileEdit({ mustVerifyEmail, status, notificationPrefe
 
     function submitProfile(e) {
         e.preventDefault();
-        profileForm.patch('/profile', {
+        profileForm.patch(adminUrl('/profile'), {
             onSuccess: () => profileForm.reset(),
         });
     }
@@ -51,7 +52,7 @@ export default function ProfileEdit({ mustVerifyEmail, status, notificationPrefe
 
     function submitDelete(e) {
         e.preventDefault();
-        deleteForm.delete('/profile', {
+        deleteForm.delete(adminUrl('/profile'), {
             onSuccess: () => deleteForm.reset(),
         });
     }
