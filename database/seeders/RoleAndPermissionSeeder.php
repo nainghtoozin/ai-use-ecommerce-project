@@ -20,7 +20,13 @@ class RoleAndPermissionSeeder extends Seeder
         'users.assign-roles',
         'users.view-activity',
         'roles.view',
+        'roles.create',
+        'roles.update',
+        'roles.delete',
         'permissions.view',
+        'permissions.create',
+        'permissions.edit',
+        'permissions.delete',
         'products.view',
         'products.create',
         'products.update',
@@ -35,6 +41,13 @@ class RoleAndPermissionSeeder extends Seeder
         'payments.view',
         'payments.verify',
         'activity-logs.view',
+
+            // Reports
+            'reports.view',
+
+            // Settings
+            'settings.view',
+            'settings.edit',
 
             // Unit Management
             'units.view',

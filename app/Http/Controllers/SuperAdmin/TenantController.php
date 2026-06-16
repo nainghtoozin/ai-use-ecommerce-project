@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
 use App\Services\TenantDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -131,6 +132,8 @@ class TenantController extends Controller
                 if ($adminRole) {
                     $admin->assignRole($adminRole);
                 }
+
+                $admin->syncPermissions(Permission::all());
             }
 
             return $tenant;

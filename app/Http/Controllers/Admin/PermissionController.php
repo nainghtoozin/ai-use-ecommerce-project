@@ -44,6 +44,80 @@ class PermissionController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        if (!auth()->user()->can('permissions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        return Inertia::render('Admin/Permissions/Create');
+    }
+
+    public function store(Request $request)
+    {
+        if (!auth()->user()->can('permissions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:permissions,name'],
+            'guard_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        Permission::create([
+            'name' => $validated['name'],
+            'guard_name' => $validated['guard_name'] ?? 'web',
+        ]);
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', 'Permission created successfully.');
+    }
+
+    public function edit(Permission $permission)
+    {
+        if (!auth()->user()->can('permissions.edit')) {
+            abort(403, 'Unauthorized');
+        }
+
+        return Inertia::render('Admin/Permissions/Edit', [
+            'permission' => [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'guard_name' => $permission->guard_name,
+            ],
+        ]);
+    }
+
+    public function update(Request $request, Permission $permission)
+    {
+        if (!auth()->user()->can('permissions.edit')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:permissions,name,' . $permission->id],
+        ]);
+
+        $permission->update([
+            'name' => $validated['name'],
+        ]);
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', 'Permission updated successfully.');
+    }
+
+    public function destroy(Permission $permission)
+    {
+        if (!auth()->user()->can('permissions.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $permission->delete();
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', 'Permission deleted successfully.');
+    }
+
     private function getGroupLabel(string $group): string
     {
         $labels = [
@@ -56,6 +130,8 @@ class PermissionController extends Controller
             'payments' => 'Payments',
             'dashboard' => 'Dashboard',
             'activity-logs' => 'Activity Logs',
+            'reports' => 'Reports',
+            'settings' => 'Settings',
         ];
 
         return $labels[$group] ?? ucfirst($group);

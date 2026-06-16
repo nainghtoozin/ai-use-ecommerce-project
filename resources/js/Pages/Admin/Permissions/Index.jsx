@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { router, Head } from '@inertiajs/react';
+import { router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function PermissionsIndex({ permissions, grouped, filters }) {
+    const { auth } = usePage().props;
+    const userPermissions = auth?.user?.permissions || [];
+    const can = (perm) => userPermissions.includes(perm);
     const [search, setSearch] = useState(filters?.search || '');
 
     function handleSearch(e) {
@@ -11,8 +14,28 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
         router.get(adminUrl('/admin/permissions'), { search }, { preserveState: true, replace: true });
     }
 
+    function handleDelete(permission) {
+        if (!confirm(`Delete permission "${permission.name}"? This will remove it from all roles.`)) return;
+        router.delete(adminUrl(`/admin/permissions/${permission.id}`), {
+            preserveState: true,
+            onSuccess: () => {},
+        });
+    }
+
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Permissions</h2>}>
+        <AdminLayout header={
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold leading-tight text-gray-800">Permissions</h2>
+                {can('permissions.create') && (
+                    <button
+                        onClick={() => router.get(adminUrl('/admin/permissions/create'))}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <i className="bi bi-plus-lg mr-1"></i> Create Permission
+                    </button>
+                )}
+            </div>
+        }>
             <Head title="Permissions" />
 
             <div className="py-6">
@@ -56,6 +79,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guard</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -76,11 +100,31 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permission.guard_name}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permission.created_at}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                    {can('permissions.edit') && (
+                                                        <button
+                                                            onClick={() => router.get(adminUrl(`/admin/permissions/${permission.id}/edit`))}
+                                                            className="text-blue-600 hover:text-blue-800 mr-3"
+                                                            title="Edit"
+                                                        >
+                                                            <i className="bi bi-pencil"></i>
+                                                        </button>
+                                                    )}
+                                                    {can('permissions.delete') && (
+                                                        <button
+                                                            onClick={() => handleDelete(permission)}
+                                                            className="text-red-600 hover:text-red-800"
+                                                            title="Delete"
+                                                        >
+                                                            <i className="bi bi-trash"></i>
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
                                         ))}
                                         {permissions.data.length === 0 && (
                                             <tr>
-                                                <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                                                <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                                                     No permissions found.
                                                 </td>
                                             </tr>

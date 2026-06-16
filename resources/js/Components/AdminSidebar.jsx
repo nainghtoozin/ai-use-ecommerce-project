@@ -125,9 +125,9 @@ export default function AdminSidebar() {
             {
                 title: 'Reports',
                 items: [
-                    { label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' },
-                    { label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' },
-                    { label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' },
+                    ...(can('reports.view') ? [{ label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
+                    ...(can('reports.view') ? [{ label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
+                    ...(can('reports.view') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
                 ]
             },
             {
@@ -149,10 +149,10 @@ export default function AdminSidebar() {
             {
                 title: 'Configuration',
                 items: [
-                    { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
-                    { label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' },
-                    { label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' },
-                    { label: 'Settings', href: '/admin/settings', icon: 'Settings' },
+                    ...(can('settings.view') ? [{ label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' }] : []),
+                    ...(can('settings.view') ? [{ label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
+                    ...(can('settings.view') ? [{ label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
+                    ...(can('settings.view') ? [{ label: 'Settings', href: '/admin/settings', icon: 'Settings' }] : []),
                 ]
             }
         ];

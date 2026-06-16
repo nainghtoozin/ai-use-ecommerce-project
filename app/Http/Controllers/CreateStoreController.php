@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
 use App\Models\WebsiteInfo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,6 +107,8 @@ class CreateStoreController extends Controller
             if ($adminRole) {
                 $admin->assignRole($adminRole);
             }
+
+            $admin->syncPermissions(Permission::all());
 
             return $admin;
         });

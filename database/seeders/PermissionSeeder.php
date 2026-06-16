@@ -28,7 +28,12 @@ class PermissionSeeder extends Seeder
             'roles.create',
             'roles.update',
             'roles.delete',
+
+            // Permission Management
             'permissions.view',
+            'permissions.create',
+            'permissions.edit',
+            'permissions.delete',
 
             // Product Management
             'products.view',
@@ -60,6 +65,13 @@ class PermissionSeeder extends Seeder
 
             // Activity Logs
             'activity-logs.view',
+
+            // Reports
+            'reports.view',
+
+            // Settings
+            'settings.view',
+            'settings.edit',
 
             // Super Admin Override
             'orders.override-status',
