@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\ProcessOrderNotifications;
 use App\Models\City;
 use App\Models\Coupon;
+use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Product;
@@ -67,6 +68,16 @@ class StorefrontCheckoutController extends Controller
         $cities = City::getActiveWithTownships();
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems));
 
+        $addresses = collect();
+        $defaultAddress = null;
+        if (auth()->check()) {
+            $addresses = CustomerAddress::forUser(auth()->id())
+                ->orderBy('is_default', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            $defaultAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
+        }
+
         $appliedCoupon = session()->get('applied_coupon');
         $couponDiscount = (float) ($appliedCoupon['discount'] ?? 0);
 
@@ -93,6 +104,8 @@ class StorefrontCheckoutController extends Controller
             'appliedPromotion' => $appliedPromotion,
             'discountAmount' => $totalDiscount,
             'autoPromotions' => $autoPromotions,
+            'addresses' => $addresses,
+            'defaultAddress' => $defaultAddress,
         ]);
     }
 

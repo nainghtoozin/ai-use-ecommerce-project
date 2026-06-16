@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import ShopLayout from '@/Layouts/ShopLayout';
 
 export default function Addresses({ tenant, addresses, cities }) {
@@ -8,6 +9,8 @@ export default function Addresses({ tenant, addresses, cities }) {
     const flash = props.flash || {};
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [townships, setTownships] = useState([]);
+    const [loadingTownships, setLoadingTownships] = useState(false);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         label: 'Home',
@@ -22,8 +25,25 @@ export default function Addresses({ tenant, addresses, cities }) {
         notes: '',
     });
 
+    function fetchTownships(cityId) {
+        if (!cityId) {
+            setTownships([]);
+            setData('township_id', '');
+            return;
+        }
+        setLoadingTownships(true);
+        axios.get(`/api/townships/${cityId}`).then((res) => {
+            setTownships(res.data?.townships || []);
+        }).catch(() => {
+            setTownships([]);
+        }).finally(() => {
+            setLoadingTownships(false);
+        });
+    }
+
     function openCreate() {
         reset();
+        setTownships([]);
         setEditingId(null);
         setShowForm(true);
     }
@@ -41,6 +61,13 @@ export default function Addresses({ tenant, addresses, cities }) {
             is_default: address.is_default,
             notes: address.notes || '',
         });
+        if (address.city_id) {
+            axios.get(`/api/townships/${address.city_id}`).then((res) => {
+                setTownships(res.data?.townships || []);
+            }).catch(() => {
+                setTownships([]);
+            });
+        }
         setEditingId(address.id);
         setShowForm(true);
     }
@@ -48,6 +75,7 @@ export default function Addresses({ tenant, addresses, cities }) {
     function closeForm() {
         setShowForm(false);
         setEditingId(null);
+        setTownships([]);
         reset();
     }
 
@@ -186,6 +214,7 @@ export default function Addresses({ tenant, addresses, cities }) {
                                     onChange={(e) => {
                                         setData('city_id', e.target.value);
                                         setData('township_id', '');
+                                        fetchTownships(e.target.value);
                                     }}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
@@ -204,7 +233,10 @@ export default function Addresses({ tenant, addresses, cities }) {
                                     onChange={(e) => setData('township_id', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="">Select township</option>
+                                    <option value="">{loadingTownships ? 'Loading...' : 'Select township'}</option>
+                                    {townships.map((t) => (
+                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
                                 </select>
                                 {errors.township_id && <p className="text-red-500 text-sm mt-1">{errors.township_id}</p>}
                             </div>

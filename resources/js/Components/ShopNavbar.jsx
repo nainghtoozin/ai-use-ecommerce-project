@@ -184,6 +184,15 @@ export default function ShopNavbar() {
                                                         <i className="bi bi-receipt text-gray-400"></i>
                                                         My Orders
                                                     </Link>
+                                                    {storeSlug && (auth?.user?.is_admin || auth?.user?.permissions?.includes('access-admin')) && (
+                                                        <>
+                                                            <div className="border-t border-gray-100"></div>
+                                                            <Link href={`/store/${storeSlug}/admin/dashboard`} className="flex items-center gap-3 px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors font-medium">
+                                                                <i className="bi bi-shield-check text-blue-400"></i>
+                                                                Go To Admin Panel
+                                                            </Link>
+                                                        </>
+                                                    )}
                                                     <div className="border-t border-gray-100 mt-1 pt-1">
                                                         <button onClick={logout} className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                                             <i className="bi bi-box-arrow-right text-gray-400"></i>

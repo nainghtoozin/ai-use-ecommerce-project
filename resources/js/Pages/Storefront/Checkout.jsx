@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import ShopLayout from '@/Layouts/ShopLayout';
 
-export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymentMethods, cities, errors, appliedPromotion: initialAppliedPromotion, discountAmount: initialDiscountAmount, autoPromotions }) {
+export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymentMethods, cities, errors, appliedPromotion: initialAppliedPromotion, discountAmount: initialDiscountAmount, autoPromotions, addresses = [], defaultAddress = null }) {
     const { auth } = usePage().props;
     const [localAppliedPromotion, setLocalAppliedPromotion] = useState(initialAppliedPromotion || null);
     const [localDiscount, setLocalDiscount] = useState(initialDiscountAmount || 0);
@@ -94,6 +94,45 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
     const [selectedFileName, setSelectedFileName] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
+    const [showAddressPicker, setShowAddressPicker] = useState(false);
+    const [selectedAddress, setSelectedAddress] = useState(null);
+
+    useEffect(() => {
+        if (defaultAddress) {
+            setSelectedAddress(defaultAddress);
+            setForm((prev) => ({
+                ...prev,
+                first_name: defaultAddress.first_name,
+                last_name: defaultAddress.last_name,
+                phone: defaultAddress.phone,
+                address: defaultAddress.address_line,
+                city_id: defaultAddress.city_id?.toString() || '',
+                township_id: defaultAddress.township_id?.toString() || '',
+                postal_code: defaultAddress.postal_code || '',
+            }));
+            if (defaultAddress.city_id) {
+                fetchTownships(defaultAddress.city_id);
+            }
+        }
+    }, [defaultAddress]);
+
+    function selectAddress(address) {
+        setSelectedAddress(address);
+        setForm((prev) => ({
+            ...prev,
+            first_name: address.first_name,
+            last_name: address.last_name,
+            phone: address.phone,
+            address: address.address_line,
+            city_id: address.city_id?.toString() || '',
+            township_id: address.township_id?.toString() || '',
+            postal_code: address.postal_code || '',
+        }));
+        if (address.city_id) {
+            fetchTownships(address.city_id);
+        }
+        setShowAddressPicker(false);
+    }
 
     function copyToClipboard(text, id) {
         navigator.clipboard.writeText(text).then(() => {
@@ -247,6 +286,48 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                 <form onSubmit={handleSubmit}>
                     {step === 1 && (
                         <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+                            {addresses.length > 0 && (
+                                <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-700">Delivering to:</span>
+                                            {selectedAddress ? (
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    {selectedAddress.first_name} {selectedAddress.last_name} — {selectedAddress.address_line}, {selectedAddress.city?.name || ''}
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-gray-400 mt-1">No address selected</p>
+                                            )}
+                                        </div>
+                                        <button type="button" onClick={() => setShowAddressPicker(!showAddressPicker)} className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                            {showAddressPicker ? 'Cancel' : 'Change'}
+                                        </button>
+                                    </div>
+                                    {showAddressPicker && (
+                                        <div className="mt-3 space-y-2 border-t pt-3">
+                                            {addresses.map((addr) => (
+                                                <button
+                                                    key={addr.id}
+                                                    type="button"
+                                                    onClick={() => selectAddress(addr)}
+                                                    className={`w-full text-left p-3 rounded-lg border text-sm transition-colors ${
+                                                        selectedAddress?.id === addr.id
+                                                            ? 'border-blue-500 bg-blue-50'
+                                                            : 'border-gray-200 hover:border-blue-300'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-medium">{addr.label}</span>
+                                                        {addr.is_default && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Default</span>}
+                                                    </div>
+                                                    <p className="text-gray-600 mt-1">{addr.address_line}</p>
+                                                    <p className="text-gray-500">{addr.first_name} {addr.last_name} — {addr.phone}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             <h2 className="text-lg font-semibold text-gray-900">Shipping Information</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>

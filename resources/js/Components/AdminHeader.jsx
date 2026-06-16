@@ -1,10 +1,13 @@
-import { usePage, router } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function AdminHeader() {
-    const { auth, url } = usePage().props;
+    const { props, url } = usePage();
+    const { auth } = props;
     const isImpersonating = auth?.user?.is_impersonating;
     const impersonatorName = auth?.user?.impersonator_name;
+
+    const storeSlug = url?.match(/^\/store\/([^/]+)\//)?.[1] ?? null;
 
     const stopImpersonating = () => {
         router.post('/superadmin/impersonate/leave', {}, {
@@ -60,6 +63,15 @@ export default function AdminHeader() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-3">
+                    {storeSlug && (
+                        <Link
+                            href={`/store/${storeSlug}`}
+                            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                        >
+                            <i className="bi bi-eye"></i>
+                            View Store
+                        </Link>
+                    )}
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                         <span className="text-xs text-gray-600">Online</span>
