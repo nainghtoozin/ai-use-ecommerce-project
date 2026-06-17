@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ProductFormMain from '@/Components/ProductForm/ProductFormMain';
 import SidebarSection from '@/Components/ProductForm/SidebarSection';
@@ -18,6 +18,10 @@ const TYPE_STYLES = {
 };
 
 export default function ProductEdit({ product, categories, units = [], brands = [], selectableProducts = [] }) {
+    const { auth } = usePage().props;
+    if (!auth?.user?.permissions?.includes('products.update')) {
+        return <AdminLayout><div className="text-center py-16"><p className="text-red-600 font-semibold">Unauthorized</p></div></AdminLayout>;
+    }
     const {
         formData,
         setData,

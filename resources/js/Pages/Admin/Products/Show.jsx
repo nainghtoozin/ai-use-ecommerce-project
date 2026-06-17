@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
@@ -69,6 +69,9 @@ function VariantLabel({ attrs }) {
 }
 
 export default function ProductShow({ product, relatedCombos = [] }) {
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
     const TypeIcon = TYPE_ICONS[product.type] || Package;
     const typeConfig = TYPE_COLORS[product.type] || TYPE_COLORS.single;
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -117,19 +120,23 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Link
-                            href={adminUrl(`/admin/products/${product.id}/edit`)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                        >
-                            <Edit3 className="w-4 h-4" />
-                            Edit
-                        </Link>
-                        <button
-                            onClick={() => setDeleteModalOpen(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
-                        >
-                            Delete
-                        </button>
+                        {can('products.update') && (
+                            <Link
+                                href={adminUrl(`/admin/products/${product.id}/edit`)}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                            >
+                                <Edit3 className="w-4 h-4" />
+                                Edit
+                            </Link>
+                        )}
+                        {can('products.delete') && (
+                            <button
+                                onClick={() => setDeleteModalOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
+                            >
+                                Delete
+                            </button>
+                        )}
                     </div>
                 </div>
             }
@@ -329,14 +336,16 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                                 <Layers className="w-8 h-8 text-purple-300" />
                                             </div>
                                             <p className="text-sm font-medium text-gray-900">No variants defined</p>
-                                            <p className="text-sm text-gray-500 mt-1">This variable product has no variants yet.</p>
-                                            <Link
-                                                href={adminUrl(`/admin/products/${product.id}/edit`)}
-                                                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-                                            >
-                                                <Edit3 className="w-4 h-4" />
-                                                Add Variants
-                                            </Link>
+                                    <p className="text-sm text-gray-500 mt-1">This variable product has no variants yet.</p>
+                                    {can('products.update') && (
+                                        <Link
+                                            href={adminUrl(`/admin/products/${product.id}/edit`)}
+                                            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                            Add Variants
+                                        </Link>
+                                    )}
                                         </div>
                                     </div>
                                 )}
@@ -414,13 +423,15 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     </div>
                                     <p className="text-sm font-medium text-gray-900">No components added</p>
                                     <p className="text-sm text-gray-500 mt-1">This combo product has no items yet.</p>
-                                    <Link
-                                        href={adminUrl(`/admin/products/${product.id}/edit`)}
-                                        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
-                                    >
-                                        <Edit3 className="w-4 h-4" />
-                                        Add Components
-                                    </Link>
+                                    {can('products.update') && (
+                                        <Link
+                                            href={adminUrl(`/admin/products/${product.id}/edit`)}
+                                            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                            Add Components
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -721,13 +732,15 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         {/* Quick Actions */}
                         <div className="sticky bottom-4">
                             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-3">
-                                <Link
-                                    href={adminUrl(`/admin/products/${product.id}/edit`)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    <Edit3 className="w-4 h-4" />
-                                    Edit Product
-                                </Link>
+                                {can('products.update') && (
+                                    <Link
+                                        href={adminUrl(`/admin/products/${product.id}/edit`)}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        <Edit3 className="w-4 h-4" />
+                                        Edit Product
+                                    </Link>
+                                )}
                                 <Link
                                     href={adminUrl('/admin/products')}
                                     className="w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors text-center block"

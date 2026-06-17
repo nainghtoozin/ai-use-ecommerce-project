@@ -16,6 +16,10 @@ class AdminUnitController extends Controller
 
     public function index()
     {
+        if (!auth()->user()->can('units.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $units = $this->unitService->list();
 
         return Inertia::render('Admin/Units/Index', [
@@ -25,11 +29,19 @@ class AdminUnitController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('units.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Units/Create');
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('units.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $validated = $request->validate($this->unitService->rules());
 
         $this->unitService->create($validated);
@@ -40,6 +52,10 @@ class AdminUnitController extends Controller
 
     public function edit(Unit $unit)
     {
+        if (!auth()->user()->can('units.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Units/Edit', [
             'unit' => $unit,
         ]);
@@ -47,6 +63,10 @@ class AdminUnitController extends Controller
 
     public function update(Request $request, Unit $unit)
     {
+        if (!auth()->user()->can('units.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $validated = $request->validate($this->unitService->rules($unit));
 
         $this->unitService->update($unit, $validated);
@@ -57,6 +77,10 @@ class AdminUnitController extends Controller
 
     public function destroy(Unit $unit)
     {
+        if (!auth()->user()->can('units.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->unitService->delete($unit);
 
         return admin_redirect('admin.units.index')
@@ -65,6 +89,10 @@ class AdminUnitController extends Controller
 
     public function search(Request $request)
     {
+        if (!auth()->user()->can('units.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = $request->input('query');
         $units = $this->unitService->search($query);
         $units->appends(['query' => $query]);

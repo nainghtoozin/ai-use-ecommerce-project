@@ -1,4 +1,4 @@
-import { router, Head } from '@inertiajs/react';
+import { router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import ProductTypeSelector from '@/Components/ProductType/ProductTypeSelector';
@@ -8,6 +8,10 @@ export default function ProductTypeSelect({
     allTypes = ['single', 'variable', 'combo'],
     featureStatus = {},
 }) {
+    const { auth } = usePage().props;
+    if (!auth?.user?.permissions?.includes('products.create')) {
+        return <AdminLayout><div className="text-center py-16"><p className="text-red-600 font-semibold">Unauthorized</p></div></AdminLayout>;
+    }
     const handleTypeSelect = (type) => {
         router.get(adminUrl(`/admin/products/create?type=${type}`));
     };

@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { Search, Plus, Trash2, Image } from 'lucide-react';
 
 export default function BrandsIndex({ brands, query = '' }) {
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
     const [search, setSearch] = useState(query);
     const [deleteModal, setDeleteModal] = useState(null);
     const searchTimeout = useRef(null);
@@ -35,10 +38,12 @@ export default function BrandsIndex({ brands, query = '' }) {
                         <h1 className="text-2xl font-bold text-gray-900">Brands</h1>
                         <p className="text-sm text-gray-500 mt-1">Manage product brands</p>
                     </div>
-                    <Link href={adminUrl('/admin/brands/create')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                        <Plus className="w-4 h-4" />
-                        Add Brand
-                    </Link>
+                    {can('brands.create') && (
+                        <Link href={adminUrl('/admin/brands/create')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                            <Plus className="w-4 h-4" />
+                            Add Brand
+                        </Link>
+                    )}
                 </div>
 
                 <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -99,8 +104,12 @@ export default function BrandsIndex({ brands, query = '' }) {
                                         </td>
                                         <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
                                             <div className="flex justify-end gap-3">
-                                                <Link href={adminUrl(`/admin/brands/${brand.id}/edit`)} className="text-blue-600 hover:text-blue-800 font-medium">Edit</Link>
-                                                <button onClick={() => confirmDelete(brand)} className="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                                                {can('brands.update') && (
+                                                    <Link href={adminUrl(`/admin/brands/${brand.id}/edit`)} className="text-blue-600 hover:text-blue-800 font-medium">Edit</Link>
+                                                )}
+                                                {can('brands.delete') && (
+                                                    <button onClick={() => confirmDelete(brand)} className="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

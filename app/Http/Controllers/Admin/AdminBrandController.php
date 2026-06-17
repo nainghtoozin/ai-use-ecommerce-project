@@ -20,6 +20,10 @@ class AdminBrandController extends Controller
 
     public function index()
     {
+        if (!auth()->user()->can('brands.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $brands = $this->brandService->list();
 
         return Inertia::render('Admin/Brands/Index', [
@@ -29,11 +33,19 @@ class AdminBrandController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('brands.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Brands/Create');
     }
 
     public function store(StoreBrandRequest $request)
     {
+        if (!auth()->user()->can('brands.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('logo')) {
@@ -48,6 +60,10 @@ class AdminBrandController extends Controller
 
     public function edit(Brand $brand)
     {
+        if (!auth()->user()->can('brands.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Brands/Edit', [
             'brand' => $brand,
         ]);
@@ -55,6 +71,10 @@ class AdminBrandController extends Controller
 
     public function update(UpdateBrandRequest $request, Brand $brand)
     {
+        if (!auth()->user()->can('brands.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('logo')) {
@@ -70,6 +90,10 @@ class AdminBrandController extends Controller
 
     public function destroy(Brand $brand)
     {
+        if (!auth()->user()->can('brands.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->imageService->delete($brand->logo);
         $this->brandService->delete($brand);
 
@@ -79,6 +103,10 @@ class AdminBrandController extends Controller
 
     public function search(Request $request)
     {
+        if (!auth()->user()->can('brands.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = $request->input('query');
         $brands = $this->brandService->search($query);
         $brands->appends(['query' => $query]);

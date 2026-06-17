@@ -38,13 +38,13 @@ class PermissionSeeder extends Seeder
             // Product Management
             'products.view',
             'products.create',
-            'products.update',
+            'products.edit',
             'products.delete',
 
             // Category Management
             'categories.view',
             'categories.create',
-            'categories.update',
+            'categories.edit',
             'categories.delete',
 
             // Order Management
@@ -80,13 +80,13 @@ class PermissionSeeder extends Seeder
             // Unit Management
             'units.view',
             'units.create',
-            'units.update',
+            'units.edit',
             'units.delete',
 
             // Brand Management
             'brands.view',
             'brands.create',
-            'brands.update',
+            'brands.edit',
             'brands.delete',
 
             // Maintenance

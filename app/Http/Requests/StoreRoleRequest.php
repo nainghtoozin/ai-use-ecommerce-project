@@ -15,7 +15,7 @@ class StoreRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where(fn($q) => $q->where('guard_name', 'web'))],
+            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where(fn($q) => $q->where('guard_name', 'web')->where('tenant_id', tenant()?->id))],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ];

@@ -56,7 +56,7 @@ const STOCK_STYLES = {
     out_of_stock: { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-600/10', dot: 'bg-red-500', label: 'Out of Stock' },
 };
 
-function InlineActions({ product, onDelete }) {
+function InlineActions({ product, onDelete, can }) {
     return (
         <div className="flex items-center gap-1 whitespace-nowrap">
             <Link
@@ -66,27 +66,33 @@ function InlineActions({ product, onDelete }) {
             >
                 <Eye className="w-4 h-4" />
             </Link>
-            <Link
-                href={adminUrl(`/admin/products/${product.id}/edit`)}
-                className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
-                title="Edit"
-            >
-                <Pencil className="w-4 h-4" />
-            </Link>
-            <button
-                type="button"
-                onClick={() => onDelete(product)}
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                title="Delete"
-            >
-                <Trash2 className="w-4 h-4" />
-            </button>
+            {can('products.update') && (
+                <Link
+                    href={adminUrl(`/admin/products/${product.id}/edit`)}
+                    className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                    title="Edit"
+                >
+                    <Pencil className="w-4 h-4" />
+                </Link>
+            )}
+            {can('products.delete') && (
+                <button
+                    type="button"
+                    onClick={() => onDelete(product)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    title="Delete"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            )}
         </div>
     );
 }
 
 export default function AdminProductsIndex({ products, categories, brands = [], filters = {}, showPagination = true, warning = null }) {
-    const { url } = usePage();
+    const { url, props: { auth } } = usePage();
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
     const params = new URLSearchParams(url.split('?')[1] || '');
 
     const [search, setSearch] = useState(filters.search || '');
@@ -245,13 +251,15 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             {productCount} product{productCount !== 1 ? 's' : ''} · {activeCount} active
                         </p>
                     </div>
-                    <Link
-                        href={adminUrl('/admin/products/type-select')}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Product
-                    </Link>
+                    {can('products.create') && (
+                        <Link
+                            href={adminUrl('/admin/products/type-select')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Product
+                        </Link>
+                    )}
                 </div>
 
                 {/* Filters */}
@@ -371,27 +379,33 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                 {selectedIds.length} product{selectedIds.length !== 1 ? 's' : ''} selected
                             </span>
                             <div className="h-4 w-px bg-blue-200" />
-                            <button
-                                onClick={() => handleBulkAction('activate')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-md hover:bg-emerald-200 transition-colors"
-                            >
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                Activate
-                            </button>
-                            <button
-                                onClick={() => handleBulkAction('deactivate')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors"
-                            >
-                                <XCircle className="w-3.5 h-3.5" />
-                                Deactivate
-                            </button>
-                            <button
-                                onClick={() => handleBulkAction('delete')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Delete
-                            </button>
+                            {can('products.update') && (
+                                <button
+                                    onClick={() => handleBulkAction('activate')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-md hover:bg-emerald-200 transition-colors"
+                                >
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                    Activate
+                                </button>
+                            )}
+                            {can('products.update') && (
+                                <button
+                                    onClick={() => handleBulkAction('deactivate')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors"
+                                >
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    Deactivate
+                                </button>
+                            )}
+                            {can('products.delete') && (
+                                <button
+                                    onClick={() => handleBulkAction('delete')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete
+                                </button>
+                            )}
                         </div>
                         <button
                             onClick={() => { setSelectedIds([]); setSelectAll(false); }}
@@ -453,7 +467,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                 <p className="text-sm text-gray-500 mt-1">
                                                     {hasFilters ? 'Try adjusting your search or filter criteria.' : 'Get started by adding your first product.'}
                                                 </p>
-                                                {!hasFilters && (
+                                                {!hasFilters && can('products.create') && (
                                                     <Link
                                                         href={adminUrl('/admin/products/type-select')}
                                                         className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
@@ -577,7 +591,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                 </td>
 
                                                 <td className="px-4 py-3 align-middle sticky right-0 bg-white z-10">
-                                                    <InlineActions product={product} onDelete={openDeleteModal} />
+                                                    <InlineActions product={product} onDelete={openDeleteModal} can={can} />
                                                 </td>
                                             </tr>
                                         );

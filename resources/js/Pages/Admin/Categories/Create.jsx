@@ -1,8 +1,12 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function CategoryCreate() {
+    const { auth } = usePage().props;
+    if (!auth?.user?.permissions?.includes('categories.create')) {
+        return <AdminLayout><div className="text-center py-16"><p className="text-red-600 font-semibold">Unauthorized</p></div></AdminLayout>;
+    }
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         description: '',

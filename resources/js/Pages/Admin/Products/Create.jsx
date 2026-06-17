@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ProductFormMain from '@/Components/ProductForm/ProductFormMain';
 import SidebarSection from '@/Components/ProductForm/SidebarSection';
@@ -18,6 +18,10 @@ const TYPE_STYLES = {
 };
 
 export default function ProductCreate({ categories, units = [], brands = [], productType = 'single', selectableProducts = [] }) {
+    const { auth } = usePage().props;
+    if (!auth?.user?.permissions?.includes('products.create')) {
+        return <AdminLayout><div className="text-center py-16"><p className="text-red-600 font-semibold">Unauthorized</p></div></AdminLayout>;
+    }
     const {
         formData,
         setData,

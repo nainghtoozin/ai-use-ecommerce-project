@@ -18,6 +18,7 @@ use App\Services\ProductService;
 use App\Services\SkuService;
 use App\Services\SubscriptionLimitService;
 use App\Services\PerPageTrait;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -33,6 +34,10 @@ class AdminProductController extends Controller
 
     public function index(Request $request)
     {
+        if (!auth()->user()->can('products.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = Product::with(['category', 'unit', 'brand']);
 
         // Eager load active variant stock sum to avoid N+1 on effective_stock
@@ -150,6 +155,10 @@ class AdminProductController extends Controller
 
     public function typeSelect()
     {
+        if (!auth()->user()->can('products.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $featureGate = \App\Services\FeatureGate::forUser();
 
         return Inertia::render('Admin/Products/TypeSelect', [
@@ -161,6 +170,10 @@ class AdminProductController extends Controller
 
     public function create(Request $request)
     {
+        if (!auth()->user()->can('products.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $categories = Category::all();
         $productType = $request->input('type', ProductType::SINGLE);
 
@@ -203,6 +216,10 @@ class AdminProductController extends Controller
 
     public function store(StoreProductRequest $request)
     {
+        if (!auth()->user()->can('products.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validated();
 
         // Set product type, defaulting to single for backward compatibility
@@ -340,6 +357,10 @@ class AdminProductController extends Controller
 
     public function edit(Product $product)
     {
+        if (!auth()->user()->can('products.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $categories = Category::all();
 
         $selectableProducts = null;
@@ -382,6 +403,10 @@ class AdminProductController extends Controller
 
     public function show(Product $product)
     {
+        if (!auth()->user()->can('products.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $product->load(['category', 'unit', 'brand', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant', 'orderItems']);
 
         // Append price range for variable products
@@ -416,6 +441,10 @@ class AdminProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product)
     {
+        if (!auth()->user()->can('products.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validated();
 
         // Validate type if provided (don't overwrite existing type if not sent)
@@ -607,6 +636,10 @@ class AdminProductController extends Controller
 
     public function destroy(Product $product)
     {
+        if (!auth()->user()->can('products.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         if ($product->hasOrders()) {
             return back()->with('error', 'Cannot delete product because it exists in customer orders.');
         }
@@ -643,8 +676,8 @@ class AdminProductController extends Controller
 
     public function bulkDestroy(Request $request)
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!auth()->user()->can('products.delete')) {
+            abort(403, 'Unauthorized');
         }
 
         $request->validate([
@@ -697,8 +730,8 @@ class AdminProductController extends Controller
 
     public function bulkActivate(Request $request)
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!auth()->user()->can('products.update')) {
+            abort(403, 'Unauthorized');
         }
 
         $request->validate([
@@ -724,8 +757,8 @@ class AdminProductController extends Controller
 
     public function bulkDeactivate(Request $request)
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!auth()->user()->can('products.update')) {
+            abort(403, 'Unauthorized');
         }
 
         $request->validate([
@@ -751,6 +784,10 @@ class AdminProductController extends Controller
 
     public function search(Request $request)
     {
+        if (!auth()->user()->can('products.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = $request->input('query');
 
         $products = Product::with(['category', 'unit', 'brand'])
