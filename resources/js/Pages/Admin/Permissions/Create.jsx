@@ -5,6 +5,12 @@ import { adminUrl } from '@/Utils/adminUrl';
 
 export default function PermissionsCreate() {
     const { props } = usePage();
+    const { auth } = props;
+    const permissions = auth?.user?.permissions || [];
+    if (!permissions.includes('permissions.create')) {
+        router.get(adminUrl('/admin/permissions'));
+        return null;
+    }
     const flash = props.flash || {};
     const [name, setName] = useState('');
     const [errors, setErrors] = useState({});

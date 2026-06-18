@@ -101,7 +101,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permission.guard_name}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permission.created_at}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                    {can('permissions.edit') && (
+                                                    {can('permissions.update') && (
                                                         <button
                                                             onClick={() => router.get(adminUrl(`/admin/permissions/${permission.id}/edit`))}
                                                             className="text-blue-600 hover:text-blue-800 mr-3"

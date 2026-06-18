@@ -6,8 +6,10 @@ import PerPageSelect from '@/Components/PerPageSelect';
 import { assetUrl } from '@/Utils/helpers';
 
 export default function UsersIndex({ users, filters, roles, showPagination = true, warning = null }) {
-    const { props } = usePage();
-    const isSuperAdmin = props?.auth?.user?.is_superadmin ?? false;
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
+    const isSuperAdmin = auth?.user?.is_superadmin ?? false;
     const [search, setSearch] = useState(filters?.search || '');
     const [roleFilter, setRoleFilter] = useState(filters?.role || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
@@ -90,12 +92,14 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                         <i className="bi bi-search mr-1"></i> Search
                                     </button>
                                 </form>
-                                <Link
-                                    href={adminUrl('/admin/users/create')}
-                                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
-                                >
-                                    <i className="bi bi-plus-lg"></i> Create User
-                                </Link>
+                                {can('users.create') && (
+                                    <Link
+                                        href={adminUrl('/admin/users/create')}
+                                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
+                                    >
+                                        <i className="bi bi-plus-lg"></i> Create User
+                                    </Link>
+                                )}
                             </div>
 
                             <div className="flex gap-4 mb-6">
@@ -175,28 +179,32 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Link href={adminUrl(`/admin/users/${user.id}`)} className="text-blue-600 hover:text-blue-900">
-                                                            <i className="bi bi-eye"></i>
-                                                        </Link>
-                                                        <Link href={adminUrl(`/admin/users/${user.id}/edit`)} className="text-indigo-600 hover:text-indigo-900">
-                                                            <i className="bi bi-pencil"></i>
-                                                        </Link>
-                                                        {(isSuperAdmin || !user.is_owner) && user.status === 'active' && (
-                                                            <>
-                                                                <button onClick={() => handleSuspend(user)} className="text-yellow-600 hover:text-yellow-900">
-                                                                    <i className="bi bi-pause-circle"></i>
-                                                                </button>
-                                                                <button onClick={() => handleBan(user)} className="text-red-600 hover:text-red-900">
-                                                                    <i className="bi bi-slash-circle"></i>
-                                                                </button>
-                                                            </>
+                                                        {can('users.view') && (
+                                                            <Link href={adminUrl(`/admin/users/${user.id}`)} className="text-blue-600 hover:text-blue-900">
+                                                                <i className="bi bi-eye"></i>
+                                                            </Link>
                                                         )}
-                                                        {user.status !== 'active' && (
+                                                        {can('users.update') && (
+                                                            <Link href={adminUrl(`/admin/users/${user.id}/edit`)} className="text-indigo-600 hover:text-indigo-900">
+                                                                <i className="bi bi-pencil"></i>
+                                                            </Link>
+                                                        )}
+                                                        {can('users.suspend') && (isSuperAdmin || !user.is_owner) && user.status === 'active' && (
+                                                            <button onClick={() => handleSuspend(user)} className="text-yellow-600 hover:text-yellow-900">
+                                                                <i className="bi bi-pause-circle"></i>
+                                                            </button>
+                                                        )}
+                                                        {can('users.ban') && (isSuperAdmin || !user.is_owner) && user.status === 'active' && (
+                                                            <button onClick={() => handleBan(user)} className="text-red-600 hover:text-red-900">
+                                                                <i className="bi bi-slash-circle"></i>
+                                                            </button>
+                                                        )}
+                                                        {can('users.activate') && user.status !== 'active' && (
                                                             <button onClick={() => handleActivate(user)} className="text-green-600 hover:text-green-900">
                                                                 <i className="bi bi-check-circle"></i>
                                                             </button>
                                                         )}
-                                                        {(isSuperAdmin || !user.is_owner) && (
+                                                        {can('users.delete') && (isSuperAdmin || !user.is_owner) && (
                                                             <button onClick={() => confirmDelete(user)} className="text-red-600 hover:text-red-900">
                                                                 <i className="bi bi-trash"></i>
                                                             </button>

@@ -4,8 +4,10 @@ import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function UsersShow({ user, activities }) {
-    const { props } = usePage();
-    const isSuperAdmin = props?.auth?.user?.is_superadmin ?? false;
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
+    const isSuperAdmin = auth?.user?.is_superadmin ?? false;
 
     const statusBadge = (status) => {
         const colors = {
@@ -62,10 +64,12 @@ export default function UsersShow({ user, activities }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Link href={adminUrl(`/admin/users/${user.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
-                                        <i className="bi bi-pencil mr-1"></i> Edit
-                                    </Link>
-                                    {(isSuperAdmin || !user.is_owner) && (
+                                    {can('users.update') && (
+                                        <Link href={adminUrl(`/admin/users/${user.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                            <i className="bi bi-pencil mr-1"></i> Edit
+                                        </Link>
+                                    )}
+                                    {can('users.delete') && (isSuperAdmin || !user.is_owner) && (
                                         <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
                                             <i className="bi bi-trash mr-1"></i> Delete
                                         </button>
@@ -90,6 +94,7 @@ export default function UsersShow({ user, activities }) {
                         </div>
                     </div>
 
+                    {can('users.view-activity') && (
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
@@ -130,6 +135,7 @@ export default function UsersShow({ user, activities }) {
                             )}
                         </div>
                     </div>
+                    )}
 
                     <div className="flex justify-start">
                         <Link href={adminUrl('/admin/users')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">

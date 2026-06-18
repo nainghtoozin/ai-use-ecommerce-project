@@ -68,6 +68,10 @@ class RoleController extends Controller
 
     public function store(StoreRoleRequest $request)
     {
+        if (!auth()->user()->can('roles.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
 
         if ($request->filled('permissions')) {
@@ -147,6 +151,10 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, $id)
     {
+        if (!auth()->user()->can('roles.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $role = Role::when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
             ->findOrFail($id);
 

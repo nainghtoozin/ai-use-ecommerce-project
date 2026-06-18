@@ -1,8 +1,12 @@
-import { Link, Head, router } from '@inertiajs/react';
+import { Link, Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function RolesShow({ role, grouped_permissions }) {
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
+
     function confirmDelete() {
         if (window.confirm(`Are you sure you want to delete "${role.name}"? This action cannot be undone.`)) {
             router.delete(adminUrl(`/admin/roles/${role.id}`));
@@ -28,12 +32,16 @@ export default function RolesShow({ role, grouped_permissions }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Link href={adminUrl(`/admin/roles/${role.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
-                                        <i className="bi bi-pencil mr-1"></i> Edit
-                                    </Link>
-                                    <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
-                                        <i className="bi bi-trash mr-1"></i> Delete
-                                    </button>
+                                    {can('roles.update') && (
+                                        <Link href={adminUrl(`/admin/roles/${role.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                            <i className="bi bi-pencil mr-1"></i> Edit
+                                        </Link>
+                                    )}
+                                    {can('roles.delete') && (
+                                        <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+                                            <i className="bi bi-trash mr-1"></i> Delete
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 

@@ -50,6 +50,10 @@ class AdminUserController extends Controller
 
     public function index(Request $request)
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $search = $request->get('search');
         $role = $request->get('role');
         $status = $request->get('status');
@@ -100,6 +104,10 @@ class AdminUserController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('users.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $roles = Role::orderBy('name')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
             ->pluck('name');
@@ -111,6 +119,10 @@ class AdminUserController extends Controller
 
     public function store(StoreUserRequest $request)
     {
+        if (!auth()->user()->can('users.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validated();
 
         // Enforce plan staff limit for admin role users
@@ -144,16 +156,22 @@ class AdminUserController extends Controller
 
     public function show(int $id)
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::with('roles')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
 
-        $activities = ActivityLog::query()
-            ->where('subject_type', User::class)
-            ->where('subject_id', $user->id)
-            ->latest()
-            ->limit(20)
-            ->get();
+        $activities = auth()->user()->can('users.view-activity')
+            ? ActivityLog::query()
+                ->where('subject_type', User::class)
+                ->where('subject_id', $user->id)
+                ->latest()
+                ->limit(20)
+                ->get()
+            : [];
 
         return Inertia::render('Admin/Users/Show', [
             'user' => $user,
@@ -163,6 +181,10 @@ class AdminUserController extends Controller
 
     public function edit(int $id)
     {
+        if (!auth()->user()->can('users.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::with('roles')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
@@ -178,6 +200,10 @@ class AdminUserController extends Controller
 
     public function update(UpdateUserRequest $request, int $id)
     {
+        if (!auth()->user()->can('users.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::with('roles')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
@@ -223,6 +249,10 @@ class AdminUserController extends Controller
         }
 
         if (isset($data['role'])) {
+            if (!auth()->user()->can('users.assign-roles')) {
+                abort(403, 'Unauthorized');
+            }
+
             $currentRoles = $user->roles->pluck('name')->toArray();
             if ($data['role'] !== ($currentRoles[0] ?? null)) {
                 if ($user->isOwner() && $data['role'] !== 'admin' && !$this->isSuperAdmin()) {
@@ -259,6 +289,10 @@ class AdminUserController extends Controller
 
     public function destroy(int $id)
     {
+        if (!auth()->user()->can('users.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::with('roles')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
@@ -300,6 +334,10 @@ class AdminUserController extends Controller
 
     public function suspend(int $id)
     {
+        if (!auth()->user()->can('users.suspend')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
 
@@ -321,6 +359,10 @@ class AdminUserController extends Controller
 
     public function ban(int $id)
     {
+        if (!auth()->user()->can('users.ban')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
 
@@ -342,6 +384,10 @@ class AdminUserController extends Controller
 
     public function activate(int $id)
     {
+        if (!auth()->user()->can('users.activate')) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
             ->findOrFail($id);
 

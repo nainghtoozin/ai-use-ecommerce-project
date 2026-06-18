@@ -75,7 +75,7 @@ class PermissionController extends Controller
 
     public function edit(Permission $permission)
     {
-        if (!auth()->user()->can('permissions.edit')) {
+        if (!auth()->user()->can('permissions.update')) {
             abort(403, 'Unauthorized');
         }
 
@@ -90,7 +90,7 @@ class PermissionController extends Controller
 
     public function update(Request $request, Permission $permission)
     {
-        if (!auth()->user()->can('permissions.edit')) {
+        if (!auth()->user()->can('permissions.update')) {
             abort(403, 'Unauthorized');
         }
 
@@ -110,6 +110,12 @@ class PermissionController extends Controller
     {
         if (!auth()->user()->can('permissions.delete')) {
             abort(403, 'Unauthorized');
+        }
+
+        $roleCount = $permission->roles()->count();
+        if ($roleCount > 0) {
+            return redirect()->route('admin.permissions.index')
+                ->with('error', "Cannot delete permission '{$permission->name}' because it is assigned to {$roleCount} role(s). Please remove it from all roles first.");
         }
 
         $permission->delete();
