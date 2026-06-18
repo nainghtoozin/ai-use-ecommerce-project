@@ -68,10 +68,20 @@ class PermissionSeeder extends Seeder
 
             // Reports
             'reports.view',
+            'reports.sales',
+            'reports.orders',
+            'reports.products',
+            'reports.payments',
 
             // Settings
             'settings.view',
             'settings.edit',
+            'settings.website',
+            'settings.telegram',
+            'settings.notifications',
+            'settings.payment-methods',
+            'settings.shipping',
+            'settings.seo',
 
             // Super Admin Override
             'orders.override-status',
@@ -88,6 +98,30 @@ class PermissionSeeder extends Seeder
             'brands.create',
             'brands.edit',
             'brands.delete',
+
+            // Coupon Management
+            'coupons.view',
+            'coupons.create',
+            'coupons.update',
+            'coupons.delete',
+
+            // Promotion Management
+            'promotions.view',
+            'promotions.create',
+            'promotions.update',
+            'promotions.delete',
+
+            // City Management
+            'cities.view',
+            'cities.create',
+            'cities.update',
+            'cities.delete',
+
+            // Township Management
+            'townships.view',
+            'townships.create',
+            'townships.update',
+            'townships.delete',
 
             // Maintenance
             'bypass maintenance mode',

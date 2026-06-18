@@ -19,6 +19,10 @@ class AdminPaymentMethodController extends Controller
 
     public function index(): \Inertia\Response
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $paymentMethods = PaymentMethod::latest()->paginate(10);
         return Inertia::render('Admin/PaymentMethods/Index', [
             'paymentMethods' => $paymentMethods,
@@ -27,11 +31,19 @@ class AdminPaymentMethodController extends Controller
 
     public function create(): \Inertia\Response
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/PaymentMethods/Create');
     }
 
     public function store(PaymentMethodStoreRequest $request): RedirectResponse
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->paymentMethodService->createPaymentMethod($request->validated());
 
         return admin_redirect('admin.payment-methods.index')
@@ -40,6 +52,10 @@ class AdminPaymentMethodController extends Controller
 
     public function edit(PaymentMethod $paymentMethod): \Inertia\Response
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/PaymentMethods/Edit', [
             'paymentMethod' => $paymentMethod,
         ]);
@@ -47,6 +63,10 @@ class AdminPaymentMethodController extends Controller
 
     public function update(PaymentMethodUpdateRequest $request, PaymentMethod $paymentMethod): RedirectResponse
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->paymentMethodService->updatePaymentMethod($paymentMethod, $request->validated());
 
         return admin_redirect('admin.payment-methods.index')
@@ -55,6 +75,10 @@ class AdminPaymentMethodController extends Controller
 
     public function destroy(PaymentMethod $paymentMethod): RedirectResponse
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->paymentMethodService->deletePaymentMethod($paymentMethod);
 
         return admin_redirect('admin.payment-methods.index')
@@ -63,6 +87,10 @@ class AdminPaymentMethodController extends Controller
 
     public function toggle(PaymentMethod $paymentMethod): JsonResponse
     {
+        if (!auth()->user()->can('payments.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $paymentMethod = $this->paymentMethodService->toggleActive($paymentMethod);
 
         return response()->json([

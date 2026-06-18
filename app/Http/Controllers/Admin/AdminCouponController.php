@@ -19,6 +19,10 @@ class AdminCouponController extends Controller
 
     public function index()
     {
+        if (!auth()->user()->can('coupons.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $coupons = Coupon::withCount(['products', 'categories'])
             ->latest()
             ->paginate(15);
@@ -30,6 +34,10 @@ class AdminCouponController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('coupons.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Coupons/Create', [
             'categories' => Category::all(['id', 'name']),
             'products' => Product::all(['id', 'name']),
@@ -38,6 +46,10 @@ class AdminCouponController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('coupons.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -82,6 +94,10 @@ class AdminCouponController extends Controller
 
     public function edit(Coupon $coupon)
     {
+        if (!auth()->user()->can('coupons.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $coupon->load(['products', 'categories']);
 
         return Inertia::render('Admin/Coupons/Edit', [
@@ -93,6 +109,10 @@ class AdminCouponController extends Controller
 
     public function update(Request $request, Coupon $coupon)
     {
+        if (!auth()->user()->can('coupons.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -133,6 +153,10 @@ class AdminCouponController extends Controller
 
     public function destroy(Coupon $coupon)
     {
+        if (!auth()->user()->can('coupons.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $coupon->products()->detach();
         $coupon->categories()->detach();
         $coupon->delete();
@@ -143,6 +167,10 @@ class AdminCouponController extends Controller
 
     public function search(Request $request)
     {
+        if (!auth()->user()->can('coupons.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = $request->input('query');
 
         $coupons = Coupon::where(function ($q) use ($query) {

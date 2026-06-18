@@ -112,7 +112,7 @@ export default function AdminSidebar() {
                     ...(can('categories.view') ? [{ label: 'Categories', href: '/admin/categories', icon: 'Tags' }] : []),
                     ...(can('brands.view') ? [{ label: 'Brands', href: '/admin/brands', icon: 'Layers' }] : []),
                     ...(can('units.view') ? [{ label: 'Units', href: '/admin/units', icon: 'Ruler' }] : []),
-                    { label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' },
+                    ...(can('promotions.view') ? [{ label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' }] : []),
                 ]
             },
             {
@@ -125,16 +125,16 @@ export default function AdminSidebar() {
             {
                 title: 'Reports',
                 items: [
-                    ...(can('reports.view') ? [{ label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
-                    ...(can('reports.view') ? [{ label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
-                    ...(can('reports.view') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
+                    ...(can('reports.sales') ? [{ label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
+                    ...(can('reports.products') ? [{ label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
+                    ...(can('reports.payments') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
                 ]
             },
             {
                 title: 'Locations',
                 items: [
-                    { label: 'Cities', href: '/admin/cities', icon: 'Building2' },
-                    { label: 'Townships', href: '/admin/townships', icon: 'MapPin' },
+                    ...(can('cities.view') ? [{ label: 'Cities', href: '/admin/cities', icon: 'Building2' }] : []),
+                    ...(can('townships.view') ? [{ label: 'Townships', href: '/admin/townships', icon: 'MapPin' }] : []),
                 ]
             },
             {
@@ -149,9 +149,9 @@ export default function AdminSidebar() {
             {
                 title: 'Configuration',
                 items: [
-                    ...(can('settings.view') ? [{ label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' }] : []),
-                    ...(can('settings.view') ? [{ label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
-                    ...(can('settings.view') ? [{ label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
+                    ...(can('settings.website') ? [{ label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' }] : []),
+                    ...(can('settings.notifications') ? [{ label: 'Notification Settings', href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
+                    ...(can('settings.telegram') ? [{ label: 'Telegram Integration', href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
                     ...(can('settings.view') ? [{ label: 'Settings', href: '/admin/settings', icon: 'Settings' }] : []),
                 ]
             }

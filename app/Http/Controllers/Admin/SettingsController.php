@@ -18,6 +18,10 @@ class SettingsController extends Controller
 
     public function edit(): \Inertia\Response
     {
+        if (!auth()->user()->can('settings.website')) {
+            abort(403, 'Unauthorized');
+        }
+
         $settings = WebsiteInfo::getSettings();
 
         return Inertia::render('Admin/Settings/Edit', [
@@ -27,6 +31,10 @@ class SettingsController extends Controller
 
     public function update(UpdateWebsiteSettingsRequest $request)
     {
+        if (!auth()->user()->can('settings.website')) {
+            abort(403, 'Unauthorized');
+        }
+
         $info = WebsiteInfo::firstWhere('tenant_id', tenant()->id);
         if (!$info) {
             $info = new WebsiteInfo();

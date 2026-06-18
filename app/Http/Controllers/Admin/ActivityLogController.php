@@ -22,6 +22,10 @@ class ActivityLogController extends Controller
 
     public function index(Request $request)
     {
+        if (!auth()->user()->can('activity-logs.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $logName = $request->get('log_name');
         $event = $request->get('event');
 
@@ -63,6 +67,10 @@ class ActivityLogController extends Controller
 
     public function show(int $id)
     {
+        if (!auth()->user()->can('activity-logs.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $log = ActivityLog::with('causer', 'subject', 'impersonator', 'impersonatedUser')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('activity_logs.tenant_id', $t->id))
             ->findOrFail($id);

@@ -16,6 +16,10 @@ class AdminPromotionBannerController extends Controller
 
     public function index()
     {
+        if (!auth()->user()->can('promotions.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $promotions = PromotionBanner::latest()->paginate(10);
 
         return Inertia::render('Admin/PromotionBanners/Index', [
@@ -25,6 +29,10 @@ class AdminPromotionBannerController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('promotions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -50,6 +58,10 @@ class AdminPromotionBannerController extends Controller
 
     public function update(Request $request, PromotionBanner $promotion)
     {
+        if (!auth()->user()->can('promotions.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -71,6 +83,10 @@ class AdminPromotionBannerController extends Controller
 
     public function destroy(PromotionBanner $promotion)
     {
+        if (!auth()->user()->can('promotions.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->imageService->delete($promotion->image);
         $promotion->delete();
 
@@ -80,11 +96,19 @@ class AdminPromotionBannerController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('promotions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/PromotionBanners/Create');
     }
 
     public function edit(PromotionBanner $promotion)
     {
+        if (!auth()->user()->can('promotions.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/PromotionBanners/Edit', [
             'promotion' => $promotion,
         ]);
@@ -92,6 +116,10 @@ class AdminPromotionBannerController extends Controller
 
     public function search(Request $request)
     {
+        if (!auth()->user()->can('promotions.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = $request->input('query');
 
         $promotions = PromotionBanner::where(function ($q) use ($query) {

@@ -12,6 +12,10 @@ class AdminNotificationSettingsController extends Controller
 {
     public function edit()
     {
+        if (!auth()->user()->can('settings.notifications')) {
+            abort(403, 'Unauthorized');
+        }
+
         $settings = Setting::pluck('value', 'key')->toArray();
 
         return Inertia::render('Admin/Settings/NotificationSettings', [
@@ -23,6 +27,10 @@ class AdminNotificationSettingsController extends Controller
 
     public function update(Request $request)
     {
+        if (!auth()->user()->can('settings.notifications')) {
+            abort(403, 'Unauthorized');
+        }
+
         $request->validate([
             'notifications_enabled' => 'required',
         ]);

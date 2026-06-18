@@ -20,6 +20,10 @@ class AdminTownshipController extends Controller
 
     public function index(Request $request): \Inertia\Response
     {
+        if (!auth()->user()->can('townships.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = Township::with('city');
 
         if ($request->has('city_id') && $request->city_id) {
@@ -37,6 +41,10 @@ class AdminTownshipController extends Controller
 
     public function create(): \Inertia\Response
     {
+        if (!auth()->user()->can('townships.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $cities = City::active()->orderBy('name')->get();
         return Inertia::render('Admin/Townships/Create', [
             'cities' => $cities,
@@ -45,6 +53,10 @@ class AdminTownshipController extends Controller
 
     public function store(TownshipStoreRequest $request): RedirectResponse
     {
+        if (!auth()->user()->can('townships.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->locationService->createTownship($request->validated());
 
         return admin_redirect('admin.townships.index')
@@ -53,6 +65,9 @@ class AdminTownshipController extends Controller
 
     public function edit(Township $township): \Inertia\Response
     {
+        if (!auth()->user()->can('townships.update')) {
+            abort(403, 'Unauthorized');
+        }
         $cities = City::active()->orderBy('name')->get();
         return Inertia::render('Admin/Townships/Edit', [
             'township' => $township,
@@ -62,6 +77,10 @@ class AdminTownshipController extends Controller
 
     public function update(TownshipUpdateRequest $request, Township $township): RedirectResponse
     {
+        if (!auth()->user()->can('townships.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->locationService->updateTownship($township, $request->validated());
 
         return admin_redirect('admin.townships.index')
@@ -70,6 +89,10 @@ class AdminTownshipController extends Controller
 
     public function destroy(Township $township): RedirectResponse
     {
+        if (!auth()->user()->can('townships.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->locationService->deleteTownship($township);
 
         return admin_redirect('admin.townships.index')
@@ -78,6 +101,10 @@ class AdminTownshipController extends Controller
 
     public function toggle(Township $township): RedirectResponse
     {
+        if (!auth()->user()->can('townships.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $this->locationService->toggleTownshipActive($township);
 
         return back()->with('success', 'Status updated successfully.');

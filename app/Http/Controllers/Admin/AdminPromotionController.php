@@ -14,6 +14,10 @@ class AdminPromotionController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('promotions.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $promotions = Promotion::withCount(['products', 'categories'])
             ->latest()
             ->paginate(15);
@@ -33,6 +37,10 @@ class AdminPromotionController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('promotions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Promotions/Create', [
             'categories' => Category::all(['id', 'name']),
             'products' => Product::all(['id', 'name']),
@@ -41,6 +49,10 @@ class AdminPromotionController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('promotions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -89,6 +101,10 @@ class AdminPromotionController extends Controller
 
     public function edit(Promotion $promotion)
     {
+        if (!auth()->user()->can('promotions.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $promotion->load(['products', 'categories']);
 
         return Inertia::render('Admin/Promotions/Edit', [
@@ -100,6 +116,10 @@ class AdminPromotionController extends Controller
 
     public function update(Request $request, Promotion $promotion)
     {
+        if (!auth()->user()->can('promotions.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -142,6 +162,10 @@ class AdminPromotionController extends Controller
 
     public function destroy(Promotion $promotion)
     {
+        if (!auth()->user()->can('promotions.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $promotion->products()->detach();
         $promotion->categories()->detach();
         $promotion->usages()->delete();
@@ -153,6 +177,10 @@ class AdminPromotionController extends Controller
 
     public function search(Request $request)
     {
+        if (!auth()->user()->can('promotions.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = $request->input('query');
 
         $promotions = Promotion::where(function ($q) use ($query) {
@@ -182,6 +210,10 @@ class AdminPromotionController extends Controller
 
     public function toggle(Promotion $promotion)
     {
+        if (!auth()->user()->can('promotions.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $promotion->update(['is_active' => !$promotion->is_active]);
 
         return admin_redirect('admin.promotions.index')
@@ -190,6 +222,10 @@ class AdminPromotionController extends Controller
 
     public function duplicate(Promotion $promotion)
     {
+        if (!auth()->user()->can('promotions.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $newPromotion = $promotion->replicate();
         $newPromotion->code = Promotion::generateCode();
         $newPromotion->name = $promotion->name . ' (Copy)';

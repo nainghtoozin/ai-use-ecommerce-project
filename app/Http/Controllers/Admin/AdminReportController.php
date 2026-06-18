@@ -71,6 +71,10 @@ class AdminReportController extends Controller
 
     public function sales(Request $request)
     {
+        if (!auth()->user()->can('reports.sales')) {
+            abort(403, 'Unauthorized');
+        }
+
         $filters = $this->extractFilters($request);
         $perPage = $this->resolvePerPage($request);
 
@@ -87,6 +91,10 @@ class AdminReportController extends Controller
 
     public function orderDetails(Order $order)
     {
+        if (!auth()->user()->can('reports.sales')) {
+            abort(403, 'Unauthorized');
+        }
+
         $order->load([
             'items.product',
             'items.variant',
@@ -101,6 +109,10 @@ class AdminReportController extends Controller
 
     public function clearCache()
     {
+        if (!auth()->user()->can('reports.sales')) {
+            abort(403, 'Unauthorized');
+        }
+
         Cache::forget('sales_report_default');
 
         return redirect()->back()->with('success', 'Sales report cache cleared.');
@@ -223,6 +235,10 @@ class AdminReportController extends Controller
 
     public function productSales(Request $request)
     {
+        if (!auth()->user()->can('reports.products')) {
+            abort(403, 'Unauthorized');
+        }
+
         $perPage = $this->resolvePerPage($request);
         $filters = $request->only(['date_from', 'date_to', 'category_id', 'search', 'stock_status']);
 
@@ -391,6 +407,10 @@ class AdminReportController extends Controller
 
     public function payments(Request $request)
     {
+        if (!auth()->user()->can('reports.payments')) {
+            abort(403, 'Unauthorized');
+        }
+
         $perPage = $this->resolvePerPage($request);
         $filters = $request->only([
             'date_from', 'date_to', 'payment_method_id',
@@ -567,6 +587,10 @@ class AdminReportController extends Controller
 
     public function verifyPayment(string $id)
     {
+        if (!auth()->user()->can('reports.payments')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::findOrFail($id);
 
@@ -594,6 +618,10 @@ class AdminReportController extends Controller
 
     public function rejectPayment(Request $request, string $id)
     {
+        if (!auth()->user()->can('reports.payments')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::findOrFail($id);
 

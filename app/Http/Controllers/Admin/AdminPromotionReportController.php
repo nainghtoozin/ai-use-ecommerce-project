@@ -18,6 +18,10 @@ class AdminPromotionReportController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('reports.orders')) {
+            abort(403, 'Unauthorized');
+        }
+
         return Inertia::render('Admin/Promotions/Reports', [
             'promotions' => Promotion::select('id', 'name', 'code')->orderBy('name')->get(),
             'products' => Product::select('id', 'name')->orderBy('name')->get(),
@@ -27,6 +31,10 @@ class AdminPromotionReportController extends Controller
 
     public function getData(Request $request)
     {
+        if (!auth()->user()->can('reports.orders')) {
+            abort(403, 'Unauthorized');
+        }
+
         $startDate = $request->input('start_date') ? Carbon::parse($request->start_date)->startOfDay() : Carbon::now()->subMonth()->startOfDay();
         $endDate = $request->input('end_date') ? Carbon::parse($request->end_date)->endOfDay() : Carbon::now()->endOfDay();
         $promotionId = $request->input('promotion_id');
