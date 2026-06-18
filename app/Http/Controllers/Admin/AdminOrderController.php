@@ -29,6 +29,10 @@ class AdminOrderController extends Controller
 
     public function index(Request $request)
     {
+        if (!auth()->user()->can('orders.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $filters = $request->only(['order_status', 'payment_status', 'search']);
 
         $ordersQuery = Order::query()->with([
@@ -93,6 +97,10 @@ class AdminOrderController extends Controller
 
     public function show(string $id)
     {
+        if (!auth()->user()->can('orders.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $order = Order::with([
             'user',
             'items.product',
@@ -109,6 +117,10 @@ class AdminOrderController extends Controller
 
     public function updateOrderStatus(Request $request, string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         $request->validate([
             'order_status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
         ]);
@@ -129,6 +141,10 @@ class AdminOrderController extends Controller
 
     public function confirmOrder(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user', 'paymentMethod')->findOrFail($id);
 
@@ -150,6 +166,10 @@ class AdminOrderController extends Controller
 
     public function processOrder(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user')->findOrFail($id);
 
@@ -171,6 +191,10 @@ class AdminOrderController extends Controller
 
     public function shipOrder(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user')->findOrFail($id);
 
@@ -192,6 +216,10 @@ class AdminOrderController extends Controller
 
     public function deliverOrder(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user')->findOrFail($id);
 
@@ -213,6 +241,10 @@ class AdminOrderController extends Controller
 
     public function cancelOrder(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user')->findOrFail($id);
 
@@ -237,6 +269,10 @@ class AdminOrderController extends Controller
 
     public function verifyPayment(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user')->findOrFail($id);
 
@@ -267,6 +303,10 @@ class AdminOrderController extends Controller
 
     public function rejectPayment(Request $request, string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         try {
             $order = Order::with('user')->findOrFail($id);
 
@@ -300,6 +340,10 @@ class AdminOrderController extends Controller
 
     public function markAsPaid(Request $request, string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         $request->validate([
             'paid_amount' => 'nullable|numeric|min:0',
         ]);
@@ -338,6 +382,10 @@ class AdminOrderController extends Controller
 
     public function destroy(string $id)
     {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
         $order = Order::findOrFail($id);
 
         if ($order->order_status !== Order::ORDER_STATUS_CANCELLED) {

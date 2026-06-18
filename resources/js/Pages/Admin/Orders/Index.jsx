@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
 
 export default function AdminOrdersIndex({ orders, filters = {}, showPagination = true, warning = null }) {
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
+
     const [filterForm, setFilterForm] = useState({
         order_status: filters.order_status || '',
         payment_status: filters.payment_status || '',
@@ -185,8 +189,10 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                             </td>
                                             <td className="px-4 py-4 text-right text-sm">
                                                 <div className="flex justify-end gap-2">
-                                                    <Link href={adminUrl(`/admin/orders/${order.id}`)} className="text-blue-600 hover:text-blue-800">View</Link>
-                                                    {order.order_status === 'cancelled' && (
+                                                    {can('orders.view') && (
+                                                        <Link href={adminUrl(`/admin/orders/${order.id}`)} className="text-blue-600 hover:text-blue-800">View</Link>
+                                                    )}
+                                                    {can('orders.update-status') && order.order_status === 'cancelled' && (
                                                         <button onClick={() => handleDelete(order.id)} className="text-red-600 hover:text-red-800">Delete</button>
                                                     )}
                                                 </div>

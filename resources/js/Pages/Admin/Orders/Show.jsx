@@ -4,8 +4,8 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function AdminOrdersShow({ order }) {
-    const { props } = usePage();
-    const flash = props.flash || {};
+    const { auth, flash: pageFlash } = usePage().props;
+    const flash = pageFlash || {};
     const [imagePreview, setImagePreview] = useState(null);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
@@ -13,9 +13,10 @@ export default function AdminOrdersShow({ order }) {
     const [overrideNewStatus, setOverrideNewStatus] = useState('');
     const [overrideReason, setOverrideReason] = useState('');
 
-    const permissions = props.permissions || [];
-    const canOverrideStatus = permissions.includes('orders.override-status');
-    const canOverridePayment = permissions.includes('orders.override-payment');
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
+    const canOverrideStatus = can('orders.override-status');
+    const canOverridePayment = can('orders.override-payment');
 
     const cityName = order.city?.name;
     const townshipName = order.township?.name;
@@ -117,6 +118,8 @@ export default function AdminOrdersShow({ order }) {
     const paymentStatusOptions = ['pending', 'paid', 'failed', 'refunded'];
 
     function renderNextActionButton() {
+        if (!can('orders.update-status')) return null;
+
         if (order.can_confirm) {
             return (
                 <button onClick={handleConfirm}
@@ -207,14 +210,18 @@ export default function AdminOrdersShow({ order }) {
         if (order.payment_status === 'pending' && order.can_verify_payment) {
             return (
                 <div className="space-y-2">
-                    <button onClick={handleVerifyPayment}
-                        className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors">
-                        Verify Payment
-                    </button>
-                    <button onClick={() => setRejectModalOpen(true)}
-                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
-                        Reject Payment
-                    </button>
+                    {can('orders.update-status') && (
+                        <button onClick={handleVerifyPayment}
+                            className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors">
+                            Verify Payment
+                        </button>
+                    )}
+                    {can('orders.update-status') && (
+                        <button onClick={() => setRejectModalOpen(true)}
+                            className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
+                            Reject Payment
+                        </button>
+                    )}
                 </div>
             );
         }
@@ -474,13 +481,13 @@ export default function AdminOrdersShow({ order }) {
                         <div className="bg-white rounded-lg border border-red-200 p-6">
                             <h2 className="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
                             <div className="space-y-3">
-                                {order.can_cancel && (
+                                {can('orders.update-status') && order.can_cancel && (
                                     <button onClick={handleCancel}
                                         className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
                                         Cancel Order
                                     </button>
                                 )}
-                                {order.order_status === 'cancelled' && (
+                                {can('orders.update-status') && order.order_status === 'cancelled' && (
                                     <button onClick={handleDelete}
                                         className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm font-medium transition-colors">
                                         Delete Order
