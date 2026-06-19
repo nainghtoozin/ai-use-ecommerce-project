@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function PaymentMethodCreate() {
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         type: 'bank_transfer',
@@ -42,6 +45,19 @@ export default function PaymentMethodCreate() {
         } else {
             setQrPreview(null);
         }
+    }
+
+    if (!can('payments.create')) {
+        return (
+            <AdminLayout>
+                <Head title="Unauthorized" />
+                <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <p className="text-red-700 font-medium">You do not have permission to create payment methods.</p>
+                    </div>
+                </div>
+            </AdminLayout>
+        );
     }
 
     return (

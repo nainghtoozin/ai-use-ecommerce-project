@@ -11,6 +11,10 @@ class AdminBillingController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = auth()->user()->tenant;
 
         if (!$tenant) {
@@ -51,6 +55,10 @@ class AdminBillingController extends Controller
 
     public function renew(Request $request)
     {
+        if (!auth()->user()->can('billing.renew')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = auth()->user()->tenant;
 
         if (!$tenant) {

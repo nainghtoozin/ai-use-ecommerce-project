@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
@@ -12,6 +12,9 @@ const statusConfig = {
 };
 
 export default function AdminBillingIndex({ subscription }) {
+    const { auth } = usePage().props;
+    const permissions = auth?.user?.permissions || [];
+    const can = (perm) => permissions.includes(perm);
     const cfg = statusConfig[subscription?.status] || statusConfig.expired;
 
     const formatMoney = (amount) => {
@@ -166,7 +169,7 @@ export default function AdminBillingIndex({ subscription }) {
                             </div>
                         </div>
 
-                        {['expired', 'past_due', 'canceled'].includes(subscription.status) && (
+                        {can('billing.renew') && ['expired', 'past_due', 'canceled'].includes(subscription.status) && (
                             <div className="bg-white rounded-xl border border-gray-200">
                                 <div className="px-6 py-4 border-b border-gray-100">
                                     <h3 className="text-base font-semibold text-gray-900">Renew Subscription</h3>

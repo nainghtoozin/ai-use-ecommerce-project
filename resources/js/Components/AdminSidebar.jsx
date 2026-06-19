@@ -102,7 +102,7 @@ export default function AdminSidebar() {
                 title: 'Main',
                 items: [
                     ...(can('dashboard.view') ? [{ label: 'Dashboard', href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
-                    { label: 'Billing', href: '/admin/billing', icon: 'CreditCard' },
+                    ...(can('billing.view') ? [{ label: 'Billing', href: '/admin/billing', icon: 'CreditCard' }] : []),
                 ]
             },
             {

@@ -15,6 +15,10 @@ class AdminController extends Controller
 {
     public function index(Request $request)
     {
+        if (!auth()->user()->can('dashboard.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $period = $request->input('period', 'today');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');

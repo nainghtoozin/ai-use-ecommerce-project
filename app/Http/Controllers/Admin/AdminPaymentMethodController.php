@@ -31,7 +31,7 @@ class AdminPaymentMethodController extends Controller
 
     public function create(): \Inertia\Response
     {
-        if (!auth()->user()->can('payments.view')) {
+        if (!auth()->user()->can('payments.create')) {
             abort(403, 'Unauthorized');
         }
 
@@ -40,7 +40,7 @@ class AdminPaymentMethodController extends Controller
 
     public function store(PaymentMethodStoreRequest $request): RedirectResponse
     {
-        if (!auth()->user()->can('payments.view')) {
+        if (!auth()->user()->can('payments.create')) {
             abort(403, 'Unauthorized');
         }
 
@@ -52,7 +52,7 @@ class AdminPaymentMethodController extends Controller
 
     public function edit(PaymentMethod $paymentMethod): \Inertia\Response
     {
-        if (!auth()->user()->can('payments.view')) {
+        if (!auth()->user()->can('payments.update')) {
             abort(403, 'Unauthorized');
         }
 
@@ -63,7 +63,7 @@ class AdminPaymentMethodController extends Controller
 
     public function update(PaymentMethodUpdateRequest $request, PaymentMethod $paymentMethod): RedirectResponse
     {
-        if (!auth()->user()->can('payments.view')) {
+        if (!auth()->user()->can('payments.update')) {
             abort(403, 'Unauthorized');
         }
 
@@ -75,7 +75,7 @@ class AdminPaymentMethodController extends Controller
 
     public function destroy(PaymentMethod $paymentMethod): RedirectResponse
     {
-        if (!auth()->user()->can('payments.view')) {
+        if (!auth()->user()->can('payments.delete')) {
             abort(403, 'Unauthorized');
         }
 
@@ -87,7 +87,7 @@ class AdminPaymentMethodController extends Controller
 
     public function toggle(PaymentMethod $paymentMethod): JsonResponse
     {
-        if (!auth()->user()->can('payments.view')) {
+        if (!auth()->user()->can('payments.update')) {
             abort(403, 'Unauthorized');
         }
 

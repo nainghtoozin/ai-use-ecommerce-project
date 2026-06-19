@@ -58,7 +58,14 @@ class PermissionSeeder extends Seeder
             // Payment Management
             'payments.upload-proof',
             'payments.view',
+            'payments.create',
+            'payments.update',
+            'payments.delete',
             'payments.verify',
+
+            // Billing
+            'billing.view',
+            'billing.renew',
 
             // Dashboard
             'dashboard.view',
