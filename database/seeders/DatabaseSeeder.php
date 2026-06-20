@@ -10,16 +10,16 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             // Permissions -> Roles & Super Admin -> Other seeders
+            // SYSTEM SEEDERS
             PermissionSeeder::class,
             RoleAndPermissionSeeder::class,
             PlanSeeder::class,
+            LocationSeeder::class,
+
+            // TENANT BOOTSTRAP CANDIDATES (move to TenantBootstrapService in future)
             WebsiteSettingsSeeder::class,
             PaymentMethodSeeder::class,
-            LocationSeeder::class,
-            UserSeeder::class,
             CategorySeeder::class,
-            ProductSeeder::class,
-            OrderSeeder::class,
             UnitSeeder::class,
             BrandSeeder::class,
 
