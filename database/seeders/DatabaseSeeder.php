@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             // Permissions -> Roles & Super Admin -> Other seeders
             PermissionSeeder::class,
             RoleAndPermissionSeeder::class,
+            PlanSeeder::class,
             WebsiteSettingsSeeder::class,
             PaymentMethodSeeder::class,
             LocationSeeder::class,
