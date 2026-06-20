@@ -8,6 +8,11 @@ export default function RolesShow({ role, grouped_permissions }) {
     const can = (perm) => permissions.includes(perm);
 
     function confirmDelete() {
+        const protectedRoles = ['superadmin', 'admin'];
+        if (protectedRoles.includes(role.name)) {
+            alert(`The "${role.name}" role is protected and cannot be deleted.`);
+            return;
+        }
         if (window.confirm(`Are you sure you want to delete "${role.name}"? This action cannot be undone.`)) {
             router.delete(adminUrl(`/admin/roles/${role.id}`));
         }
@@ -32,15 +37,21 @@ export default function RolesShow({ role, grouped_permissions }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {can('roles.update') && (
+                                    {can('roles.update') && !['superadmin', 'admin'].includes(role.name) && (
                                         <Link href={adminUrl(`/admin/roles/${role.id}/edit`)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
                                             <i className="bi bi-pencil mr-1"></i> Edit
                                         </Link>
                                     )}
-                                    {can('roles.delete') && (
+                                    {['superadmin', 'admin'].includes(role.name) && (
+                                        <span className="px-4 py-2 text-sm text-gray-400 italic">Protected system role</span>
+                                    )}
+                                    {can('roles.delete') && !['superadmin', 'admin'].includes(role.name) && (
                                         <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
                                             <i className="bi bi-trash mr-1"></i> Delete
                                         </button>
+                                    )}
+                                    {['superadmin', 'admin'].includes(role.name) && (
+                                        <span className="px-4 py-2 text-sm text-gray-400 italic">System role — protected</span>
                                     )}
                                 </div>
                             </div>

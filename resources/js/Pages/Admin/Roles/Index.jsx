@@ -18,7 +18,7 @@ export default function RolesIndex({ roles, filters }) {
     }
 
     function confirmDelete(role) {
-        const protectedRoles = ['superadmin', 'customer'];
+        const protectedRoles = ['superadmin', 'admin'];
         if (protectedRoles.includes(role.name)) {
             alert(`The "${role.name}" role is protected and cannot be deleted.`);
             return;
@@ -103,12 +103,12 @@ export default function RolesIndex({ roles, filters }) {
                                                         <Link href={adminUrl(`/admin/roles/${role.id}`)} className="text-blue-600 hover:text-blue-900">
                                                             <i className="bi bi-eye"></i>
                                                         </Link>
-                                                        {canUpdate && (
+                                                        {canUpdate && !['superadmin', 'admin'].includes(role.name) && (
                                                             <Link href={adminUrl(`/admin/roles/${role.id}/edit`)} className="text-indigo-600 hover:text-indigo-900">
                                                                 <i className="bi bi-pencil"></i>
                                                             </Link>
                                                         )}
-                                                        {canDelete && (
+                                                        {canDelete && !['superadmin', 'admin'].includes(role.name) && (
                                                             <button onClick={() => confirmDelete(role)} className="text-red-600 hover:text-red-900">
                                                                 <i className="bi bi-trash"></i>
                                                             </button>

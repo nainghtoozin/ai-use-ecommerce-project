@@ -35,6 +35,17 @@ use App\Http\Controllers\TelegramIntegrationController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Support\Facades\Mail;
+
+Route::get('/test-mail', function () {
+    Mail::raw('Mailpit Test', function ($message) {
+        $message->to('test@example.com')
+            ->subject('Testing Mailpit');
+    });
+
+    return 'Mail Sent';
+});
+
 // ============================================================
 // DEFAULT ROUTE
 // ============================================================
@@ -222,9 +233,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/telegram-integration/toggle', [TelegramIntegrationController::class, 'toggle'])->name('telegram-integration.toggle');
     Route::post('/telegram-integration/test', [TelegramIntegrationController::class, 'sendTestMessage'])->name('telegram-integration.test');
 
-// ============================================================
-// BROADCAST TEST ROUTE (production-restricted — SuperAdmin only)
-// ============================================================
+    // ============================================================
+    // BROADCAST TEST ROUTE (production-restricted — SuperAdmin only)
+    // ============================================================
     Route::get('/broadcast/test', function (\Illuminate\Http\Request $request) {
         if ($request->user()->isSuperAdmin()) {
             $userId = $request->user()->id;
@@ -265,191 +276,191 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
-    Route::get('/suspended', fn () => \Inertia\Inertia::render('Admin/Suspended'))->name('suspended');
+    Route::get('/suspended', fn() => \Inertia\Inertia::render('Admin/Suspended'))->name('suspended');
 
     // ── Operations routes (blocked when expired/suspended) ──
     Route::middleware('tenant.active')->group(function () {
-    Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
-    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
-    Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
-    Route::get('/payments', [AdminPaymentMethodController::class, 'index'])->name('payments.index');
+        Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
+        Route::get('/payments', [AdminPaymentMethodController::class, 'index'])->name('payments.index');
 
-    // Admin Chat
-    Route::get('/chat/users', [ChatController::class, 'getAdminUsers'])->name('chat.users');
-    Route::get('/chat/messages/{userId}/{beforeId?}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
-    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::post('/chat/read/{userId}', [ChatController::class, 'markAsRead'])->name('chat.read');
-    Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
+        // Admin Chat
+        Route::get('/chat/users', [ChatController::class, 'getAdminUsers'])->name('chat.users');
+        Route::get('/chat/messages/{userId}/{beforeId?}', [ChatController::class, 'fetchMessages'])->name('chat.messages');
+        Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+        Route::post('/chat/read/{userId}', [ChatController::class, 'markAsRead'])->name('chat.read');
+        Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
 
-    // Search
-    Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');
-    Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
-    Route::get('/orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
-    Route::get('/promotions/search', [AdminPromotionController::class, 'search'])->name('promotions.search');
-    Route::get('/banners/search', [AdminPromotionBannerController::class, 'search'])->name('banners.search');
+        // Search
+        Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');
+        Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
+        Route::get('/orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
+        Route::get('/promotions/search', [AdminPromotionController::class, 'search'])->name('promotions.search');
+        Route::get('/banners/search', [AdminPromotionBannerController::class, 'search'])->name('banners.search');
 
-    // Categories
-    Route::get('/categories/create', [AdminCategoryController::class, 'create'])->name('categories.create');
-    Route::post('/categories', [AdminCategoryController::class, 'store'])->name('categories.store');
-    Route::get('/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit');
-    Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
-    Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
+        // Categories
+        Route::get('/categories/create', [AdminCategoryController::class, 'create'])->name('categories.create');
+        Route::post('/categories', [AdminCategoryController::class, 'store'])->name('categories.store');
+        Route::get('/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit');
+        Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
 
-    // Products
-    Route::get('/products/type-select', [AdminProductController::class, 'typeSelect'])->name('products.type-select');
-    Route::get('/products/create', [AdminProductController::class, 'create'])->name('products.create');
-    Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
-    Route::get('/products/{product}', [AdminProductController::class, 'show'])->name('products.show');
-    Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
-    Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
-    Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
-    
-    // Bulk Actions
-    Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDestroy'])->name('products.bulk-delete');
-    Route::post('/products/bulk-activate', [AdminProductController::class, 'bulkActivate'])->name('products.bulk-activate');
-    Route::post('/products/bulk-deactivate', [AdminProductController::class, 'bulkDeactivate'])->name('products.bulk-deactivate');
+        // Products
+        Route::get('/products/type-select', [AdminProductController::class, 'typeSelect'])->name('products.type-select');
+        Route::get('/products/create', [AdminProductController::class, 'create'])->name('products.create');
+        Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
+        Route::get('/products/{product}', [AdminProductController::class, 'show'])->name('products.show');
+        Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
+        Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
+        Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
 
-    // Orders
-    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-    Route::post('/orders/{order}/confirm', [AdminOrderController::class, 'confirmOrder'])->name('orders.confirm');
-    Route::post('/orders/{order}/process', [AdminOrderController::class, 'processOrder'])->name('orders.process');
-    Route::post('/orders/{order}/ship', [AdminOrderController::class, 'shipOrder'])->name('orders.ship');
-    Route::post('/orders/{order}/deliver', [AdminOrderController::class, 'deliverOrder'])->name('orders.deliver');
-    Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');
-    Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment');
-    Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment');
-    Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
-    Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status');
-    Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment');
-    Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
-    Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');
+        // Bulk Actions
+        Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDestroy'])->name('products.bulk-delete');
+        Route::post('/products/bulk-activate', [AdminProductController::class, 'bulkActivate'])->name('products.bulk-activate');
+        Route::post('/products/bulk-deactivate', [AdminProductController::class, 'bulkDeactivate'])->name('products.bulk-deactivate');
 
-    // Telegram Integration Settings
-    Route::get('/settings/telegram-integration', [\App\Http\Controllers\TelegramIntegrationController::class, 'edit'])->name('settings.telegram-integration');
+        // Orders
+        Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order}/confirm', [AdminOrderController::class, 'confirmOrder'])->name('orders.confirm');
+        Route::post('/orders/{order}/process', [AdminOrderController::class, 'processOrder'])->name('orders.process');
+        Route::post('/orders/{order}/ship', [AdminOrderController::class, 'shipOrder'])->name('orders.ship');
+        Route::post('/orders/{order}/deliver', [AdminOrderController::class, 'deliverOrder'])->name('orders.deliver');
+        Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');
+        Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment');
+        Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment');
+        Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
+        Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status');
+        Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment');
+        Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+        Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');
 
-    // Banners (slider)
-    Route::get('/banners', [AdminPromotionBannerController::class, 'index'])->name('banners.index');
-    Route::get('/banners/create', [AdminPromotionBannerController::class, 'create'])->name('banners.create');
-    Route::post('/banners', [AdminPromotionBannerController::class, 'store'])->name('banners.store');
-    Route::get('/banners/{promotion}/edit', [AdminPromotionBannerController::class, 'edit'])->name('banners.edit');
-    Route::put('/banners/{promotion}', [AdminPromotionBannerController::class, 'update'])->name('banners.update');
-    Route::delete('/banners/{promotion}', [AdminPromotionBannerController::class, 'destroy'])->name('banners.destroy');
+        // Telegram Integration Settings
+        Route::get('/settings/telegram-integration', [\App\Http\Controllers\TelegramIntegrationController::class, 'edit'])->name('settings.telegram-integration');
 
-    // Promotions (discount engine)
-    Route::get('/promotions', [AdminPromotionController::class, 'index'])->name('promotions.index');
-    Route::get('/promotions/create', [AdminPromotionController::class, 'create'])->name('promotions.create');
-    Route::post('/promotions', [AdminPromotionController::class, 'store'])->name('promotions.store');
-    Route::get('/promotions/{promotion}/edit', [AdminPromotionController::class, 'edit'])->name('promotions.edit');
-    Route::put('/promotions/{promotion}', [AdminPromotionController::class, 'update'])->name('promotions.update');
-    Route::delete('/promotions/{promotion}', [AdminPromotionController::class, 'destroy'])->name('promotions.destroy');
-    Route::post('/promotions/{promotion}/toggle', [AdminPromotionController::class, 'toggle'])->name('promotions.toggle');
-    Route::post('/promotions/{promotion}/duplicate', [AdminPromotionController::class, 'duplicate'])->name('promotions.duplicate');
+        // Banners (slider)
+        Route::get('/banners', [AdminPromotionBannerController::class, 'index'])->name('banners.index');
+        Route::get('/banners/create', [AdminPromotionBannerController::class, 'create'])->name('banners.create');
+        Route::post('/banners', [AdminPromotionBannerController::class, 'store'])->name('banners.store');
+        Route::get('/banners/{promotion}/edit', [AdminPromotionBannerController::class, 'edit'])->name('banners.edit');
+        Route::put('/banners/{promotion}', [AdminPromotionBannerController::class, 'update'])->name('banners.update');
+        Route::delete('/banners/{promotion}', [AdminPromotionBannerController::class, 'destroy'])->name('banners.destroy');
 
-    // Promotions Reports
-    Route::get('/promotions/reports', [\App\Http\Controllers\Admin\AdminPromotionReportController::class, 'index'])->name('promotions.reports');
-    Route::get('/promotions/reports/data', [\App\Http\Controllers\Admin\AdminPromotionReportController::class, 'getData'])->name('promotions.reports.data');
+        // Promotions (discount engine)
+        Route::get('/promotions', [AdminPromotionController::class, 'index'])->name('promotions.index');
+        Route::get('/promotions/create', [AdminPromotionController::class, 'create'])->name('promotions.create');
+        Route::post('/promotions', [AdminPromotionController::class, 'store'])->name('promotions.store');
+        Route::get('/promotions/{promotion}/edit', [AdminPromotionController::class, 'edit'])->name('promotions.edit');
+        Route::put('/promotions/{promotion}', [AdminPromotionController::class, 'update'])->name('promotions.update');
+        Route::delete('/promotions/{promotion}', [AdminPromotionController::class, 'destroy'])->name('promotions.destroy');
+        Route::post('/promotions/{promotion}/toggle', [AdminPromotionController::class, 'toggle'])->name('promotions.toggle');
+        Route::post('/promotions/{promotion}/duplicate', [AdminPromotionController::class, 'duplicate'])->name('promotions.duplicate');
 
-    // Reports
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/sales', [AdminReportController::class, 'sales'])->name('sales');
-        Route::post('/sales/clear-cache', [AdminReportController::class, 'clearCache'])->name('sales.clear-cache');
-        Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details');
-        Route::get('/product-sales', [AdminReportController::class, 'productSales'])->name('product-sales');
-        Route::get('/payments', [AdminReportController::class, 'payments'])->name('payments');
-        Route::post('/payments/{order}/verify', [AdminReportController::class, 'verifyPayment'])->name('payments.verify');
-        Route::post('/payments/{order}/reject', [AdminReportController::class, 'rejectPayment'])->name('payments.reject');
-    });
+        // Promotions Reports
+        Route::get('/promotions/reports', [\App\Http\Controllers\Admin\AdminPromotionReportController::class, 'index'])->name('promotions.reports');
+        Route::get('/promotions/reports/data', [\App\Http\Controllers\Admin\AdminPromotionReportController::class, 'getData'])->name('promotions.reports.data');
 
-    // Coupons (discount engine)
-    Route::get('/coupons', [\App\Http\Controllers\Admin\AdminCouponController::class, 'index'])->name('coupons.index');
-    Route::get('/coupons/create', [\App\Http\Controllers\Admin\AdminCouponController::class, 'create'])->name('coupons.create');
-    Route::post('/coupons', [\App\Http\Controllers\Admin\AdminCouponController::class, 'store'])->name('coupons.store');
-    Route::get('/coupons/{coupon}/edit', [\App\Http\Controllers\Admin\AdminCouponController::class, 'edit'])->name('coupons.edit');
-    Route::put('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'update'])->name('coupons.update');
-    Route::delete('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'destroy'])->name('coupons.destroy');
-    Route::get('/coupons/search', [\App\Http\Controllers\Admin\AdminCouponController::class, 'search'])->name('coupons.search');
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/sales', [AdminReportController::class, 'sales'])->name('sales');
+            Route::post('/sales/clear-cache', [AdminReportController::class, 'clearCache'])->name('sales.clear-cache');
+            Route::get('/sales/order/{order}', [AdminReportController::class, 'orderDetails'])->name('sales.order-details');
+            Route::get('/product-sales', [AdminReportController::class, 'productSales'])->name('product-sales');
+            Route::get('/payments', [AdminReportController::class, 'payments'])->name('payments');
+            Route::post('/payments/{order}/verify', [AdminReportController::class, 'verifyPayment'])->name('payments.verify');
+            Route::post('/payments/{order}/reject', [AdminReportController::class, 'rejectPayment'])->name('payments.reject');
+        });
 
-    // Units
-    Route::get('/units', [AdminUnitController::class, 'index'])->name('units.index');
-    Route::get('/units/search', [AdminUnitController::class, 'search'])->name('units.search');
-    Route::get('/units/create', [AdminUnitController::class, 'create'])->name('units.create');
-    Route::post('/units', [AdminUnitController::class, 'store'])->name('units.store');
-    Route::get('/units/{unit}/edit', [AdminUnitController::class, 'edit'])->name('units.edit');
-    Route::put('/units/{unit}', [AdminUnitController::class, 'update'])->name('units.update');
-    Route::delete('/units/{unit}', [AdminUnitController::class, 'destroy'])->name('units.destroy');
+        // Coupons (discount engine)
+        Route::get('/coupons', [\App\Http\Controllers\Admin\AdminCouponController::class, 'index'])->name('coupons.index');
+        Route::get('/coupons/create', [\App\Http\Controllers\Admin\AdminCouponController::class, 'create'])->name('coupons.create');
+        Route::post('/coupons', [\App\Http\Controllers\Admin\AdminCouponController::class, 'store'])->name('coupons.store');
+        Route::get('/coupons/{coupon}/edit', [\App\Http\Controllers\Admin\AdminCouponController::class, 'edit'])->name('coupons.edit');
+        Route::put('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'update'])->name('coupons.update');
+        Route::delete('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'destroy'])->name('coupons.destroy');
+        Route::get('/coupons/search', [\App\Http\Controllers\Admin\AdminCouponController::class, 'search'])->name('coupons.search');
 
-    // Brands
-    Route::get('/brands', [AdminBrandController::class, 'index'])->name('brands.index');
-    Route::get('/brands/search', [AdminBrandController::class, 'search'])->name('brands.search');
-    Route::get('/brands/create', [AdminBrandController::class, 'create'])->name('brands.create');
-    Route::post('/brands', [AdminBrandController::class, 'store'])->name('brands.store');
-    Route::get('/brands/{brand}/edit', [AdminBrandController::class, 'edit'])->name('brands.edit');
-    Route::put('/brands/{brand}', [AdminBrandController::class, 'update'])->name('brands.update');
-    Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy'])->name('brands.destroy');
+        // Units
+        Route::get('/units', [AdminUnitController::class, 'index'])->name('units.index');
+        Route::get('/units/search', [AdminUnitController::class, 'search'])->name('units.search');
+        Route::get('/units/create', [AdminUnitController::class, 'create'])->name('units.create');
+        Route::post('/units', [AdminUnitController::class, 'store'])->name('units.store');
+        Route::get('/units/{unit}/edit', [AdminUnitController::class, 'edit'])->name('units.edit');
+        Route::put('/units/{unit}', [AdminUnitController::class, 'update'])->name('units.update');
+        Route::delete('/units/{unit}', [AdminUnitController::class, 'destroy'])->name('units.destroy');
 
-    // Website Info (now uses SettingsController)
-    Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
-    Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
+        // Brands
+        Route::get('/brands', [AdminBrandController::class, 'index'])->name('brands.index');
+        Route::get('/brands/search', [AdminBrandController::class, 'search'])->name('brands.search');
+        Route::get('/brands/create', [AdminBrandController::class, 'create'])->name('brands.create');
+        Route::post('/brands', [AdminBrandController::class, 'store'])->name('brands.store');
+        Route::get('/brands/{brand}/edit', [AdminBrandController::class, 'edit'])->name('brands.edit');
+        Route::put('/brands/{brand}', [AdminBrandController::class, 'update'])->name('brands.update');
+        Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy'])->name('brands.destroy');
 
-    // Notification Settings
-    Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');
-    Route::post('/settings/notifications', [AdminNotificationSettingsController::class, 'update'])->name('settings.notifications.update');
+        // Website Info (now uses SettingsController)
+        Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
+        Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
 
-    // Payment Methods
-    Route::resource('payment-methods', AdminPaymentMethodController::class)->except(['show']);
-    Route::post('payment-methods/{paymentMethod}/toggle', [AdminPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
+        // Notification Settings
+        Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');
+        Route::post('/settings/notifications', [AdminNotificationSettingsController::class, 'update'])->name('settings.notifications.update');
 
-    // Cities
-    Route::resource('cities', AdminCityController::class)->except(['show']);
-    Route::post('cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle');
+        // Payment Methods
+        Route::resource('payment-methods', AdminPaymentMethodController::class)->except(['show']);
+        Route::post('payment-methods/{paymentMethod}/toggle', [AdminPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
 
-    // Myanmar locations import
-    Route::post('locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
+        // Cities
+        Route::resource('cities', AdminCityController::class)->except(['show']);
+        Route::post('cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle');
 
-    // Townships
-    Route::resource('townships', AdminTownshipController::class)->except(['show']);
-    Route::post('townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
+        // Myanmar locations import
+        Route::post('locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
 
-    // ============================================================
-    // USER MANAGEMENT ROUTES
-    // ============================================================
-    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
-    Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
-    Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
-    Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
-    Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
-    Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('users.suspend');
-    Route::post('/users/{user}/ban', [AdminUserController::class, 'ban'])->name('users.ban');
-    Route::post('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
+        // Townships
+        Route::resource('townships', AdminTownshipController::class)->except(['show']);
+        Route::post('townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
 
-    // ============================================================
-    // ACTIVITY LOG ROUTES
-    // ============================================================
-    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-    Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
+        // ============================================================
+        // USER MANAGEMENT ROUTES
+        // ============================================================
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('users.suspend');
+        Route::post('/users/{user}/ban', [AdminUserController::class, 'ban'])->name('users.ban');
+        Route::post('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
 
-    // ============================================================
-    // ROLE MANAGEMENT ROUTES
-    // ============================================================
-    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
-    Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
-    Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
-    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
-    Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        // ============================================================
+        // ACTIVITY LOG ROUTES
+        // ============================================================
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
-    // ============================================================
-    // PERMISSION ROUTES
-    // ============================================================
-    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-    Route::get('/permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
-    Route::post('/permissions', [PermissionController::class, 'store'])->name('permissions.store');
-    Route::get('/permissions/{permission}/edit', [PermissionController::class, 'edit'])->name('permissions.edit');
-    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
-    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+        // ============================================================
+        // ROLE MANAGEMENT ROUTES
+        // ============================================================
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
+        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+        // ============================================================
+        // PERMISSION ROUTES
+        // ============================================================
+        Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+        Route::get('/permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
+        Route::post('/permissions', [PermissionController::class, 'store'])->name('permissions.store');
+        Route::get('/permissions/{permission}/edit', [PermissionController::class, 'edit'])->name('permissions.edit');
+        Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
+        Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
     }); // ← ends tenant.active group
 }); // ← ends tenant.valid + admin group
 
@@ -531,5 +542,3 @@ Route::get('/api/townships/{cityId}', [App\Http\Controllers\Api\LocationControll
 
 // Storefront Admin (safe migration — runs alongside /admin/*)
 require __DIR__ . '/storefront-admin.php';
-
-

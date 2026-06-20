@@ -136,6 +136,10 @@ class RoleController extends Controller
             ->when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
             ->findOrFail($id);
 
+        if (in_array($role->name, ['superadmin', 'admin'])) {
+            abort(403, 'This role is a protected system role and cannot be edited.');
+        }
+
         $groupedPermissions = $this->getGroupedPermissions();
 
         return Inertia::render('Admin/Roles/Edit', [
@@ -157,6 +161,11 @@ class RoleController extends Controller
 
         $role = Role::when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
             ->findOrFail($id);
+
+        if (in_array($role->name, ['superadmin', 'admin'])) {
+            return admin_redirect('admin.roles.index')
+                ->with('error', "The '{$role->name}' role is a protected system role and cannot be modified.");
+        }
 
         $role->update(['name' => $request->name]);
 
@@ -193,7 +202,7 @@ class RoleController extends Controller
         $role = Role::when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
             ->findOrFail($id);
 
-        if (in_array($role->name, ['superadmin', 'admin', 'customer'])) {
+        if (in_array($role->name, ['superadmin', 'admin'])) {
             return admin_redirect('admin.roles.index')
                 ->with('error', "The '{$role->name}' role cannot be deleted.");
         }

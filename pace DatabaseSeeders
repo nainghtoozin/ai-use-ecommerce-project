@@ -1,0 +1,341 @@
+[33mcommit 6787bce17ac86e91828acb20fdcfdee6a3019dd5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri Jun 19 21:58:15 2026 +0630
+
+    permission 10 fixed
+
+[33mcommit d5f02793a18e0be4a69ec61491d1a185c40fd2bd[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 18 23:11:02 2026 +0630
+
+    test
+
+[33mcommit cb4158b0f1887e15cdd156c0fb7b28ffd4fff02e[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 18 22:43:27 2026 +0630
+
+    permission step 10 done
+
+[33mcommit ba246bbfacd6de6401930048aa79d5fd5190d683[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 18 21:43:10 2026 +0630
+
+    permission order done
+
+[33mcommit d31d36297d85fc00f81f96eb01e629475e79055d[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Wed Jun 17 23:12:18 2026 +0630
+
+    permission edit ended products
+
+[33mcommit f6a88bdb2c0a02392167b28e9fc4368d1cd508ce[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 16 22:50:42 2026 +0630
+
+    role & permission checked
+
+[33mcommit a687607eba3c2d3c1f47ca85d952279e8e16b8f0[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 16 22:29:43 2026 +0630
+
+    store ui added
+
+[33mcommit a43396a2d5615e02de7cd6e11fd995e9222b6f1b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 16 21:36:42 2026 +0630
+
+    profile edit
+
+[33mcommit 15ebc2910a9537a7a5ed4e9a00e2cc55655d98eb[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun Jun 14 23:01:11 2026 +0630
+
+    home page edit 4
+
+[33mcommit 78778979ff49e1212012a4d7e3f339119751ea58[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun Jun 14 22:33:23 2026 +0630
+
+    home page edit 4
+
+[33mcommit a02db88bde16f8161b378592f1be7905671cb2e9[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun Jun 14 22:17:19 2026 +0630
+
+    ui/ux edit
+
+[33mcommit b4660f0d05bb9ae3812891305cfe553c65bf5687[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun Jun 14 12:17:31 2026 +0630
+
+    home page edit 2
+
+[33mcommit 4bc843c866b470ee36680b70a65bf7b1a5de87d9[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun Jun 14 11:51:42 2026 +0630
+
+    home page edit 1
+
+[33mcommit def054ec462dd72359a588b871dda10300861131[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri Jun 12 22:55:38 2026 +0630
+
+    checkout fix
+
+[33mcommit 79efdb2f4a8814c1922f77e3dddbf0b88be3d51d[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri Jun 12 22:45:37 2026 +0630
+
+    saas home page
+
+[33mcommit 023cfe50250143b7d9abcb159bf505b4e87943a0[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri Jun 12 22:29:54 2026 +0630
+
+    saas home page edit
+
+[33mcommit db079fea383cfb0c7010f0a45221b72e0e208e27[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 11 23:13:07 2026 +0630
+
+    ui/ux editing
+
+[33mcommit eca33153f88f2341f1beff744bf989de8216751c[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 11 23:08:16 2026 +0630
+
+    ui/ux editing but local no edit
+
+[33mcommit d5136246be9e29378d0b5c8cfa7a877d6bfc458b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 11 21:19:40 2026 +0630
+
+    saas setting fix
+
+[33mcommit 97df6280c2fb8e9c9f13ec3a526324aeb18ae0c7[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Wed Jun 10 22:49:24 2026 +0630
+
+    saas fix bug
+
+[33mcommit 987b7d85f2d7499369a608ed84ddb3513d76805e[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 9 23:04:02 2026 +0630
+
+    test 2
+
+[33mcommit 19805ad14741dd0f6b9d38126700e289664d1342[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 9 22:55:57 2026 +0630
+
+    test
+
+[33mcommit afba8fc9a022bf0d137461d652404e1f8e18c3c2[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 9 22:01:06 2026 +0630
+
+    order edit
+
+[33mcommit fc3c636db0e0383c28d2544f9ecdfa6706d2d243[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Mon Jun 8 23:00:18 2026 +0630
+
+    test create saas no test
+
+[33mcommit 607a6ca326959833964d1665cd4e780a69d38d3a[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Mon Jun 8 22:10:40 2026 +0630
+
+    test create saas
+
+[33mcommit 550a30796f86c62e6b37cbfd9ab3dcf6e6fd9456[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri Jun 5 23:04:39 2026 +0630
+
+    work done no perfect
+
+[33mcommit ebc15da2d96965802267de1624aeca2e94a7c8e8[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu Jun 4 22:29:47 2026 +0630
+
+    saas version 2 start
+
+[33mcommit 4185a8eb2df20bdd3fbe43ac1dd81f9170a156a6[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Wed Jun 3 21:26:50 2026 +0630
+
+    order in cod added
+
+[33mcommit d0230d5d6efcde9ec5963eb4d074651118685654[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 2 22:32:14 2026 +0630
+
+    order test
+
+[33mcommit 2968e9f2ab4b2c792ccd3dcd702841984d962ab0[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue Jun 2 21:48:55 2026 +0630
+
+    saas merchant test
+
+[33mcommit fe5dfa4e1adbe7a8b90efc73ea88d1e84f4a344f[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 31 23:12:45 2026 +0630
+
+    saas test
+
+[33mcommit a99b81918704c6a5d2b4c0be002853656cdb60fb[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 31 21:04:48 2026 +0630
+
+    order view fix and saas test
+
+[33mcommit 34f53808d038dabe592ca36e7e4b20db61c3a940[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 31 18:01:10 2026 +0630
+
+    Saas test
+
+[33mcommit 6364437d86c3069a322774de9f1c23698bd4a118[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 31 16:41:59 2026 +0630
+
+    test
+
+[33mcommit c5aa87f0f32ec5d06afa49a8dc18269830c03e70[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 31 10:28:35 2026 +0630
+
+    Implement subscription expiry lifecycle
+
+[33mcommit 69d98408e97b51d4ee9528b9ca4713d805c05d3b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 31 09:49:35 2026 +0630
+
+    Add subscription billing cycle support
+
+[33mcommit 2d7082172c1a100eda8bbd4793118db0a5fb55b9[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu May 28 22:45:22 2026 +0630
+
+    error fix
+
+[33mcommit 642f756119b060e23a74c8e04ad3c720a17a661b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Wed May 27 23:21:25 2026 +0630
+
+    home page edit
+
+[33mcommit ead258766ef2e4dcdd397bbacb9746a4f753af5b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Mon May 25 22:47:07 2026 +0630
+
+    telegram message fix
+
+[33mcommit 8b7a948fbddf64a3730cb284a1e812120f32d19b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 23:17:56 2026 +0630
+
+    telegram message test
+
+[33mcommit 9b778af1b47d064e7d5b674131f856bca9016572[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 19:23:04 2026 +0630
+
+    pusher setup
+
+[33mcommit 0e7d4d0a238aee22eb668acabf5f164647845c93[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 10:39:49 2026 +0630
+
+    setting update
+
+[33mcommit 2c8a0d7cb8dc1cc68b3074c04267615f264bd19d[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 09:58:15 2026 +0630
+
+    home page edit
+
+[33mcommit 2b9d23c8035ad618431210dbc3cf38e5358b378f[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 09:28:38 2026 +0630
+
+    contact setting edit
+
+[33mcommit 698acb3172413253c7c4d03472d9109e852a7799[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 00:48:45 2026 +0630
+
+    payment report
+
+[33mcommit 3c999d24ca67b96911c3acdb59abadbc58964064[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sun May 24 00:07:56 2026 +0630
+
+    product sale order setup
+
+[33mcommit 28e98026a5130d2948144e2173260013d14e6e4f[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Sat May 23 23:11:16 2026 +0630
+
+    Setting Edit
+
+[33mcommit 65ed50c290129b8c0451cb4566434ce969777845[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri May 22 22:56:44 2026 +0630
+
+    sale report add3
+
+[33mcommit 660021a9549f29e488b94afc5c12c0221e68317b[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri May 22 22:51:37 2026 +0630
+
+    sale report add2
+
+[33mcommit 5e0ee4ba2c2a4d172ebb917286050c377ca8eb6e[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri May 22 22:40:12 2026 +0630
+
+    sale report add
+
+[33mcommit 97e24cc6a8e254f0c0c8c4f9186b2e150f456bb7[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri May 22 21:11:37 2026 +0630
+
+    Add Footer Logo
+
+[33mcommit ad2ec75ad68ad3ff01b74082b162e4fab174c3c4[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu May 21 22:37:15 2026 +0630
+
+    V2 Dashboard Make
+
+[33mcommit 885634bb524f1b037b6a5977527511334f4c9bc4[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Wed May 20 22:06:32 2026 +0630
+
+    Version 2 Image Upload
+
+[33mcommit cbbf0c53bcc704cad0f56bfb503464bf3cb3e7f3[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue May 19 22:42:04 2026 +0630
+
+    Test V
+
+[33mcommit 12a9f1cb3ca80993887f7f4cf0ea9f02a7ddbe56[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Tue May 19 21:00:00 2026 +0630
+
+    V 2 Edit Role
+
+[33mcommit a7ec5e2481f703afe6f749db481ae187964ff005[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Fri May 15 22:29:37 2026 +0630
+
+    Version 2 Update
+
+[33mcommit 4d579cdefd62434344c826244292c32be264493d[m
+Author: nainghtoozin <nainghtoo09798@email.com>
+Date:   Thu May 14 22:50:10 2026 +0630
+
+    Update project

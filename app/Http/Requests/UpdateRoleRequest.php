@@ -9,7 +9,16 @@ class UpdateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('roles.update') ?? false;
+        if (!($this->user()?->can('roles.update') ?? false)) {
+            return false;
+        }
+
+        $role = $this->route('role');
+        if ($role && in_array($role->name, ['superadmin', 'admin'])) {
+            return false;
+        }
+
+        return true;
     }
 
     public function rules(): array
@@ -17,7 +26,7 @@ class UpdateRoleRequest extends FormRequest
         $roleId = $this->route('role');
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where(fn($q) => $q->where('guard_name', 'web')->where('tenant_id', tenant()?->id))->ignore($roleId)],
+            'name' => ['required', 'string', 'max:255', 'not_in:superadmin,admin', Rule::unique('roles', 'name')->where(fn($q) => $q->where('guard_name', 'web')->where('tenant_id', tenant()?->id))->ignore($roleId)],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ];
@@ -27,6 +36,7 @@ class UpdateRoleRequest extends FormRequest
     {
         return [
             'name.unique' => 'A role with this name already exists.',
+            'name.not_in' => 'Cannot rename a role to a protected system name.',
             'permissions.*.exists' => 'One or more selected permissions do not exist.',
         ];
     }
