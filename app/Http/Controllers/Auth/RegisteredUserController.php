@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
-use App\Models\Role;
+use App\Services\TenantBootstrapService;
 
 class RegisteredUserController extends Controller
 {
@@ -64,21 +64,7 @@ class RegisteredUserController extends Controller
             'tenant_id' => $tenant->id,
         ]);
 
-        $customerRole = Role::firstOrCreate([
-            'name' => 'customer',
-            'guard_name' => 'web',
-            'tenant_id' => $tenant->id,
-        ]);
-
-        if ($customerRole->wasRecentlyCreated) {
-            $globalRole = Role::where('name', 'customer')
-                ->whereNull('tenant_id')
-                ->first();
-            if ($globalRole) {
-                $customerRole->syncPermissions($globalRole->permissions);
-            }
-        }
-
+        $customerRole = app(TenantBootstrapService::class)->ensureCustomerRole($tenant);
         $user->assignRole($customerRole);
 
         event(new Registered($user));

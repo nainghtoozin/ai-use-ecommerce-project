@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,9 +14,12 @@ class UpdateRoleRequest extends FormRequest
             return false;
         }
 
-        $role = $this->route('role');
-        if ($role && in_array($role->name, ['superadmin', 'admin'])) {
-            return false;
+        $routeRole = $this->route('role');
+        if ($routeRole) {
+            $role = $routeRole instanceof Role ? $routeRole : Role::find($routeRole);
+            if ($role && in_array($role->name, ['superadmin', 'admin'])) {
+                return false;
+            }
         }
 
         return true;

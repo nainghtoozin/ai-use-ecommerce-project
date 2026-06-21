@@ -4,14 +4,12 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
-use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
-use Spatie\Permission\Models\Permission;
+use App\Services\TenantBootstrapService;
 use App\Services\TenantDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
 class TenantController extends Controller
@@ -49,8 +47,10 @@ class TenantController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
+    public function store(
+        Request $request,
+        TenantBootstrapService $bootstrapService,
+    ) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:tenants,slug|regex:/^[a-z0-9\-]+$/',
@@ -64,7 +64,7 @@ class TenantController extends Controller
             'admin_password' => 'required_if:create_admin,true|string|min:8',
         ]);
 
-        $tenant = DB::transaction(function () use ($validated) {
+        $tenant = DB::transaction(function () use ($validated, $bootstrapService) {
             $storeSlug = $validated['slug'];
             $tenant = Tenant::create([
                 'name' => $validated['name'],
@@ -78,63 +78,18 @@ class TenantController extends Controller
 
             Tenant::clearDefaultCache();
 
-            $plan = isset($validated['plan_id']) && $validated['plan_id'] ? \App\Models\Plan::find($validated['plan_id']) : \App\Models\Plan::free();
-            $billingInterval = $plan?->defaultInterval() ?? 'monthly';
-            $subscription = new \App\Models\Subscription();
-            $subscription->tenant_id = $tenant->id;
-            $subscription->fill([
-                'plan_id' => $plan?->id,
-                'billing_interval' => $billingInterval,
-                'status' => in_array($tenant->status, ['trialing', 'active']) ? $tenant->status : 'active',
-                'starts_at' => now(),
-                'expires_at' => $plan?->calculateExpiryDate(now(), $billingInterval),
+            $tenantStatus = $validated['status'] ?? 'active';
+            $subscriptionStatus = in_array($tenantStatus, ['trialing', 'active']) ? $tenantStatus : 'active';
+
+            $bootstrapService->bootstrap($tenant, [
+                'plan_id' => $validated['plan_id'] ?? null,
+                'status' => $subscriptionStatus,
+                'create_owner' => !empty($validated['create_admin']),
+                'owner_name' => $validated['admin_name'] ?? null,
+                'owner_email' => $validated['admin_email'] ?? null,
+                'owner_password' => $validated['admin_password'] ?? null,
+                'email_verified' => true,
             ]);
-            $subscription->save();
-
-            foreach (['admin', 'customer'] as $roleName) {
-                $role = Role::where('name', $roleName)
-                    ->where('guard_name', 'web')
-                    ->where('tenant_id', $tenant->id)
-                    ->first();
-
-                if (!$role) {
-                    $role = new Role();
-                    $role->name = $roleName;
-                    $role->guard_name = 'web';
-                    $role->tenant_id = $tenant->id;
-                    $role->save();
-
-                    $globalRole = Role::where('name', $roleName)
-                        ->whereNull('tenant_id')
-                        ->first();
-                    if ($globalRole) {
-                        $role->syncPermissions($globalRole->permissions);
-                    }
-                }
-            }
-
-            if (!empty($validated['create_admin']) && !empty($validated['admin_email'])) {
-                $admin = User::create([
-                    'name' => $validated['admin_name'],
-                    'email' => $validated['admin_email'],
-                    'password' => Hash::make($validated['admin_password']),
-                    'status' => User::STATUS_ACTIVE,
-                    'email_verified_at' => now(),
-                ]);
-                $admin->tenant_id = $tenant->id;
-                $admin->is_owner = true;
-                $admin->save();
-
-                $adminRole = Role::where('name', 'admin')
-                    ->where('tenant_id', $tenant->id)
-                    ->first();
-
-                if ($adminRole) {
-                    $admin->assignRole($adminRole);
-                }
-
-                $admin->syncPermissions(Permission::all());
-            }
 
             return $tenant;
         });

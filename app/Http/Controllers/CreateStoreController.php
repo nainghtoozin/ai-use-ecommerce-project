@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Plan;
-use App\Models\Role;
 use App\Models\Tenant;
-use App\Models\User;
-use Spatie\Permission\Models\Permission;
 use App\Models\WebsiteInfo;
+use App\Services\TenantBootstrapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Illuminate\Auth\Events\Registered;
 
 class CreateStoreController extends Controller
 {
+    public function __construct(
+        private readonly TenantBootstrapService $bootstrapService,
+    ) {}
+
     public function index()
     {
         $settings = WebsiteInfo::getSettings();
@@ -55,62 +55,12 @@ class CreateStoreController extends Controller
 
             Tenant::clearDefaultCache();
 
-            $plan = Plan::free();
-
-            if ($plan) {
-                $subscription = $tenant->subscription()->create([
-                    'plan_id' => $plan->id,
-                    'billing_interval' => $plan->defaultInterval(),
-                    'status' => 'pending',
-                    'starts_at' => null,
-                    'expires_at' => null,
-                ]);
-            }
-
-            foreach (['admin', 'customer'] as $roleName) {
-                $role = Role::where('name', $roleName)
-                    ->where('guard_name', 'web')
-                    ->where('tenant_id', $tenant->id)
-                    ->first();
-
-                if (!$role) {
-                    $role = new Role();
-                    $role->name = $roleName;
-                    $role->guard_name = 'web';
-                    $role->tenant_id = $tenant->id;
-                    $role->save();
-
-                    $globalRole = Role::where('name', $roleName)
-                        ->whereNull('tenant_id')
-                        ->first();
-                    if ($globalRole) {
-                        $role->syncPermissions($globalRole->permissions);
-                    }
-                }
-            }
-
-            $admin = User::create([
-                'name' => $validated['owner_name'],
-                'email' => $validated['owner_email'],
-                'password' => Hash::make($validated['password']),
-                'status' => User::STATUS_ACTIVE,
+            return $this->bootstrapService->bootstrap($tenant, [
+                'owner_name' => $validated['owner_name'],
+                'owner_email' => $validated['owner_email'],
+                'owner_password' => $validated['password'],
+                'status' => 'pending',
             ]);
-
-            $admin->tenant_id = $tenant->id;
-            $admin->is_owner = true;
-            $admin->save();
-
-            $adminRole = Role::where('name', 'admin')
-                ->where('tenant_id', $tenant->id)
-                ->first();
-
-            if ($adminRole) {
-                $admin->assignRole($adminRole);
-            }
-
-            $admin->syncPermissions(Permission::all());
-
-            return $admin;
         });
 
         event(new Registered($admin));
