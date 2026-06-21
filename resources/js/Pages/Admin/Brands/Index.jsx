@@ -60,6 +60,7 @@ export default function BrandsIndex({ brands, query = '' }) {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Logo</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Slug</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -69,13 +70,13 @@ export default function BrandsIndex({ brands, query = '' }) {
                             <tbody className="divide-y divide-gray-200">
                                 {!brands?.data?.length ? (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-16 text-center">
+                                        <td colSpan="6" className="px-6 py-16 text-center">
                                             <Image className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                                             <p className="text-gray-500 text-sm">No brands found.</p>
                                             {search && <p className="text-gray-400 text-xs mt-1">Try a different search term.</p>}
                                         </td>
                                     </tr>
-                                ) : brands.data.map((brand) => (
+                                ) : brands.data.map((brand, index) => (
                                     <tr key={brand.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             {brand.logo ? (
@@ -86,6 +87,7 @@ export default function BrandsIndex({ brands, query = '' }) {
                                                 </div>
                                             )}
                                         </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm font-medium text-gray-900">{brand.name}</p>
                                             {brand.description && (

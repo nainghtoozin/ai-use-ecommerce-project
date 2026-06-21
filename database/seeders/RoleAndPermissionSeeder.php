@@ -33,7 +33,7 @@ class RoleAndPermissionSeeder extends Seeder
         'products.delete',
         'categories.view',
         'categories.create',
-        'categories.edit',
+        'categories.update',
         'categories.delete',
         'orders.view',
         'orders.update-status',
@@ -52,13 +52,13 @@ class RoleAndPermissionSeeder extends Seeder
             // Unit Management
             'units.view',
             'units.create',
-            'units.edit',
+            'units.update',
             'units.delete',
 
             // Brand Management
             'brands.view',
             'brands.create',
-            'brands.edit',
+            'brands.update',
             'brands.delete',
 
             // Maintenance

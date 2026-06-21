@@ -48,7 +48,7 @@ export default function UnitsIndex({ units, query = '' }) {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Short Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -58,9 +58,9 @@ export default function UnitsIndex({ units, query = '' }) {
                         <tbody className="divide-y divide-gray-200">
                             {!units?.data?.length ? (
                                 <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">No units found.</td></tr>
-                            ) : units.data.map((unit) => (
+                            ) : units.data.map((unit, index) => (
                                 <tr key={unit.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 text-sm text-gray-500">#{unit.id}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{unit.name}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600">{unit.short_name}</td>
                                     <td className="px-6 py-4">

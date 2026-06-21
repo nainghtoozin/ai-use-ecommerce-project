@@ -3,10 +3,13 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
 
+const SYSTEM_METHODS = ['Cash', 'Cash On Delivery'];
+
 export default function PaymentMethodsIndex({ paymentMethods }) {
     const { auth } = usePage().props;
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
+    const isSystemMethod = (name) => SYSTEM_METHODS.includes(name);
     function handleToggle(id) {
         router.post(adminUrl(`/admin/payment-methods/${id}/toggle`));
     }
@@ -36,6 +39,7 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">QR</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account Number</th>
@@ -46,8 +50,8 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {!paymentMethods?.data?.length ? (
-                                <tr><td colSpan="7" className="px-6 py-12 text-center text-gray-500">No payment methods found.</td></tr>
-                            ) : paymentMethods.data.map((pm) => (
+                                <tr><td colSpan="8" className="px-6 py-12 text-center text-gray-500">No payment methods found.</td></tr>
+                            ) : paymentMethods.data.map((pm, index) => (
                                 <tr key={pm.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         {pm.qr_image_url ? (
@@ -58,6 +62,7 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                                             </div>
                                         )}
                                     </td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{pm.name}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600">{pm.account_name || '-'}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600">{pm.account_number || '-'}</td>
@@ -76,10 +81,10 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm">
                                         <div className="flex justify-end gap-2">
-                                            {can('payments.update') && (
+                                            {can('payments.update') && !isSystemMethod(pm.name) && (
                                                 <Link href={adminUrl(`/admin/payment-methods/${pm.id}/edit`)} className="text-blue-600 hover:text-blue-800">Edit</Link>
                                             )}
-                                            {can('payments.delete') && (
+                                            {can('payments.delete') && !isSystemMethod(pm.name) && (
                                                 <button onClick={() => handleDelete(pm.id)} className="text-red-600 hover:text-red-800">Delete</button>
                                             )}
                                         </div>

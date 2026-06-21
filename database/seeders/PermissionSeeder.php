@@ -44,7 +44,7 @@ class PermissionSeeder extends Seeder
             // Category Management
             'categories.view',
             'categories.create',
-            'categories.edit',
+            'categories.update',
             'categories.delete',
 
             // Order Management
@@ -97,13 +97,13 @@ class PermissionSeeder extends Seeder
             // Unit Management
             'units.view',
             'units.create',
-            'units.edit',
+            'units.update',
             'units.delete',
 
             // Brand Management
             'brands.view',
             'brands.create',
-            'brands.edit',
+            'brands.update',
             'brands.delete',
 
             // Coupon Management
