@@ -3,10 +3,14 @@
 namespace App\Services;
 
 use App\Events\TenantCreated;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Models\Unit;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +61,11 @@ class TenantBootstrapService
 
                 $this->assignOwnerRole($owner, $tenant);
                 $this->assignOwnerPermissions($owner);
+
+                $this->createDefaultUnits($tenant);
+                $this->createDefaultCategories($tenant);
+                $this->createDefaultBrands($tenant);
+                $this->createDefaultPaymentMethods($tenant);
 
                 TenantCreated::dispatch($tenant, $owner);
 
@@ -213,5 +222,100 @@ class TenantBootstrapService
         \App\Services\FeatureGate::clearCache($plan);
 
         return $subscription;
+    }
+
+    protected function createDefaultUnits(Tenant $tenant): void
+    {
+        $units = [
+            ['name' => 'Piece', 'short_name' => 'pcs'],
+            ['name' => 'Box', 'short_name' => 'box'],
+            ['name' => 'Pack', 'short_name' => 'pk'],
+            ['name' => 'Kg', 'short_name' => 'kg'],
+            ['name' => 'Gram', 'short_name' => 'g'],
+            ['name' => 'Liter', 'short_name' => 'L'],
+            ['name' => 'Meter', 'short_name' => 'm'],
+        ];
+
+        foreach ($units as $data) {
+            $existing = Unit::withoutTenantScope()
+                ->where('tenant_id', $tenant->id)
+                ->where('name', $data['name'])
+                ->first();
+
+            if (!$existing) {
+                $unit = new Unit();
+                $unit->tenant_id = $tenant->id;
+                $unit->name = $data['name'];
+                $unit->short_name = $data['short_name'];
+                $unit->is_active = true;
+                $unit->save();
+            }
+        }
+    }
+
+    protected function createDefaultCategories(Tenant $tenant): void
+    {
+        $categories = [
+            'General', 'Fashion', 'Electronics', 'Beauty',
+            'Home & Living', 'Food & Grocery', 'Sports', 'Other',
+        ];
+
+        foreach ($categories as $name) {
+            $existing = Category::withoutTenantScope()
+                ->where('tenant_id', $tenant->id)
+                ->where('name', $name)
+                ->first();
+
+            if (!$existing) {
+                $category = new Category();
+                $category->tenant_id = $tenant->id;
+                $category->name = $name;
+                $category->save();
+            }
+        }
+    }
+
+    protected function createDefaultBrands(Tenant $tenant): void
+    {
+        $brands = ['Local Made', 'No Brand', 'Imported', 'Custom Brand'];
+
+        foreach ($brands as $name) {
+            $existing = Brand::withoutTenantScope()
+                ->where('tenant_id', $tenant->id)
+                ->where('name', $name)
+                ->first();
+
+            if (!$existing) {
+                $brand = new Brand();
+                $brand->tenant_id = $tenant->id;
+                $brand->name = $name;
+                $brand->is_active = true;
+                $brand->save();
+            }
+        }
+    }
+
+    protected function createDefaultPaymentMethods(Tenant $tenant): void
+    {
+        $methods = [
+            ['name' => 'Cash', 'type' => 'cash'],
+            ['name' => 'Cash On Delivery', 'type' => 'cod'],
+        ];
+
+        foreach ($methods as $data) {
+            $existing = PaymentMethod::withoutTenantScope()
+                ->where('tenant_id', $tenant->id)
+                ->where('name', $data['name'])
+                ->first();
+
+            if (!$existing) {
+                $method = new PaymentMethod();
+                $method->tenant_id = $tenant->id;
+                $method->name = $data['name'];
+                $method->type = $data['type'];
+                $method->is_active = true;
+                $method->save();
+            }
+        }
     }
 }

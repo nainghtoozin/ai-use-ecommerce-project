@@ -210,6 +210,48 @@ class MerchantManagementTest extends TestCase
                 $table->unsignedBigInteger('tenant_id')->nullable()->unique();
                 $table->timestamps();
             },
+            'units' => function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('tenant_id');
+                $table->string('name');
+                $table->string('short_name');
+                $table->text('description')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->unique(['tenant_id', 'name']);
+            },
+            'categories' => function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('tenant_id')->nullable();
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->timestamps();
+            },
+            'brands' => function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('tenant_id');
+                $table->string('name');
+                $table->string('slug');
+                $table->text('description')->nullable();
+                $table->string('logo')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->unique(['tenant_id', 'name']);
+                $table->unique(['tenant_id', 'slug']);
+            },
+            'payment_methods' => function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('tenant_id')->nullable();
+                $table->string('name');
+                $table->string('type', 20)->nullable();
+                $table->string('account_name')->nullable();
+                $table->string('account_number')->nullable();
+                $table->string('qr_image')->nullable();
+                $table->string('bank_name')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->unique(['tenant_id', 'name']);
+            },
             'notifications' => function ($table) {
                 $table->uuid('id')->primary();
                 $table->string('type');
