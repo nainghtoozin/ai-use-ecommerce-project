@@ -503,6 +503,9 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
     Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
     Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
 
+    Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\PlatformSettingController::class, 'index'])->name('platform-settings.index');
+    Route::put('/platform-settings', [\App\Http\Controllers\SuperAdmin\PlatformSettingController::class, 'update'])->name('platform-settings.update');
+
     Route::post('/impersonate/{user}', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
 
     // ── Utility routes (SuperAdmin only) ──

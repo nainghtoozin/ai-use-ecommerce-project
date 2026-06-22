@@ -38,7 +38,7 @@ class AdminProductController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $query = Product::with(['category', 'unit', 'brand']);
+        $query = Product::forCurrentTenant()->with(['category', 'unit', 'brand']);
 
         // Eager load active variant stock sum to avoid N+1 on effective_stock
         $query->withSum(['variants as variant_total_stock' => function ($q) {
@@ -686,7 +686,7 @@ class AdminProductController extends Controller
         ]);
 
         $ids = $request->input('ids');
-        $products = Product::whereIn('id', $ids)->get();
+        $products = Product::forCurrentTenant()->whereIn('id', $ids)->get();
 
         $blockedProducts = $products->filter(fn($p) => $p->hasOrders());
 
@@ -740,7 +740,7 @@ class AdminProductController extends Controller
         ]);
 
         $ids = $request->input('ids');
-        $count = Product::whereIn('id', $ids)->update(['status' => Product::STATUS_ACTIVE]);
+        $count = Product::forCurrentTenant()->whereIn('id', $ids)->update(['status' => Product::STATUS_ACTIVE]);
 
         ActivityLogger::log(
             "Bulk activated {$count} product(s)",
@@ -767,7 +767,7 @@ class AdminProductController extends Controller
         ]);
 
         $ids = $request->input('ids');
-        $count = Product::whereIn('id', $ids)->update(['status' => Product::STATUS_INACTIVE]);
+        $count = Product::forCurrentTenant()->whereIn('id', $ids)->update(['status' => Product::STATUS_INACTIVE]);
 
         ActivityLogger::log(
             "Bulk deactivated {$count} product(s)",
@@ -790,7 +790,7 @@ class AdminProductController extends Controller
 
         $query = $request->input('query');
 
-        $products = Product::with(['category', 'unit', 'brand'])
+        $products = Product::forCurrentTenant()->with(['category', 'unit', 'brand'])
             ->where('name', 'like', "%{$query}%")
             ->latest()
             ->paginate(10);
@@ -885,10 +885,10 @@ class AdminProductController extends Controller
             $productId = (int) $item['combo_product_id'];
 
             // Check product exists
-            $componentProduct = Product::find($productId);
+            $componentProduct = Product::forCurrentTenant()->find($productId);
             if (!$componentProduct) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    $productKey => 'Product #' . $productId . ' does not exist.',
+                    $productKey => 'Component product is invalid or unavailable.',
                 ]);
             }
 
@@ -910,11 +910,11 @@ class AdminProductController extends Controller
             // Validate linked_variant_id if provided
             if (isset($item['linked_variant_id']) && $item['linked_variant_id']) {
                 $variantId = (int) $item['linked_variant_id'];
-                $variant = ProductVariant::find($variantId);
+                $variant = ProductVariant::forCurrentTenant()->find($variantId);
 
                 if (!$variant) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        "{$productKey}.linked_variant_id" => 'Variant #' . $variantId . ' does not exist.',
+                        "{$productKey}.linked_variant_id" => 'Selected variant is invalid or unavailable.',
                     ]);
                 }
 

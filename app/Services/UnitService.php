@@ -9,13 +9,16 @@ class UnitService
 {
     public function list()
     {
-        return Unit::latest()->paginate(10);
+        return Unit::forCurrentTenant()->latest()->paginate(10);
     }
 
     public function search(string $query)
     {
-        return Unit::where('name', 'like', "%{$query}%")
-            ->orWhere('short_name', 'like', "%{$query}%")
+        return Unit::forCurrentTenant()
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('short_name', 'like', "%{$query}%");
+            })
             ->latest()
             ->paginate(10);
     }

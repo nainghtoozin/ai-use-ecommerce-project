@@ -27,6 +27,14 @@ class AdminOrderController extends Controller
         $this->orderWorkflow = $orderWorkflow;
     }
 
+    private function tenantFilter(): mixed
+    {
+        if (auth()->user()->isSuperAdmin()) {
+            return false;
+        }
+        return auth()->user()->tenant_id;
+    }
+
     public function index(Request $request)
     {
         if (!auth()->user()->can('orders.view')) {
@@ -42,7 +50,8 @@ class AdminOrderController extends Controller
             'paymentMethod',
             'city',
             'township'
-        ]);
+        ])
+        ->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId));
 
         if (!empty($filters['order_status'])) {
             $ordersQuery->where('order_status', $filters['order_status']);
@@ -108,7 +117,9 @@ class AdminOrderController extends Controller
             'paymentMethod',
             'city',
             'township'
-        ])->findOrFail($id);
+        ])
+        ->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
+        ->findOrFail($id);
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
@@ -126,7 +137,8 @@ class AdminOrderController extends Controller
         ]);
 
         try {
-            $order = Order::findOrFail($id);
+            $order = Order::when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
+                ->findOrFail($id);
             $this->orderService->updateOrderStatus($order, $request->order_status);
 
             return admin_redirect('admin.orders.show', $id)
@@ -146,7 +158,9 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user', 'paymentMethod')->findOrFail($id);
+            $order = Order::with('user', 'paymentMethod')
+                ->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
+                ->findOrFail($id);
 
             $this->orderWorkflow->assertCanConfirmOrder($order);
 
@@ -171,7 +185,7 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
             $this->orderWorkflow->assertCanProcessOrder($order);
 
@@ -196,7 +210,7 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
             $this->orderWorkflow->assertCanShipOrder($order);
 
@@ -221,7 +235,7 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
             $this->orderWorkflow->assertCanDeliverOrder($order);
 
@@ -246,7 +260,7 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
             if (!$order->canCancel()) {
                 return admin_redirect('admin.orders.show', $id)
@@ -274,7 +288,7 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
             if (!$order->canApprovePayment()) {
                 return admin_redirect('admin.orders.show', $id)
@@ -308,7 +322,7 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
             if (!$order->canRejectPayment()) {
                 return admin_redirect('admin.orders.show', $id)
@@ -349,7 +363,8 @@ class AdminOrderController extends Controller
         ]);
 
         try {
-            $order = Order::findOrFail($id);
+            $order = Order::when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
+                ->findOrFail($id);
             Log::info('MarkAsPaid debug - Order ID: ' . $id . ', payment_status: ' . $order->payment_status);
             Log::info('canMarkAsPaid result: ' . ($order->canMarkAsPaid() ? 'true' : 'false'));
 
@@ -386,7 +401,8 @@ class AdminOrderController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $order = Order::findOrFail($id);
+        $order = Order::when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
+            ->findOrFail($id);
 
         if ($order->order_status !== Order::ORDER_STATUS_CANCELLED) {
             return admin_redirect('admin.orders.index')

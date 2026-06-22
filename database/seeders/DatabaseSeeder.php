@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             PlanSeeder::class,
             LocationSeeder::class,
+            PlatformSettingSeeder::class,
 
             // TENANT BOOTSTRAP CANDIDATES (move to TenantBootstrapService in future)
             WebsiteSettingsSeeder::class,

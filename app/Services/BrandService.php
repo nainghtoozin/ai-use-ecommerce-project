@@ -10,13 +10,16 @@ class BrandService
 {
     public function list()
     {
-        return Brand::latest()->paginate(10);
+        return Brand::forCurrentTenant()->latest()->paginate(10);
     }
 
     public function search(string $query)
     {
-        return Brand::where('name', 'like', "%{$query}%")
-            ->orWhere('slug', 'like', "%{$query}%")
+        return Brand::forCurrentTenant()
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('slug', 'like', "%{$query}%");
+            })
             ->latest()
             ->paginate(10);
     }

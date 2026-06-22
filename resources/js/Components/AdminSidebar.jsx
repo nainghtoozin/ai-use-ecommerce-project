@@ -85,6 +85,7 @@ export default function AdminSidebar() {
                 {
                     title: 'System Management',
                     items: [
+                        { label: 'Platform Settings', href: '/superadmin/platform-settings', icon: 'Settings' },
                         { label: 'Website Info', href: '/admin/website-info/edit', icon: 'Globe' },
                     ]
                 },

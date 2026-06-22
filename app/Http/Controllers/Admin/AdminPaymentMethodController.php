@@ -23,7 +23,7 @@ class AdminPaymentMethodController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $paymentMethods = PaymentMethod::latest()->paginate(10);
+        $paymentMethods = PaymentMethod::forCurrentTenant()->latest()->paginate(10);
         return Inertia::render('Admin/PaymentMethods/Index', [
             'paymentMethods' => $paymentMethods,
         ]);

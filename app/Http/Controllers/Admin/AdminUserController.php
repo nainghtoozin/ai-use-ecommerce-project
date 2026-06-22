@@ -45,7 +45,7 @@ class AdminUserController extends Controller
         if ($this->isSuperAdmin()) {
             return false;
         }
-        return Tenant::getCurrent();
+        return auth()->user()->tenant_id;
     }
 
     public function index(Request $request)
@@ -59,7 +59,7 @@ class AdminUserController extends Controller
         $status = $request->get('status');
 
         $users = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->when($search, fn($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%");
@@ -90,7 +90,7 @@ class AdminUserController extends Controller
         }
 
         $roles = Role::orderBy('name')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Index', [
@@ -109,7 +109,7 @@ class AdminUserController extends Controller
         }
 
         $roles = Role::orderBy('name')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Create', [
@@ -161,7 +161,7 @@ class AdminUserController extends Controller
         }
 
         $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
 
         $activities = auth()->user()->can('users.view-activity')
@@ -186,10 +186,10 @@ class AdminUserController extends Controller
         }
 
         $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
         $roles = Role::orderBy('name')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Edit', [
@@ -205,7 +205,7 @@ class AdminUserController extends Controller
         }
 
         $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
         $data = $request->validated();
         $changes = [];
@@ -294,7 +294,7 @@ class AdminUserController extends Controller
         }
 
         $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
 
         $this->protectOwner($user);
@@ -309,7 +309,7 @@ class AdminUserController extends Controller
 
         if ($user->hasRole('admin') && !$user->hasRole('superadmin')) {
             $adminCount = User::role('admin')
-                ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+                ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
                 ->count();
             if ($adminCount <= 1) {
                 return admin_redirect('admin.users.index')
@@ -338,7 +338,7 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+        $user = User::when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
 
         $this->protectOwner($user);
@@ -363,7 +363,7 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+        $user = User::when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
 
         $this->protectOwner($user);
@@ -388,7 +388,7 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::when(Tenant::getCurrent(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
+        $user = User::when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
             ->findOrFail($id);
 
         $user->update(['status' => User::STATUS_ACTIVE]);

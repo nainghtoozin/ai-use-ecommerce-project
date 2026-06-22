@@ -132,6 +132,10 @@ class PermissionSeeder extends Seeder
 
             // Maintenance
             'bypass maintenance mode',
+
+            // Platform Settings (SuperAdmin)
+            'platform.settings.view',
+            'platform.settings.update',
         ];
 
         foreach ($permissions as $name) {

@@ -16,7 +16,7 @@ class AdminCategoryController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $categories = Category::latest()->paginate(10);
+        $categories = Category::forCurrentTenant()->latest()->paginate(10);
 
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $categories,
@@ -96,7 +96,8 @@ class AdminCategoryController extends Controller
 
         $query = $request->input('query');
 
-        $categories = Category::where('name', 'like', "%{$query}%")
+        $categories = Category::forCurrentTenant()
+            ->where('name', 'like', "%{$query}%")
             ->latest()
             ->paginate(10);
 
