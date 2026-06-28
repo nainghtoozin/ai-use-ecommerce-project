@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
 
 export default function ResetPassword({ token, email }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -22,7 +22,7 @@ export default function ResetPassword({ token, email }) {
     }
 
     return (
-        <GuestLayout>
+        <PlatformGuestLayout>
             <Head title="Reset Password" />
 
             <form onSubmit={submit}>
@@ -54,6 +54,6 @@ export default function ResetPassword({ token, email }) {
                     </button>
                 </div>
             </form>
-        </GuestLayout>
+        </PlatformGuestLayout>
     );
 }

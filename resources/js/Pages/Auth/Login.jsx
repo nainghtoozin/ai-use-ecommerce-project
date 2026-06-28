@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
 
 export default function Login({ status }) {
     const { errors } = usePage().props;
@@ -18,7 +18,7 @@ export default function Login({ status }) {
     };
 
     return (
-        <GuestLayout>
+        <PlatformGuestLayout>
             <Head title="Log in" />
 
             {status && (
@@ -103,6 +103,6 @@ export default function Login({ status }) {
                     </div>
                 )}
             </form>
-        </GuestLayout>
+        </PlatformGuestLayout>
     );
 }

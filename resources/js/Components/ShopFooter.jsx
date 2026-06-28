@@ -29,8 +29,8 @@ export default function ShopFooter() {
     const [infoModal, setInfoModal] = useState(null);
 
     const fs = website_info?.footer_settings || {};
-    const siteName = website_info?.site_name || 'My Store';
     const logoUrl = assetUrl(website_info?.footer_logo_url || website_info?.logo);
+    const siteName = website_info?.site_name || 'My Store';
     const themeColor = 'var(--theme-color, #3B82F6)';
 
     const ci = website_info?.contact_info || {};
@@ -226,7 +226,7 @@ export default function ShopFooter() {
                     <div className="py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                         <div className="flex items-center gap-2 text-slate-500 text-xs">
                             <i className="bi bi-copyright"></i>
-                            <span>{new Date().getFullYear()} {siteName}. All rights reserved.</span>
+                            <span>{website_info?.footer_copyright || `${new Date().getFullYear()} ${siteName}. All rights reserved.`}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs">
                             <span className="text-slate-500">Powered by</span>

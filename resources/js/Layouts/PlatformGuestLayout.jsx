@@ -1,10 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 
-export default function GuestLayout({ children }) {
-    const { website_info } = usePage().props;
-    const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.site_name || website_info?.name || 'My Store';
+export default function PlatformGuestLayout({ children }) {
+    const { platform_setting } = usePage().props;
+    const logoUrl = assetUrl(platform_setting?.site_logo);
+    const siteName = platform_setting?.site_name || 'My Store';
 
     return (
         <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-50">

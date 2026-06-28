@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
 
 export default function VerifyEmail() {
     const { auth } = usePage().props;
@@ -11,7 +11,7 @@ export default function VerifyEmail() {
     }
 
     return (
-        <GuestLayout>
+        <PlatformGuestLayout>
             <Head title="Verify Email" />
 
             <p className="text-sm text-gray-600 mb-6">
@@ -33,6 +33,6 @@ export default function VerifyEmail() {
                     </button>
                 </div>
             </form>
-        </GuestLayout>
+        </PlatformGuestLayout>
     );
 }

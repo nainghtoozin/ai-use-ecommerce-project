@@ -6,7 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title inertia>{{ $page['props']['website_info']['site_name'] ?? 'My E-Commerce Store' }}</title>
+    @php
+        $siteTitle = $page['props']['platform_setting']['site_name'] ?? 'My E-Commerce Store';
+        $tenantFavicon = $page['props']['website_info']['favicon_url'] ?? null;
+        $platformFavicon = $page['props']['platform_setting']['favicon'] ?? null;
+        $faviconUrl = $tenantFavicon ?? ($platformFavicon ? (str_starts_with($platformFavicon, 'http') ? $platformFavicon : asset('storage/' . $platformFavicon)) : null);
+    @endphp
+
+    <title inertia>{{ $siteTitle }}</title>
+
+    @if ($faviconUrl)
+        <link rel="icon" type="image/png" href="{{ $faviconUrl }}?v={{ time() }}">
+    @endif
 
     @php
         $themeColor = ($page['props']['website_info']['theme_color'] ?? '') ?: '#3B82F6';

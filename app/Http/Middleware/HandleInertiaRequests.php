@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Category;
+use App\Models\PlatformSetting;
 use App\Models\Product;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -89,6 +90,7 @@ class HandleInertiaRequests extends Middleware
             'app' => [
                 'name' => $websiteSettings['site_name'] ?? config('app.name', 'My E-Commerce Store'),
             ],
+            'platform_setting' => PlatformSetting::current()->toArray(),
             'website_info' => $websiteSettings,
             'websiteSettings' => $websiteSettings,
             'categories' => cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {

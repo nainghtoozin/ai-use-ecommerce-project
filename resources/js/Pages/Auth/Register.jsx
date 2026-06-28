@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
+import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
 
 export default function Register() {
     const { errors } = usePage().props;
@@ -23,7 +23,7 @@ export default function Register() {
     };
 
     return (
-        <GuestLayout>
+        <PlatformGuestLayout>
             <Head title="Register" />
 
             <form onSubmit={submit}>
@@ -101,6 +101,6 @@ export default function Register() {
                     </button>
                 </div>
             </form>
-        </GuestLayout>
+        </PlatformGuestLayout>
     );
 }

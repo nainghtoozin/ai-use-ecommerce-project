@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\WebsiteInfo;
 use App\Services\StoreResolver;
 use Closure;
 use Illuminate\Http\Request;
@@ -26,6 +27,9 @@ class Storefront
 
         app()->instance('current.tenant', $tenant);
         $request->merge(['tenant' => $tenant]);
+
+        $settings = WebsiteInfo::first();
+        \Inertia\Inertia::share('website_info', $settings ? $settings->toArray() : []);
 
         return $next($request);
     }

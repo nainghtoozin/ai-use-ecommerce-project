@@ -1,10 +1,10 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import ShopLayout from '@/Layouts/ShopLayout';
+import PlatformLayout from '@/Layouts/PlatformLayout';
 import HomepageHero from '@/Components/Storefront/HomepageHero';
 
 export default function ClientProductIndex() {
-    const { website_info } = usePage().props;
-    const siteName = website_info?.site_name || 'My Store';
+    const { platform_setting } = usePage().props;
+    const siteName = platform_setting?.site_name || 'My Store';
 
     const features = [
         {
@@ -58,10 +58,10 @@ export default function ClientProductIndex() {
     ];
 
     return (
-        <ShopLayout>
+        <PlatformLayout>
             <Head title={siteName} />
 
-            <HomepageHero websiteInfo={website_info} />
+            <HomepageHero websiteInfo={{ site_name: siteName, logo: platform_setting?.site_logo }} />
 
             <section id="features" className="py-16 sm:py-20 lg:py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -150,6 +150,6 @@ export default function ClientProductIndex() {
                     </div>
                 </div>
             </section>
-        </ShopLayout>
+        </PlatformLayout>
     );
 }

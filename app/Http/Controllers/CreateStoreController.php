@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PlatformSetting;
 use App\Models\Tenant;
 use App\Models\WebsiteInfo;
+use App\Services\ImageService;
 use App\Services\TenantBootstrapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,12 +20,13 @@ class CreateStoreController extends Controller
 
     public function index()
     {
+        $platform = PlatformSetting::current();
         $settings = WebsiteInfo::getSettings();
 
         return Inertia::render('Public/CreateStore', [
             'appUrl' => config('app.url'),
-            'siteName' => $settings->site_name ?? 'My Store',
-            'logoUrl' => $settings->logo_url,
+            'siteName' => $platform->site_name ?: ($settings->site_name ?? 'My Store'),
+            'logoUrl' => $platform->site_logo ? ImageService::url($platform->site_logo) : $settings->logo_url,
         ]);
     }
 
@@ -87,6 +90,7 @@ class CreateStoreController extends Controller
 
     public function success(Request $request)
     {
+        $platform = PlatformSetting::current();
         $settings = WebsiteInfo::getSettings();
 
         return Inertia::render('Public/StoreRegistrationSuccess', [
@@ -94,8 +98,8 @@ class CreateStoreController extends Controller
             'storeUrl' => $request->query('store')
                 ? url('/store/' . $request->query('store'))
                 : null,
-            'siteName' => $settings->site_name ?? 'My Store',
-            'logoUrl' => $settings->logo_url,
+            'siteName' => $platform->site_name ?: ($settings->site_name ?? 'My Store'),
+            'logoUrl' => $platform->site_logo ? ImageService::url($platform->site_logo) : $settings->logo_url,
         ]);
     }
 }

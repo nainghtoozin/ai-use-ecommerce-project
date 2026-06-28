@@ -18,14 +18,17 @@ const STORAGE_PREFIX = 'admin_sidebar_section_';
 
 export default function AdminSidebar() {
     const { props, url } = usePage();
-    const { auth, website_info, tenant } = props;
+    const { auth, website_info, platform_setting, tenant } = props;
     const userPermissions = auth?.user?.permissions;
     const can = (perm) => userPermissions?.includes(perm);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
 
-    const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.site_name || 'My Store';
+    const isSuperAdmin = auth?.user?.is_superadmin;
+    const brandLogo = isSuperAdmin ? platform_setting?.site_logo : website_info?.logo;
+    const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (website_info?.site_name || 'My Store');
+    const logoUrl = assetUrl(brandLogo);
+    const siteName = brandName;
 
     const iconMap = {
         'LayoutDashboard': LayoutDashboard,
@@ -57,8 +60,6 @@ export default function AdminSidebar() {
         if (!LucideIcon) return null;
         return <LucideIcon className={`w-5 h-5 ${className}`} />;
     };
-
-    const isSuperAdmin = auth?.user?.is_superadmin;
 
     const menuSections = useMemo(() => {
         if (isSuperAdmin) {

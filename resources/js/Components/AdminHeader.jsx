@@ -3,7 +3,7 @@ import NotificationBell from '@/Components/NotificationBell';
 
 export default function AdminHeader() {
     const { props, url } = usePage();
-    const { auth } = props;
+    const { auth, platform_setting } = props;
     const isImpersonating = auth?.user?.is_impersonating;
     const impersonatorName = auth?.user?.impersonator_name;
 
@@ -32,6 +32,11 @@ export default function AdminHeader() {
         return 'Admin Panel';
     };
 
+    const isSuperAdmin = auth?.user?.is_superadmin;
+    const subtitle = isSuperAdmin
+        ? (platform_setting?.site_name ? `${platform_setting.site_name} — SuperAdmin` : 'SuperAdmin Panel')
+        : 'Manage your store';
+
     return (
         <>
             {isImpersonating && (
@@ -59,7 +64,7 @@ export default function AdminHeader() {
                     <div className="lg:hidden w-10"></div>
                     <div>
                         <h1 className="text-base lg:text-lg font-semibold text-gray-900">{getPageTitle()}</h1>
-                        <p className="text-xs text-gray-500 hidden lg:block">Manage your store</p>
+                        <p className="text-xs text-gray-500 hidden lg:block">{subtitle}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-3">
