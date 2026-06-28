@@ -6,24 +6,6 @@ use App\Models\Plan;
 use App\Models\PlanFeature;
 use Illuminate\Database\Seeder;
 
-/**
- * PlanSeeder — seeds default subscription plans and their features.
- *
- * Plan hierarchy:
- *   Free      → single_products only
- *   Starter   → single_products + variable_products
- *   Business  → single_products + variable_products + combo_products
- *
- * Feature keys:
- *   single_products    — create standard single-variant products
- *   variable_products  — create products with size/color/etc variants
- *   combo_products     — create bundle/combo products
- *
- * Future features:
- *   digital_products   — digital/downloadable products
- *   subscription_products — recurring subscription products
- *   booking_products   — booking/appointment products
- */
 class PlanSeeder extends Seeder
 {
     public function run(): void
@@ -40,23 +22,45 @@ class PlanSeeder extends Seeder
                 'product_limit' => 10,
                 'staff_limit' => 2,
                 'storage_limit' => 100,
+                'analytics_enabled' => false,
+                'custom_domain_enabled' => false,
                 'description' => 'Get started with standard products.',
                 'is_default' => true,
                 'is_active' => true,
                 'sort_order' => 1,
                 'features' => [
-                    'single_products' => [
-                        'label' => 'Standard Products',
-                        'description' => 'Create products with fixed pricing and inventory.',
-                    ],
-                    'variable_products' => [
-                        'label' => 'Variable Products',
-                        'description' => null,
-                    ],
-                    'combo_products' => [
-                        'label' => 'Bundle / Combo Products',
-                        'description' => null,
-                    ],
+                    'single_products' => ['label' => 'Standard Products', 'description' => 'Create products with fixed pricing and inventory.'],
+                    'variable_products' => ['label' => 'Variable Products', 'description' => null],
+                    'combo_products' => ['label' => 'Bundle / Combo Products', 'description' => null],
+                    'digital_products' => ['label' => 'Digital / Downloadable Products', 'description' => null],
+                    'reports' => ['label' => 'Analytics & Reports', 'description' => null],
+                    'custom_domain' => ['label' => 'Custom Domain', 'description' => null],
+                    'advanced_seo' => ['label' => 'Advanced SEO', 'description' => null],
+                    'theme_editor' => ['label' => 'Theme Editor', 'description' => null],
+                    'custom_css' => ['label' => 'Custom CSS', 'description' => null],
+                    'maintenance_mode' => ['label' => 'Maintenance Mode', 'description' => null],
+                    'reviews' => ['label' => 'Customer Reviews', 'description' => 'Allow customers to leave product reviews.'],
+                    'wishlist' => ['label' => 'Wishlist', 'description' => 'Allow customers to save products to wishlist.'],
+                    'compare' => ['label' => 'Product Compare', 'description' => null],
+                    'coupons' => ['label' => 'Coupons', 'description' => null],
+                    'promotions' => ['label' => 'Promotions & Discounts', 'description' => null],
+                    'flash_sales' => ['label' => 'Flash Sales', 'description' => null],
+                    'telegram_integration' => ['label' => 'Telegram Integration', 'description' => null],
+                    'whatsapp_integration' => ['label' => 'WhatsApp Integration', 'description' => null],
+                    'social_media_integration' => ['label' => 'Social Media Integration', 'description' => null],
+                    'google_analytics' => ['label' => 'Google Analytics', 'description' => null],
+                    'meta_pixel' => ['label' => 'Meta Pixel', 'description' => null],
+                    'mailchimp_integration' => ['label' => 'Mailchimp Integration', 'description' => null],
+                    'ai_product_generator' => ['label' => 'AI Product Generator', 'description' => null],
+                    'ai_description' => ['label' => 'AI Product Description', 'description' => null],
+                    'ai_seo' => ['label' => 'AI SEO', 'description' => null],
+                    'ai_translation' => ['label' => 'AI Translation', 'description' => null],
+                    'payment_gateways_cod' => ['label' => 'Cash on Delivery', 'description' => null],
+                    'payment_gateways_kbzpay' => ['label' => 'KBZPay', 'description' => null],
+                    'payment_gateways_wavepay' => ['label' => 'WavePay', 'description' => null],
+                    'payment_gateways_stripe' => ['label' => 'Stripe', 'description' => null],
+                    'payment_gateways_paypal' => ['label' => 'PayPal', 'description' => null],
+                    'payment_gateways_manual' => ['label' => 'Manual Transfer', 'description' => null],
                 ],
             ],
             [
@@ -70,23 +74,45 @@ class PlanSeeder extends Seeder
                 'product_limit' => 100,
                 'staff_limit' => 5,
                 'storage_limit' => 1024,
+                'analytics_enabled' => true,
+                'custom_domain_enabled' => true,
                 'description' => 'Unlock variable products with size, color, and more options.',
                 'is_default' => false,
                 'is_active' => true,
                 'sort_order' => 2,
                 'features' => [
-                    'single_products' => [
-                        'label' => 'Standard Products',
-                        'description' => 'Create products with fixed pricing and inventory.',
-                    ],
-                    'variable_products' => [
-                        'label' => 'Variable Products',
-                        'description' => 'Create products with multiple options like size, color, material.',
-                    ],
-                    'combo_products' => [
-                        'label' => 'Bundle / Combo Products',
-                        'description' => null,
-                    ],
+                    'single_products' => ['label' => 'Standard Products', 'description' => 'Create products with fixed pricing and inventory.'],
+                    'variable_products' => ['label' => 'Variable Products', 'description' => 'Create products with multiple options like size, color, material.'],
+                    'combo_products' => ['label' => 'Bundle / Combo Products', 'description' => null],
+                    'digital_products' => ['label' => 'Digital / Downloadable Products', 'description' => null],
+                    'reports' => ['label' => 'Analytics & Reports', 'description' => 'Sales reports, revenue charts, and growth metrics.'],
+                    'custom_domain' => ['label' => 'Custom Domain', 'description' => 'Use your own domain name for your store.'],
+                    'advanced_seo' => ['label' => 'Advanced SEO', 'description' => null],
+                    'theme_editor' => ['label' => 'Theme Editor', 'description' => null],
+                    'custom_css' => ['label' => 'Custom CSS', 'description' => null],
+                    'maintenance_mode' => ['label' => 'Maintenance Mode', 'description' => 'Put your store in maintenance mode with a custom message.'],
+                    'reviews' => ['label' => 'Customer Reviews', 'description' => 'Allow customers to leave product reviews.'],
+                    'wishlist' => ['label' => 'Wishlist', 'description' => 'Allow customers to save products to wishlist.'],
+                    'compare' => ['label' => 'Product Compare', 'description' => 'Allow customers to compare products side by side.'],
+                    'coupons' => ['label' => 'Coupons', 'description' => 'Create discount coupons for your customers.'],
+                    'promotions' => ['label' => 'Promotions & Discounts', 'description' => null],
+                    'flash_sales' => ['label' => 'Flash Sales', 'description' => null],
+                    'telegram_integration' => ['label' => 'Telegram Integration', 'description' => 'Send order notifications to Telegram.'],
+                    'whatsapp_integration' => ['label' => 'WhatsApp Integration', 'description' => null],
+                    'social_media_integration' => ['label' => 'Social Media Integration', 'description' => null],
+                    'google_analytics' => ['label' => 'Google Analytics', 'description' => null],
+                    'meta_pixel' => ['label' => 'Meta Pixel', 'description' => null],
+                    'mailchimp_integration' => ['label' => 'Mailchimp Integration', 'description' => null],
+                    'ai_product_generator' => ['label' => 'AI Product Generator', 'description' => null],
+                    'ai_description' => ['label' => 'AI Product Description', 'description' => null],
+                    'ai_seo' => ['label' => 'AI SEO', 'description' => null],
+                    'ai_translation' => ['label' => 'AI Translation', 'description' => null],
+                    'payment_gateways_cod' => ['label' => 'Cash on Delivery', 'description' => 'Accept cash payments on delivery.'],
+                    'payment_gateways_kbzpay' => ['label' => 'KBZPay', 'description' => null],
+                    'payment_gateways_wavepay' => ['label' => 'WavePay', 'description' => null],
+                    'payment_gateways_stripe' => ['label' => 'Stripe', 'description' => null],
+                    'payment_gateways_paypal' => ['label' => 'PayPal', 'description' => null],
+                    'payment_gateways_manual' => ['label' => 'Manual Transfer', 'description' => 'Accept bank transfer payments.'],
                 ],
             ],
             [
@@ -100,23 +126,45 @@ class PlanSeeder extends Seeder
                 'product_limit' => null,
                 'staff_limit' => null,
                 'storage_limit' => null,
+                'analytics_enabled' => true,
+                'custom_domain_enabled' => true,
                 'description' => 'Full product suite including bundles and combos.',
                 'is_default' => false,
                 'is_active' => true,
                 'sort_order' => 3,
                 'features' => [
-                    'single_products' => [
-                        'label' => 'Standard Products',
-                        'description' => 'Create products with fixed pricing and inventory.',
-                    ],
-                    'variable_products' => [
-                        'label' => 'Variable Products',
-                        'description' => 'Create products with multiple options like size, color, material.',
-                    ],
-                    'combo_products' => [
-                        'label' => 'Bundle / Combo Products',
-                        'description' => 'Create product bundles and combo deals with custom pricing.',
-                    ],
+                    'single_products' => ['label' => 'Standard Products', 'description' => 'Create products with fixed pricing and inventory.'],
+                    'variable_products' => ['label' => 'Variable Products', 'description' => 'Create products with multiple options like size, color, material.'],
+                    'combo_products' => ['label' => 'Bundle / Combo Products', 'description' => 'Create product bundles and combo deals with custom pricing.'],
+                    'digital_products' => ['label' => 'Digital / Downloadable Products', 'description' => 'Sell digital products like ebooks, software, and media.'],
+                    'reports' => ['label' => 'Analytics & Reports', 'description' => 'Sales reports, revenue charts, and growth metrics.'],
+                    'custom_domain' => ['label' => 'Custom Domain', 'description' => 'Use your own domain name for your store.'],
+                    'advanced_seo' => ['label' => 'Advanced SEO', 'description' => 'Advanced SEO tools including meta tags, sitemaps, and more.'],
+                    'theme_editor' => ['label' => 'Theme Editor', 'description' => 'Customize your store theme with a visual editor.'],
+                    'custom_css' => ['label' => 'Custom CSS', 'description' => 'Add custom CSS to your store.'],
+                    'maintenance_mode' => ['label' => 'Maintenance Mode', 'description' => 'Put your store in maintenance mode with a custom message.'],
+                    'reviews' => ['label' => 'Customer Reviews', 'description' => 'Allow customers to leave product reviews.'],
+                    'wishlist' => ['label' => 'Wishlist', 'description' => 'Allow customers to save products to wishlist.'],
+                    'compare' => ['label' => 'Product Compare', 'description' => 'Allow customers to compare products side by side.'],
+                    'coupons' => ['label' => 'Coupons', 'description' => 'Create discount coupons for your customers.'],
+                    'promotions' => ['label' => 'Promotions & Discounts', 'description' => 'Create promotions, discounts, and special offers.'],
+                    'flash_sales' => ['label' => 'Flash Sales', 'description' => 'Run limited-time flash sales.'],
+                    'telegram_integration' => ['label' => 'Telegram Integration', 'description' => 'Send order notifications to Telegram.'],
+                    'whatsapp_integration' => ['label' => 'WhatsApp Integration', 'description' => 'WhatsApp chat and notification integration.'],
+                    'social_media_integration' => ['label' => 'Social Media Integration', 'description' => 'Connect Facebook, TikTok, and other social platforms.'],
+                    'google_analytics' => ['label' => 'Google Analytics', 'description' => 'Track store traffic with Google Analytics.'],
+                    'meta_pixel' => ['label' => 'Meta Pixel', 'description' => 'Track conversions with Meta Pixel.'],
+                    'mailchimp_integration' => ['label' => 'Mailchimp Integration', 'description' => 'Email marketing integration with Mailchimp.'],
+                    'ai_product_generator' => ['label' => 'AI Product Generator', 'description' => 'Generate product listings with AI assistance.'],
+                    'ai_description' => ['label' => 'AI Product Description', 'description' => 'Generate compelling product descriptions with AI.'],
+                    'ai_seo' => ['label' => 'AI SEO', 'description' => 'Optimize your content with AI-powered SEO suggestions.'],
+                    'ai_translation' => ['label' => 'AI Translation', 'description' => 'Translate your store content with AI.'],
+                    'payment_gateways_cod' => ['label' => 'Cash on Delivery', 'description' => 'Accept cash payments on delivery.'],
+                    'payment_gateways_kbzpay' => ['label' => 'KBZPay', 'description' => 'Accept KBZPay mobile payments.'],
+                    'payment_gateways_wavepay' => ['label' => 'WavePay', 'description' => 'Accept WavePay mobile payments.'],
+                    'payment_gateways_stripe' => ['label' => 'Stripe', 'description' => 'Accept credit card payments via Stripe.'],
+                    'payment_gateways_paypal' => ['label' => 'PayPal', 'description' => 'Accept PayPal payments.'],
+                    'payment_gateways_manual' => ['label' => 'Manual Transfer', 'description' => 'Accept bank transfer payments.'],
                 ],
             ],
         ];

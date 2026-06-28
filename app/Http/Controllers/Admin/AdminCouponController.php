@@ -7,6 +7,7 @@ use App\Models\Coupon;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\CouponService;
+use App\Services\FeatureGate;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -19,6 +20,13 @@ class AdminCouponController extends Controller
 
     public function index()
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.view')) {
             abort(403, 'Unauthorized');
         }
@@ -34,6 +42,13 @@ class AdminCouponController extends Controller
 
     public function create()
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.create')) {
             abort(403, 'Unauthorized');
         }
@@ -46,6 +61,13 @@ class AdminCouponController extends Controller
 
     public function store(Request $request)
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.create')) {
             abort(403, 'Unauthorized');
         }
@@ -94,6 +116,13 @@ class AdminCouponController extends Controller
 
     public function edit(Coupon $coupon)
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.update')) {
             abort(403, 'Unauthorized');
         }
@@ -109,6 +138,13 @@ class AdminCouponController extends Controller
 
     public function update(Request $request, Coupon $coupon)
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.update')) {
             abort(403, 'Unauthorized');
         }
@@ -153,6 +189,13 @@ class AdminCouponController extends Controller
 
     public function destroy(Coupon $coupon)
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.delete')) {
             abort(403, 'Unauthorized');
         }
@@ -167,6 +210,13 @@ class AdminCouponController extends Controller
 
     public function search(Request $request)
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
         if (!auth()->user()->can('coupons.view')) {
             abort(403, 'Unauthorized');
         }

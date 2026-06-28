@@ -34,7 +34,7 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
     );
 }
 
-export default function CreatePlan() {
+export default function CreatePlan({ allFeatures = [] }) {
     const [form, setForm] = useState({
         name: '',
         slug: '',
@@ -48,6 +48,9 @@ export default function CreatePlan() {
         custom_domain_enabled: false,
         status: 'active',
     });
+    const [features, setFeatures] = useState(
+        Object.fromEntries(allFeatures.map(f => [f.key, false]))
+    );
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
 
@@ -61,10 +64,19 @@ export default function CreatePlan() {
         });
     }
 
+    function handleFeatureToggle(key, checked) {
+        setFeatures(prev => ({ ...prev, [key]: checked }));
+    }
+
     function handleSubmit(e) {
         e.preventDefault();
         setProcessing(true);
         setErrors({});
+
+        const featuresPayload = Object.entries(features).map(([key, enabled]) => ({
+            key,
+            enabled,
+        }));
 
         router.post('/superadmin/plans', {
             ...form,
@@ -73,6 +85,7 @@ export default function CreatePlan() {
             product_limit: form.product_limit === '' ? null : form.product_limit,
             staff_limit: form.staff_limit === '' ? null : form.staff_limit,
             storage_limit: form.storage_limit === '' ? null : form.storage_limit,
+            features: featuresPayload,
         }, {
             onSuccess: () => setProcessing(false),
             onError: (errs) => {
@@ -81,6 +94,17 @@ export default function CreatePlan() {
             },
         });
     }
+
+    const featureCategories = [
+        { label: 'Product Features', keys: ['single_products', 'variable_products', 'combo_products', 'digital_products'] },
+        { label: 'Analytics', keys: ['reports'] },
+        { label: 'Store Features', keys: ['custom_domain', 'advanced_seo', 'theme_editor', 'custom_css', 'maintenance_mode'] },
+        { label: 'Customer Features', keys: ['reviews', 'wishlist', 'compare'] },
+        { label: 'Marketing', keys: ['coupons', 'promotions', 'flash_sales'] },
+        { label: 'Integrations', keys: ['telegram_integration', 'whatsapp_integration', 'social_media_integration', 'google_analytics', 'meta_pixel', 'mailchimp_integration'] },
+        { label: 'AI', keys: ['ai_product_generator', 'ai_description', 'ai_seo', 'ai_translation'] },
+        { label: 'Payment Gateways', keys: ['payment_gateways_cod', 'payment_gateways_kbzpay', 'payment_gateways_wavepay', 'payment_gateways_stripe', 'payment_gateways_paypal', 'payment_gateways_manual'] },
+    ];
 
     return (
         <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Create Subscription Plan</h2>}>
@@ -125,31 +149,31 @@ export default function CreatePlan() {
                             <div className="border-b border-gray-200 pb-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Features</h3>
 
-                                <div className="space-y-3">
-                                    <label className="flex items-center gap-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={form.analytics_enabled}
-                                            onChange={(e) => handleChange('analytics_enabled', e.target.checked)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                                        />
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
-                                            <p className="text-xs text-gray-400">Sales reports, revenue charts, and growth metrics</p>
+                                <div className="space-y-6">
+                                    {featureCategories.map(cat => (
+                                        <div key={cat.label}>
+                                            <h4 className="text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wider">{cat.label}</h4>
+                                            <div className="space-y-2">
+                                                {cat.keys.map(key => {
+                                                    const feature = allFeatures.find(f => f.key === key);
+                                                    if (!feature) return null;
+                                                    return (
+                                                        <label key={key} className="flex items-center gap-3 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={features[key] || false}
+                                                                onChange={(e) => handleFeatureToggle(key, e.target.checked)}
+                                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                                                            />
+                                                            <div>
+                                                                <span className="text-sm font-medium text-gray-700">{feature.label}</span>
+                                                            </div>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </label>
-                                    <label className="flex items-center gap-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={form.custom_domain_enabled}
-                                            onChange={(e) => handleChange('custom_domain_enabled', e.target.checked)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                                        />
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-700">Custom Domain</span>
-                                            <p className="text-xs text-gray-400">Use your own domain name for the store</p>
-                                        </div>
-                                    </label>
+                                    ))}
                                 </div>
                             </div>
 

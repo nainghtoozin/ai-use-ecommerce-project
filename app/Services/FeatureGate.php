@@ -51,11 +51,54 @@ class FeatureGate
 
     /**
      * Feature key descriptions for UI display.
+     *
+     * === CATEGORIES ===
+     * Product Features   → single_products, variable_products, combo_products, digital_products
+     * Analytics          → reports
+     * Store Features     → custom_domain, advanced_seo, theme_editor, custom_css, maintenance_mode
+     * Customer Features  → reviews, wishlist, compare
+     * Marketing          → coupons, promotions, flash_sales
+     * Integrations       → telegram_integration, whatsapp_integration
+     * AI                 → ai_product_generator, ai_description, ai_seo, ai_translation
+     * Payments           → payment_gateways_cod, payment_gateways_kbzpay, payment_gateways_wavepay,
+     *                      payment_gateways_stripe, payment_gateways_paypal, payment_gateways_manual
      */
     protected const FEATURE_LABELS = [
         'single_products' => 'Standard Products',
         'variable_products' => 'Variable Products (Size, Color, etc.)',
         'combo_products' => 'Bundle / Combo Products',
+        'digital_products' => 'Digital / Downloadable Products',
+        'reports' => 'Analytics & Reports',
+        'custom_domain' => 'Custom Domain',
+        'advanced_seo' => 'Advanced SEO',
+        'theme_editor' => 'Theme Editor',
+        'custom_css' => 'Custom CSS',
+        'maintenance_mode' => 'Maintenance Mode',
+        'reviews' => 'Customer Reviews',
+        'wishlist' => 'Wishlist',
+        'compare' => 'Product Compare',
+        'coupons' => 'Coupons',
+        'promotions' => 'Promotions & Discounts',
+        'flash_sales' => 'Flash Sales',
+        'telegram_integration' => 'Telegram Integration',
+        'whatsapp_integration' => 'WhatsApp Integration',
+        'social_media_integration' => 'Social Media Integration',
+        'google_analytics' => 'Google Analytics',
+        'meta_pixel' => 'Meta Pixel',
+        'mailchimp_integration' => 'Mailchimp Integration',
+        'ai_product_generator' => 'AI Product Generator',
+        'ai_description' => 'AI Product Description',
+        'ai_seo' => 'AI SEO',
+        'ai_translation' => 'AI Translation',
+        'payment_gateways_cod' => 'Cash on Delivery',
+        'payment_gateways_kbzpay' => 'KBZPay',
+        'payment_gateways_wavepay' => 'WavePay',
+        'payment_gateways_stripe' => 'Stripe',
+        'payment_gateways_paypal' => 'PayPal',
+        'payment_gateways_manual' => 'Manual Transfer',
+        'gift_cards' => 'Gift Cards',
+        'loyalty_points' => 'Loyalty Points Program',
+        'referral_system' => 'Referral System',
     ];
 
     /**
@@ -65,6 +108,38 @@ class FeatureGate
         'single_products' => null,
         'variable_products' => 'Starter',
         'combo_products' => 'Business',
+        'digital_products' => 'Business',
+        'reports' => 'Starter',
+        'custom_domain' => 'Starter',
+        'advanced_seo' => 'Starter',
+        'theme_editor' => 'Business',
+        'custom_css' => 'Business',
+        'maintenance_mode' => 'Starter',
+        'reviews' => null,
+        'wishlist' => null,
+        'compare' => 'Starter',
+        'coupons' => 'Starter',
+        'promotions' => 'Business',
+        'flash_sales' => 'Business',
+        'telegram_integration' => 'Starter',
+        'whatsapp_integration' => 'Starter',
+        'social_media_integration' => 'Starter',
+        'google_analytics' => 'Starter',
+        'meta_pixel' => 'Starter',
+        'mailchimp_integration' => 'Business',
+        'ai_product_generator' => 'Business',
+        'ai_description' => 'Business',
+        'ai_seo' => 'Business',
+        'ai_translation' => 'Business',
+        'payment_gateways_cod' => null,
+        'payment_gateways_kbzpay' => 'Starter',
+        'payment_gateways_wavepay' => 'Starter',
+        'payment_gateways_stripe' => 'Starter',
+        'payment_gateways_paypal' => 'Starter',
+        'payment_gateways_manual' => 'Starter',
+        'gift_cards' => 'Business',
+        'loyalty_points' => 'Business',
+        'referral_system' => 'Business',
     ];
 
     protected ?User $user = null;
@@ -153,11 +228,43 @@ class FeatureGate
     }
 
     /**
-     * Get the display label for a feature key.
+     * Static shortcut for upgrade hint.
+     */
+    public static function getUpgradeHintStatic(string $featureKey): ?string
+    {
+        return self::UPGRADE_HINTS[$featureKey] ?? null;
+    }
+
+    /**
+     * Get the display label for a feature key (instance method).
      */
     public function getLabel(string $featureKey): string
     {
         return self::FEATURE_LABELS[$featureKey] ?? $featureKey;
+    }
+
+    /**
+     * Get the display label for a feature key (static).
+     */
+    public static function getLabelStatic(string $featureKey): string
+    {
+        return self::FEATURE_LABELS[$featureKey] ?? $featureKey;
+    }
+
+    /**
+     * Get all feature keys with their labels.
+     */
+    public static function getAllFeatureDefinitions(): array
+    {
+        $definitions = [];
+        foreach (self::FEATURE_LABELS as $key => $label) {
+            $definitions[] = [
+                'key' => $key,
+                'label' => $label,
+                'upgrade_hint' => self::UPGRADE_HINTS[$key] ?? null,
+            ];
+        }
+        return $definitions;
     }
 
     /**
@@ -303,7 +410,7 @@ class FeatureGate
     {
         Cache::forget("features_plan_{$plan->id}");
 
-        foreach (array_keys(self::FEATURE_TYPE_MAP) as $key) {
+        foreach (array_keys(self::FEATURE_LABELS) as $key) {
             Cache::forget("feature_{$plan->id}_{$key}");
         }
     }

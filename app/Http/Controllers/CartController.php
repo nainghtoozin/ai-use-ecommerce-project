@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Coupon;
 use App\Services\CouponService;
+use App\Services\FeatureGate;
 use App\Services\PromotionService;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
@@ -202,6 +203,13 @@ class CartController extends Controller
 
     public function applyCoupon(Request $request)
     {
+        if (!FeatureGate::enabled('coupons')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Coupons feature is not available on your current plan.',
+            ], 403);
+        }
+
         $request->validate(['code' => 'required|string|max:50']);
 
         $cart = session()->get('cart', []);
@@ -251,6 +259,13 @@ class CartController extends Controller
 
     public function applyPromotion(Request $request)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Promotions feature is not available on your current plan.',
+            ], 403);
+        }
+
         $request->validate(['code' => 'required|string|max:50']);
 
         $cart = session()->get('cart', []);

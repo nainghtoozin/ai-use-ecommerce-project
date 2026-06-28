@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PromotionBanner;
+use App\Services\FeatureGate;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,6 +17,13 @@ class AdminPromotionBannerController extends Controller
 
     public function index()
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.view')) {
             abort(403, 'Unauthorized');
         }
@@ -29,6 +37,13 @@ class AdminPromotionBannerController extends Controller
 
     public function store(Request $request)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
         }
@@ -58,6 +73,13 @@ class AdminPromotionBannerController extends Controller
 
     public function update(Request $request, PromotionBanner $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.update')) {
             abort(403, 'Unauthorized');
         }
@@ -83,6 +105,13 @@ class AdminPromotionBannerController extends Controller
 
     public function destroy(PromotionBanner $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.delete')) {
             abort(403, 'Unauthorized');
         }
@@ -96,6 +125,13 @@ class AdminPromotionBannerController extends Controller
 
     public function create()
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
         }
@@ -105,6 +141,13 @@ class AdminPromotionBannerController extends Controller
 
     public function edit(PromotionBanner $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.update')) {
             abort(403, 'Unauthorized');
         }
@@ -116,6 +159,13 @@ class AdminPromotionBannerController extends Controller
 
     public function search(Request $request)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.view')) {
             abort(403, 'Unauthorized');
         }

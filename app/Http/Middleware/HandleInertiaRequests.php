@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\PlatformSetting;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Services\FeatureGate;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -86,6 +87,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => session('success'),
                 'error'   => session('error'),
                 'warning' => session('warning'),
+                'feature_locked' => session('feature_locked'),
             ],
             'app' => [
                 'name' => $websiteSettings['site_name'] ?? config('app.name', 'My E-Commerce Store'),
@@ -96,6 +98,7 @@ class HandleInertiaRequests extends Middleware
             'categories' => cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
+            'featureStatus' => FeatureGate::forUser()->getAllFeaturesStatus(),
         ]);
     }
 

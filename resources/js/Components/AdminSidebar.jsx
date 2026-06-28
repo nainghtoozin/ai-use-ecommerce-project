@@ -11,16 +11,17 @@ import {
     Bell, Globe, BellRing, Send, Settings,
     Store, User, LogOut, Menu, X,
     ChevronLeft, ChevronRight, ChevronDown,
-    FileText, Ruler, Layers,
+    FileText, Ruler, Layers, Zap,
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'admin_sidebar_section_';
 
 export default function AdminSidebar() {
     const { props, url } = usePage();
-    const { auth, website_info, platform_setting, tenant } = props;
+    const { auth, website_info, platform_setting, tenant, featureStatus } = props;
     const userPermissions = auth?.user?.permissions;
     const can = (perm) => userPermissions?.includes(perm);
+    const hasFeature = (key) => featureStatus?.[key]?.enabled !== false;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
 
@@ -53,6 +54,7 @@ export default function AdminSidebar() {
         'FileText': FileText,
         'Ruler': Ruler,
         'Layers': Layers,
+        'Zap': Zap,
     };
 
     const Icon = ({ name, className = '' }) => {
@@ -114,7 +116,6 @@ export default function AdminSidebar() {
                     ...(can('categories.view') ? [{ label: 'Categories', href: '/admin/categories', icon: 'Tags' }] : []),
                     ...(can('brands.view') ? [{ label: 'Brands', href: '/admin/brands', icon: 'Layers' }] : []),
                     ...(can('units.view') ? [{ label: 'Units', href: '/admin/units', icon: 'Ruler' }] : []),
-                    ...(can('promotions.view') ? [{ label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' }] : []),
                 ]
             },
             {
@@ -125,11 +126,19 @@ export default function AdminSidebar() {
                 ]
             },
             {
+                title: 'Marketing',
+                items: [
+                    ...(can('coupons.view') && hasFeature('coupons') ? [{ label: 'Coupons', href: '/admin/coupons', icon: 'Tags' }] : []),
+                    ...(can('promotions.view') && hasFeature('promotions') ? [{ label: 'Promotions', href: '/admin/promotions', icon: 'Megaphone' }] : []),
+                    ...(hasFeature('flash_sales') ? [{ label: 'Flash Sales', href: '/admin/flash-sales', icon: 'Zap' }] : []),
+                ]
+            },
+            {
                 title: 'Reports',
                 items: [
-                    ...(can('reports.sales') ? [{ label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
-                    ...(can('reports.products') ? [{ label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
-                    ...(can('reports.payments') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
+                    ...(can('reports.sales') && hasFeature('reports') ? [{ label: 'Sales Report', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
+                    ...(can('reports.products') && hasFeature('reports') ? [{ label: 'Product Sales', href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
+                    ...(can('reports.payments') && hasFeature('reports') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
                 ]
             },
             {

@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
-import { usePage } from '@inertiajs/react';
+import { usePage, Link } from '@inertiajs/react';
+import { Crown } from 'lucide-react';
 
 export default function FlashMessages() {
-    const { flash } = usePage().props;
+    const { flash, auth } = usePage().props;
     const [toasts, setToasts] = useState([]);
+    const [locked, setLocked] = useState(null);
 
     useEffect(() => {
+        if (flash?.feature_locked?.feature) {
+            setLocked(flash.feature_locked);
+            return;
+        }
+
         const newToasts = [];
         
         if (flash?.success) {
@@ -40,6 +47,44 @@ export default function FlashMessages() {
     const removeToast = (id) => {
         setToasts((prev) => prev.filter((toast) => toast.id !== id));
     };
+
+    if (locked) {
+        const currentPlan = auth?.user?.subscription?.plan_name || 'Free';
+        return (
+            <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+                    <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Crown className="w-8 h-8 text-amber-600" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Feature Unavailable</h2>
+                    <p className="text-gray-600 mb-6">
+                        <span className="font-medium">{locked.feature}</span> is not included in your current plan.
+                    </p>
+                    <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-gray-500">Feature</span>
+                            <span className="font-medium text-gray-900">{locked.feature}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500">Current Plan</span>
+                            <span className="font-medium text-gray-900">{currentPlan}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500">Required Plan</span>
+                            <span className="font-medium text-blue-600">{locked.required_plan}</span>
+                        </div>
+                    </div>
+                    <Link
+                        href="/admin/billing"
+                        className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade to {locked.required_plan}
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     if (toasts.length === 0) return null;
 

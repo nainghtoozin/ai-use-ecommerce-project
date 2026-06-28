@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Promotion;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\FeatureGate;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -14,6 +15,13 @@ class AdminPromotionController extends Controller
 {
     public function index()
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.view')) {
             abort(403, 'Unauthorized');
         }
@@ -37,6 +45,13 @@ class AdminPromotionController extends Controller
 
     public function create()
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
         }
@@ -49,6 +64,13 @@ class AdminPromotionController extends Controller
 
     public function store(Request $request)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
         }
@@ -101,6 +123,13 @@ class AdminPromotionController extends Controller
 
     public function edit(Promotion $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.update')) {
             abort(403, 'Unauthorized');
         }
@@ -116,6 +145,13 @@ class AdminPromotionController extends Controller
 
     public function update(Request $request, Promotion $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.update')) {
             abort(403, 'Unauthorized');
         }
@@ -162,6 +198,13 @@ class AdminPromotionController extends Controller
 
     public function destroy(Promotion $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.delete')) {
             abort(403, 'Unauthorized');
         }
@@ -177,6 +220,13 @@ class AdminPromotionController extends Controller
 
     public function search(Request $request)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.view')) {
             abort(403, 'Unauthorized');
         }
@@ -210,6 +260,13 @@ class AdminPromotionController extends Controller
 
     public function toggle(Promotion $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.update')) {
             abort(403, 'Unauthorized');
         }
@@ -222,6 +279,13 @@ class AdminPromotionController extends Controller
 
     public function duplicate(Promotion $promotion)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
         }

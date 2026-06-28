@@ -9,6 +9,7 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Category;
+use App\Services\FeatureGate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -18,6 +19,13 @@ class AdminPromotionReportController extends Controller
 {
     public function index()
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('promotions'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('promotions') ?? 'Business',
+            ]);
+        }
+
         if (!auth()->user()->can('reports.orders')) {
             abort(403, 'Unauthorized');
         }
@@ -31,6 +39,13 @@ class AdminPromotionReportController extends Controller
 
     public function getData(Request $request)
     {
+        if (!FeatureGate::enabled('promotions')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Promotions & Discounts feature is not available on your current plan.',
+            ], 403);
+        }
+
         if (!auth()->user()->can('reports.orders')) {
             abort(403, 'Unauthorized');
         }

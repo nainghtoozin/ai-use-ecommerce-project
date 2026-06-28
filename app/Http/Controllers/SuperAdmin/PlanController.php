@@ -4,6 +4,8 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\PlanFeature;
+use App\Services\FeatureGate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -33,13 +35,19 @@ class PlanController extends Controller
 
     public function create()
     {
-        return Inertia::render('SuperAdmin/Plans/Create');
+        $allFeatures = array_map(fn($def) => [
+            'key' => $def['key'],
+            'label' => $def['label'],
+            'enabled' => false,
+        ], FeatureGate::getAllFeatureDefinitions());
+
+        return Inertia::render('SuperAdmin/Plans/Create', [
+            'allFeatures' => $allFeatures,
+        ]);
     }
 
     public function store(Request $request)
     {
-        // Inertia FormData converts JS null → empty string.
-        // Convert empty strings back to null so nullable rules pass.
         $request->merge([
             'product_limit' => $request->product_limit === '' ? null : $request->product_limit,
             'staff_limit' => $request->staff_limit === '' ? null : $request->staff_limit,
@@ -60,9 +68,15 @@ class PlanController extends Controller
             'analytics_enabled' => 'boolean',
             'custom_domain_enabled' => 'boolean',
             'status' => 'required|in:active,inactive,deprecated',
+            'features' => 'nullable|array',
         ]);
 
-        Plan::create($validated);
+        $features = $request->input('features', []);
+        unset($validated['features']);
+
+        $plan = Plan::create($validated);
+
+        $this->syncFeatures($plan, $features);
 
         return redirect()->route('superadmin.plans.index')
             ->with('success', 'Plan created successfully.');
@@ -70,8 +84,20 @@ class PlanController extends Controller
 
     public function edit(Plan $plan)
     {
+        $plan->load('features');
+
+        $allFeatures = array_map(function ($def) use ($plan) {
+            $planFeature = $plan->features->firstWhere('feature_key', $def['key']);
+            return [
+                'key' => $def['key'],
+                'label' => $def['label'],
+                'enabled' => $planFeature ? $planFeature->is_enabled : false,
+            ];
+        }, FeatureGate::getAllFeatureDefinitions());
+
         return Inertia::render('SuperAdmin/Plans/Edit', [
             'plan' => $plan,
+            'allFeatures' => $allFeatures,
         ]);
     }
 
@@ -97,9 +123,15 @@ class PlanController extends Controller
             'analytics_enabled' => 'boolean',
             'custom_domain_enabled' => 'boolean',
             'status' => 'required|in:active,inactive,deprecated',
+            'features' => 'nullable|array',
         ]);
 
+        $features = $request->input('features', []);
+        unset($validated['features']);
+
         $plan->update($validated);
+
+        $this->syncFeatures($plan, $features);
 
         return redirect()->route('superadmin.plans.index')
             ->with('success', 'Plan updated successfully.');
@@ -121,5 +153,26 @@ class PlanController extends Controller
 
         return redirect()->route('superadmin.plans.index')
             ->with('success', 'Plan deleted successfully.');
+    }
+
+    private function syncFeatures(Plan $plan, array $features): void
+    {
+        foreach ($features as $feature) {
+            $key = $feature['key'] ?? null;
+            if (!$key) continue;
+
+            $enabled = filter_var($feature['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            PlanFeature::updateOrCreate(
+                ['plan_id' => $plan->id, 'feature_key' => $key],
+                [
+                    'is_enabled' => $enabled,
+                    'display_label' => FeatureGate::getLabelStatic($key),
+                    'description' => $enabled ? FeatureGate::getLabelStatic($key) : null,
+                ]
+            );
+        }
+
+        FeatureGate::clearCache($plan);
     }
 }

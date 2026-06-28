@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\PaymentMethod;
+use App\Services\FeatureGate;
 use App\Events\PaymentVerified;
 use App\Events\PaymentRejected;
 use App\Jobs\ProcessOrderStatusChange;
@@ -71,6 +72,10 @@ class AdminReportController extends Controller
 
     public function sales(Request $request)
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.sales')) {
             abort(403, 'Unauthorized');
         }
@@ -91,6 +96,10 @@ class AdminReportController extends Controller
 
     public function orderDetails(Order $order)
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.sales')) {
             abort(403, 'Unauthorized');
         }
@@ -109,6 +118,10 @@ class AdminReportController extends Controller
 
     public function clearCache()
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.sales')) {
             abort(403, 'Unauthorized');
         }
@@ -235,6 +248,10 @@ class AdminReportController extends Controller
 
     public function productSales(Request $request)
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.products')) {
             abort(403, 'Unauthorized');
         }
@@ -407,6 +424,10 @@ class AdminReportController extends Controller
 
     public function payments(Request $request)
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.payments')) {
             abort(403, 'Unauthorized');
         }
@@ -587,6 +608,10 @@ class AdminReportController extends Controller
 
     public function verifyPayment(string $id)
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.payments')) {
             abort(403, 'Unauthorized');
         }
@@ -618,6 +643,10 @@ class AdminReportController extends Controller
 
     public function rejectPayment(Request $request, string $id)
     {
+        if (!FeatureGate::enabled('reports')) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!auth()->user()->can('reports.payments')) {
             abort(403, 'Unauthorized');
         }
