@@ -33,6 +33,10 @@ class SuperAdminPlatformSettingController extends Controller
             'support_email' => 'nullable|email|max:255',
             'maintenance_mode' => 'boolean',
             'registration_enabled' => 'boolean',
+            'trial_enabled' => 'boolean',
+            'trial_days' => 'nullable|integer|min:1|max:365',
+            'allow_trial_renewal' => 'boolean',
+            'max_trial_renewals' => 'nullable|integer|min:0|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'favicon' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024',
         ]);
@@ -42,6 +46,10 @@ class SuperAdminPlatformSettingController extends Controller
             'support_email' => $validated['support_email'],
             'maintenance_mode' => $request->boolean('maintenance_mode'),
             'registration_enabled' => $request->boolean('registration_enabled'),
+            'trial_enabled' => $request->boolean('trial_enabled'),
+            'trial_days' => $request->integer('trial_days'),
+            'allow_trial_renewal' => $request->boolean('allow_trial_renewal'),
+            'max_trial_renewals' => $request->integer('max_trial_renewals'),
         ];
 
         if ($request->hasFile('logo')) {

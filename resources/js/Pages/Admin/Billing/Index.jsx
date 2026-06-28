@@ -11,7 +11,7 @@ const statusConfig = {
     suspended: { label: 'Suspended',     bg: 'bg-yellow-50 border-yellow-200',        badge: 'bg-yellow-100 text-yellow-700',    icon: 'bi-pause-circle-fill' },
 };
 
-export default function AdminBillingIndex({ subscription }) {
+export default function AdminBillingIndex({ subscription, auditLogs }) {
     const { auth } = usePage().props;
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
@@ -150,7 +150,14 @@ export default function AdminBillingIndex({ subscription }) {
                                     {subscription.trial_ends_at && (
                                         <div>
                                             <p className="text-sm text-gray-500">Trial Ends</p>
-                                            <p className="text-base font-medium text-gray-900">{subscription.trial_ends_at}</p>
+                                            <p className="text-base font-medium text-gray-900">
+                                                {subscription.trial_ends_at}
+                                                {subscription.trial_days_remaining > 0 && (
+                                                    <span className="text-sm font-normal text-gray-500 ml-1">
+                                                        ({subscription.trial_days_remaining} day{subscription.trial_days_remaining > 1 ? 's' : ''} left)
+                                                    </span>
+                                                )}
+                                            </p>
                                         </div>
                                     )}
                                     {subscription.cancelled_at && (
@@ -186,6 +193,42 @@ export default function AdminBillingIndex({ subscription }) {
                                     >
                                         Renew Now
                                     </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {auditLogs && auditLogs.length > 0 && (
+                            <div className="bg-white rounded-xl border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-100">
+                                    <h3 className="text-base font-semibold text-gray-900">Activity History</h3>
+                                </div>
+                                <div className="p-6">
+                                    <div className="space-y-3">
+                                        {auditLogs.map((log) => (
+                                            <div key={log.id} className="flex items-start gap-3 text-sm">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-gray-900 capitalize">
+                                                            {log.event === 'trial_started' ? 'Trial Started' :
+                                                             log.event === 'plan_changed' ? 'Plan Changed' :
+                                                             log.event === 'renewed' ? 'Renewed' :
+                                                             log.event === 'activated' ? 'Activated' :
+                                                             log.event === 'canceled' ? 'Canceled' :
+                                                             log.event === 'suspended' ? 'Suspended' :
+                                                             log.event === 'past_due' ? 'Past Due' :
+                                                             log.event === 'expired' ? 'Expired' :
+                                                             log.event === 'trial_ended' ? 'Trial Ended' :
+                                                             log.event}
+                                                        </span>
+                                                        <span className="text-gray-400">{log.created_at}</span>
+                                                    </div>
+                                                    {log.reason && (
+                                                        <p className="text-gray-500 mt-0.5">{log.reason}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}

@@ -16,6 +16,8 @@ class PlatformSettingSeeder extends Seeder
             'support_email' => null,
             'maintenance_mode' => false,
             'registration_enabled' => true,
+            'trial_enabled' => true,
+            'trial_days' => 14,
         ]);
 
         PlatformSetting::clearCache();

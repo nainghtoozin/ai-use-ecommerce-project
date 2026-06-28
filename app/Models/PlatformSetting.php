@@ -14,11 +14,19 @@ class PlatformSetting extends Model
         'support_email',
         'maintenance_mode',
         'registration_enabled',
+        'trial_enabled',
+        'trial_days',
+        'allow_trial_renewal',
+        'max_trial_renewals',
     ];
 
     protected $casts = [
         'maintenance_mode' => 'boolean',
         'registration_enabled' => 'boolean',
+        'trial_enabled' => 'boolean',
+        'trial_days' => 'integer',
+        'allow_trial_renewal' => 'boolean',
+        'max_trial_renewals' => 'integer',
     ];
 
     public static function current(): self

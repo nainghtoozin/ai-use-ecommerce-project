@@ -12,6 +12,7 @@ use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\TenantIsValid;
 use App\Http\Middleware\SubscriptionIsActive;
 use App\Http\Middleware\EnsureTenantIsActive;
+use App\Http\Middleware\CheckStoreLocked;
 use App\Http\Middleware\Storefront;
 use App\Http\Middleware\CheckTenantAccess;
 use App\Models\User;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.status' => CheckUserStatus::class,
             'maintenance' => CheckMaintenanceMode::class,
             'tenant.active' => EnsureTenantIsActive::class,
+            'tenant.locked' => CheckStoreLocked::class,
             'tenant.valid' => TenantIsValid::class,
             'subscription.active' => SubscriptionIsActive::class,
             'storefront' => Storefront::class,

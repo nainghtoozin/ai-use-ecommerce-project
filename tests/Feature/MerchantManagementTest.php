@@ -275,7 +275,20 @@ class MerchantManagementTest extends TestCase
                 $table->text('notes')->nullable();
                 $table->timestamps();
             },
-
+            'platform_settings' => function ($table) {
+                $table->id();
+                $table->string('site_name')->default('My Application');
+                $table->string('site_logo')->nullable();
+                $table->string('favicon')->nullable();
+                $table->string('support_email')->nullable();
+                $table->boolean('maintenance_mode')->default(false);
+                $table->boolean('registration_enabled')->default(true);
+                $table->boolean('trial_enabled')->default(true);
+                $table->integer('trial_days')->default(14);
+                $table->boolean('allow_trial_renewal')->default(false);
+                $table->unsignedTinyInteger('max_trial_renewals')->default(0);
+                $table->timestamps();
+            },
         ];
 
         foreach ($tables as $name => $callback) {

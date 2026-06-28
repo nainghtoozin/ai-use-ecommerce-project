@@ -35,10 +35,10 @@ class FeatureGate
     /**
      * Development mode: bypasses all feature restrictions.
      *
-     * TODO: Re-enable subscription restrictions after SaaS billing implementation.
-     * Set this to false once plans, billing, and user subscriptions are live.
+     * Now disabled — plan limits are seeded and FeatureGate reads
+     * real PlanFeature records from the database.
      */
-    protected const DEV_MODE = true;
+    protected const DEV_MODE = false;
 
     /**
      * Feature key to product type mapping.

@@ -50,6 +50,11 @@ class EnsureTenantIsActive
             return $next($request);
         }
 
+        // Locked tenant — pass through (CheckStoreLocked middleware handles mutation blocking)
+        if ($tenant->isLocked()) {
+            return $next($request);
+        }
+
         // Active or trialing subscription — allow
         if ($tenant->hasActiveSubscription()) {
             return $next($request);
@@ -65,9 +70,8 @@ class EnsureTenantIsActive
             return $next($request);
         }
 
-        // Expired — redirect to dashboard (accessible via tenant.valid only, outside tenant.active)
-        return $this->redirectToDashboard($storeSlug)
-            ->with('error', 'Your subscription has expired. Please renew to restore access to all features.');
+        // Expired — redirect to standalone expired page (outside tenant.active to avoid loop)
+        return $this->redirectToExpired($storeSlug);
     }
 
     private function redirectToSuspended(?string $storeSlug): \Illuminate\Http\RedirectResponse
@@ -78,11 +82,11 @@ class EnsureTenantIsActive
         return redirect()->route('admin.suspended');
     }
 
-    private function redirectToDashboard(?string $storeSlug): \Illuminate\Http\RedirectResponse
+    private function redirectToExpired(?string $storeSlug): \Illuminate\Http\RedirectResponse
     {
         if ($storeSlug) {
-            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $storeSlug]);
+            return redirect()->route('storefront.admin.expired', ['store_slug' => $storeSlug]);
         }
-        return redirect()->route('admin.dashboard');
+        return redirect()->route('admin.expired');
     }
 }

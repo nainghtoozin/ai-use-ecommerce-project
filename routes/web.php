@@ -263,14 +263,19 @@ Route::middleware('auth')->group(function () {
 //
 // ============================================================
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid', 'tenant.binding'])->group(function () {
-    // ── Account routes (accessible even when subscription expired) ──
-    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    // ── Account routes (accessible even when subscription expired/suspended) ──
+    Route::get('/expired', fn() => \Inertia\Inertia::render('Standalone/Expired', [
+        'store_slug' => null,
+    ]))->name('expired');
+    Route::get('/suspended', fn() => \Inertia\Inertia::render('Standalone/Suspended', [
+        'store_slug' => null,
+    ]))->name('suspended');
     Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
-    Route::get('/suspended', fn() => \Inertia\Inertia::render('Admin/Suspended'))->name('suspended');
 
-    // ── Operations routes (blocked when expired/suspended) ──
-    Route::middleware('tenant.active')->group(function () {
+    // ── Operations routes (blocked when expired/suspended/locked) ──
+    Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
         Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
@@ -504,6 +509,27 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
         Artisan::call('migrate', ['--force' => true]);
         return response()->json(['message' => 'Migration completed.']);
     })->name('run-migrate');
+});
+
+// ============================================================
+// PAYMENT GATEWAY ROUTES
+// ============================================================
+Route::prefix('payment')->name('payment.')->group(function () {
+    // Public webhook endpoint — no auth (gateway calls these)
+    Route::post('webhook/{gateway}', [\App\Http\Controllers\Payment\WebhookController::class, 'handle'])
+        ->name('webhook.handle');
+
+    // Authenticated payment routes
+    Route::middleware('auth')->group(function () {
+        Route::get('gateways', [\App\Http\Controllers\Payment\PaymentController::class, 'gateways'])
+            ->name('gateways');
+        Route::post('checkout/{gateway}', [\App\Http\Controllers\Payment\PaymentController::class, 'checkout'])
+            ->name('checkout');
+        Route::get('success', [\App\Http\Controllers\Payment\PaymentController::class, 'success'])
+            ->name('success');
+        Route::get('cancel', [\App\Http\Controllers\Payment\PaymentController::class, 'cancel'])
+            ->name('cancel');
+    });
 });
 
 // Auth

@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Notifications\WelcomeOwner;
+use App\Services\SubscriptionAuditService;
 use Illuminate\Auth\Events\Verified;
 use App\Models\Tenant;
 
@@ -25,6 +26,11 @@ class ActivateTenantOnVerified
                     $subscription->status = 'active';
                     $subscription->starts_at = now();
                     $subscription->save();
+
+                    SubscriptionAuditService::log($subscription, 'activated', [
+                        'old_status' => 'pending',
+                        'reason' => 'Email verified',
+                    ]);
                 }
 
                 $user->notify(new WelcomeOwner($tenant));

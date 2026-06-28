@@ -54,19 +54,24 @@ Route::prefix('store/{store_slug}/admin')
     ->middleware(['storefront', 'auth', 'role:admin', 'tenant.valid', 'tenant.access', 'tenant.binding'])
     ->group(function () {
 
-    // ── Account routes (accessible even when subscription expired) ──
-    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    // ── Account routes (accessible even when subscription expired/suspended) ──
+    Route::get('/expired', fn (\Illuminate\Http\Request $req) => \Inertia\Inertia::render('Standalone/Expired', [
+        'store_slug' => $req->route('store_slug'),
+    ]))->name('expired');
+    Route::get('/suspended', fn (\Illuminate\Http\Request $req) => \Inertia\Inertia::render('Standalone/Suspended', [
+        'store_slug' => $req->route('store_slug'),
+    ]))->name('suspended');
     Route::get('/billing', [AdminBillingController::class, 'index'])->name('billing');
     Route::post('/billing/renew', [AdminBillingController::class, 'renew'])->name('billing.renew');
-    Route::get('/suspended', fn () => \Inertia\Inertia::render('Admin/Suspended'))->name('suspended');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ── Operations routes (blocked when expired/suspended) ──
-    Route::middleware('tenant.active')->group(function () {
+    // ── Operations routes (blocked when expired/suspended/locked) ──
+    Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'index'])->name('dashboard');
 
         // Products
         Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');

@@ -23,6 +23,10 @@ class StorefrontController extends Controller
             abort(404);
         }
 
+        if ($tenant->isLocked()) {
+            return $this->renderLocked($tenant);
+        }
+
         $query = $request->input('query', '');
         $categoryId = $request->input('category', '');
         $sort = $request->input('sort', 'latest');
@@ -76,6 +80,10 @@ class StorefrontController extends Controller
         $tenant = Tenant::getCurrent();
         if (!$tenant) {
             abort(404);
+        }
+
+        if ($tenant->isLocked()) {
+            return $this->renderLocked($tenant);
         }
 
         $query = $request->input('query', '');
@@ -135,6 +143,10 @@ class StorefrontController extends Controller
         $tenant = Tenant::getCurrent();
         if (!$tenant) {
             abort(404);
+        }
+
+        if ($tenant->isLocked()) {
+            return $this->renderLocked($tenant);
         }
 
         if ($product->status !== Product::STATUS_ACTIVE) {
@@ -246,5 +258,16 @@ class StorefrontController extends Controller
             $q->orWhere('type', Product::TYPE_COMBO)
               ->whereHas('comboItems.comboProduct', fn($c) => $c->where('stock', '>', 0));
         });
+    }
+
+    private function renderLocked(Tenant $tenant)
+    {
+        return \Inertia\Inertia::render('Storefront/Locked', [
+            'tenant' => [
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'logo' => $tenant->logo,
+            ],
+        ]);
     }
 }

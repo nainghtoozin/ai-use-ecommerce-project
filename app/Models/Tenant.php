@@ -19,6 +19,7 @@ class Tenant extends Model
         'status',
         'settings',
         'activated_at',
+        'locked_at',
         'subscription_plan_id',
         'expires_at',
         'used_storage_bytes',
@@ -27,6 +28,7 @@ class Tenant extends Model
     protected $casts = [
         'settings' => 'array',
         'activated_at' => 'datetime',
+        'locked_at' => 'datetime',
         'expires_at' => 'datetime',
         'used_storage_bytes' => 'integer',
     ];
@@ -96,6 +98,29 @@ class Tenant extends Model
     public function isTrialing(): bool
     {
         return $this->status === 'trialing';
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->locked_at !== null;
+    }
+
+    public function lock(): void
+    {
+        if ($this->locked_at) {
+            return;
+        }
+
+        $this->update(['locked_at' => now()]);
+    }
+
+    public function unlock(): void
+    {
+        if (!$this->locked_at) {
+            return;
+        }
+
+        $this->update(['locked_at' => null]);
     }
 
     public function hasActiveSubscription(): bool

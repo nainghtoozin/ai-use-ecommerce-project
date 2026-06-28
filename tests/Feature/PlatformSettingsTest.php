@@ -200,6 +200,10 @@ class PlatformSettingsTest extends TestCase
                 $table->string('support_email')->nullable();
                 $table->boolean('maintenance_mode')->default(false);
                 $table->boolean('registration_enabled')->default(true);
+                $table->boolean('trial_enabled')->default(true);
+                $table->integer('trial_days')->default(14);
+                $table->boolean('allow_trial_renewal')->default(false);
+                $table->unsignedTinyInteger('max_trial_renewals')->default(0);
                 $table->timestamps();
             },
         ];

@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Subscription;
-use App\Notifications\SubscriptionExpired;
-use App\Notifications\SubscriptionSuspended;
-use Illuminate\Support\Facades\Log;
+    use App\Models\Subscription;
+    use App\Notifications\SubscriptionExpired;
+    use App\Notifications\SubscriptionSuspended;
+    use App\Services\SubscriptionAuditService;
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Log;
 
 class SubscriptionExpiryService
 {
@@ -47,98 +49,117 @@ class SubscriptionExpiryService
 
     private function transitionActiveToPastDue(): int
     {
-        $count = 0;
+        return $this->processBatch(
+            Subscription::where('status', 'active')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<', now()),
+            function ($sub) {
+                $oldStatus = $sub->status;
+                $sub->update([
+                    'status' => 'past_due',
+                    'notes' => $sub->notes
+                        ? $sub->notes . "\n[" . now() . "] Expired — entered 7-day grace period (past_due)."
+                        : "[" . now() . "] Expired — entered 7-day grace period (past_due).",
+                ]);
 
-        Subscription::where('status', 'active')
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<', now())
-            ->chunk(100, function ($subscriptions) use (&$count) {
-                foreach ($subscriptions as $sub) {
-                    $sub->update([
-                        'status' => 'past_due',
-                        'notes' => $sub->notes
-                            ? $sub->notes . "\n[" . now() . "] Expired — entered 7-day grace period (past_due)."
-                            : "[" . now() . "] Expired — entered 7-day grace period (past_due).",
-                    ]);
-
-                    $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
-                    $count++;
-                }
-            });
-
-        return $count;
+                $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+                return ['old_status' => $oldStatus, 'event' => 'past_due'];
+            }
+        );
     }
 
     private function transitionPastDueToExpired(): int
     {
-        $count = 0;
         $graceCutoff = now()->subDays(self::GRACE_DAYS);
 
-        Subscription::where('status', 'past_due')
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<', $graceCutoff)
-            ->chunk(100, function ($subscriptions) use (&$count) {
-                foreach ($subscriptions as $sub) {
-                    $sub->update([
-                        'status' => 'expired',
-                        'notes' => $sub->notes
-                            ? $sub->notes . "\n[" . now() . "] Grace period ended — status set to expired."
-                            : "[" . now() . "] Grace period ended — status set to expired.",
-                    ]);
+        return $this->processBatch(
+            Subscription::where('status', 'past_due')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<', $graceCutoff),
+            function ($sub) {
+                $oldStatus = $sub->status;
+                $sub->update([
+                    'status' => 'expired',
+                    'notes' => $sub->notes
+                        ? $sub->notes . "\n[" . now() . "] Grace period ended — status set to expired."
+                        : "[" . now() . "] Grace period ended — status set to expired.",
+                ]);
 
-                    $count++;
-                }
-            });
+                $sub->tenant->lock();
 
-        return $count;
+                return ['old_status' => $oldStatus, 'event' => 'expired'];
+            }
+        );
     }
 
     private function transitionExpiredToSuspended(): int
     {
-        $count = 0;
         $suspendCutoff = now()->subDays(self::SUSPEND_DAYS_AFTER_EXPIRY);
 
-        Subscription::where('status', 'expired')
-            ->where('updated_at', '<', $suspendCutoff)
-            ->chunk(100, function ($subscriptions) use (&$count) {
-                foreach ($subscriptions as $sub) {
-                    $sub->update([
-                        'status' => 'suspended',
-                        'suspended_at' => now(),
-                        'notes' => $sub->notes
-                            ? $sub->notes . "\n[" . now() . "] Auto-suspended — tenant deactivated."
-                            : "[" . now() . "] Auto-suspended — tenant deactivated.",
-                    ]);
+        return $this->processBatch(
+            Subscription::where('status', 'expired')
+                ->where('updated_at', '<', $suspendCutoff),
+            function ($sub) {
+                $oldStatus = $sub->status;
+                $sub->update([
+                    'status' => 'suspended',
+                    'suspended_at' => now(),
+                    'notes' => $sub->notes
+                        ? $sub->notes . "\n[" . now() . "] Auto-suspended — tenant deactivated."
+                        : "[" . now() . "] Auto-suspended — tenant deactivated.",
+                ]);
 
-                    $sub->tenant->update(['status' => 'suspended']);
-                    $sub->tenant->notifyAdmins(new SubscriptionSuspended($sub));
-                    $count++;
-                }
-            });
+                $sub->tenant->update(['status' => 'suspended']);
+                $sub->tenant->lock();
+                $sub->tenant->notifyAdmins(new SubscriptionSuspended($sub));
 
-        return $count;
+                return ['old_status' => $oldStatus, 'event' => 'suspended'];
+            }
+        );
     }
 
     private function transitionTrialToExpired(): int
     {
+        return $this->processBatch(
+            Subscription::where('status', 'trialing')
+                ->whereNotNull('trial_ends_at')
+                ->where('trial_ends_at', '<', now()),
+            function ($sub) {
+                $oldStatus = $sub->status;
+                $sub->update([
+                    'status' => 'expired',
+                    'notes' => $sub->notes
+                        ? $sub->notes . "\n[" . now() . "] Trial ended — auto-expired."
+                        : "[" . now() . "] Trial ended — auto-expired.",
+                ]);
+
+                $sub->tenant->lock();
+                $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+
+                return ['old_status' => $oldStatus, 'event' => 'trial_ended'];
+            }
+        );
+    }
+
+    private function processBatch($query, callable $transition): int
+    {
         $count = 0;
 
-        Subscription::where('status', 'trialing')
-            ->whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '<', now())
-            ->chunk(100, function ($subscriptions) use (&$count) {
-                foreach ($subscriptions as $sub) {
-                    $sub->update([
-                        'status' => 'expired',
-                        'notes' => $sub->notes
-                            ? $sub->notes . "\n[" . now() . "] Trial ended — auto-expired."
-                            : "[" . now() . "] Trial ended — auto-expired.",
+        $query->chunk(100, function ($subscriptions) use ($transition, &$count) {
+            foreach ($subscriptions as $sub) {
+                DB::transaction(function () use ($sub, $transition, &$count) {
+                    $sub->refresh();
+
+                    $result = $transition($sub);
+
+                    SubscriptionAuditService::log($sub, $result['event'], [
+                        'old_status' => $result['old_status'],
                     ]);
 
-                    $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
                     $count++;
-                }
-            });
+                });
+            }
+        });
 
         return $count;
     }

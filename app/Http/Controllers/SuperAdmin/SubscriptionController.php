@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Services\FeatureGate;
+use App\Services\SubscriptionAuditService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -51,7 +53,7 @@ class SubscriptionController extends Controller
 
     public function show(Subscription $subscription)
     {
-        $subscription->load(['tenant', 'plan']);
+        $subscription->load(['tenant', 'plan', 'auditLogs.oldPlan', 'auditLogs.newPlan']);
 
         $history = Subscription::where('tenant_id', $subscription->tenant_id)
             ->with('plan')
@@ -71,9 +73,25 @@ class SubscriptionController extends Controller
                 ->get()
             : collect();
 
+        $auditLogs = $subscription->auditLogs->take(50)->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'event' => $log->event,
+                'actor_type' => $log->actor_type,
+                'actor_id' => $log->actor_id,
+                'old_plan' => $log->oldPlan?->name,
+                'new_plan' => $log->newPlan?->name,
+                'old_status' => $log->old_status,
+                'new_status' => $log->new_status,
+                'reason' => $log->reason,
+                'created_at' => $log->created_at->toDateTimeString(),
+            ];
+        });
+
         return Inertia::render('SuperAdmin/Subscriptions/Show', [
             'subscription' => $subscription,
             'history' => $history,
+            'auditLogs' => $auditLogs,
             'usage' => $usage,
             'plans' => $plans,
             'intervals' => $intervals,
@@ -121,9 +139,19 @@ class SubscriptionController extends Controller
         ]);
         $subscription->save();
 
+        FeatureGate::clearCache($plan);
+
+        SubscriptionAuditService::log($subscription, 'subscription_created', [
+            'new_plan_id' => $plan->id,
+            'old_status' => null,
+            'reason' => 'Assigned by SuperAdmin',
+        ]);
+
         if ($tenant->status === 'suspended') {
             $tenant->update(['status' => 'active']);
         }
+
+        $tenant->unlock();
 
         return redirect()->route('superadmin.subscriptions.show', $subscription)
             ->with('success', "Subscription assigned to \"{$tenant->name}\".");
@@ -145,12 +173,16 @@ class SubscriptionController extends Controller
                 ->with('error', 'Tenant is already on this plan.');
         }
 
+        $isDowngrade = $newPlan->isFree() || (
+            $oldPlan && $newPlan->monthly_price && $oldPlan->monthly_price
+            && $newPlan->monthly_price < $oldPlan->monthly_price
+        );
+
         $warnings = $this->checkDowngradeWarnings($subscription->tenant, $newPlan);
 
-        if ($newPlan->isFree() || ($newPlan->monthly_price && $oldPlan && $oldPlan->monthly_price && $newPlan->monthly_price < $oldPlan->monthly_price)) {
-            if (!empty($warnings)) {
-                session()->flash('downgrade_warnings', $warnings);
-            }
+        if ($isDowngrade && !empty($warnings)) {
+            return redirect()->route('superadmin.subscriptions.show', $subscription)
+                ->with('error', 'Cannot downgrade: ' . implode(' ', $warnings));
         }
 
         $billingInterval = $validated['billing_interval'] ?? $newPlan->defaultInterval();
@@ -167,8 +199,19 @@ class SubscriptionController extends Controller
                 : "[" . now() . "] Plan changed: {$oldPlan?->name} → {$newPlan->name}. {$validated['reason']}",
         ]);
 
+        FeatureGate::clearCache($newPlan);
+        if ($oldPlan) {
+            FeatureGate::clearCache($oldPlan);
+        }
+
+        SubscriptionAuditService::log($subscription, 'plan_changed', [
+            'old_plan_id' => $oldPlan?->id,
+            'new_plan_id' => $newPlan->id,
+            'reason' => $validated['reason'] ?? null,
+        ]);
+
         return redirect()->route('superadmin.subscriptions.show', $subscription)
-            ->with('success', "Plan changed to \"{$newPlan->name}\"." . (!empty($warnings) ? ' Warning: some limits may be exceeded.' : ''));
+            ->with('success', "Plan changed to \"{$newPlan->name}\".");
     }
 
     public function renew(Request $request, Subscription $subscription)
@@ -182,6 +225,10 @@ class SubscriptionController extends Controller
 
         $subscription->renew($expiresAt, $validated['notes'] ?? null);
 
+        SubscriptionAuditService::log($subscription, 'renewed', [
+            'reason' => $validated['notes'] ?? null,
+        ]);
+
         return redirect()->route('superadmin.subscriptions.show', $subscription)
             ->with('success', 'Subscription renewed until ' . $expiresAt->toFormattedDateString() . '.');
     }
@@ -193,6 +240,10 @@ class SubscriptionController extends Controller
         ]);
 
         $subscription->renewFromInterval($validated['notes'] ?? null);
+
+        SubscriptionAuditService::log($subscription, 'renewed', [
+            'reason' => $validated['notes'] ?? 'Renewed via interval',
+        ]);
 
         $expiry = $subscription->fresh()->expires_at;
 
@@ -225,6 +276,10 @@ class SubscriptionController extends Controller
             'notes' => $subscription->notes ? $subscription->notes . "\n" . $note : $note,
         ]);
 
+        SubscriptionAuditService::log($subscription, 'canceled', [
+            'reason' => $validated['reason'] ?? null,
+        ]);
+
         return redirect()->route('superadmin.subscriptions.show', $subscription)
             ->with('success', $subscription->expires_at->isFuture()
                 ? 'Subscription canceled. Merchant retains access until ' . $subscription->expires_at->toFormattedDateString() . '.'
@@ -241,6 +296,10 @@ class SubscriptionController extends Controller
         $subscription->suspend();
         $subscription->tenant->update(['status' => 'suspended']);
 
+        SubscriptionAuditService::log($subscription, 'suspended', [
+            'reason' => 'Suspended by SuperAdmin',
+        ]);
+
         return redirect()->route('superadmin.subscriptions.show', $subscription)
             ->with('success', 'Subscription suspended. Remaining time preserved.');
     }
@@ -254,6 +313,10 @@ class SubscriptionController extends Controller
 
         $subscription->activate();
         $subscription->tenant->update(['status' => 'active']);
+
+        SubscriptionAuditService::log($subscription, 'activated', [
+            'reason' => 'Activated by SuperAdmin',
+        ]);
 
         return redirect()->route('superadmin.subscriptions.show', $subscription)
             ->with('success', 'Subscription activated. Remaining time restored.');

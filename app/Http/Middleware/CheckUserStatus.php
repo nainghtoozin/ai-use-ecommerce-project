@@ -32,6 +32,15 @@ class CheckUserStatus
             }
 
             if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
+                // Prevent redirect loop: allow suspended/expired pages to render
+                $route = $request->route();
+                if ($route && in_array($route->getName(), [
+                    'admin.suspended', 'storefront.admin.suspended',
+                    'admin.expired', 'storefront.admin.expired',
+                ])) {
+                    return $next($request);
+                }
+
                 if ($user->hasRole('admin')) {
                     $storeSlug = $request->route('store_slug');
                     if ($storeSlug) {

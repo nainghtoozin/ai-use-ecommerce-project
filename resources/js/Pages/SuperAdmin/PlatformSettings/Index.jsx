@@ -10,6 +10,10 @@ export default function PlatformSettingsIndex({ settings }) {
     const [favicon, setFavicon] = useState(settings.favicon || null);
     const [maintenanceMode, setMaintenanceMode] = useState(settings.maintenance_mode || false);
     const [registrationEnabled, setRegistrationEnabled] = useState(settings.registration_enabled ?? true);
+    const [trialEnabled, setTrialEnabled] = useState(settings.trial_enabled ?? true);
+    const [trialDays, setTrialDays] = useState(settings.trial_days ?? 14);
+    const [allowTrialRenewal, setAllowTrialRenewal] = useState(settings.allow_trial_renewal ?? true);
+    const [maxTrialRenewals, setMaxTrialRenewals] = useState(settings.max_trial_renewals ?? 0);
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
 
@@ -23,6 +27,10 @@ export default function PlatformSettingsIndex({ settings }) {
         formData.append('support_email', supportEmail);
         formData.append('maintenance_mode', maintenanceMode ? '1' : '0');
         formData.append('registration_enabled', registrationEnabled ? '1' : '0');
+        formData.append('trial_enabled', trialEnabled ? '1' : '0');
+        formData.append('trial_days', trialDays.toString());
+        formData.append('allow_trial_renewal', allowTrialRenewal ? '1' : '0');
+        formData.append('max_trial_renewals', maxTrialRenewals.toString());
 
         if (logo instanceof File) {
             formData.append('logo', logo);
@@ -108,7 +116,84 @@ export default function PlatformSettingsIndex({ settings }) {
                                 </div>
                             </div>
 
-                            {/* Section 3: System Settings */}
+                            {/* Section 3: Trial Settings */}
+                            <div className="border-b border-gray-200 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">Trial Settings</h3>
+                                <p className="text-sm text-gray-500 mb-4">Configure free trial for new merchants.</p>
+                                <div className="space-y-4">
+                                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-700">Trial Enabled</span>
+                                            <p className="text-xs text-gray-400">New merchants get a free trial when subscribing to a paid plan.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={trialEnabled}
+                                            onClick={() => setTrialEnabled(!trialEnabled)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${trialEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                                        >
+                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${trialEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                        </button>
+                                    </label>
+                                    {trialEnabled && (
+                                        <div>
+                                            <label htmlFor="trial_days" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Trial Duration (Days)
+                                            </label>
+                                            <input
+                                                id="trial_days"
+                                                type="number"
+                                                min="1"
+                                                max="365"
+                                                value={trialDays}
+                                                onChange={(e) => setTrialDays(e.target.value)}
+                                                className="w-full max-w-xs rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            />
+                                            {errors.trial_days && <p className="text-xs text-red-600 mt-1">{errors.trial_days}</p>}
+                                        </div>
+                                    )}
+                                    {trialEnabled && (
+                                        <div className="ml-4 pl-4 border-l-2 border-gray-100 space-y-4">
+                                            <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                                <div>
+                                                    <span className="text-sm font-medium text-gray-700">Allow Trial Renewal</span>
+                                                    <p className="text-xs text-gray-400">Merchants can extend their trial period after it expires.</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    role="switch"
+                                                    aria-checked={allowTrialRenewal}
+                                                    onClick={() => setAllowTrialRenewal(!allowTrialRenewal)}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${allowTrialRenewal ? 'bg-blue-600' : 'bg-gray-300'}`}
+                                                >
+                                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${allowTrialRenewal ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                                </button>
+                                            </label>
+                                            {allowTrialRenewal && (
+                                                <div>
+                                                    <label htmlFor="max_trial_renewals" className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Max Trial Renewals
+                                                    </label>
+                                                    <input
+                                                        id="max_trial_renewals"
+                                                        type="number"
+                                                        min="0"
+                                                        max="255"
+                                                        value={maxTrialRenewals}
+                                                        onChange={(e) => setMaxTrialRenewals(e.target.value)}
+                                                        className="w-full max-w-xs rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                    />
+                                                    <p className="text-xs text-gray-400 mt-1">Set to 0 for unlimited renewals.</p>
+                                                    {errors.max_trial_renewals && <p className="text-xs text-red-600 mt-1">{errors.max_trial_renewals}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Section 4: System Settings */}
                             <div className="pb-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-1">System Settings</h3>
                                 <p className="text-sm text-gray-500 mb-4">Control platform-wide features.</p>

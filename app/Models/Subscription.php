@@ -18,6 +18,7 @@ class Subscription extends Model
         'starts_at',
         'expires_at',
         'trial_ends_at',
+        'trial_renewals_count',
         'cancelled_at',
         'suspended_at',
         'notes',
@@ -27,6 +28,7 @@ class Subscription extends Model
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
         'trial_ends_at' => 'datetime',
+        'trial_renewals_count' => 'integer',
         'cancelled_at' => 'datetime',
         'suspended_at' => 'datetime',
     ];
@@ -48,6 +50,11 @@ class Subscription extends Model
     public function plan()
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(\App\Models\SubscriptionAuditLog::class)->latest();
     }
 
     /* ── Status helpers ── */
@@ -167,6 +174,7 @@ class Subscription extends Model
     {
         if (!$this->suspended_at) {
             $this->update(['status' => 'active']);
+            $this->tenant->unlock();
             return;
         }
 
@@ -175,6 +183,7 @@ class Subscription extends Model
                 'status' => 'active',
                 'suspended_at' => null,
             ]);
+            $this->tenant->unlock();
             return;
         }
 
@@ -187,6 +196,8 @@ class Subscription extends Model
             'expires_at' => $newExpiry,
             'suspended_at' => null,
         ]);
+
+        $this->tenant->unlock();
     }
 
     public function markAsCanceled(?Carbon $at = null): void
@@ -209,6 +220,7 @@ class Subscription extends Model
             $this->tenant->update(['status' => 'active']);
         }
 
+        $this->tenant->unlock();
         $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
     }
 
@@ -271,6 +283,7 @@ class Subscription extends Model
             $this->tenant->update(['status' => 'active']);
         }
 
+        $this->tenant->unlock();
         $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
     }
 

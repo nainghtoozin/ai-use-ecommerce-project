@@ -7,11 +7,13 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\PlatformSetting;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\SubscriptionAuditService;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -196,7 +198,9 @@ class TenantBootstrapService
      */
     protected function createSubscription(Tenant $tenant, ?int $planId = null, string $status = 'pending'): ?Subscription
     {
-        $plan = $planId ? Plan::find($planId) : Plan::free();
+        $settings = PlatformSetting::current();
+
+        $plan = $this->resolvePlan($planId, $settings);
 
         if (!$plan) {
             Log::warning('No plan found during tenant bootstrap', [
@@ -206,22 +210,59 @@ class TenantBootstrapService
             return null;
         }
 
-        $startsAt = $status === 'active' ? now() : null;
-        $expiresAt = $status === 'active'
-            ? $plan->calculateExpiryDate(now(), $plan->defaultInterval())
-            : null;
+        $trialEnabled = $settings->trial_enabled && !$plan->isFree();
 
-        $subscription = $tenant->subscription()->create([
-            'plan_id' => $plan->id,
-            'billing_interval' => $plan->defaultInterval(),
-            'status' => $status,
-            'starts_at' => $startsAt,
-            'expires_at' => $expiresAt,
-        ]);
+        if ($trialEnabled) {
+            $trialDays = max(1, $settings->trial_days ?? 14);
+            $trialEndsAt = now()->addDays($trialDays);
 
-        \App\Services\FeatureGate::clearCache($plan);
+            $subscription = $tenant->subscription()->create([
+                'plan_id' => $plan->id,
+                'billing_interval' => $plan->defaultInterval(),
+                'status' => 'trialing',
+                'starts_at' => now(),
+                'trial_ends_at' => $trialEndsAt,
+                'expires_at' => $trialEndsAt,
+            ]);
+
+            SubscriptionAuditService::log($subscription, 'trial_started', [
+                'new_plan_id' => $plan->id,
+                'old_status' => null,
+            ]);
+        } else {
+            $startsAt = $status === 'active' ? now() : null;
+            $expiresAt = $status === 'active'
+                ? $plan->calculateExpiryDate(now(), $plan->defaultInterval())
+                : null;
+
+            $subscription = $tenant->subscription()->create([
+                'plan_id' => $plan->id,
+                'billing_interval' => $plan->defaultInterval(),
+                'status' => $status,
+                'starts_at' => $startsAt,
+                'expires_at' => $expiresAt,
+            ]);
+        }
+
+        FeatureGate::clearCache($plan);
 
         return $subscription;
+    }
+
+    private function resolvePlan(?int $planId, PlatformSetting $settings): ?Plan
+    {
+        if ($planId) {
+            return Plan::find($planId);
+        }
+
+        if ($settings->trial_enabled) {
+            return Plan::where('status', 'active')
+                ->where('monthly_price', '>', 0)
+                ->orderBy('monthly_price')
+                ->first() ?? Plan::free();
+        }
+
+        return Plan::free();
     }
 
     protected function createDefaultUnits(Tenant $tenant): void

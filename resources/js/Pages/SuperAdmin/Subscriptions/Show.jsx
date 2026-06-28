@@ -13,7 +13,7 @@ function daysUntil(date) {
     return diff > 0 ? diff : null;
 }
 
-export default function ShowSubscription({ subscription, history, usage, plans, intervals, currentInterval, tenantUsers }) {
+export default function ShowSubscription({ subscription, history, auditLogs, usage, plans, intervals, currentInterval, tenantUsers }) {
     const { props } = usePage();
     const flash = props?.flash || {};
     const [showChangePlan, setShowChangePlan] = useState(false);
@@ -26,8 +26,6 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
     const [changeReason, setChangeReason] = useState('');
     const [changeBillingInterval, setChangeBillingInterval] = useState(currentInterval || 'monthly');
     const [processing, setProcessing] = useState(false);
-
-    const downgradeWarnings = flash?.downgrade_warnings;
 
     const statusColors = {
         trialing: 'bg-blue-100 text-blue-800',
@@ -120,21 +118,6 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
-                    {/* Downgrade warnings */}
-                    {downgradeWarnings && downgradeWarnings.length > 0 && (
-                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-                            <div className="flex">
-                                <div className="flex-shrink-0">⚠️</div>
-                                <div className="ml-3">
-                                    <p className="text-sm font-medium text-yellow-800">Downgrade Warning</p>
-                                    <ul className="mt-1 text-sm text-yellow-700 list-disc list-inside">
-                                        {downgradeWarnings.map((w, i) => <li key={i}>{w}</li>)}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Expiry Warning Banner */}
                     {subscription.status === 'expired' && (
@@ -643,6 +626,68 @@ export default function ShowSubscription({ subscription, history, usage, plans, 
                             <p className="text-sm text-gray-500">No history records.</p>
                         )}
                     </div>
+
+                    {/* Audit Log */}
+                    {auditLogs && auditLogs.length > 0 && (
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">Audit Log ({auditLogs.length})</h3>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actor</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {auditLogs.map((log) => (
+                                            <tr key={log.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.created_at}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                        log.event === 'trial_started' ? 'bg-blue-100 text-blue-800' :
+                                                        log.event === 'plan_changed' ? 'bg-indigo-100 text-indigo-800' :
+                                                        log.event === 'renewed' ? 'bg-green-100 text-green-800' :
+                                                        log.event === 'activated' ? 'bg-emerald-100 text-emerald-800' :
+                                                        log.event === 'canceled' ? 'bg-gray-100 text-gray-800' :
+                                                        log.event === 'suspended' ? 'bg-yellow-100 text-yellow-800' :
+                                                        log.event === 'subscription_created' ? 'bg-purple-100 text-purple-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {log.event === 'trial_started' ? 'Trial Started' :
+                                                         log.event === 'plan_changed' ? 'Plan Changed' :
+                                                         log.event === 'renewed' ? 'Renewed' :
+                                                         log.event === 'activated' ? 'Activated' :
+                                                         log.event === 'canceled' ? 'Canceled' :
+                                                         log.event === 'suspended' ? 'Suspended' :
+                                                         log.event === 'subscription_created' ? 'Created' :
+                                                         log.event === 'past_due' ? 'Past Due' :
+                                                         log.event === 'expired' ? 'Expired' :
+                                                         log.event === 'trial_ended' ? 'Trial Ended' :
+                                                         log.event}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{log.actor_type || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.old_status || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.new_status || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {log.old_plan && log.new_plan
+                                                        ? `${log.old_plan} → ${log.new_plan}`
+                                                        : log.new_plan || '—'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">{log.reason || '—'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>
