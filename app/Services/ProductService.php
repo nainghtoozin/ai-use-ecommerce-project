@@ -858,16 +858,16 @@ class ProductService
         if ($product->isVariable()) {
             [$min, $max] = $product->getPriceRange();
             if ($min === $max) {
-                return number_format($min) . ' MMK';
+                return number_format($min) . ' ' . config('payments.default_currency');
             }
-            return 'From ' . number_format($min) . ' MMK';
+            return 'From ' . number_format($min) . ' ' . config('payments.default_currency');
         }
 
         if ($product->isCombo()) {
-            return number_format($product->getEffectivePrice()) . ' MMK';
+            return number_format($product->getEffectivePrice()) . ' ' . config('payments.default_currency');
         }
 
-        return number_format((float) ($product->price ?? 0)) . ' MMK';
+        return number_format((float) ($product->price ?? 0)) . ' ' . config('payments.default_currency');
     }
 
     /**

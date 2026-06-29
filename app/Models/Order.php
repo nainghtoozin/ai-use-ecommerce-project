@@ -51,6 +51,7 @@ class Order extends Model
         'order_status',
         'payment_verified_at',
         'rejection_reason',
+        'telegram_notified_at',
     ];
 
     protected $casts = [
@@ -60,6 +61,7 @@ class Order extends Model
         'discount_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'payment_verified_at' => 'datetime',
+        'telegram_notified_at' => 'datetime',
     ];
 
     protected $appends = [

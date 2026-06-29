@@ -5,6 +5,8 @@ namespace App\Jobs;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\TelegramNotificationRouter;
+use App\Services\TelegramOrderMessageBuilder;
 use App\Services\TelegramRecipientResolver;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
@@ -103,6 +105,18 @@ class ProcessOrderNotifications implements ShouldQueue
     private function dispatchTelegramOrderPlaced(): void
     {
         try {
+            Log::info('[ProcessOrderNotifications] Order notification requested', [
+                'order_id' => $this->order->id,
+            ]);
+
+            if ($this->order->telegram_notified_at !== null) {
+                Log::info('[ProcessOrderNotifications] Telegram notification skipped - already notified', [
+                    'order_id' => $this->order->id,
+                    'telegram_notified_at' => $this->order->telegram_notified_at,
+                ]);
+                return;
+            }
+
             $resolver = app(TelegramRecipientResolver::class);
             $integrations = $resolver->resolve($this->order);
 
@@ -110,45 +124,49 @@ class ProcessOrderNotifications implements ShouldQueue
                 Log::info('[ProcessOrderNotifications] Telegram order notification skipped - no verified integrations', [
                     'order_id' => $this->order->id,
                 ]);
-
                 return;
             }
 
-            $this->order->loadMissing('items.product', 'paymentMethod');
+            $builder = app(TelegramOrderMessageBuilder::class);
+            $payload = $builder->buildNewOrder($this->order);
 
-            $lines = [];
-            $lines[] = "🆕 New Order #{$this->order->id}";
-            $lines[] = '';
-            $lines[] = "👤 Customer: {$this->order->customer_name}";
-            $lines[] = "📞 Phone: {$this->order->phone}";
-            $lines[] = '💳 Payment: ' . ($this->order->paymentMethod?->name ?? 'N/A');
-            $lines[] = '💰 Total: ' . number_format((float) $this->order->total_amount) . ' MMK';
-            $lines[] = '';
+            Log::info('[ProcessOrderNotifications] Payload generated', [
+                'order_id' => $this->order->id,
+                'notification_type' => $payload->notificationType,
+                'destination' => $payload->destination,
+            ]);
 
-            if ($this->order->items->isNotEmpty()) {
-                $lines[] = '📦 Products:';
-
-                foreach ($this->order->items as $item) {
-                    $productName = $item->product?->name ?? "Product #{$item->product_id}";
-                    $itemTotal = (float) $item->price * (int) $item->quantity;
-                    $lines[] = '  - ' . $productName . ' x' . $item->quantity . ' - ' . number_format($itemTotal) . ' MMK';
-                }
-
-                $lines[] = '';
-            }
-
-            $lines[] = '🕐 ' . now()->format('M j, Y g:i A');
-
-            $message = implode("\n", $lines);
+            $router = app(TelegramNotificationRouter::class);
+            $totalDispatches = 0;
 
             foreach ($integrations as $integration) {
-                SendTelegramMessageJob::dispatch($integration, $message)->onQueue('default');
+                $targets = $router->resolve($integration, 'order');
+
+                Log::info('[ProcessOrderNotifications] Destination resolved', [
+                    'order_id' => $this->order->id,
+                    'integration_id' => $integration->id,
+                    'target_count' => count($targets),
+                    'targets' => $targets,
+                ]);
+
+                foreach ($targets as $target) {
+                    SendTelegramMessageJob::dispatch(
+                        $integration,
+                        $payload->message,
+                        $target['chat_id'],
+                        $payload->toArray(),
+                    )->onQueue('default');
+                    $totalDispatches++;
+                }
             }
 
-            Log::info('[ProcessOrderNotifications] Telegram order notification dispatched', [
+            $this->order->timestamps = false;
+            $this->order->updateQuietly(['telegram_notified_at' => now()]);
+
+            Log::info('[ProcessOrderNotifications] Notification completed', [
                 'order_id' => $this->order->id,
                 'integration_count' => $integrations->count(),
-                'integration_ids' => $integrations->pluck('id')->toArray(),
+                'dispatch_count' => $totalDispatches,
             ]);
         } catch (\Throwable $e) {
             Log::warning('[ProcessOrderNotifications] Telegram order notification dispatch failed', [

@@ -20,6 +20,16 @@ class Plan extends Model
         'storage_limit',
         'analytics_enabled',
         'custom_domain_enabled',
+        'orders_monthly_limit',
+        'coupon_limit',
+        'promotion_limit',
+        'flash_sale_limit',
+        'api_request_limit',
+        'image_limit',
+        'image_max_size_kb',
+        'branch_limit',
+        'warehouse_limit',
+        'pos_device_limit',
         'status',
         // Deprecated compat columns — kept for backward compat
         'price',
@@ -142,6 +152,16 @@ class Plan extends Model
     public function hasUnlimitedStaff(): bool
     {
         return $this->staff_limit === null;
+    }
+
+    public function isUnlimited(string $column): bool
+    {
+        return $this->{$column} === null;
+    }
+
+    public function limitValue(string $column): ?int
+    {
+        return $this->{$column};
     }
 
     /* ── Plan lookup helpers ── */

@@ -16,18 +16,24 @@ abstract class Controller
         // (e.g. OrderController::show(string $id) for route /{store_slug}/orders/{order})
         // while preserving container-resolved deps (e.g. Request) spliced at integer keys.
         $filtered = array_filter($parameters, fn ($key) => $key !== 'store_slug', ARRAY_FILTER_USE_KEY);
-        $positionalValues = array_values($filtered);
+
+        $diValues = [];
+        foreach ($filtered as $key => $value) {
+            if (is_int($key)) {
+                $diValues[] = $value;
+            }
+        }
 
         $args = [];
-        foreach ($rm->getParameters() as $i => $param) {
+        $diIndex = 0;
+        foreach ($rm->getParameters() as $param) {
             $name = $param->getName();
 
             if (array_key_exists($name, $parameters)) {
                 $args[] = $parameters[$name];
-            } elseif (array_key_exists($i, $parameters)) {
-                $args[] = $parameters[$i];
-            } elseif (isset($positionalValues[$i])) {
-                $args[] = $positionalValues[$i];
+            } elseif (isset($diValues[$diIndex])) {
+                $args[] = $diValues[$diIndex];
+                $diIndex++;
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[] = $param->getDefaultValue();
             } elseif ($param->allowsNull()) {

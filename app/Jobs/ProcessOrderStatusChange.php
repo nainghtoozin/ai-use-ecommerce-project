@@ -5,6 +5,8 @@ namespace App\Jobs;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\TelegramNotificationRouter;
+use App\Services\TelegramOrderMessageBuilder;
 use App\Services\TelegramRecipientResolver;
 use App\Events\OrderStatusChanged;
 use App\Events\PaymentVerified;
@@ -103,6 +105,11 @@ class ProcessOrderStatusChange implements ShouldQueue
     private function dispatchTelegramStatusChange(): void
     {
         try {
+            Log::info('[ProcessOrderStatusChange] Status notification requested', [
+                'order_id' => $this->order->id,
+                'event' => $this->event,
+            ]);
+
             $resolver = app(TelegramRecipientResolver::class);
             $integrations = $resolver->resolve($this->order);
 
@@ -111,21 +118,47 @@ class ProcessOrderStatusChange implements ShouldQueue
                     'order_id' => $this->order->id,
                     'event' => $this->event,
                 ]);
-
                 return;
             }
 
-            $message = $this->buildStatusMessage();
+            $builder = app(TelegramOrderMessageBuilder::class);
+            $payload = $builder->buildStatusChange($this->order, $this->event, $this->oldStatus, $this->rejectionReason);
+
+            Log::info('[ProcessOrderStatusChange] Payload generated', [
+                'order_id' => $this->order->id,
+                'event' => $this->event,
+                'notification_type' => $payload->notificationType,
+            ]);
+
+            $router = app(TelegramNotificationRouter::class);
+            $totalDispatches = 0;
 
             foreach ($integrations as $integration) {
-                SendTelegramMessageJob::dispatch($integration, $message)->onQueue('default');
+                $targets = $router->resolve($integration, 'order');
+
+                Log::info('[ProcessOrderStatusChange] Destination resolved', [
+                    'order_id' => $this->order->id,
+                    'event' => $this->event,
+                    'integration_id' => $integration->id,
+                    'target_count' => count($targets),
+                ]);
+
+                foreach ($targets as $target) {
+                    SendTelegramMessageJob::dispatch(
+                        $integration,
+                        $payload->message,
+                        $target['chat_id'],
+                        $payload->toArray(),
+                    )->onQueue('default');
+                    $totalDispatches++;
+                }
             }
 
-            Log::info('[ProcessOrderStatusChange] Telegram status notification dispatched', [
+            Log::info('[ProcessOrderStatusChange] Notification completed', [
                 'order_id' => $this->order->id,
                 'event' => $this->event,
                 'integration_count' => $integrations->count(),
-                'integration_ids' => $integrations->pluck('id')->toArray(),
+                'dispatch_count' => $totalDispatches,
             ]);
         } catch (\Throwable $e) {
             Log::warning('[ProcessOrderStatusChange] Telegram status notification dispatch failed', [
@@ -134,60 +167,6 @@ class ProcessOrderStatusChange implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
         }
-    }
-
-    private function buildStatusMessage(): string
-    {
-        $this->order->loadMissing('paymentMethod');
-
-        $emoji = match ($this->event) {
-            'confirmed' => '✅',
-            'processing' => '🔄',
-            'shipped' => '📦',
-            'delivered' => '✅',
-            'cancelled_by_admin', 'cancelled_by_customer' => '❌',
-            'payment_verified' => '💳',
-            'payment_rejected' => '❌',
-            'payment_proof_uploaded' => '📎',
-            default => '📋',
-        };
-
-        $label = match ($this->event) {
-            'confirmed' => 'Order Confirmed',
-            'processing' => 'Order Processing',
-            'shipped' => 'Order Shipped',
-            'delivered' => 'Order Delivered',
-            'cancelled_by_admin' => 'Order Cancelled by Admin',
-            'cancelled_by_customer' => 'Order Cancelled by Customer',
-            'payment_verified' => 'Payment Verified',
-            'payment_rejected' => 'Payment Rejected',
-            'payment_proof_uploaded' => 'Payment Proof Uploaded',
-            default => 'Status Updated',
-        };
-
-        $lines = [];
-        $lines[] = "{$emoji} {$label} #{$this->order->id}";
-        $lines[] = '';
-        $lines[] = "👤 Customer: {$this->order->customer_name}";
-        $lines[] = "📞 Phone: {$this->order->phone}";
-        $lines[] = '💰 Total: ' . number_format((float) $this->order->total_amount) . ' MMK';
-        $lines[] = '💳 Payment: ' . ($this->order->paymentMethod?->name ?? 'N/A');
-
-        if ($this->oldStatus) {
-            $lines[] = '';
-            $lines[] = "📋 Status: {$this->oldStatus} -> {$this->order->order_status}";
-        } else {
-            $lines[] = "📋 Status: {$this->order->order_status}";
-        }
-
-        if ($this->event === 'payment_rejected' && $this->rejectionReason) {
-            $lines[] = "⚠️ Reason: {$this->rejectionReason}";
-        }
-
-        $lines[] = '';
-        $lines[] = '🕐 ' . now()->format('M j, Y g:i A');
-
-        return implode("\n", $lines);
     }
 
     private function logActivity(): void

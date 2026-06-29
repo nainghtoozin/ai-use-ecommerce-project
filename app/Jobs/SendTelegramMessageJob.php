@@ -24,19 +24,26 @@ class SendTelegramMessageJob implements ShouldQueue
     public function __construct(
         public TelegramIntegration $telegramIntegration,
         public string $message,
+        public ?string $chatId = null,
+        public ?array $payload = null,
     ) {}
 
     public function handle(TelegramService $telegramService): void
     {
+        $notificationType = $this->payload['notification_type'] ?? 'unknown';
+        $context = $this->payload['context'] ?? [];
+
         Log::info('SendTelegramMessageJob started', [
             'integration_id' => $this->telegramIntegration->id,
             'bot_username' => $this->telegramIntegration->bot_username,
+            'notification_type' => $notificationType,
             'attempt' => $this->attempts(),
         ]);
 
         $result = $telegramService->sendMessage(
             $this->telegramIntegration,
             $this->message,
+            $this->chatId,
         );
 
         if ($result['success']) {
@@ -45,6 +52,7 @@ class SendTelegramMessageJob implements ShouldQueue
 
             Log::info('SendTelegramMessageJob completed successfully', [
                 'integration_id' => $this->telegramIntegration->id,
+                'notification_type' => $notificationType,
                 'status_code' => $result['status_code'] ?? null,
             ]);
 
@@ -53,6 +61,7 @@ class SendTelegramMessageJob implements ShouldQueue
 
         Log::warning('SendTelegramMessageJob API call failed', [
             'integration_id' => $this->telegramIntegration->id,
+            'notification_type' => $notificationType,
             'attempt' => $this->attempts(),
             'error' => $result['message'],
         ]);
@@ -62,9 +71,12 @@ class SendTelegramMessageJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
+        $notificationType = $this->payload['notification_type'] ?? 'unknown';
+
         Log::error('SendTelegramMessageJob exhausted all attempts', [
             'integration_id' => $this->telegramIntegration->id,
             'bot_username' => $this->telegramIntegration->bot_username,
+            'notification_type' => $notificationType,
             'error' => $e->getMessage(),
         ]);
     }

@@ -48,6 +48,7 @@ export default function ProductTypeSelector({
     availableTypes = ['single'],
     allTypes = ['single', 'variable', 'combo'],
     featureStatus = {},
+    allPlans = [],
 }) {
     const [selectedType, setSelectedType] = useState(null);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -156,6 +157,7 @@ export default function ProductTypeSelector({
                 onClose={() => setShowUpgradeModal(false)}
                 featureName={lockedType?.title}
                 upgradeHint={lockedType?.upgradeHint}
+                plans={allPlans}
             />
         </>
     );

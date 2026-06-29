@@ -48,14 +48,31 @@ export default function TelegramIntegration({ integration }) {
                   is_enabled: integration.is_enabled ?? false,
                   last_verified_at: integration.last_verified_at,
                   created_at: integration.created_at,
+                  personal_chat_id: integration.personal_chat_id,
+                  personal_chat_username: integration.personal_chat_username,
+                  personal_chat_title: integration.personal_chat_title,
+                  personal_verified_at: integration.personal_verified_at,
+                  personal_status_label: integration.personal_status_label ?? 'Not Connected',
+                  group_chat_id: integration.group_chat_id,
+                  group_chat_title: integration.group_chat_title,
+                  group_chat_username: integration.group_chat_username,
+                  group_chat_type: integration.group_chat_type,
+                  group_verified_at: integration.group_verified_at,
+                  group_status_label: integration.group_status_label ?? 'Not Connected',
+                  group_status_badge: integration.group_status_badge ?? 'not_connected',
               }
             : null,
     );
     const [polling, setPolling] = useState(false);
+    const [reconnecting, setReconnecting] = useState(false);
+    const [disconnectingGroup, setDisconnectingGroup] = useState(false);
+    const [testingGroup, setTestingGroup] = useState(false);
 
     const hasIntegration = integrationData !== null;
     const isVerified = integrationData?.verification_status === 'verified';
     const isPending = integrationData?.verification_status === 'pending_verification';
+    const isPersonalConnected = integrationData?.personal_verified_at != null;
+    const isGroupConnected = integrationData?.group_verified_at != null;
 
     function fetchStatus() {
         apiFetch('/telegram-integration/status')
@@ -90,15 +107,12 @@ export default function TelegramIntegration({ integration }) {
         setSuccess(null);
         setConnecting(true);
 
-        apiFetch('/telegram-integration/connect', {
-            method: 'POST',
-            body: JSON.stringify({
-                bot_token: botToken,
-                bot_name: botName,
-                bot_username: botUsername,
-            }),
+        window.axios.post('/telegram-integration/connect', {
+            bot_token: botToken,
+            bot_name: botName,
+            bot_username: botUsername,
         })
-            .then((data) => {
+            .then(({ data }) => {
                 setSuccess(data.message);
                 setIntegrationData({
                     bot_name: botName || data.data?.integration?.bot_name,
@@ -110,7 +124,7 @@ export default function TelegramIntegration({ integration }) {
                 setPolling(true);
             })
             .catch((err) => {
-                setError(err.message);
+                setError(err.response?.data?.message || err.message);
             })
             .finally(() => {
                 setConnecting(false);
@@ -155,6 +169,77 @@ export default function TelegramIntegration({ integration }) {
             })
             .finally(() => {
                 setTesting(false);
+            });
+    }
+
+    function handleDisconnectGroup() {
+        if (!confirm('Disconnect group chat? Your bot will remain in the group. To fully remove it, remove the bot from the group manually.')) return;
+
+        setError(null);
+        setSuccess(null);
+        setDisconnectingGroup(true);
+
+        apiFetch('/telegram-integration/group/disconnect', { method: 'POST' })
+            .then((data) => {
+                setIntegrationData((prev) => ({
+                    ...prev,
+                    group_chat_id: null,
+                    group_chat_title: null,
+                    group_chat_username: null,
+                    group_chat_type: null,
+                    group_verified_at: null,
+                    group_status_label: 'Not Connected',
+                    group_status_badge: 'not_connected',
+                }));
+                setSuccess(data.message);
+            })
+            .catch((err) => {
+                setError(err.message);
+            })
+            .finally(() => {
+                setDisconnectingGroup(false);
+            });
+    }
+
+    function handleTestGroup() {
+        setError(null);
+        setSuccess(null);
+        setTestingGroup(true);
+
+        apiFetch('/telegram-integration/group/test', { method: 'POST' })
+            .then((data) => {
+                setSuccess(data.message || 'Test group notification sent!');
+            })
+            .catch((err) => {
+                setError(err.message);
+            })
+            .finally(() => {
+                setTestingGroup(false);
+            });
+    }
+
+    function handleReconnectPersonal() {
+        setError(null);
+        setSuccess(null);
+        setReconnecting(true);
+
+        apiFetch('/telegram-integration/reconnect-personal', { method: 'POST' })
+            .then((data) => {
+                setIntegrationData((prev) => ({
+                    ...prev,
+                    personal_chat_id: null,
+                    personal_chat_username: null,
+                    personal_chat_title: null,
+                    personal_verified_at: null,
+                    personal_status_label: 'Not Connected',
+                }));
+                setSuccess(data.message);
+            })
+            .catch((err) => {
+                setError(err.message);
+            })
+            .finally(() => {
+                setReconnecting(false);
             });
     }
 
@@ -286,6 +371,140 @@ export default function TelegramIntegration({ integration }) {
                             <div className="text-sm text-gray-600 space-y-2">
                                 <p>Your bot is connected. To complete verification:</p>
                                 <OnboardingSteps username={integrationData.bot_username} />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {hasIntegration && (
+                    <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Personal Chat</h2>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPersonalConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                {isPersonalConnected ? 'Connected' : 'Not Connected'}
+                            </span>
+                        </div>
+                        {isPersonalConnected ? (
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="text-gray-500">Chat ID</span>
+                                        <p className="font-medium text-gray-900 mt-0.5 font-mono">{integrationData.personal_chat_id}</p>
+                                    </div>
+                                    {integrationData.personal_chat_username && (
+                                        <div>
+                                            <span className="text-gray-500">Username</span>
+                                            <p className="font-medium text-gray-900 mt-0.5">@{integrationData.personal_chat_username}</p>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <span className="text-gray-500">Connected At</span>
+                                        <p className="font-medium text-gray-900 mt-0.5">
+                                            {integrationData.personal_verified_at ? new Date(integrationData.personal_verified_at).toLocaleString() : '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="pt-3 border-t border-gray-100">
+                                    <button
+                                        type="button"
+                                        onClick={handleReconnectPersonal}
+                                        disabled={reconnecting}
+                                        className="text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50"
+                                    >
+                                        {reconnecting ? 'Resetting...' : 'Reconnect Personal Chat'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-sm text-gray-500 mb-3">Send /start to your bot from Telegram to connect your personal chat.</p>
+                                {integrationData?.bot_username && (
+                                    <a
+                                        href={`https://t.me/${integrationData.bot_username.replace('@', '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        Open Bot
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {hasIntegration && (
+                    <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Telegram Group</h2>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isGroupConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                                {isGroupConnected ? 'Connected' : 'Not Connected'}
+                            </span>
+                        </div>
+                        {isGroupConnected ? (
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="text-gray-500">Group Name</span>
+                                        <p className="font-medium text-gray-900 mt-0.5">{integrationData.group_chat_title || '—'}</p>
+                                    </div>
+                                    {integrationData.group_chat_username && (
+                                        <div>
+                                            <span className="text-gray-500">Username</span>
+                                            <p className="font-medium text-gray-900 mt-0.5">@{integrationData.group_chat_username}</p>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <span className="text-gray-500">Group ID</span>
+                                        <p className="font-medium text-gray-900 mt-0.5 font-mono">{integrationData.group_chat_id}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Connected At</span>
+                                        <p className="font-medium text-gray-900 mt-0.5">
+                                            {integrationData.group_verified_at ? new Date(integrationData.group_verified_at).toLocaleString() : '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="pt-3 border-t border-gray-100 flex items-center gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleDisconnectGroup}
+                                        disabled={disconnectingGroup}
+                                        className="text-sm text-red-600 hover:text-red-800 underline disabled:opacity-50"
+                                    >
+                                        {disconnectingGroup ? 'Disconnecting...' : 'Disconnect Group'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleTestGroup}
+                                        disabled={testingGroup}
+                                        className="text-sm text-emerald-600 hover:text-emerald-800 underline disabled:opacity-50"
+                                    >
+                                        {testingGroup ? 'Sending...' : 'Test Group Notification'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-sm text-gray-500 mb-3">Add your bot to a Telegram group and send /start or any message to connect.</p>
+                                {integrationData?.bot_username && (
+                                    <a
+                                        href={`https://t.me/${integrationData.bot_username.replace('@', '')}?startgroup=connect`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Add to Group
+                                    </a>
+                                )}
                             </div>
                         )}
                     </div>
@@ -447,6 +666,14 @@ export default function TelegramIntegration({ integration }) {
                             </p>
                         </div>
 
+                        <DestinationSelector
+                            integrationData={integrationData}
+                            isPersonalConnected={isPersonalConnected}
+                            isGroupConnected={isGroupConnected}
+                        />
+
+                        <SystemNotifications integrationData={integrationData} />
+
                         <div className="mt-4 bg-white rounded-lg border border-gray-200 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 mb-2">Test Connection</h2>
                             <p className="text-sm text-gray-500 mb-4">
@@ -480,6 +707,398 @@ export default function TelegramIntegration({ integration }) {
                 )}
             </div>
         </AdminLayout>
+    );
+}
+
+function DestinationSelector({ integrationData, isPersonalConnected, isGroupConnected }) {
+    const categories = [
+        { key: 'order', label: 'Order Notifications', desc: 'New orders, status changes, payment verification' },
+        { key: 'payment', label: 'Payment Notifications', desc: 'Payment confirmations, refunds, disputes' },
+        { key: 'inventory', label: 'Inventory Notifications', desc: 'Low stock, out of stock alerts' },
+        { key: 'system', label: 'System Notifications', desc: 'System updates, maintenance notices' },
+        { key: 'marketing', label: 'Marketing Notifications', desc: 'Promotions, campaigns, announcements' },
+        { key: 'manual', label: 'Manual Notifications', desc: 'Manually triggered notifications' },
+    ];
+    const destinations = ['personal', 'group', 'both', 'disabled'];
+
+    const [defaultDest, setDefaultDest] = useState(integrationData?.default_destination ?? 'personal');
+    const [overrides, setOverrides] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [testingCat, setTestingCat] = useState(null);
+    const [sampleSending, setSampleSending] = useState(false);
+    const [destError, setDestError] = useState(null);
+    const [destSuccess, setDestSuccess] = useState(null);
+
+    useEffect(() => {
+        if (integrationData) {
+            setDefaultDest(integrationData.default_destination ?? 'personal');
+            const initialOverrides = {};
+            categories.forEach((cat) => {
+                if (integrationData[cat.key + '_destination']) {
+                    initialOverrides[cat.key] = integrationData[cat.key + '_destination'];
+                }
+            });
+            setOverrides(initialOverrides);
+        }
+    }, [integrationData]);
+
+    function getEffective(catKey) {
+        return overrides[catKey] || defaultDest;
+    }
+
+    function getRouteIcon(catKey) {
+        const dest = getEffective(catKey);
+        if (dest === 'disabled') {
+            return <span className="text-gray-400 text-xs">Disabled</span>;
+        }
+        const routes = [];
+        let hasWarning = false;
+        if (dest === 'personal' || dest === 'both') {
+            if (isPersonalConnected) {
+                routes.push(
+                    <span key="p" className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                        Personal
+                    </span>,
+                );
+            } else {
+                hasWarning = true;
+            }
+        }
+        if (dest === 'group' || dest === 'both') {
+            if (isGroupConnected) {
+                routes.push(
+                    <span key="g" className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                        Group
+                    </span>,
+                );
+            } else {
+                hasWarning = true;
+            }
+        }
+        if (routes.length > 0) {
+            return <span className="flex gap-1 flex-wrap">{routes}</span>;
+        }
+        if (hasWarning) {
+            if (dest === 'personal' || dest === 'both') return <span className="text-xs text-red-500">Personal unavailable</span>;
+            if (dest === 'group') return <span className="text-xs text-red-500">Group unavailable</span>;
+        }
+        return <span className="text-xs text-gray-400">No route</span>;
+    }
+
+    function getRouteWarning(catKey) {
+        const dest = getEffective(catKey);
+        if (dest === 'disabled') return null;
+        if ((dest === 'personal' || dest === 'both') && !isPersonalConnected) {
+            return 'Personal chat not connected';
+        }
+        if ((dest === 'group' || dest === 'both') && !isGroupConnected) {
+            return 'Group chat not connected';
+        }
+        return null;
+    }
+
+    function handleSave() {
+        setDestError(null);
+        setDestSuccess(null);
+        setSaving(true);
+
+        const payload = {
+            default_destination: defaultDest,
+        };
+        categories.forEach((cat) => {
+            if (overrides[cat.key]) {
+                payload[cat.key + '_destination'] = overrides[cat.key];
+            } else {
+                payload[cat.key + '_destination'] = null;
+            }
+        });
+
+        apiFetch('/telegram-integration/destination', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        })
+            .then((data) => {
+                setDestSuccess(data.message);
+            })
+            .catch((err) => {
+                setDestError(err.message);
+            })
+            .finally(() => {
+                setSaving(false);
+            });
+    }
+
+    function handleTest(catKey) {
+        setDestError(null);
+        setDestSuccess(null);
+        setTestingCat(catKey);
+
+        apiFetch('/telegram-integration/test-router', {
+            method: 'POST',
+            body: JSON.stringify({ category: catKey }),
+        })
+            .then((data) => {
+                setDestSuccess(data.message);
+            })
+            .catch((err) => {
+                setDestError(err.message);
+            })
+            .finally(() => {
+                setTestingCat(null);
+            });
+    }
+
+    return (
+        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Destination Routing</h2>
+            <p className="text-sm text-gray-500 mb-5">
+                Choose where each notification category is sent. Categories inherit from the default unless overridden.
+            </p>
+
+            {destError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                    <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-red-700">{destError}</p>
+                </div>
+            )}
+
+            {destSuccess && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                    <svg className="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-green-700">{destSuccess}</p>
+                </div>
+            )}
+
+            <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Default Destination</label>
+                <select
+                    value={defaultDest}
+                    onChange={(e) => setDefaultDest(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    {destinations.map((d) => (
+                        <option key={d} value={d} disabled={d === 'group' && !isGroupConnected}>
+                            {d.charAt(0).toUpperCase() + d.slice(1)} {d === 'group' && !isGroupConnected ? '(Group not connected)' : ''}
+                        </option>
+                    ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">Used for all categories unless overridden below.</p>
+            </div>
+
+            <div className="space-y-3">
+                {categories.map((cat) => {
+                    const effective = getEffective(cat.key);
+                    const warning = getRouteWarning(cat.key);
+                    const isOverridden = overrides[cat.key] !== undefined;
+                    return (
+                        <div key={cat.key} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900">{cat.label}</p>
+                                <p className="text-xs text-gray-500 truncate">{cat.desc}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <select
+                                    value={overrides[cat.key] || ''}
+                                    onChange={(e) => {
+                                        setOverrides((prev) => {
+                                            const next = { ...prev };
+                                            if (e.target.value === '') {
+                                                delete next[cat.key];
+                                            } else {
+                                                next[cat.key] = e.target.value;
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                    className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">Inherit ({defaultDest})</option>
+                                    {destinations.map((d) => (
+                                        <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
+                                    ))}
+                                </select>
+                                {getRouteIcon(cat.key)}
+                                {warning && <span className="text-xs text-red-500">{warning}</span>}
+                                {effective !== 'disabled' && !warning && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleTest(cat.key)}
+                                        disabled={testingCat === cat.key}
+                                        className="text-xs text-blue-600 hover:text-blue-800 underline disabled:opacity-50"
+                                    >
+                                        {testingCat === cat.key ? 'Testing...' : 'Test'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                <div className="text-xs text-gray-400">
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
+                        Personal
+                        <span className="mx-1">|</span>
+                        <span className="inline-block w-2 h-2 rounded-full bg-purple-500" />
+                        Group
+                        <span className="mx-1">|</span>
+                        <span className="inline-block w-2 h-2 rounded-full bg-gray-300" />
+                        Disabled
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setDestError(null);
+                            setDestSuccess(null);
+                            setSampleSending(true);
+                            apiFetch('/telegram-integration/sample-order', { method: 'POST' })
+                                .then((data) => setDestSuccess(data.message))
+                                .catch((err) => setDestError(err.message))
+                                .finally(() => setSampleSending(false));
+                        }}
+                        disabled={sampleSending}
+                        className="px-4 py-2 border border-emerald-600 text-emerald-700 rounded-lg hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                        {sampleSending ? 'Sending...' : 'Send Sample Order'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                        {saving ? 'Saving...' : 'Save Destinations'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SystemNotifications({ integrationData }) {
+    const notificationTypes = [
+        { group: 'Order', types: [
+            { type: 'order.new', label: 'New Order' },
+            { type: 'order.confirmed', label: 'Confirmed' },
+            { type: 'order.shipped', label: 'Shipped' },
+            { type: 'order.delivered', label: 'Delivered' },
+            { type: 'order.cancelled', label: 'Cancelled' },
+        ]},
+        { group: 'Payment', types: [
+            { type: 'payment.success', label: 'Received' },
+            { type: 'payment.failed', label: 'Failed' },
+            { type: 'payment.verified', label: 'Verified' },
+            { type: 'payment.rejected', label: 'Rejected' },
+            { type: 'payment.proof_uploaded', label: 'Proof Uploaded' },
+        ]},
+        { group: 'Inventory', types: [
+            { type: 'inventory.low_stock', label: 'Low Stock' },
+            { type: 'inventory.out_of_stock', label: 'Out of Stock' },
+        ]},
+        { group: 'Customer', types: [
+            { type: 'customer.new', label: 'New Customer' },
+        ]},
+        { group: 'System', types: [
+            { type: 'system.daily_summary', label: 'Daily Summary' },
+            { type: 'system.queue_failure', label: 'Queue Failure' },
+        ]},
+        { group: 'Security', types: [
+            { type: 'security.alert', label: 'Security Alert' },
+        ]},
+        { group: 'Admin', types: [
+            { type: 'manual.admin', label: 'Manual Message' },
+        ]},
+    ];
+
+    const [previewing, setPreviewing] = useState(null);
+    const [previewData, setPreviewData] = useState(null);
+    const [previewError, setPreviewError] = useState(null);
+
+    function handlePreview(type) {
+        setPreviewing(type);
+        setPreviewError(null);
+        setPreviewData(null);
+
+        apiFetch('/telegram-integration/preview', {
+            method: 'POST',
+            body: JSON.stringify({ type }),
+        })
+            .then((data) => {
+                setPreviewData(data.data);
+            })
+            .catch((err) => {
+                setPreviewError(err.message);
+            })
+            .finally(() => {
+                setPreviewing(null);
+            });
+    }
+
+    return (
+        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Templates</h2>
+            <p className="text-sm text-gray-500 mb-5">
+                Preview each notification template before sending. All previews use the same message builders as production.
+            </p>
+
+            {previewError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">{previewError}</p>
+                </div>
+            )}
+
+            {previewData && (
+                <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Preview</span>
+                        <span className="text-xs text-gray-400">
+                            Routes to: <span className="font-medium text-gray-600">{previewData.destination}</span>
+                        </span>
+                    </div>
+                    <pre className="text-sm text-gray-800 whitespace-pre-wrap font-sans bg-white p-3 rounded border border-gray-100">
+                        {previewData.rendered}
+                    </pre>
+                    <button
+                        type="button"
+                        onClick={() => { setPreviewData(null); setPreviewError(null); }}
+                        className="mt-2 text-xs text-gray-500 hover:text-gray-700 underline"
+                    >
+                        Close preview
+                    </button>
+                </div>
+            )}
+
+            <div className="space-y-4">
+                {notificationTypes.map((group) => (
+                    <div key={group.group}>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">{group.group}</h3>
+                        <div className="space-y-1">
+                            {group.types.map((nt) => (
+                                <div key={nt.type} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-50">
+                                    <span className="text-sm text-gray-600">{nt.label}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePreview(nt.type)}
+                                        disabled={previewing === nt.type}
+                                        className="text-xs text-blue-600 hover:text-blue-800 underline disabled:opacity-50"
+                                    >
+                                        {previewing === nt.type ? 'Loading...' : 'Preview'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -517,20 +1136,7 @@ function OnboardingSteps({ username }) {
 
             <div className="border-t border-gray-100 pt-3">
                 <p className="text-sm font-medium text-gray-700 mb-2">For group notifications:</p>
-                <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-600 text-sm font-bold shrink-0">3</div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-900">Add bot to your group</p>
-                        <p className="text-sm text-gray-500">Open group info {'>'} Add Members {'>'} search your bot and add it.</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3 mt-3">
-                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-600 text-sm font-bold shrink-0">4</div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-900">Send any message in the group</p>
-                        <p className="text-sm text-gray-500">After adding, send any message in the group. The bot will detect the group automatically.</p>
-                    </div>
-                </div>
+                <p className="text-sm text-gray-500">Use the Telegram Group card below to add your bot to a group and connect.</p>
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">

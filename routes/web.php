@@ -85,8 +85,6 @@ Route::get('/maintenance', function () {
 // ============================================================
 // CART ROUTES (public — session based)
 // ============================================================
-// CART ROUTES (public — session based)
-// ============================================================
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/add', [CartController::class, 'store'])->name('store');
@@ -131,7 +129,7 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::post('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
     // Store-based admin login
-    Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('admin.login');
+    Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('storefront.admin.login');
     Route::post('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
     // Onboarding completion (after email verification)
@@ -223,6 +221,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/telegram-integration/status', [TelegramIntegrationController::class, 'status'])->name('telegram-integration.status');
     Route::patch('/telegram-integration/toggle', [TelegramIntegrationController::class, 'toggle'])->name('telegram-integration.toggle');
     Route::post('/telegram-integration/test', [TelegramIntegrationController::class, 'sendTestMessage'])->name('telegram-integration.test');
+    Route::post('/telegram-integration/reconnect-personal', [TelegramIntegrationController::class, 'reconnectPersonalChat'])->name('telegram-integration.reconnect-personal');
+    Route::post('/telegram-integration/group/disconnect', [TelegramIntegrationController::class, 'disconnectGroup'])->name('telegram-integration.group.disconnect');
+    Route::post('/telegram-integration/group/test', [TelegramIntegrationController::class, 'testGroupNotification'])->name('telegram-integration.group.test');
+    Route::post('/telegram-integration/destination', [TelegramIntegrationController::class, 'updateDestination'])->name('telegram-integration.destination');
+    Route::post('/telegram-integration/test-router', [TelegramIntegrationController::class, 'sendTestRouter'])->name('telegram-integration.test-router');
+    Route::post('/telegram-integration/sample-order', [TelegramIntegrationController::class, 'sendSampleOrderNotification'])->name('telegram-integration.sample-order');
+    Route::post('/telegram-integration/preview', [TelegramIntegrationController::class, 'previewNotification'])->name('telegram-integration.preview');
 
     // ============================================================
     // BROADCAST TEST ROUTE (production-restricted — SuperAdmin only)

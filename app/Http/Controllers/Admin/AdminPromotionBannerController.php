@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PromotionBanner;
 use App\Services\FeatureGate;
 use App\Services\ImageService;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -46,6 +47,12 @@ class AdminPromotionBannerController extends Controller
 
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
+        }
+
+        $limitService = SubscriptionLimitService::for();
+        if (!$limitService->checkLimit('flash_sale_limit')) {
+            return redirect()->back()->with('error',
+                'Flash sale limit reached. Please upgrade your plan to create more flash sales.');
         }
 
         $data = $request->validate([

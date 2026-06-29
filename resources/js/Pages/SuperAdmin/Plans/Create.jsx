@@ -44,6 +44,16 @@ export default function CreatePlan({ allFeatures = [] }) {
         product_limit: '',
         staff_limit: '',
         storage_limit: '',
+        orders_monthly_limit: '',
+        coupon_limit: '',
+        promotion_limit: '',
+        flash_sale_limit: '',
+        api_request_limit: '',
+        image_limit: '',
+        image_max_size_kb: '',
+        branch_limit: '',
+        warehouse_limit: '',
+        pos_device_limit: '',
         analytics_enabled: false,
         custom_domain_enabled: false,
         status: 'active',
@@ -85,6 +95,16 @@ export default function CreatePlan({ allFeatures = [] }) {
             product_limit: form.product_limit === '' ? null : form.product_limit,
             staff_limit: form.staff_limit === '' ? null : form.staff_limit,
             storage_limit: form.storage_limit === '' ? null : form.storage_limit,
+            orders_monthly_limit: form.orders_monthly_limit === '' ? null : form.orders_monthly_limit,
+            coupon_limit: form.coupon_limit === '' ? null : form.coupon_limit,
+            promotion_limit: form.promotion_limit === '' ? null : form.promotion_limit,
+            flash_sale_limit: form.flash_sale_limit === '' ? null : form.flash_sale_limit,
+            api_request_limit: form.api_request_limit === '' ? null : form.api_request_limit,
+            image_limit: form.image_limit === '' ? null : form.image_limit,
+            image_max_size_kb: form.image_max_size_kb === '' ? null : form.image_max_size_kb,
+            branch_limit: form.branch_limit === '' ? null : form.branch_limit,
+            warehouse_limit: form.warehouse_limit === '' ? null : form.warehouse_limit,
+            pos_device_limit: form.pos_device_limit === '' ? null : form.pos_device_limit,
             features: featuresPayload,
         }, {
             onSuccess: () => setProcessing(false),
@@ -139,11 +159,29 @@ export default function CreatePlan({ allFeatures = [] }) {
                             <div className="border-b border-gray-200 pb-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Limits</h3>
 
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                    <Input field="product_limit" label="Product Limit" type="number" placeholder="e.g. 100" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
-                                    <Input field="staff_limit" label="Staff Accounts" type="number" placeholder="e.g. 10" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
-                                    <Input field="storage_limit" label="Storage (MB)" type="number" placeholder="e.g. 1000" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
-                                </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <Input field="product_limit" label="Product Limit" type="number" placeholder="e.g. 100" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="staff_limit" label="Staff Accounts" type="number" placeholder="e.g. 10" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="storage_limit" label="Storage (MB)" type="number" placeholder="e.g. 1000" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
+                                <Input field="orders_monthly_limit" label="Monthly Orders" type="number" placeholder="e.g. 500" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="coupon_limit" label="Coupons" type="number" placeholder="e.g. 20" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="promotion_limit" label="Promotions" type="number" placeholder="e.g. 10" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
+                                <Input field="flash_sale_limit" label="Flash Sales" type="number" placeholder="e.g. 5" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="api_request_limit" label="API Requests" type="number" placeholder="e.g. 10000" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="image_limit" label="Images per Product" type="number" placeholder="e.g. 10" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
+                                <Input field="image_max_size_kb" label="Max Image Size (KB)" type="number" placeholder="e.g. 2048" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="branch_limit" label="Branches" type="number" placeholder="e.g. 3" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                                <Input field="warehouse_limit" label="Warehouses" type="number" placeholder="e.g. 2" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
+                                <Input field="pos_device_limit" label="POS Devices" type="number" placeholder="e.g. 3" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
+                            </div>
                             </div>
 
                             <div className="border-b border-gray-200 pb-6">

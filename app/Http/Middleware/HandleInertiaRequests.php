@@ -7,6 +7,7 @@ use App\Models\PlatformSetting;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Services\FeatureGate;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -99,6 +100,7 @@ class HandleInertiaRequests extends Middleware
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
             'featureStatus' => FeatureGate::forUser()->getAllFeaturesStatus(),
+            'subscription_limits' => $user ? SubscriptionLimitService::for()->getAllLimits() : [],
         ]);
     }
 

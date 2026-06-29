@@ -17,7 +17,7 @@ class TelegramRecipientResolver
 
         $query = TelegramIntegration::query()
             ->where('is_enabled', true)
-            ->verified();
+            ->anyVerified();
 
         if ($order && $order->tenant_id) {
             $query->where('tenant_id', $order->tenant_id);

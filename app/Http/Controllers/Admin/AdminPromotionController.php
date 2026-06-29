@@ -7,6 +7,7 @@ use App\Models\Promotion;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\FeatureGate;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -73,6 +74,12 @@ class AdminPromotionController extends Controller
 
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
+        }
+
+        $limitService = SubscriptionLimitService::for();
+        if (!$limitService->checkLimit('promotion_limit')) {
+            return redirect()->back()->with('error',
+                'Promotion limit reached. Please upgrade your plan to create more promotions.');
         }
 
         $data = $request->validate([
@@ -288,6 +295,12 @@ class AdminPromotionController extends Controller
 
         if (!auth()->user()->can('promotions.create')) {
             abort(403, 'Unauthorized');
+        }
+
+        $limitService = SubscriptionLimitService::for();
+        if (!$limitService->checkLimit('promotion_limit')) {
+            return redirect()->back()->with('error',
+                'Promotion limit reached. Please upgrade your plan to duplicate promotions.');
         }
 
         $newPromotion = $promotion->replicate();

@@ -10,7 +10,6 @@ use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\TenantIsValid;
-use App\Http\Middleware\SubscriptionIsActive;
 use App\Http\Middleware\EnsureTenantIsActive;
 use App\Http\Middleware\CheckStoreLocked;
 use App\Http\Middleware\Storefront;
@@ -34,12 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => RoleMiddleware::class,
-            'check.status' => CheckUserStatus::class,
-            'maintenance' => CheckMaintenanceMode::class,
             'tenant.active' => EnsureTenantIsActive::class,
             'tenant.locked' => CheckStoreLocked::class,
             'tenant.valid' => TenantIsValid::class,
-            'subscription.active' => SubscriptionIsActive::class,
             'storefront' => Storefront::class,
             'tenant.access' => CheckTenantAccess::class,
             'tenant.binding' => \App\Http\Middleware\ValidateTenantBinding::class,

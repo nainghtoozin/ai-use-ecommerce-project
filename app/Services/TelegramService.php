@@ -51,7 +51,7 @@ class TelegramService
         ];
     }
 
-    public function sendMessage(TelegramIntegration $integration, string $message): array
+    public function sendMessage(TelegramIntegration $integration, string $message, ?string $chatId = null): array
     {
         Log::info('Telegram API request started', [
             'integration_id' => $integration->id,
@@ -76,7 +76,7 @@ class TelegramService
             return ['success' => false, 'message' => 'Bot token is missing.'];
         }
 
-        $chatId = $integration->chat_id;
+        $chatId = $chatId ?? $integration->getEffectiveChatId();
 
         if (empty($chatId)) {
             Log::error('Telegram API failed - empty chat ID', [

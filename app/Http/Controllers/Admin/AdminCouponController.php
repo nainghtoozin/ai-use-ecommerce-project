@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\CouponService;
 use App\Services\FeatureGate;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -70,6 +71,12 @@ class AdminCouponController extends Controller
 
         if (!auth()->user()->can('coupons.create')) {
             abort(403, 'Unauthorized');
+        }
+
+        $limitService = SubscriptionLimitService::for();
+        if (!$limitService->checkLimit('coupon_limit')) {
+            return redirect()->back()->with('error',
+                'Coupon limit reached. Please upgrade your plan to create more coupons.');
         }
 
         $data = $request->validate([

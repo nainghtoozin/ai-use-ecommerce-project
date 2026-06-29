@@ -1,47 +1,7 @@
 import { X, Sparkles, Lock, CheckCircle2 } from 'lucide-react';
 
-export default function UpgradeModal({ isOpen, onClose, featureName = '', upgradeHint = null }) {
+export default function UpgradeModal({ isOpen, onClose, featureName = '', upgradeHint = null, plans = [] }) {
     if (!isOpen) return null;
-
-    const plans = [
-        {
-            name: 'Free',
-            price: '$0',
-            period: '/month',
-            features: [
-                'Standard products',
-                'Basic inventory',
-                'Order management',
-            ],
-            default: true,
-        },
-        {
-            name: 'Starter',
-            price: '$9',
-            period: '/month',
-            features: [
-                'Everything in Free',
-                'Variable products',
-                'Size, color, options',
-                'Variant pricing',
-            ],
-            popular: upgradeHint === 'Starter',
-            target: upgradeHint === 'Starter',
-        },
-        {
-            name: 'Business',
-            price: '$29',
-            period: '/month',
-            features: [
-                'Everything in Starter',
-                'Combo / Bundle products',
-                'Custom bundle pricing',
-                'Cross-sell bundles',
-            ],
-            popular: upgradeHint === 'Business' || !upgradeHint,
-            target: upgradeHint === 'Business',
-        },
-    ];
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -79,68 +39,84 @@ export default function UpgradeModal({ isOpen, onClose, featureName = '', upgrad
 
                 <div className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {plans.map((plan) => (
-                            <div
-                                key={plan.name}
-                                className={`
-                                    relative rounded-xl border-2 p-5 flex flex-col
-                                    ${plan.target
-                                        ? 'border-blue-500 bg-blue-50/30 shadow-lg shadow-blue-500/10'
-                                        : plan.default
-                                            ? 'border-gray-200 bg-gray-50'
-                                            : 'border-gray-200 bg-white'
-                                    }
-                                `}
-                            >
-                                {plan.popular && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                        <span className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded-full shadow-sm">
-                                            {plan.target ? 'Recommended' : 'Most Popular'}
-                                        </span>
-                                    </div>
-                                )}
-                                {plan.default && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                        <span className="px-3 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">
-                                            Free
-                                        </span>
-                                    </div>
-                                )}
+                        {plans.map((plan) => {
+                            const isCurrent = plan.is_current;
+                            const isTarget = upgradeHint
+                                ? plan.name === upgradeHint || plan.slug === upgradeHint
+                                : false;
+                            const showRecommended = !upgradeHint && !isCurrent && plan.name === 'Business';
 
-                                <div className="mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
-                                    <div className="flex items-baseline gap-1 mt-1">
-                                        <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                                        <span className="text-sm text-gray-500">{plan.period}</span>
-                                    </div>
-                                </div>
-
-                                <ul className="space-y-2.5 flex-1 mb-5">
-                                    {plan.features.map((feature, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-sm">
-                                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-gray-600">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <button
-                                    type="button"
+                            return (
+                                <div
+                                    key={plan.slug || plan.name}
                                     className={`
-                                        w-full py-2.5 rounded-lg text-sm font-medium transition-colors
-                                        ${plan.target
-                                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
-                                            : plan.default
-                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                : 'bg-gray-900 text-white hover:bg-gray-800'
+                                        relative rounded-xl border-2 p-5 flex flex-col
+                                        ${isTarget
+                                            ? 'border-blue-500 bg-blue-50/30 shadow-lg shadow-blue-500/10'
+                                            : isCurrent
+                                                ? 'border-gray-200 bg-gray-50'
+                                                : 'border-gray-200 bg-white'
                                         }
                                     `}
-                                    disabled={plan.default}
                                 >
-                                    {plan.default ? 'Current Plan' : plan.target ? 'Upgrade' : 'Upgrade'}
-                                </button>
-                            </div>
-                        ))}
+                                    {(isTarget || showRecommended) && (
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                            <span className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded-full shadow-sm">
+                                                {isTarget ? 'Recommended' : 'Most Popular'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {isCurrent && !isTarget && (
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                            <span className="px-3 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">
+                                                Current
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                                        <div className="flex items-baseline gap-1 mt-1">
+                                            <span className="text-3xl font-bold text-gray-900">
+                                                {plan.monthly_price === 0 ? 'Free' : plan.monthly_price != null ? `$${plan.monthly_price}` : '—'}
+                                            </span>
+                                            {plan.monthly_price > 0 && (
+                                                <span className="text-sm text-gray-500">/month</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <ul className="space-y-2.5 flex-1 mb-5">
+                                        {plan.features?.map((feature, i) => {
+                                            const label = typeof feature === 'string' ? feature : (feature.label || feature.key || '');
+                                            if (typeof feature === 'object' && feature.enabled === false) return null;
+                                            return (
+                                                <li key={i} className="flex items-start gap-2 text-sm">
+                                                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                    <span className="text-gray-600">{label}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+
+                                    <button
+                                        type="button"
+                                        className={`
+                                            w-full py-2.5 rounded-lg text-sm font-medium transition-colors
+                                            ${isTarget
+                                                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                                                : isCurrent
+                                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                                            }
+                                        `}
+                                        disabled={isCurrent}
+                                    >
+                                        {isCurrent ? 'Current Plan' : isTarget ? 'Upgrade' : 'Upgrade'}
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <p className="text-center text-xs text-gray-400 mt-6">
