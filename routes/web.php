@@ -40,7 +40,7 @@ use Illuminate\Support\Facades\Mail;
 // ============================================================
 // DEFAULT ROUTE
 // ============================================================
-Route::get('/', [ClientController::class, 'index'])->name('home');
+Route::get('/', [\App\Http\Controllers\PublicLandingController::class, 'index'])->name('home');
 Route::get('/dashboard', [ClientController::class, 'index'])->name('client.dashboard');
 Route::get('/products', [ClientController::class, 'products'])->name('products.page');
 Route::get('/create-store', [CreateStoreController::class, 'index'])->name('create-store');

@@ -40,7 +40,8 @@ export default function PlatformNavbar() {
 
     const navLinks = [
         { label: 'Features', href: '/#features', icon: 'bi-star' },
-        { label: 'How It Works', href: '/#how-it-works', icon: 'bi-gear' },
+        { label: 'Pricing', href: '/#pricing', icon: 'bi-currency-dollar' },
+        { label: 'FAQ', href: '/#faq', icon: 'bi-question-circle' },
     ];
 
     return (
@@ -135,7 +136,7 @@ export default function PlatformNavbar() {
                                 <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                                     Merchant Login
                                 </Link>
-                                <Link href="/contact" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
+                                <Link href="/client/contact" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
                                     style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                     onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                                     onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
