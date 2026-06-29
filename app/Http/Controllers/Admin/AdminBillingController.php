@@ -177,10 +177,12 @@ class AdminBillingController extends Controller
             return redirect()->back()->with('error', 'Your subscription has been suspended. Please contact support.');
         }
 
-        if ($subscription->trial_ends_at) {
+        if ($subscription->trial_ends_at && $subscription->onTrial()) {
             $settings = PlatformSetting::current();
-            if ($settings->allow_trial_renewal && $settings->max_trial_renewals > 0
-                && $subscription->trial_renewals_count >= $settings->max_trial_renewals) {
+            $trialRenewalBlocked = !$settings->allow_trial_renewal
+                || $settings->max_trial_renewals <= 0
+                || $subscription->trial_renewals_count >= $settings->max_trial_renewals;
+            if ($trialRenewalBlocked) {
                 return redirect()->back()->with(
                     'error',
                     'Trial renewal limit reached. Please upgrade to a paid plan to continue.'
@@ -190,7 +192,8 @@ class AdminBillingController extends Controller
 
         $subscription->renewFromInterval('Self-service renewal by merchant.');
 
-        if ($subscription->trial_ends_at) {
+        // Only count as trial renewal if the subscription is still on trial
+        if ($subscription->trial_ends_at && $subscription->onTrial()) {
             $subscription->increment('trial_renewals_count');
             SubscriptionAuditService::log($subscription, 'trial_renewed', [
                 'reason' => 'Trial renewal via self-service.',

@@ -18,9 +18,7 @@ class DashboardController extends Controller
             'total' => Tenant::count(),
             'active' => Tenant::where('status', 'active')->count(),
             'suspended' => Tenant::where('status', 'suspended')->count(),
-            'expired' => Tenant::whereHas('subscription', function ($q) {
-                $q->where('status', 'expired');
-            })->count(),
+            'expired' => Tenant::expired()->count(),
         ];
 
         $totalSubscriptions = Subscription::count();

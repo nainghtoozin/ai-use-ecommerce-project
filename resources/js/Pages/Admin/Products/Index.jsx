@@ -93,7 +93,6 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
     const { url, props: { auth } } = usePage();
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
-    const params = new URLSearchParams(url.split('?')[1] || '');
 
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || '');

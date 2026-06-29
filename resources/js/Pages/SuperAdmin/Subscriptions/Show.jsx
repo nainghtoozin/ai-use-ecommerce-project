@@ -432,7 +432,7 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                 <dt className="text-sm text-gray-500">Billing Cycle</dt>
                                 <dd className="text-sm font-medium text-gray-900">
                                     {subscription.billing_interval === 'yearly' ? 'Yearly' : 'Monthly'}
-                                    {subscription.plan?.yearly_price && subscription.billing_interval === 'yearly' && (
+                                    {subscription.plan?.yearly_price && subscription.plan?.monthly_price > 0 && subscription.billing_interval === 'yearly' && (
                                         <span className="text-xs text-green-600 ml-1">
                                             (saves {Math.round((1 - subscription.plan.yearly_price / (subscription.plan.monthly_price * 12)) * 100)}%)
                                         </span>

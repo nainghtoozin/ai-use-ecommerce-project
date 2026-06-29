@@ -44,9 +44,15 @@ class EnsureTenantIsActive
                 ->with('error', 'Your account is currently restricted. Please contact support.');
         }
 
-        // Free plan — skip subscription check (FeatureGate handles limits)
         $subscription = $tenant->subscription;
-        if ($subscription && $subscription->plan?->isFree()) {
+
+        // No subscription record — allow (edge case; superadmin should assign one)
+        if (! $subscription) {
+            return $next($request);
+        }
+
+        // Free plan — skip subscription check (FeatureGate handles limits)
+        if ($subscription->plan?->isFree()) {
             return $next($request);
         }
 
@@ -55,14 +61,22 @@ class EnsureTenantIsActive
             return $next($request);
         }
 
-        // Active or trialing subscription — allow
-        if ($tenant->hasActiveSubscription()) {
+        // Pending — allow (tenant may still be bootstrapping or email unverified)
+        if ($subscription->isPending()) {
             return $next($request);
         }
 
-        // No subscription record — allow (edge case; superadmin should assign one)
-        if (! $subscription) {
+        // Active, trialing — allow
+        if ($subscription->isInGoodStanding()) {
             return $next($request);
+        }
+
+        // Past due — redirect to billing page instead of expired (still in grace period)
+        if ($subscription->isPastDue()) {
+            if ($storeSlug) {
+                return redirect()->route('storefront.admin.billing', ['store_slug' => $storeSlug]);
+            }
+            return redirect()->route('admin.billing');
         }
 
         // Canceled but still within paid period — allow

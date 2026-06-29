@@ -59,6 +59,11 @@ class Subscription extends Model
 
     /* ── Status helpers ── */
 
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
     public function isTrialing(): bool
     {
         return $this->status === 'trialing';
@@ -91,7 +96,7 @@ class Subscription extends Model
 
     public function isInGoodStanding(): bool
     {
-        return in_array($this->status, ['trialing', 'active']);
+        return in_array($this->status, ['trialing', 'active', 'pending']);
     }
 
     /* ── Trial helpers ── */
@@ -122,7 +127,7 @@ class Subscription extends Model
             return true;
         }
 
-        if ($this->status === 'suspended') {
+        if (in_array($this->status, ['suspended', 'pending'])) {
             return false;
         }
 

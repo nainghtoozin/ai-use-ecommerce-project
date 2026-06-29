@@ -62,7 +62,6 @@ class TenantBootstrapService
                 $owner = $this->createOwner($tenant, $options);
 
                 $this->assignOwnerRole($owner, $tenant);
-                $this->assignOwnerPermissions($owner);
 
                 $this->createDefaultUnits($tenant);
                 $this->createDefaultCategories($tenant);

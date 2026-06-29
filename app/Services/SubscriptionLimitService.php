@@ -106,7 +106,7 @@ class SubscriptionLimitService
             'flash_sale_limit' => $this->flashSaleCount(),
             'api_request_limit' => 0,     // Not tracked yet
             'image_limit' => 0,           // Not tracked yet
-            'image_max_size_kb' => $plan?->image_max_size_kb ?? 0,  // Max size cap, not usage
+            'image_max_size_kb' => 0,  // Not tracked yet; limit is a max-size cap, not a count
             'branch_limit' => $this->branchCount(),
             'warehouse_limit' => $this->warehouseCount(),
             'pos_device_limit' => $this->posDeviceCount(),
@@ -198,6 +198,9 @@ class SubscriptionLimitService
             'coupon_limit',
             'promotion_limit',
             'flash_sale_limit',
+            'api_request_limit',
+            'image_limit',
+            'image_max_size_kb',
             'branch_limit',
             'warehouse_limit',
             'pos_device_limit',

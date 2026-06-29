@@ -47,6 +47,7 @@ class FeatureGate
         'single_products' => 'single',
         'variable_products' => 'variable',
         'combo_products' => 'combo',
+        'digital_products' => 'digital',
     ];
 
     /**

@@ -163,11 +163,14 @@ class Tenant extends Model
     public function scopeExpired($query)
     {
         return $query->whereHas('subscription', function ($q) {
-            $q->where('status', 'expired')
-              ->orWhere(function ($q) {
-                  $q->whereNotNull('expires_at')
-                    ->where('expires_at', '<', now())
-                    ->whereNotIn('status', ['canceled', 'suspended']);
+            $q->whereRaw('id = (SELECT id FROM subscriptions s2 WHERE s2.tenant_id = subscriptions.tenant_id ORDER BY id DESC LIMIT 1)')
+              ->where(function ($q) {
+                  $q->where('status', 'expired')
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('expires_at')
+                          ->where('expires_at', '<', now())
+                          ->whereNotIn('status', ['canceled', 'suspended']);
+                    });
               });
         });
     }

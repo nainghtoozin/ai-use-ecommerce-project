@@ -168,7 +168,12 @@ class Plan extends Model
 
     public function isFree(): bool
     {
-        return $this->slug === 'free' || ($this->monthly_price === null || $this->monthly_price == 0);
+        if ($this->slug === 'free') {
+            return true;
+        }
+        $monthlyIsFree = $this->monthly_price === null || $this->monthly_price == 0;
+        $yearlyIsFree = $this->yearly_price === null || $this->yearly_price == 0;
+        return $monthlyIsFree && $yearlyIsFree;
     }
 
     public function isPaid(): bool

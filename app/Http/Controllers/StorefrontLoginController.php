@@ -79,13 +79,18 @@ class StorefrontLoginController extends Controller
                 ])->onlyInput('email');
             }
 
-            // Auto-assign tenant_id for legacy users registered before tenant_id was stored
-            if ($user->tenant_id === null) {
-                $user->update(['tenant_id' => $tenant->id]);
-            }
+            // Legacy users (null tenant_id): remember email for post-auth assignment
+            // Must not update tenant_id before authenticate() — see below
         }
 
         $request->authenticate();
+
+        // Auto-assign tenant_id for legacy users registered before tenant_id was stored.
+        // Runs after authenticate() to avoid persisting tenant_id on failed login attempts.
+        $user = Auth::user();
+        if ($user->tenant_id === null) {
+            $user->update(['tenant_id' => $tenant->id]);
+        }
 
         $request->session()->regenerate();
 

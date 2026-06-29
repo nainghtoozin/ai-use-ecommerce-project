@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Validation\Rules;
 
 class CreateStoreController extends Controller
 {
@@ -39,7 +40,7 @@ class CreateStoreController extends Controller
             'domain' => 'nullable|string|max:255|unique:tenants,domain',
             'owner_name' => 'required|string|max:255',
             'owner_email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $admin = DB::transaction(function () use ($validated) {

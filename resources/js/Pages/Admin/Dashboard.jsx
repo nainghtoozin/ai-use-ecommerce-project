@@ -389,14 +389,14 @@ export default function AdminDashboard({
                                             <tr
                                                 key={order.id}
                                                 className="hover:bg-gray-50 transition-colors cursor-pointer"
-                                                onClick={() => window.location.href = adminUrl(`/admin/orders/${order.id}`)}
+                                                onClick={() => router.visit(adminUrl(`/admin/orders/${order.id}`))}
                                             >
                                                 <td className="px-5 py-4">
                                                     <span className="text-sm font-medium text-gray-900">#{order.id}</span>
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <span className="text-sm text-gray-600">
-                                                        {order.user?.name || order.customer_name || `${order.first_name} ${order.last_name}`}
+                                                        {order.user?.name || order.customer_name || (order.first_name ? `${order.first_name} ${order.last_name}` : 'N/A')}
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-4">

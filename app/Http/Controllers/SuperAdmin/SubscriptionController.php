@@ -173,9 +173,20 @@ class SubscriptionController extends Controller
                 ->with('error', 'Tenant is already on this plan.');
         }
 
+        $oldMonthly = $oldPlan?->monthly_price;
+        $newMonthly = $newPlan->monthly_price;
+        $oldEffectiveMonthly = $oldMonthly;
+        if (!$oldMonthly && $oldPlan?->yearly_price) {
+            $oldEffectiveMonthly = round($oldPlan->yearly_price / 12, 2);
+        }
+        $newEffectiveMonthly = $newMonthly;
+        if (!$newMonthly && $newPlan->yearly_price) {
+            $newEffectiveMonthly = round($newPlan->yearly_price / 12, 2);
+        }
+
         $isDowngrade = $newPlan->isFree() || (
-            $oldPlan && $newPlan->monthly_price && $oldPlan->monthly_price
-            && $newPlan->monthly_price < $oldPlan->monthly_price
+            $oldEffectiveMonthly && $newEffectiveMonthly
+            && $newEffectiveMonthly < $oldEffectiveMonthly
         );
 
         $warnings = $this->checkDowngradeWarnings($subscription->tenant, $newPlan);
@@ -187,10 +198,14 @@ class SubscriptionController extends Controller
 
         $billingInterval = $validated['billing_interval'] ?? $newPlan->defaultInterval();
 
+        $newStatus = in_array($subscription->status, ['trialing', 'pending'])
+            ? $subscription->status
+            : 'active';
+
         $subscription->update([
             'plan_id' => $newPlan->id,
             'billing_interval' => $billingInterval,
-            'status' => 'active',
+            'status' => $newStatus,
             'expires_at' => $subscription->expires_at?->isFuture()
                 ? $subscription->expires_at
                 : $newPlan->calculateExpiryDate(now(), $billingInterval),

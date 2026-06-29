@@ -21,6 +21,14 @@ const routes = {
     'orders.cancel': '/orders/{order}/cancel',
     'orders.upload-payment': '/orders/{order}/upload-payment',
     'orders.confirm-payment': '/orders/{order}/confirm-payment',
+    'admin.billing': '/admin/billing',
+    'admin.billing.renew': '/admin/billing/renew',
+    'storefront.admin.billing': '/store/{store_slug}/admin/billing',
+    'storefront.admin.billing.renew': '/store/{store_slug}/admin/billing/renew',
+    'storefront.admin.expired': '/store/{store_slug}/admin/expired',
+    'storefront.admin.suspended': '/store/{store_slug}/admin/suspended',
+    'admin.expired': '/admin/expired',
+    'admin.suspended': '/admin/suspended',
 };
 
 export function route(name, params) {
