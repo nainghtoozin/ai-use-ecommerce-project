@@ -9,7 +9,10 @@ use Illuminate\Database\Seeder;
 class RoleAndPermissionSeeder extends Seeder
 {
     private array $adminPermissions = [
+        // Dashboard
         'dashboard.view',
+
+        // User Management
         'users.view',
         'users.create',
         'users.update',
@@ -19,50 +22,102 @@ class RoleAndPermissionSeeder extends Seeder
         'users.activate',
         'users.assign-roles',
         'users.view-activity',
+
+        // Role Management
         'roles.view',
         'roles.create',
         'roles.update',
         'roles.delete',
+
+        // Permission Management
         'permissions.view',
         'permissions.create',
         'permissions.edit',
         'permissions.delete',
+
+        // Product Management
         'products.view',
         'products.create',
         'products.edit',
         'products.delete',
+
+        // Category Management
         'categories.view',
         'categories.create',
         'categories.update',
         'categories.delete',
+
+        // Order Management
         'orders.view',
         'orders.update-status',
         'orders.cancel-any',
+        'orders.override-status',
+        'orders.override-payment',
+
+        // Payment / Billing
         'payments.view',
+        'payments.create',
+        'payments.update',
+        'payments.delete',
         'payments.verify',
+        'billing.view',
+        'billing.renew',
+
+        // Dashboard
         'activity-logs.view',
 
-            // Reports
-            'reports.view',
+        // Reports
+        'reports.view',
+        'reports.sales',
+        'reports.orders',
+        'reports.products',
+        'reports.payments',
 
-            // Settings
-            'settings.view',
-            'settings.edit',
+        // Settings
+        'settings.view',
+        'settings.edit',
+        'settings.website',
+        'settings.telegram',
+        'settings.notifications',
 
-            // Unit Management
-            'units.view',
-            'units.create',
-            'units.update',
-            'units.delete',
+        // Unit Management
+        'units.view',
+        'units.create',
+        'units.update',
+        'units.delete',
 
-            // Brand Management
-            'brands.view',
-            'brands.create',
-            'brands.update',
-            'brands.delete',
+        // Brand Management
+        'brands.view',
+        'brands.create',
+        'brands.update',
+        'brands.delete',
 
-            // Maintenance
-            'bypass maintenance mode',
+        // Coupon Management
+        'coupons.view',
+        'coupons.create',
+        'coupons.update',
+        'coupons.delete',
+
+        // Promotion Management
+        'promotions.view',
+        'promotions.create',
+        'promotions.update',
+        'promotions.delete',
+
+        // City Management
+        'cities.view',
+        'cities.create',
+        'cities.update',
+        'cities.delete',
+
+        // Township Management
+        'townships.view',
+        'townships.create',
+        'townships.update',
+        'townships.delete',
+
+        // Maintenance
+        'bypass maintenance mode',
     ];
 
     private array $customerPermissions = [

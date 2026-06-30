@@ -129,7 +129,7 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::post('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
     // Store-based admin login
-    Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('storefront.admin.login');
+    Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('admin.login');
     Route::post('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
     // Onboarding completion (after email verification)
