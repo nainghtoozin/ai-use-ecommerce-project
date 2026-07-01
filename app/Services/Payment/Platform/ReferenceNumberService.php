@@ -12,6 +12,7 @@ class ReferenceNumberService
     const PREFIX_INVOICE = 'INV';
     const PREFIX_REFUND = 'REF';
     const PREFIX_WEBHOOK = 'WEB';
+    const PREFIX_TRANSACTION = 'TXN';
 
     const SEQUENCE_PAD = 6;
 
@@ -63,6 +64,11 @@ class ReferenceNumberService
     public function generateWebhookRef(?string $date = null): string
     {
         return $this->generate(self::PREFIX_WEBHOOK, $date);
+    }
+
+    public function generateTransactionRef(?string $date = null): string
+    {
+        return $this->generate(self::PREFIX_TRANSACTION, $date);
     }
 
     public function parsePrefix(string $reference): ?string

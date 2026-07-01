@@ -11,6 +11,7 @@ enum TransactionStatus: string
     case APPROVED = 'approved';
     case PAID = 'paid';
     case COMPLETED = 'completed';
+    case REJECTED = 'rejected';
     case FAILED = 'failed';
     case CANCELLED = 'cancelled';
     case EXPIRED = 'expired';
@@ -27,6 +28,7 @@ enum TransactionStatus: string
             self::APPROVED => 'Approved',
             self::PAID => 'Paid',
             self::COMPLETED => 'Completed',
+            self::REJECTED => 'Rejected',
             self::FAILED => 'Failed',
             self::CANCELLED => 'Cancelled',
             self::EXPIRED => 'Expired',
@@ -57,6 +59,11 @@ enum TransactionStatus: string
         return in_array($this, [self::DRAFT, self::PENDING, self::WAITING_PAYMENT, self::WAITING_REVIEW]);
     }
 
+    public function isRejected(): bool
+    {
+        return $this === self::REJECTED;
+    }
+
     public function canTransitionTo(self $target): bool
     {
         if ($this === $target) {
@@ -72,14 +79,15 @@ enum TransactionStatus: string
         }
 
         if ($target === self::CANCELLED) {
-            return $this->isPending();
+            return $this->isPending() || $this === self::REJECTED;
         }
 
         $flow = [
             self::DRAFT->value => [self::PENDING->value],
             self::PENDING->value => [self::WAITING_PAYMENT->value, self::FAILED->value, self::CANCELLED->value],
             self::WAITING_PAYMENT->value => [self::WAITING_REVIEW->value, self::FAILED->value, self::EXPIRED->value],
-            self::WAITING_REVIEW->value => [self::APPROVED->value, self::FAILED->value, self::EXPIRED->value],
+            self::WAITING_REVIEW->value => [self::APPROVED->value, self::REJECTED->value, self::FAILED->value, self::EXPIRED->value],
+            self::REJECTED->value => [self::WAITING_PAYMENT->value, self::CANCELLED->value],
             self::APPROVED->value => [self::PAID->value, self::FAILED->value],
             self::PAID->value => [self::COMPLETED->value, self::REFUNDED->value, self::PARTIALLY_REFUNDED->value],
         ];

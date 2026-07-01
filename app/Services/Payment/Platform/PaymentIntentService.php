@@ -8,6 +8,7 @@ use App\Events\Payments\PaymentIntentCancelled;
 use App\Events\Payments\PaymentIntentCompleted;
 use App\Events\Payments\PaymentIntentCreated;
 use App\Events\Payments\PaymentIntentExpired;
+use App\Events\Payments\PaymentIntentRejected;
 use App\Models\PaymentIntent;
 use App\Models\Plan;
 use App\Models\Tenant;
@@ -90,6 +91,16 @@ class PaymentIntentService
         return $intent->fresh();
     }
 
+    public function markAsPaid(PaymentIntent $intent): PaymentIntent
+    {
+        $this->validator->validateNotTerminal($intent);
+        $this->validator->validateTransition($intent, TransactionStatus::PAID);
+
+        $intent->markAsPaid();
+
+        return $intent->fresh();
+    }
+
     public function complete(PaymentIntent $intent): PaymentIntent
     {
         $this->validator->validateNotTerminal($intent);
@@ -109,6 +120,18 @@ class PaymentIntentService
         $intent->markAsCancelled();
 
         PaymentIntentCancelled::dispatch($intent);
+
+        return $intent->fresh();
+    }
+
+    public function reject(PaymentIntent $intent): PaymentIntent
+    {
+        $this->validator->validateNotTerminal($intent);
+        $this->validator->validateTransition($intent, TransactionStatus::REJECTED);
+
+        $intent->markAsRejected();
+
+        PaymentIntentRejected::dispatch($intent);
 
         return $intent->fresh();
     }
@@ -133,6 +156,7 @@ class PaymentIntentService
                 TransactionStatus::PENDING->value,
                 TransactionStatus::WAITING_PAYMENT->value,
                 TransactionStatus::WAITING_REVIEW->value,
+                TransactionStatus::REJECTED->value,
             ])
             ->where('expires_at', '<', now())
             ->update(['status' => TransactionStatus::EXPIRED->value]);
@@ -158,6 +182,22 @@ class PaymentIntentService
         return PaymentIntent::forTenant($tenant->id)
             ->whereReference($reference)
             ->first();
+    }
+
+    public function getPendingReviewIntents(Tenant $tenant): iterable
+    {
+        return PaymentIntent::forTenant($tenant->id)
+            ->where('status', TransactionStatus::WAITING_REVIEW->value)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function getRejectedIntents(Tenant $tenant): iterable
+    {
+        return PaymentIntent::forTenant($tenant->id)
+            ->where('status', TransactionStatus::REJECTED->value)
+            ->orderBy('rejected_at', 'desc')
+            ->get();
     }
 
     public function getPendingIntents(Tenant $tenant): iterable

@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentIntent extends Model
 {
@@ -28,6 +29,7 @@ class PaymentIntent extends Model
         'metadata',
         'completed_at',
         'cancelled_at',
+        'rejected_at',
     ];
 
     protected $casts = [
@@ -35,6 +37,7 @@ class PaymentIntent extends Model
         'expires_at' => 'datetime',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'metadata' => 'array',
     ];
 
@@ -53,6 +56,36 @@ class PaymentIntent extends Model
         return $this->belongsTo(Subscription::class);
     }
 
+    public function evidences(): HasMany
+    {
+        return $this->hasMany(PaymentEvidence::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(PaymentReview::class)->latest();
+    }
+
+    public function latestReview(): HasMany
+    {
+        return $this->hasMany(PaymentReview::class)->latest()->limit(1);
+    }
+
+    public function transaction(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
+    }
+
+    public function timelineEvents(): HasMany
+    {
+        return $this->hasMany(PaymentTimelineEvent::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PaymentComment::class);
+    }
+
     public function status(): TransactionStatus
     {
         return TransactionStatus::from($this->status);
@@ -66,6 +99,11 @@ class PaymentIntent extends Model
     public function isTerminal(): bool
     {
         return $this->status()->isTerminal();
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === TransactionStatus::REJECTED->value;
     }
 
     public function isExpired(): bool
@@ -84,6 +122,13 @@ class PaymentIntent extends Model
             || ($this->expires_at && $this->expires_at->isPast() && $this->isPending());
     }
 
+    public function markAsPaid(?Carbon $at = null): void
+    {
+        $this->update([
+            'status' => TransactionStatus::PAID->value,
+        ]);
+    }
+
     public function markAsCompleted(): void
     {
         $this->update([
@@ -100,6 +145,14 @@ class PaymentIntent extends Model
         ]);
     }
 
+    public function markAsRejected(?Carbon $at = null): void
+    {
+        $this->update([
+            'status' => TransactionStatus::REJECTED->value,
+            'rejected_at' => $at ?? now(),
+        ]);
+    }
+
     public function markAsExpired(): void
     {
         $this->update([
@@ -110,6 +163,16 @@ class PaymentIntent extends Model
     public function scopeWhereReference(Builder $query, string $reference): Builder
     {
         return $query->where('reference_number', $reference);
+    }
+
+    public function scopeWhereRejected(Builder $query): Builder
+    {
+        return $query->where('status', TransactionStatus::REJECTED->value);
+    }
+
+    public function scopeWherePendingReview(Builder $query): Builder
+    {
+        return $query->where('status', TransactionStatus::WAITING_REVIEW->value);
     }
 
     public static function findByReference(string $reference): ?self

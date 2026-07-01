@@ -13,13 +13,21 @@ use App\Services\NotificationPreferenceService;
 use App\Services\OrderService;
 use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\Payment\PaymentService;
+use App\Services\Payment\Platform\CheckoutService;
 use App\Services\Payment\Platform\GatewayResolver;
 use App\Services\Payment\Platform\IdempotencyService;
+use App\Services\Payment\Platform\ManualPaymentService;
 use App\Services\Payment\Platform\PaymentAuditService;
+use App\Services\Payment\Platform\PaymentEvidenceService;
 use App\Services\Payment\Platform\PaymentExecutionGuard;
 use App\Services\Payment\Platform\PaymentIntentFactory;
 use App\Services\Payment\Platform\PaymentIntentService;
 use App\Services\Payment\Platform\PaymentIntentValidator;
+use App\Services\Payment\Platform\PaymentReviewService;
+use App\Services\Payment\Platform\PaymentTimelineService;
+use App\Services\Payment\Platform\PaymentTransactionService;
+use App\Services\Payment\Platform\PaymentCommentService;
+use App\Services\Payment\Platform\LedgerService;
 use App\Services\Payment\Platform\ReferenceNumberService;
 use App\Services\Payment\Platform\SubscriptionPaymentService;
 use App\Services\Payment\Platform\Gateways\ManualPaymentGateway;
@@ -104,6 +112,49 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(PaymentAuditService::class),
             );
         });
+
+        $this->app->singleton(CheckoutService::class, function ($app) {
+            return new CheckoutService(
+                $app->make(SubscriptionPaymentService::class),
+                $app->make(PaymentAuditService::class),
+                $app->make(PaymentIntentService::class),
+                $app->make(PaymentIntentValidator::class),
+            );
+        });
+
+        $this->app->singleton(ManualPaymentService::class, function ($app) {
+            return new ManualPaymentService(
+                $app->make(CheckoutService::class),
+                $app->make(PaymentIntentService::class),
+                $app->make(PaymentExecutionGuard::class),
+                $app->make(PaymentAuditService::class),
+                $app->make(PaymentTimelineService::class),
+            );
+        });
+
+        $this->app->singleton(PaymentEvidenceService::class);
+
+        $this->app->singleton(PaymentReviewService::class, function ($app) {
+            return new PaymentReviewService(
+                $app->make(ManualPaymentService::class),
+            );
+        });
+
+        $this->app->singleton(PaymentTimelineService::class);
+
+        $this->app->singleton(PaymentTransactionService::class, function ($app) {
+            return new PaymentTransactionService(
+                $app->make(ReferenceNumberService::class),
+            );
+        });
+
+        $this->app->singleton(PaymentCommentService::class, function ($app) {
+            return new PaymentCommentService(
+                $app->make(PaymentTimelineService::class),
+            );
+        });
+
+        $this->app->singleton(LedgerService::class);
     }
 
     public function boot(): void
