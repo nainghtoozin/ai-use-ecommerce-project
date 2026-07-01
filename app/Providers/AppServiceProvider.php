@@ -31,6 +31,15 @@ use App\Services\Payment\Platform\LedgerService;
 use App\Services\Payment\Platform\ReferenceNumberService;
 use App\Services\Payment\Platform\SubscriptionPaymentService;
 use App\Services\Payment\Platform\Gateways\ManualPaymentGateway;
+use App\Services\Webhook\WebhookRouter;
+use App\Services\Webhook\WebhookProcessor;
+use App\Services\Webhook\Adapters\StripeWebhookAdapter;
+use App\Services\Webhook\Adapters\KBZPayWebhookAdapter;
+use App\Services\Webhook\Adapters\AyaPayWebhookAdapter;
+use App\Services\Webhook\Adapters\WavePayWebhookAdapter;
+use App\Services\Webhook\Adapters\PayPalWebhookAdapter;
+use App\Services\Webhook\Adapters\LemonSqueezyWebhookAdapter;
+use App\Services\Webhook\Adapters\PaddleWebhookAdapter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Gate;
@@ -155,6 +164,30 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(LedgerService::class);
+
+        $this->app->singleton(WebhookRouter::class, function ($app) {
+            $router = new WebhookRouter();
+
+            $router->register($app->make(StripeWebhookAdapter::class));
+            $router->register($app->make(KBZPayWebhookAdapter::class));
+            $router->register($app->make(AyaPayWebhookAdapter::class));
+            $router->register($app->make(WavePayWebhookAdapter::class));
+            $router->register($app->make(PayPalWebhookAdapter::class));
+            $router->register($app->make(LemonSqueezyWebhookAdapter::class));
+            $router->register($app->make(PaddleWebhookAdapter::class));
+
+            return $router;
+        });
+
+        $this->app->singleton(WebhookProcessor::class, function ($app) {
+            return new WebhookProcessor(
+                $app->make(WebhookRouter::class),
+                $app->make(PaymentIntentService::class),
+                $app->make(PaymentTransactionService::class),
+                $app->make(PaymentTimelineService::class),
+                $app->make(LedgerService::class),
+            );
+        });
     }
 
     public function boot(): void

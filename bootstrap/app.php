@@ -28,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
             $router->post('/webhooks/telegram/{telegramIntegration}', \App\Http\Controllers\TelegramWebhookController::class)
                 ->name('webhooks.telegram')
                 ->middleware(\Illuminate\Routing\Middleware\SubstituteBindings::class);
+
+            $router->post('/api/webhooks/{gateway}', \App\Http\Controllers\WebhookController::class)
+                ->name('webhooks.payment.gateway');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -52,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'webhooks/telegram/*',
+            'api/webhooks/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
