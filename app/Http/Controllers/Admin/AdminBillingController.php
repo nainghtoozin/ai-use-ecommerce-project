@@ -631,14 +631,20 @@ class AdminBillingController extends Controller
 
         $paymentMethods = PaymentMethod::active()
             ->where('type', 'bank_transfer')
+            ->orderBy('sort_order')
+            ->orderBy('name')
             ->get()
             ->map(fn($pm) => [
                 'id' => $pm->id,
                 'name' => $pm->name,
+                'display_name' => $pm->display_name,
                 'type' => $pm->type,
                 'account_name' => $pm->account_name,
                 'account_number' => $pm->account_number,
                 'bank_name' => $pm->bank_name,
+                'branch' => $pm->branch,
+                'instructions' => $pm->instructions,
+                'currency' => $pm->currency,
                 'qr_image_url' => $pm->qr_image_url,
                 'is_active' => $pm->is_active,
             ]);

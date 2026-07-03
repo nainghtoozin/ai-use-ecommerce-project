@@ -512,6 +512,16 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
 
     Route::get('/operations', [\App\Http\Controllers\SuperAdmin\SuperAdminOperationsController::class, 'index'])->name('operations.index');
 
+    Route::get('/payment-methods', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::get('/payment-methods/create', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'create'])->name('payment-methods.create');
+    Route::post('/payment-methods', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::get('/payment-methods/{paymentMethod}/edit', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'edit'])->name('payment-methods.edit');
+    Route::put('/payment-methods/{paymentMethod}', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'update'])->name('payment-methods.update');
+    Route::post('/payment-methods/{paymentMethod}/toggle', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'toggleActive'])->name('payment-methods.toggle');
+    Route::post('/payment-methods/reorder', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'reorder'])->name('payment-methods.reorder');
+    Route::delete('/payment-methods/{paymentMethod}', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+    Route::post('/payment-methods/{id}/restore', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'restore'])->name('payment-methods.restore');
+
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');
 

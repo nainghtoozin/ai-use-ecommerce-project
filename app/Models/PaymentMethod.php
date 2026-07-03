@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentMethod extends Model
@@ -13,16 +14,23 @@ class PaymentMethod extends Model
 
     protected $fillable = [
         'name',
+        'display_name',
+        'slug',
         'type',
         'account_name',
         'account_number',
-        'qr_image',
         'bank_name',
+        'branch',
+        'instructions',
+        'currency',
+        'qr_image',
         'is_active',
+        'sort_order',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     protected $appends = ['qr_image_url'];
@@ -43,6 +51,21 @@ class PaymentMethod extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('name');
+    }
+
+    public function scopeBankTransfers($query)
+    {
+        return $query->where('type', 'bank_transfer');
+    }
+
+    public static function allowsNullTenantFallback(): bool
+    {
+        return true;
     }
 
     public function orders()

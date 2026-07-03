@@ -92,6 +92,7 @@ export default function AdminSidebar() {
                     items: [
                         { label: 'Payment Reviews', href: '/superadmin/billing', icon: 'Receipt' },
                         { label: 'Financial Console', href: '/superadmin/financial', icon: 'BarChart3' },
+                        { label: 'Payment Methods', href: '/superadmin/payment-methods', icon: 'CreditCard' },
                     ]
                 },
                 {
