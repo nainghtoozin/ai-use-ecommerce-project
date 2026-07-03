@@ -5,11 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Data\Currency;
 use App\Enums\CurrencyCode;
+use App\Models\PaymentIntent;
+use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\SubscriptionAuditLog;
 use App\Services\FeatureGate;
+use App\Services\ImageService;
 use App\Services\Payment\Platform\CheckoutService;
+use App\Services\Payment\Platform\ManualPaymentService;
+use App\Services\Payment\Platform\PaymentEvidenceService;
+use App\Services\Payment\Platform\PaymentIntentService;
 use App\Services\SubscriptionAuditService;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
@@ -293,13 +299,122 @@ class AdminBillingController extends Controller
         ]);
     }
 
-    public function paymentHistory()
+    public function paymentHistory(Request $request)
     {
         if (!auth()->user()->can('billing.view')) {
             abort(403, 'Unauthorized');
         }
 
-        return Inertia::render('Admin/Billing/PaymentHistory');
+        $tenant = auth()->user()->tenant;
+
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $query = PaymentIntent::forTenant($tenant->id)
+            ->with(['plan', 'evidences', 'timelineEvents', 'comments', 'reviews'])
+            ->latest();
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Plan filter
+        if ($request->filled('plan_id')) {
+            $query->where('plan_id', $request->plan_id);
+        }
+
+        // Reference / plan name search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('reference_number', 'like', "%{$search}%")
+                  ->orWhereHas('plan', fn($pq) => $pq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $perPage = min((int) $request->get('per_page', 15), 100);
+        $intents = $query->paginate($perPage);
+
+        $intents->getCollection()->transform(function ($intent) {
+            $currency = CurrencyCode::tryFrom($intent->currency) ?? CurrencyCode::MMK;
+            return [
+                'id' => $intent->id,
+                'reference_number' => $intent->reference_number,
+                'billing_cycle' => $intent->billing_cycle,
+                'amount' => (float) $intent->amount,
+                'currency' => $intent->currency,
+                'currency_symbol' => $currency->symbol(),
+                'gateway' => $intent->gateway,
+                'status' => $intent->status,
+                'expires_at' => $intent->expires_at?->toDateTimeString(),
+                'created_at' => $intent->created_at->toDateTimeString(),
+                'plan' => $intent->plan ? [
+                    'id' => $intent->plan->id,
+                    'name' => $intent->plan->name,
+                    'slug' => $intent->plan->slug,
+                ] : null,
+                'evidences' => $intent->evidences->map(fn($ev) => [
+                    'id' => $ev->id,
+                    'type' => $ev->type,
+                    'file_path' => $ev->file_path,
+                    'note' => $ev->note,
+                ])->values()->all(),
+                'timeline' => $intent->timelineEvents->sortBy('occurred_at')->values()->map(fn($tl) => [
+                    'id' => $tl->id,
+                    'type' => $tl->type,
+                    'description' => $tl->description,
+                    'occurred_at' => $tl->occurred_at?->toDateTimeString(),
+                ])->all(),
+                'comments' => $intent->comments->sortByDesc('created_at')->values()->map(fn($c) => [
+                    'id' => $c->id,
+                    'author_name' => $c->author_name,
+                    'author_type' => $c->author_type,
+                    'body' => $c->body,
+                    'created_at' => $c->created_at->toDateTimeString(),
+                ])->all(),
+                'reviews' => $intent->reviews->map(fn($r) => [
+                    'id' => $r->id,
+                    'action' => $r->action,
+                    'reviewer_name' => $r->reviewer_name,
+                    'reason' => $r->reason,
+                    'created_at' => $r->created_at?->toDateTimeString(),
+                ])->all(),
+            ];
+        });
+
+        $subscription = $tenant->subscription;
+        $plans = Plan::active()->ordered()->get(['id', 'name', 'slug']);
+
+        return Inertia::render('Admin/Billing/PaymentHistory', [
+            'intents' => $intents,
+            'filters' => $request->only(['status', 'date_from', 'date_to', 'plan_id', 'search', 'per_page']),
+            'plans' => $plans,
+            'subscription' => $subscription ? [
+                'id' => $subscription->id,
+                'status' => $subscription->status,
+                'plan' => $subscription->plan ? [
+                    'id' => $subscription->plan->id,
+                    'name' => $subscription->plan->name,
+                    'slug' => $subscription->plan->slug,
+                ] : null,
+            ] : null,
+            'stats' => [
+                'total' => PaymentIntent::forTenant($tenant->id)->count(),
+                'completed' => PaymentIntent::forTenant($tenant->id)->whereIn('status', ['completed', 'approved', 'paid'])->count(),
+                'pending_review' => PaymentIntent::forTenant($tenant->id)->where('status', 'waiting_review')->count(),
+                'rejected' => PaymentIntent::forTenant($tenant->id)->where('status', 'rejected')->count(),
+            ],
+        ]);
     }
 
     public function settings()
@@ -338,7 +453,7 @@ class AdminBillingController extends Controller
         }
 
         $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
-        $currency = new Currency($currencyCode);
+        $currency = Currency::fromEnum($currencyCode);
 
         $billingCycle = 'monthly';
         $amount = (float) ($plan->monthly_price ?? 0);
@@ -468,13 +583,144 @@ class AdminBillingController extends Controller
         }
     }
 
-    public function payment()
+    public function payment(Request $request)
     {
         if (!auth()->user()->can('billing.view')) {
             abort(403, 'Unauthorized');
         }
 
-        return Inertia::render('Admin/Billing/Payment');
+        $tenant = auth()->user()->tenant;
+
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $reference = $request->query('intent');
+        $intent = null;
+        $intentData = null;
+        $selectedPlan = null;
+
+        if ($reference) {
+            $intentService = app(PaymentIntentService::class);
+            $intent = $intentService->findByReferenceForTenant($tenant, $reference);
+
+            if ($intent && $intent->plan) {
+                $plan = $intent->plan;
+                $featureKeys = array_column(FeatureGate::getAllFeatureDefinitions(), 'key');
+                $selectedPlan = [
+                    'id' => $plan->id,
+                    'name' => $plan->name,
+                    'slug' => $plan->slug,
+                    'description' => $plan->description,
+                    'monthly_price' => $plan->monthly_price,
+                    'yearly_price' => $plan->yearly_price,
+                ];
+
+                $intentData = [
+                    'id' => $intent->id,
+                    'reference_number' => $intent->reference_number,
+                    'amount' => $intent->amount,
+                    'currency' => $intent->currency,
+                    'status' => $intent->status,
+                    'billing_cycle' => $intent->billing_cycle,
+                    'expires_at' => $intent->expires_at?->toDateTimeString(),
+                    'created_at' => $intent->created_at->toDateTimeString(),
+                ];
+            }
+        }
+
+        $paymentMethods = PaymentMethod::active()
+            ->where('type', 'bank_transfer')
+            ->get()
+            ->map(fn($pm) => [
+                'id' => $pm->id,
+                'name' => $pm->name,
+                'type' => $pm->type,
+                'account_name' => $pm->account_name,
+                'account_number' => $pm->account_number,
+                'bank_name' => $pm->bank_name,
+                'qr_image_url' => $pm->qr_image_url,
+                'is_active' => $pm->is_active,
+            ]);
+
+        $subscription = $tenant->subscription;
+        $currentPlan = $subscription?->plan;
+
+        return Inertia::render('Admin/Billing/Payment', [
+            'intent' => $intentData,
+            'selectedPlan' => $selectedPlan,
+            'currentPlan' => $currentPlan ? [
+                'id' => $currentPlan->id,
+                'name' => $currentPlan->name,
+                'slug' => $currentPlan->slug,
+            ] : null,
+            'subscription' => $subscription ? [
+                'status' => $subscription->status,
+                'billing_interval' => $subscription->billing_interval,
+            ] : null,
+            'paymentMethods' => $paymentMethods,
+        ]);
+    }
+
+    public function paymentSubmit(Request $request)
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = auth()->user()->tenant;
+
+        if (!$tenant) {
+            return response()->json(['error' => 'Store not found.'], 403);
+        }
+
+        $validated = $request->validate([
+            'intent_reference' => ['required', 'string'],
+            'evidence' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
+            'note' => ['nullable', 'string', 'max:500'],
+            'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
+        ]);
+
+        $intentService = app(PaymentIntentService::class);
+        $intent = $intentService->findByReferenceForTenant($tenant, $validated['intent_reference']);
+
+        if (!$intent) {
+            return redirect()->back()->with('error', 'Payment intent not found.');
+        }
+
+        if ($intent->status !== 'waiting_payment') {
+            return redirect()->back()->with('error', 'This payment cannot be submitted in its current state.');
+        }
+
+        try {
+            $filePath = ImageService::upload($request->file('evidence'), 'payment-evidence');
+
+            $evidenceService = app(PaymentEvidenceService::class);
+            $evidenceService->store(
+                intent: $intent,
+                type: 'bank_transfer',
+                filePath: $filePath,
+                note: $validated['note'] ?? null,
+                metadata: [
+                    'payment_method_id' => $validated['payment_method_id'],
+                    'uploaded_by' => 'merchant',
+                ]
+            );
+
+            $manualPayment = app(ManualPaymentService::class);
+            $manualPayment->confirmPayment($intent);
+
+            $intent->refresh();
+
+            return redirect()->route('storefront.admin.billing.payment', [
+                'store_slug' => $tenant->slug,
+                'intent' => $intent->reference_number,
+                'submitted' => 'true',
+            ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to submit payment. Please try again.');
+        }
     }
 
     public function renew(Request $request)

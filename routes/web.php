@@ -504,6 +504,14 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
     Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
     Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
 
+    Route::get('/billing', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'index'])->name('billing.index');
+    Route::post('/billing/{intent}/approve', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'approve'])->name('billing.approve');
+    Route::post('/billing/{intent}/reject', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'reject'])->name('billing.reject');
+
+    Route::get('/financial', [\App\Http\Controllers\SuperAdmin\SuperAdminFinancialController::class, 'index'])->name('financial.index');
+
+    Route::get('/operations', [\App\Http\Controllers\SuperAdmin\SuperAdminOperationsController::class, 'index'])->name('operations.index');
+
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');
 

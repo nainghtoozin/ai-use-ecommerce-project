@@ -88,6 +88,19 @@ export default function AdminSidebar() {
                     ]
                 },
                 {
+                    title: 'Billing & Finance',
+                    items: [
+                        { label: 'Payment Reviews', href: '/superadmin/billing', icon: 'Receipt' },
+                        { label: 'Financial Console', href: '/superadmin/financial', icon: 'BarChart3' },
+                    ]
+                },
+                {
+                    title: 'Operations',
+                    items: [
+                        { label: 'Webhook Monitor', href: '/superadmin/operations', icon: 'Zap' },
+                    ]
+                },
+                {
                     title: 'System Management',
                     items: [
                         { label: 'Platform Settings', href: '/superadmin/platform-settings', icon: 'Settings' },
