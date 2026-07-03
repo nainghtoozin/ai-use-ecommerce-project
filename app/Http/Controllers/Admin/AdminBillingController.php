@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Data\Currency;
+use App\Enums\CurrencyCode;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\SubscriptionAuditLog;
 use App\Services\FeatureGate;
+use App\Services\Payment\Platform\CheckoutService;
 use App\Services\SubscriptionAuditService;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
@@ -206,8 +209,10 @@ class AdminBillingController extends Controller
 
         $allPlans = Plan::active()->ordered()->get();
         $allFeatureDefs = FeatureGate::getAllFeatureDefinitions();
+        $featureKeys = array_column($allFeatureDefs, 'key');
 
-        $plans = $allPlans->map(function ($plan) use ($currentPlan) {
+        $plans = $allPlans->map(function ($plan) use ($featureKeys, $currentPlan) {
+            $enabledFeatures = $plan->getEnabledFeatures();
             return [
                 'id' => $plan->id,
                 'name' => $plan->name,
@@ -220,10 +225,45 @@ class AdminBillingController extends Controller
                 'product_limit' => $plan->productLimit(),
                 'staff_limit' => $plan->staffLimit(),
                 'storage_limit' => $plan->storageLimitMb(),
+                'limits' => [
+                    'product_limit' => $plan->productLimit(),
+                    'staff_limit' => $plan->staffLimit(),
+                    'storage_limit' => $plan->storageLimitMb(),
+                    'orders_monthly_limit' => $plan->limitValue('orders_monthly_limit'),
+                    'coupon_limit' => $plan->limitValue('coupon_limit'),
+                    'promotion_limit' => $plan->limitValue('promotion_limit'),
+                    'flash_sale_limit' => $plan->limitValue('flash_sale_limit'),
+                    'branch_limit' => $plan->limitValue('branch_limit'),
+                    'warehouse_limit' => $plan->limitValue('warehouse_limit'),
+                    'pos_device_limit' => $plan->limitValue('pos_device_limit'),
+                ],
+                'features' => array_map(fn($key) => [
+                    'key' => $key,
+                    'enabled' => in_array($key, $enabledFeatures),
+                ], $featureKeys),
             ];
         });
 
         $usage = $subscription ? SubscriptionLimitService::for($tenant)->getAllLimits() : [];
+
+        $featureCategories = [
+            ['label' => 'Product Features', 'keys' => ['single_products', 'variable_products', 'combo_products', 'digital_products']],
+            ['label' => 'Analytics', 'keys' => ['reports']],
+            ['label' => 'Store Features', 'keys' => ['custom_domain', 'advanced_seo', 'theme_editor', 'custom_css', 'maintenance_mode']],
+            ['label' => 'Customer Features', 'keys' => ['reviews', 'wishlist', 'compare']],
+            ['label' => 'Marketing', 'keys' => ['coupons', 'promotions', 'flash_sales']],
+            ['label' => 'Integrations', 'keys' => ['telegram_integration', 'whatsapp_integration', 'social_media_integration', 'google_analytics', 'meta_pixel', 'mailchimp_integration']],
+            ['label' => 'AI', 'keys' => ['ai_product_generator', 'ai_description', 'ai_seo', 'ai_translation']],
+            ['label' => 'Payment Gateways', 'keys' => ['payment_gateways_cod', 'payment_gateways_kbzpay', 'payment_gateways_wavepay', 'payment_gateways_stripe', 'payment_gateways_paypal', 'payment_gateways_manual']],
+        ];
+
+        $featureCategories = array_map(function ($cat) use ($allFeatureDefs) {
+            $cat['features'] = array_values(array_filter(array_map(function ($key) use ($allFeatureDefs) {
+                $def = current(array_filter($allFeatureDefs, fn($d) => $d['key'] === $key));
+                return $def ? $def : null;
+            }, $cat['keys'])));
+            return $cat;
+        }, $featureCategories);
 
         return Inertia::render('Admin/Billing/UpgradePlan', [
             'currentPlan' => $currentPlan ? [
@@ -231,9 +271,25 @@ class AdminBillingController extends Controller
                 'name' => $currentPlan->name,
                 'slug' => $currentPlan->slug,
             ] : null,
+            'subscription' => $subscription ? [
+                'id' => $subscription->id,
+                'status' => $subscription->status,
+                'plan' => $subscription->plan ? [
+                    'id' => $subscription->plan->id,
+                    'name' => $subscription->plan->name,
+                    'slug' => $subscription->plan->slug,
+                ] : null,
+                'billing_interval' => $subscription->billing_interval,
+                'starts_at' => $subscription->starts_at?->toDateString(),
+                'expires_at' => $subscription->expires_at?->toDateString(),
+                'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+                'trial_days_remaining' => $subscription->daysLeftInTrial(),
+                'on_trial' => $subscription->isTrialing(),
+            ] : null,
             'plans' => $plans,
             'usage' => $usage,
             'allFeatureDefs' => $allFeatureDefs,
+            'featureCategories' => $featureCategories,
         ]);
     }
 
@@ -253,6 +309,172 @@ class AdminBillingController extends Controller
         }
 
         return Inertia::render('Admin/Billing/Settings');
+    }
+
+    public function checkout(string $planSlug)
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = auth()->user()->tenant;
+
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $plan = Plan::active()->where('slug', $planSlug)->first();
+
+        if (!$plan) {
+            return redirect()->route('storefront.admin.billing.upgrade', ['store_slug' => $tenant->slug])
+                ->with('error', 'The selected plan is not available.');
+        }
+
+        $subscription = $tenant->subscription;
+
+        if ($subscription && $subscription->plan && $subscription->plan->id === $plan->id) {
+            return redirect()->route('storefront.admin.billing', ['store_slug' => $tenant->slug])
+                ->with('info', 'You are already on this plan.');
+        }
+
+        $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
+        $currency = new Currency($currencyCode);
+
+        $billingCycle = 'monthly';
+        $amount = (float) ($plan->monthly_price ?? 0);
+        $gateway = 'manual';
+
+        try {
+            $checkout = app(CheckoutService::class);
+            $intent = $checkout->initiateCheckout(
+                tenant: $tenant,
+                plan: $plan,
+                billingCycle: $billingCycle,
+                amount: $amount,
+                currency: $currency,
+                gateway: $gateway,
+                metadata: ['source' => 'merchant_upgrade']
+            );
+
+            $allFeatureDefs = FeatureGate::getAllFeatureDefinitions();
+            $featureKeys = array_column($allFeatureDefs, 'key');
+
+            $plans = Plan::active()->ordered()->get()->map(function ($p) use ($featureKeys) {
+                $enabledFeatures = $p->getEnabledFeatures();
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'slug' => $p->slug,
+                    'description' => $p->description,
+                    'monthly_price' => $p->monthly_price,
+                    'yearly_price' => $p->yearly_price,
+                    'yearly_savings_percent' => $p->yearlySavingsPercent(),
+                    'product_limit' => $p->productLimit(),
+                    'staff_limit' => $p->staffLimit(),
+                    'storage_limit' => $p->storageLimitMb(),
+                    'limits' => [
+                        'product_limit' => $p->productLimit(),
+                        'staff_limit' => $p->staffLimit(),
+                        'storage_limit' => $p->storageLimitMb(),
+                        'orders_monthly_limit' => $p->limitValue('orders_monthly_limit'),
+                        'coupon_limit' => $p->limitValue('coupon_limit'),
+                        'promotion_limit' => $p->limitValue('promotion_limit'),
+                        'flash_sale_limit' => $p->limitValue('flash_sale_limit'),
+                    ],
+                    'features' => array_map(fn($key) => [
+                        'key' => $key,
+                        'enabled' => in_array($key, $enabledFeatures),
+                    ], $featureKeys),
+                ];
+            });
+
+            $currentPlan = $subscription?->plan;
+
+            return Inertia::render('Admin/Billing/Checkout', [
+                'intent' => [
+                    'id' => $intent->id,
+                    'reference_number' => $intent->reference_number,
+                    'amount' => $intent->amount,
+                    'currency' => $intent->currency,
+                    'status' => $intent->status,
+                    'billing_cycle' => $intent->billing_cycle,
+                    'expires_at' => $intent->expires_at?->toDateTimeString(),
+                    'created_at' => $intent->created_at->toDateTimeString(),
+                ],
+                'selectedPlan' => [
+                    'id' => $plan->id,
+                    'name' => $plan->name,
+                    'slug' => $plan->slug,
+                    'description' => $plan->description,
+                    'monthly_price' => $plan->monthly_price,
+                    'yearly_price' => $plan->yearly_price,
+                    'yearly_savings_percent' => $plan->yearlySavingsPercent(),
+                    'product_limit' => $plan->productLimit(),
+                    'staff_limit' => $plan->staffLimit(),
+                    'storage_limit' => $plan->storageLimitMb(),
+                    'limits' => [
+                        'product_limit' => $plan->productLimit(),
+                        'staff_limit' => $plan->staffLimit(),
+                        'storage_limit' => $plan->storageLimitMb(),
+                        'orders_monthly_limit' => $plan->limitValue('orders_monthly_limit'),
+                        'coupon_limit' => $plan->limitValue('coupon_limit'),
+                        'promotion_limit' => $plan->limitValue('promotion_limit'),
+                        'flash_sale_limit' => $plan->limitValue('flash_sale_limit'),
+                    ],
+                    'features' => array_map(fn($key) => [
+                        'key' => $key,
+                        'enabled' => in_array($key, $plan->getEnabledFeatures()),
+                    ], $featureKeys),
+                ],
+                'currentPlan' => $currentPlan ? [
+                    'id' => $currentPlan->id,
+                    'name' => $currentPlan->name,
+                    'slug' => $currentPlan->slug,
+                    'description' => $currentPlan->description,
+                    'monthly_price' => $currentPlan->monthly_price,
+                    'yearly_price' => $currentPlan->yearly_price,
+                    'product_limit' => $currentPlan->productLimit(),
+                    'staff_limit' => $currentPlan->staffLimit(),
+                    'storage_limit' => $currentPlan->storageLimitMb(),
+                    'limits' => [
+                        'product_limit' => $currentPlan->productLimit(),
+                        'staff_limit' => $currentPlan->staffLimit(),
+                        'storage_limit' => $currentPlan->storageLimitMb(),
+                        'orders_monthly_limit' => $currentPlan->limitValue('orders_monthly_limit'),
+                        'coupon_limit' => $currentPlan->limitValue('coupon_limit'),
+                        'promotion_limit' => $currentPlan->limitValue('promotion_limit'),
+                        'flash_sale_limit' => $currentPlan->limitValue('flash_sale_limit'),
+                    ],
+                    'features' => array_map(fn($key) => [
+                        'key' => $key,
+                        'enabled' => in_array($key, $currentPlan->getEnabledFeatures()),
+                    ], $featureKeys),
+                ] : null,
+                'subscription' => $subscription ? [
+                    'id' => $subscription->id,
+                    'status' => $subscription->status,
+                    'billing_interval' => $subscription->billing_interval,
+                    'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+                    'trial_days_remaining' => $subscription->daysLeftInTrial(),
+                    'on_trial' => $subscription->isTrialing(),
+                    'expires_at' => $subscription->expires_at?->toDateString(),
+                ] : null,
+                'allFeatureDefs' => $allFeatureDefs,
+                'plans' => $plans,
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('storefront.admin.billing.upgrade', ['store_slug' => $tenant->slug])
+                ->with('error', 'Unable to prepare checkout. Please try again or contact support.');
+        }
+    }
+
+    public function payment()
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        return Inertia::render('Admin/Billing/Payment');
     }
 
     public function renew(Request $request)

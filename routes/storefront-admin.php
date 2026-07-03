@@ -64,6 +64,8 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing', [AdminBillingController::class, 'index'])->name('billing');
     Route::get('/billing/subscription', [AdminBillingController::class, 'subscription'])->name('billing.subscription');
     Route::get('/billing/upgrade', [AdminBillingController::class, 'upgrade'])->name('billing.upgrade');
+    Route::get('/billing/checkout/{plan}', [AdminBillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('/billing/payment', [AdminBillingController::class, 'payment'])->name('billing.payment');
     Route::get('/billing/payment-history', [AdminBillingController::class, 'paymentHistory'])->name('billing.payment-history');
     Route::get('/billing/settings', [AdminBillingController::class, 'settings'])->name('billing.settings');
     Route::post('/billing/renew', [AdminBillingController::class, 'renew'])->name('billing.renew');

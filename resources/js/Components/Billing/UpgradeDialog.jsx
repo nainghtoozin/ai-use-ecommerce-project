@@ -45,7 +45,11 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
     const targetName = targetPlan?.name || (featureKey ? 'a higher-tier plan' : 'another plan');
 
     const handleUpgrade = () => {
-        router.get(adminUrl('/admin/billing'), {}, { preserveState: false });
+        if (targetPlan?.slug) {
+            router.get(adminUrl(`/admin/billing/checkout/${targetPlan.slug}`), {}, { preserveState: false });
+        } else {
+            router.get(adminUrl('/admin/billing'), {}, { preserveState: false });
+        }
         onClose();
     };
 
