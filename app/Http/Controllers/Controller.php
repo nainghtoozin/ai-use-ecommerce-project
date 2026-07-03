@@ -24,9 +24,11 @@ abstract class Controller
             }
         }
 
+        $positionalValues = array_values($filtered);
+
         $args = [];
         $diIndex = 0;
-        foreach ($rm->getParameters() as $param) {
+        foreach ($rm->getParameters() as $i => $param) {
             $name = $param->getName();
 
             if (array_key_exists($name, $parameters)) {
@@ -34,6 +36,8 @@ abstract class Controller
             } elseif (isset($diValues[$diIndex])) {
                 $args[] = $diValues[$diIndex];
                 $diIndex++;
+            } elseif (isset($positionalValues[$i])) {
+                $args[] = $positionalValues[$i];
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[] = $param->getDefaultValue();
             } elseif ($param->allowsNull()) {

@@ -11,7 +11,7 @@ import {
     Bell, Globe, BellRing, Send, Settings,
     Store, User, LogOut, Menu, X,
     ChevronLeft, ChevronRight, ChevronDown,
-    FileText, Ruler, Layers, Zap,
+    FileText, Ruler, Layers, Zap, ArrowUp, Clock,
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'admin_sidebar_section_';
@@ -55,6 +55,8 @@ export default function AdminSidebar() {
         'Ruler': Ruler,
         'Layers': Layers,
         'Zap': Zap,
+        'ArrowUp': ArrowUp,
+        'Clock': Clock,
     };
 
     const Icon = ({ name, className = '' }) => {
@@ -106,7 +108,6 @@ export default function AdminSidebar() {
                 title: 'Main',
                 items: [
                     ...(can('dashboard.view') ? [{ label: 'Dashboard', href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
-                    ...(can('billing.view') ? [{ label: 'Billing', href: '/admin/billing', icon: 'CreditCard' }] : []),
                 ]
             },
             {
@@ -133,6 +134,16 @@ export default function AdminSidebar() {
                     ...(hasFeature('flash_sales') ? [{ label: 'Flash Sales', href: '/admin/flash-sales', icon: 'Zap' }] : []),
                 ]
             },
+            ...(can('billing.view') ? [{
+                title: 'Billing',
+                items: [
+                    { label: 'Overview', href: '/admin/billing', icon: 'CreditCard' },
+                    { label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' },
+                    { label: 'Upgrade Plan', href: '/admin/billing/upgrade', icon: 'ArrowUp' },
+                    { label: 'Payment History', href: '/admin/billing/payment-history', icon: 'Receipt' },
+                    { label: 'Billing Settings', href: '/admin/billing/settings', icon: 'Settings' },
+                ]
+            }] : []),
             {
                 title: 'Reports',
                 items: [

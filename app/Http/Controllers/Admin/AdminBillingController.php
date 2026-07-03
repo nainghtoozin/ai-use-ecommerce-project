@@ -151,6 +151,110 @@ class AdminBillingController extends Controller
         ]);
     }
 
+    public function subscription()
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = auth()->user()->tenant;
+
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $subscription = $tenant->subscription;
+
+        return Inertia::render('Admin/Billing/Subscription', [
+            'subscription' => $subscription ? [
+                'id' => $subscription->id,
+                'status' => $subscription->status,
+                'plan' => $subscription->plan ? [
+                    'id' => $subscription->plan->id,
+                    'name' => $subscription->plan->name,
+                    'slug' => $subscription->plan->slug,
+                    'monthly_price' => $subscription->plan->monthly_price,
+                    'yearly_price' => $subscription->plan->yearly_price,
+                ] : null,
+                'billing_interval' => $subscription->billing_interval,
+                'price' => $subscription->billedPrice(),
+                'starts_at' => $subscription->starts_at?->toDateString(),
+                'expires_at' => $subscription->expires_at?->toDateString(),
+                'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+                'trial_days_remaining' => $subscription->daysLeftInTrial(),
+                'cancelled_at' => $subscription->cancelled_at?->toDateString(),
+                'suspended_at' => $subscription->suspended_at?->toDateString(),
+                'on_trial' => $subscription->isTrialing(),
+            ] : null,
+        ]);
+    }
+
+    public function upgrade()
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = auth()->user()->tenant;
+
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $subscription = $tenant->subscription;
+        $currentPlan = $subscription?->plan;
+
+        $allPlans = Plan::active()->ordered()->get();
+        $allFeatureDefs = FeatureGate::getAllFeatureDefinitions();
+
+        $plans = $allPlans->map(function ($plan) use ($currentPlan) {
+            return [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'slug' => $plan->slug,
+                'description' => $plan->description,
+                'monthly_price' => $plan->monthly_price,
+                'yearly_price' => $plan->yearly_price,
+                'is_current' => $currentPlan && $plan->id === $currentPlan->id,
+                'yearly_savings_percent' => $plan->yearlySavingsPercent(),
+                'product_limit' => $plan->productLimit(),
+                'staff_limit' => $plan->staffLimit(),
+                'storage_limit' => $plan->storageLimitMb(),
+            ];
+        });
+
+        $usage = $subscription ? SubscriptionLimitService::for($tenant)->getAllLimits() : [];
+
+        return Inertia::render('Admin/Billing/UpgradePlan', [
+            'currentPlan' => $currentPlan ? [
+                'id' => $currentPlan->id,
+                'name' => $currentPlan->name,
+                'slug' => $currentPlan->slug,
+            ] : null,
+            'plans' => $plans,
+            'usage' => $usage,
+            'allFeatureDefs' => $allFeatureDefs,
+        ]);
+    }
+
+    public function paymentHistory()
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        return Inertia::render('Admin/Billing/PaymentHistory');
+    }
+
+    public function settings()
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        return Inertia::render('Admin/Billing/Settings');
+    }
+
     public function renew(Request $request)
     {
         if (!auth()->user()->can('billing.renew')) {
