@@ -175,6 +175,7 @@ class ClientOrderController extends Controller
         }
 
         if ($request->hasFile('payment_proof')) {
+            $request->validate(['payment_proof' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
             $path = $this->imageService->upload($request->file('payment_proof'), 'payment-proofs');
             $orderData['payment_proof'] = $path;
             Log::info('Payment proof uploaded:', ['path' => $path]);
@@ -315,7 +316,7 @@ class ClientOrderController extends Controller
             ->findOrFail($id);
 
         $request->validate([
-            'payment_proof' => 'required|image|max:2048',
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
             'transaction_id' => 'nullable|string|max:100',
         ]);
 

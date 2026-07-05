@@ -37,8 +37,9 @@ const TYPE_LABELS = {
     combo: '🧩 Bundle',
 };
 
+import { formatCurrency } from '@/Utils/currency';
 function formatPrice(price) {
-    return Number(price).toLocaleString() + ' MMK';
+    return formatCurrency(price);
 }
 
 function getVariantStockStatus(stock) {

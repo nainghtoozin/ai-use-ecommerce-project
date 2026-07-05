@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Models\Traits\TenantAware;
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * ProductVariant model.
@@ -192,11 +192,7 @@ class ProductVariant extends Model
             return null;
         }
 
-        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
-            return $this->image;
-        }
-
-        return asset('storage/' . $this->image);
+        return ImageService::url($this->image);
     }
 
     public function getSkuDisplayAttribute(): string

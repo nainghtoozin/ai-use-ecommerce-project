@@ -1,5 +1,6 @@
 import { Trash2, Package } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
+import { formatCurrency } from '@/Utils/currency';
 
 const TYPE_LABELS = {
     single: '📦 Single',
@@ -38,7 +39,7 @@ export default function SidebarSection({
     const hasPriceRange = variantPrices.length > 0 && minPrice !== maxPrice;
 
     function formatPrice(price) {
-        return Number(price).toLocaleString() + ' MMK';
+        return formatCurrency(price);
     }
 
     const photoPreview = photo1File

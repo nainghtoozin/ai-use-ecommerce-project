@@ -3,8 +3,10 @@ import { Head, Link, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { useCart } from '@/Hooks/useCart';
 import axios from 'axios';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function StorefrontCart({ tenant, cartItems: initialCartItems, subtotal: initialSubtotal, appliedPromotion: initialPromotion, appliedCoupon: initialCoupon, totalDiscount: initialDiscount }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const { updateQuantity, removeItem } = useCart();
     const [cartItems, setCartItems] = useState(initialCartItems || []);
     const [subtotal, setSubtotal] = useState(initialSubtotal || 0);
@@ -245,7 +247,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 <div className="mt-2 space-y-1.5 text-sm">
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Unit Price</span>
-                                                        <span className="text-gray-800 font-medium">{Number(item.price).toLocaleString()} MMK</span>
+                                                        <span className="text-gray-800 font-medium">{formatCurrency(item.price, cc)}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className="text-gray-500">Qty</span>
@@ -269,7 +271,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                     </div>
                                                     <div className="flex justify-between border-t border-gray-100 pt-1.5">
                                                         <span className="text-gray-700 font-semibold">Subtotal</span>
-                                                        <span className="text-gray-900 font-bold">{Number(lineSubtotal).toLocaleString()} MMK</span>
+                                                        <span className="text-gray-900 font-bold">{formatCurrency(lineSubtotal, cc)}</span>
                                                     </div>
                                                 </div>
                                                 <button onClick={() => handleRemoveItem(item.cart_key)} disabled={updating === item.cart_key}
@@ -298,7 +300,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 )}
                                             </div>
                                             <div className="text-center">
-                                                <span className="text-sm text-gray-800 font-medium">{Number(item.price).toLocaleString()} MMK</span>
+                                                <span className="text-sm text-gray-800 font-medium">{formatCurrency(item.price, cc)}</span>
                                             </div>
                                             <div className="flex justify-center">
                                                 <div className="flex items-center border border-gray-300 rounded-lg">
@@ -320,7 +322,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-sm font-bold text-gray-900">{Number(lineSubtotal).toLocaleString()} MMK</span>
+                                                <span className="text-sm font-bold text-gray-900">{formatCurrency(lineSubtotal, cc)}</span>
                                             </div>
                                             <div className="flex justify-center">
                                                 <button onClick={() => handleRemoveItem(item.cart_key)} disabled={updating === item.cart_key}
@@ -341,7 +343,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                 <div className="space-y-3 text-sm">
                                     <div className="flex justify-between text-gray-600">
                                         <span>Subtotal ({cartItems.reduce((s, i) => s + i.quantity, 0)} items)</span>
-                                        <span>{Number(subtotal).toLocaleString()} MMK</span>
+                                        <span>{formatCurrency(subtotal, cc)}</span>
                                     </div>
 
                                     {totalDiscount > 0 && (
@@ -352,7 +354,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 </svg>
                                                 <span>Discount</span>
                                             </div>
-                                            <span className="font-medium">-{Number(totalDiscount).toLocaleString()} MMK</span>
+                                            <span className="font-medium">-{formatCurrency(totalDiscount, cc)}</span>
                                         </div>
                                     )}
 
@@ -363,7 +365,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
 
                                     <div className="border-t border-gray-200 pt-3 flex justify-between font-semibold text-gray-900">
                                         <span>Total</span>
-                                        <span>{Number(finalTotal).toLocaleString()} MMK</span>
+                                        <span>{formatCurrency(finalTotal, cc)}</span>
                                     </div>
                                 </div>
 

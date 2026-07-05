@@ -1,4 +1,5 @@
 import { Package, Layers, AlertTriangle, ArrowDown, TrendingDown } from 'lucide-react';
+import { formatCurrency } from '@/Utils/currency';
 
 function safeNum(val) {
     const n = Number(val);
@@ -6,7 +7,7 @@ function safeNum(val) {
 }
 
 function formatPrice(price) {
-    return safeNum(price).toLocaleString() + ' MMK';
+    return formatCurrency(safeNum(price));
 }
 
 function getStockStatus(stock) {

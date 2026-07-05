@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -19,6 +20,7 @@ const paymentColors = {
 };
 
 export default function Orders({ tenant, orders }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const storeSlug = tenant.slug;
 
     return (
@@ -72,7 +74,7 @@ export default function Orders({ tenant, orders }) {
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-lg font-bold text-gray-900">{Number(order.total_amount).toLocaleString()} MMK</p>
+                                        <p className="text-lg font-bold text-gray-900">{formatCurrency(order.total_amount, cc)}</p>
                                         <p className="text-sm text-gray-500">{order.payment_method?.name || ''}</p>
                                     </div>
                                 </div>

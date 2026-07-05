@@ -7,6 +7,7 @@ import {
     Search, Filter, FileText, Eye,
 } from 'lucide-react';
 import OrderDetailModal from '@/Components/OrderDetailModal';
+import { formatCurrency } from '@/Utils/currency';
 
 const PER_PAGE_OPTIONS = [25, 50, 100, 500, 1000];
 
@@ -29,10 +30,6 @@ const statusLabels = {
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
-
-function formatCurrency(amount) {
-    return Number(amount || 0).toLocaleString() + ' MMK';
-}
 
 const colorMap = {
     blue: { bg: 'bg-blue-50', text: 'text-blue-600' },

@@ -375,7 +375,7 @@ class AdminBillingController extends Controller
                 'evidences' => $intent->evidences->map(fn($ev) => [
                     'id' => $ev->id,
                     'type' => $ev->type,
-                    'file_path' => $ev->file_path,
+                    'file_path' => ImageService::url($ev->file_path),
                     'note' => $ev->note,
                     'sender_name' => $ev->sender_name,
                     'sender_account' => $ev->sender_account,

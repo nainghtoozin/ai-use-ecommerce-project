@@ -1,6 +1,5 @@
 import { Link, Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
 
 export default function UsersShow({ user, activities }) {
@@ -43,8 +42,8 @@ export default function UsersShow({ user, activities }) {
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="flex-shrink-0 h-16 w-16">
-                                        {user.profile_image ? (
-                                            <img className="h-16 w-16 rounded-full object-cover" src={assetUrl(user.profile_image)} alt="" />
+                                        {user.profile_image_url ? (
+                                            <img className="h-16 w-16 rounded-full object-cover" src={user.profile_image_url} alt="" />
                                         ) : (
                                             <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
                                                 <span className="text-2xl font-medium text-blue-600">{user.name.charAt(0).toUpperCase()}</span>

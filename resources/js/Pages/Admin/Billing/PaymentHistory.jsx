@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import PaymentIntentBadge from '@/Components/Billing/PaymentIntentBadge';
 import { adminUrl } from '@/Utils/adminUrl';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { Search, X, Filter, Calendar, ChevronDown, ExternalLink, Clock, MessageSquare, Image, Check, AlertCircle, Eye, FileText, CreditCard, XCircle, ShieldCheck } from 'lucide-react';
 
 const statusOptions = [
@@ -78,14 +78,10 @@ function formatDateTime(dateStr) {
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function formatCurrency(amount, currency) {
-    if (amount === null || amount === undefined) return '—';
-    const sym = currency === 'MMK' ? '' : CURRENCY_SYMBOL;
-    const val = Number(amount).toFixed(currency === 'MMK' ? 0 : 2);
-    return currency === 'MMK' ? `${val} ${currency}` : `${sym}${val}`;
-}
+
 
 function PaymentDetailDrawer({ intent, open, onClose }) {
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
     useEffect(() => {
         if (open) {
             document.body.style.overflow = 'hidden';
@@ -154,7 +150,7 @@ function PaymentDetailDrawer({ intent, open, onClose }) {
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500">Amount</span>
-                            <span className="font-semibold text-gray-900">{formatCurrency(intent.amount, intent.currency)}</span>
+                            <span className="font-semibold text-gray-900">{formatCurrency(intent.amount, pc)}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500">Currency</span>
@@ -182,10 +178,10 @@ function PaymentDetailDrawer({ intent, open, onClose }) {
                                     <div key={ev.id}>
                                         <div className="relative rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
                                             <img
-                                                src={`/storage/${ev.file_path}`}
+                                                src={ev.file_path_url}
                                                 alt="Payment evidence"
                                                 className="w-full max-h-64 object-contain cursor-pointer"
-                                                onClick={() => window.open(`/storage/${ev.file_path}`, '_blank')}
+                                                onClick={() => window.open(ev.file_path_url, '_blank')}
                                             />
                                         </div>
                                         {ev.note && <p className="text-xs text-gray-500 mt-2 italic">"{ev.note}"</p>}
@@ -305,6 +301,7 @@ function Pagination({ links }) {
 }
 
 export default function AdminBillingPaymentHistory({ intents, filters, plans, subscription, stats }) {
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
     const [showFilters, setShowFilters] = useState(false);
     const [searchValue, setSearchValue] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
@@ -517,7 +514,7 @@ export default function AdminBillingPaymentHistory({ intents, filters, plans, su
                                                 <span className="text-sm text-gray-600 capitalize">{intent.billing_cycle || '—'}</span>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-semibold text-gray-900">{formatCurrency(intent.amount, intent.currency)}</span>
+                                                <span className="text-sm font-semibold text-gray-900">{formatCurrency(intent.amount, pc)}</span>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <span className="text-sm text-gray-500">{formatDate(intent.created_at)}</span>

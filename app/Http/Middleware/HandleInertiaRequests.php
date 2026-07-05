@@ -53,12 +53,12 @@ class HandleInertiaRequests extends Middleware
             'impersonator_name' => $impersonatorName,
         ] : null;
 
-        $settingsModel = \App\Models\WebsiteInfo::first();
+        $tenant = Tenant::getCurrent();
+
+        $settingsModel = $tenant ? \App\Models\WebsiteInfo::first() : null;
         $websiteSettings = $settingsModel ? $settingsModel->toArray() : [];
 
         $wishlistEnabled = $settingsModel && ($settingsModel->enable_wishlist ?? true);
-
-        $tenant = Tenant::getCurrent();
         // Only share tenant on pages with an explicit store_slug in the URL.
         // This prevents /store/default/... links on the root domain landing page.
         if ($tenant && !$request->route('store_slug')) {

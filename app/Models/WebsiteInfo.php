@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\TenantAware;
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -20,6 +21,8 @@ class WebsiteInfo extends Model
         'timezone',
         'currency_code',
         'currency_symbol',
+        'currency_position',
+        'decimal_places',
         'date_format',
         'logo',
         'favicon',
@@ -87,6 +90,7 @@ class WebsiteInfo extends Model
         'contact_info' => 'array',
         'address_info' => 'array',
         'footer_settings' => 'array',
+        'decimal_places' => 'integer',
     ];
 
     public static function getSettings(): self
@@ -125,29 +129,25 @@ class WebsiteInfo extends Model
     public function getLogoUrlAttribute(): ?string
     {
         if (!$this->logo) return null;
-        if (str_starts_with($this->logo, 'http')) return $this->logo;
-        return asset('storage/' . $this->logo);
+        return ImageService::url($this->logo);
     }
 
     public function getFaviconUrlAttribute(): ?string
     {
         if (!$this->favicon) return null;
-        if (str_starts_with($this->favicon, 'http')) return $this->favicon;
-        return asset('storage/' . $this->favicon);
+        return ImageService::url($this->favicon);
     }
 
     public function getOgImageUrlAttribute(): ?string
     {
         if (!$this->og_image) return null;
-        if (str_starts_with($this->og_image, 'http')) return $this->og_image;
-        return asset('storage/' . $this->og_image);
+        return ImageService::url($this->og_image);
     }
 
     public function getHeroImageUrlAttribute(): ?string
     {
         if (!$this->hero_image) return null;
-        if (str_starts_with($this->hero_image, 'http')) return $this->hero_image;
-        return asset('storage/' . $this->hero_image);
+        return ImageService::url($this->hero_image);
     }
 
     public function getHeroImagesUrlsAttribute(): array
@@ -156,12 +156,7 @@ class WebsiteInfo extends Model
             return [];
         }
 
-        return array_map(function ($path) {
-            if (empty($path)) return null;
-            $path = self::normalizeImagePath($path);
-            if (str_starts_with($path, '/storage/')) return asset($path);
-            return asset('storage/' . $path);
-        }, $this->hero_images);
+        return array_map(fn($path) => $path ? ImageService::url(self::normalizeImagePath($path)) : null, $this->hero_images);
     }
 
     protected static function boot(): void
@@ -204,8 +199,7 @@ class WebsiteInfo extends Model
     public function getFooterLogoUrlAttribute(): ?string
     {
         if (!$this->footer_logo) return null;
-        if (str_starts_with($this->footer_logo, 'http')) return $this->footer_logo;
-        return asset('storage/' . $this->footer_logo);
+        return ImageService::url($this->footer_logo);
     }
 
     public function toArray(): array

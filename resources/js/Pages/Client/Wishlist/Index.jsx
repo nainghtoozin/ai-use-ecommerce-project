@@ -1,14 +1,16 @@
 import { useState, useCallback } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import BackToTopButton from '@/Components/BackToTopButton';
 import { useCart } from '@/Hooks/useCart';
 import { useWishlist } from '@/Hooks/useWishlist';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 const LOW_STOCK_THRESHOLD = 10;
 
 function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const [added, setAdded] = useState(false);
     const product = item.product;
 
@@ -87,10 +89,10 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
                         <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
                             {Number(displayPrice).toLocaleString()}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-medium">MMK</span>
+                        <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
                         {originalPrice && (
                             <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
-                                {Number(originalPrice).toLocaleString()} MMK
+                                {formatCurrency(originalPrice, cc)}
                             </span>
                         )}
                     </div>

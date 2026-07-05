@@ -4,6 +4,7 @@ import ShopLayout from '@/Layouts/ShopLayout';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
 import { useCart } from '@/Hooks/useCart';
 import { assetUrl } from '@/Utils/helpers';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 const OPTION_STYLES = [
     'bg-blue-100 text-blue-800 border-blue-300 hover:border-blue-500 hover:bg-blue-200',
@@ -38,7 +39,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
     const optionValues = detail?.option_values ?? {};
     const optionNames = detail?.option_names ?? {};
 
-    const images = [product.photo1, ...(product.gallery_images_url || product.gallery_images || [])].filter(Boolean);
+    const images = [product.photo1_url, ...(product.gallery_images_url || product.gallery_images || [])].filter(Boolean);
 
     const selectedVariant = useMemo(() => {
         if (!isVariable || !variants.length || !optionKeys.length) return null;
@@ -95,7 +96,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
         setTimeout(() => setAdded(false), 2000);
     };
 
-    const currency = ' MMK';
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
 
     const renderStockBadge = (compact = false) => {
         if (isVariable && !selectedVariant && optionKeys.length > 0) {
@@ -301,12 +302,12 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                         ) : (
                                             <div className="flex items-baseline gap-2 flex-wrap">
                                                 <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                                                    {priceDisplay}{currency}
+                                                    {formatCurrency(currentPrice, cc)}
                                                 </span>
                                                 {originalPrice > 0 && originalPrice > currentPrice && (
                                                     <>
                                                         <span className="text-base sm:text-lg text-gray-400 line-through">
-                                                            {Number(originalPrice).toLocaleString()}{currency}
+                                                            {formatCurrency(originalPrice, cc)}
                                                         </span>
                                                         <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
                                                             Save {discountPercent}%
@@ -383,7 +384,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                             )}
                                             {selectedVariant.price > 0 && (
                                                 <span className="text-gray-600">
-                                                    Price: <span className="font-semibold text-gray-900">{Number(selectedVariant.price).toLocaleString()}{currency}</span>
+                                                    Price: <span className="font-semibold text-gray-900">{formatCurrency(selectedVariant.price, cc)}</span>
                                                 </span>
                                             )}
                                         </div>
@@ -513,7 +514,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                         <div className="text-lg font-bold text-gray-900">
-                            {priceDisplay ? `${priceDisplay}${currency}` : '—'}
+                            {currentPrice ? formatCurrency(currentPrice, cc) : '—'}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
                             {renderStockBadge(true)}

@@ -1,5 +1,6 @@
-import { Link, Head } from '@inertiajs/react';
+import { Link, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 function StatCard({ label, value, icon, color, subtitle }) {
     const colors = {
@@ -28,7 +29,9 @@ function StatCard({ label, value, icon, color, subtitle }) {
 }
 
 export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, monthlyRevenue, yearlyRevenue, recentTenants, subscriptionsByPlan }) {
-    const formatMoney = (amount) => Number(amount || 0).toLocaleString() + ' MMK';
+    const { platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
+    const formatMoney = (amount) => formatCurrency(amount, pc);
     const now = new Date();
     const monthName = now.toLocaleString('default', { month: 'long' });
 

@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
+import { usePage } from '@inertiajs/react';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function VariantSelectModal({ product, onClose, onAddToCart }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
     const [quantity, setQuantity] = useState(1);
 
@@ -119,7 +122,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                     </div>
                                                     <div className="text-right flex-shrink-0">
                                                         <span className="text-sm font-semibold text-gray-900 block">
-                                                            {v.price != null ? Number(v.price).toLocaleString() : '—'} MMK
+                                                            {v.price != null ? formatCurrency(v.price, cc) : '—'}
                                                         </span>
                                                         <span className={`text-[10px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
                                                             {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'Low Stock' : 'In Stock') : 'Out of Stock'}
@@ -140,7 +143,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                 <div>
                                     <p className="text-xs text-gray-500">Price</p>
                                     <p className="text-xl font-bold text-gray-900">
-                                        {displayPrice} MMK
+                                        {formatCurrency(displayPrice, cc)}
                                     </p>
                                 </div>
                                 <div className="text-right">

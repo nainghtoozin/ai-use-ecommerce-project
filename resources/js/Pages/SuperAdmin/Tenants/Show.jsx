@@ -1,7 +1,9 @@
-import { Link, Head, router } from '@inertiajs/react';
+import { Link, Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 export default function ShowTenant({ tenant, users, stats }) {
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
     const statusColors = {
         active: 'bg-green-100 text-green-800',
         suspended: 'bg-yellow-100 text-yellow-800',
@@ -35,7 +37,7 @@ export default function ShowTenant({ tenant, users, stats }) {
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                             <p className="text-sm text-gray-500">Revenue</p>
                             <p className="mt-1 text-2xl font-semibold text-gray-900">
-                                {new Intl.NumberFormat().format(stats.revenue)} MMK
+                                {formatCurrency(stats.revenue, pc)}
                             </p>
                         </div>
                     </div>

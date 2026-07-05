@@ -6,6 +6,7 @@ import {
     DollarSign, ShoppingBag, TrendingUp, AlertTriangle, XCircle,
     Search, Filter, FileText, Package, ChevronDown,
 } from 'lucide-react';
+import { formatCurrency } from '@/Utils/currency';
 
 const PER_PAGE_OPTIONS = [25, 50, 100, 1000];
 
@@ -19,10 +20,6 @@ function calcStockStatus(stock) {
     if (stock === null || stock <= 0) return stockStatusConfig.out_of_stock;
     if (stock <= 10) return stockStatusConfig.low_stock;
     return stockStatusConfig.in_stock;
-}
-
-function formatCurrency(amount) {
-    return Number(amount || 0).toLocaleString() + ' MMK';
 }
 
 const colorMap = {

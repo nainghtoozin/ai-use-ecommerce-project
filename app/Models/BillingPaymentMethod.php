@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 class BillingPaymentMethod extends Model
 {
@@ -48,11 +48,7 @@ class BillingPaymentMethod extends Model
             return null;
         }
 
-        if (str_starts_with($this->qr_image, 'http://') || str_starts_with($this->qr_image, 'https://')) {
-            return $this->qr_image;
-        }
-
-        return asset('storage/' . $this->qr_image);
+        return ImageService::url($this->qr_image);
     }
 
     public function scopeActive($query)

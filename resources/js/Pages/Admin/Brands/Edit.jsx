@@ -18,7 +18,7 @@ export default function BrandEdit({ brand }) {
     });
 
     const [logoPreview, setLogoPreview] = useState(null);
-    const existingLogo = brand.logo;
+    const existingLogo = brand.logo_url;
 
     function handleLogoChange(e) {
         const file = e.target.files[0];

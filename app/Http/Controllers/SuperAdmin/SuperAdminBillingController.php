@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentIntent;
 use App\Models\Plan;
+use App\Services\ImageService;
 use App\Services\Payment\Platform\PaymentReviewService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -78,7 +79,7 @@ class SuperAdminBillingController extends Controller
                 'evidences' => $intent->evidences->map(fn($ev) => [
                     'id' => $ev->id,
                     'type' => $ev->type,
-                    'file_path' => $ev->file_path,
+                    'file_path' => ImageService::url($ev->file_path),
                     'note' => $ev->note,
                     'sender_name' => $ev->sender_name,
                     'sender_account' => $ev->sender_account,

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -22,11 +23,20 @@ class PaymentEvidence extends Model
         'metadata',
     ];
 
+    protected $appends = [
+        'file_path_url',
+    ];
+
     protected $casts = [
         'metadata' => 'array',
         'transferred_amount' => 'decimal:2',
         'transfer_date' => 'date',
     ];
+
+    public function getFilePathUrlAttribute(): ?string
+    {
+        return ImageService::url($this->file_path);
+    }
 
     public function paymentIntent(): BelongsTo
     {

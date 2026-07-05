@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Printer, Copy, Check, Package, User, CreditCard, Wallet, Image, Link, AlertCircle, Maximize2 } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
+import { formatCurrency } from '@/Utils/currency';
 
 const styleId = 'order-detail-modal-styles';
 if (!document.getElementById(styleId)) {
@@ -105,10 +106,6 @@ const paymentStatusBadgeColors = {
     verified: 'bg-blue-50 text-blue-700 border-blue-200',
     rejected: 'bg-red-50 text-red-700 border-red-200',
 };
-
-function formatCurrency(amount) {
-    return Number(amount || 0).toLocaleString() + ' MMK';
-}
 
 function StatusBadge({ status, colorMap, labelMap }) {
     const colors = colorMap || statusBadgeColors;

@@ -249,4 +249,12 @@ class Plan extends Model
         }
         return round((($annualMonthly - $this->yearly_price) / $annualMonthly) * 100, 1);
     }
+
+    public function getCalculatedYearlyPriceAttribute(): ?float
+    {
+        if ($this->monthly_price === null || $this->monthly_price <= 0) {
+            return null;
+        }
+        return round($this->monthly_price * 12, 2);
+    }
 }

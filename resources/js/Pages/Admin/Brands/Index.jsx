@@ -79,8 +79,8 @@ export default function BrandsIndex({ brands, query = '' }) {
                                 ) : brands.data.map((brand, index) => (
                                     <tr key={brand.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
-                                            {brand.logo ? (
-                                                <img src={brand.logo} alt={brand.name} className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
+                                            {brand.logo_url ? (
+                                                <img src={brand.logo_url} alt={brand.name} className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
                                                     <Image className="w-5 h-5 text-gray-400" />

@@ -3,7 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Check, Copy, CheckCheck, Upload, X, AlertCircle, ShieldCheck, Clock, Banknote, ArrowLeft, Building2, FileImage, Loader2 } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 function CopyButton({ text }) {
     const [copied, setCopied] = useState(false);
@@ -183,6 +183,7 @@ function UploadArea({ file, onFileSelect, onFileRemove, error }) {
 
 export default function AdminBillingPayment({ intent, selectedPlan, currentPlan, subscription, paymentMethods }) {
     const { props } = usePage();
+    const pc = getPlatformCurrencyConfig(props.platform_setting);
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
     const submitted = urlParams.get('submitted') === 'true';
     const flash = props?.flash || {};
@@ -467,7 +468,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                             <div className="p-6">
                                 <ol className="space-y-3">
                                     {[
-                                        { num: '1', label: 'Transfer the exact amount', desc: `Transfer ${CURRENCY_SYMBOL}${intent?.amount || selectedPlan?.monthly_price || '—'} to one of the accounts above.` },
+                                        { num: '1', label: 'Transfer the exact amount', desc: `Transfer ${pc.symbol}${intent?.amount || selectedPlan?.monthly_price || '—'} to one of the accounts above.` },
                                         { num: '2', label: 'Use your reference number', desc: `Include your reference number ${intent?.reference_number || ''} in the transfer remarks.` },
                                         { num: '3', label: 'Upload payment evidence', desc: 'Take a screenshot or photo of your transfer confirmation and upload it below.' },
                                         { num: '4', label: 'Submit for review', desc: 'Click Submit Payment to send your evidence to our team.' },
@@ -545,9 +546,9 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                     Transfer Amount <span className="text-red-500">*</span>
                                                 </label>
                                                 <div className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-semibold flex items-center gap-1">
-                                                    <span>{CURRENCY_SYMBOL}</span>
+                                                    <span>{pc.symbol}</span>
                                                     <span>{Number(transferredAmount).toLocaleString()}</span>
-                                                    {intent?.currency === 'MMK' && <span className="text-gray-400 font-normal ml-1">MMK</span>}
+                                                    {pc.code !== 'USD' && <span className="text-gray-400 font-normal ml-1">{pc.code}</span>}
                                                 </div>
                                                 <p className="text-xs text-gray-400 mt-1">This amount is fixed based on your selected plan.</p>
                                             </div>
@@ -648,16 +649,16 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-500">Currency</span>
-                                    <span className="font-semibold text-gray-900">{intent?.currency || 'MMK'}</span>
+                                    <span className="font-semibold text-gray-900">{intent?.currency || pc.code}</span>
                                 </div>
                                 <div className="border-t border-gray-100 pt-3">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-semibold text-gray-900">Total Amount</span>
                                         <span className="text-lg font-bold text-gray-900">
                                             {intent?.amount !== null && intent?.amount !== undefined
-                                                ? `${CURRENCY_SYMBOL}${intent.amount}`
+                                                ? formatCurrency(intent.amount, pc)
                                                 : selectedPlan?.monthly_price !== null
-                                                    ? `${CURRENCY_SYMBOL}${selectedPlan.monthly_price}`
+                                                    ? formatCurrency(selectedPlan.monthly_price, pc)
                                                     : '—'}
                                         </span>
                                     </div>

@@ -4,6 +4,9 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import ImageUpload from '@/Components/ImageUpload';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
+import TimezoneSelect from '@/Components/TimezoneSelect';
+import CurrencySelect from '@/Components/CurrencySelect';
+import { CURRENCY_MAP } from '@/Data/currencies';
 
 const PRESET_COLORS = [
   { name: 'Blue', value: '#3B82F6' },
@@ -323,9 +326,51 @@ export default function SettingsEdit({ settings = {} }) {
                         { value: 'my', label: 'Myanmar' },
                       ]
                     })}
-                    {renderField('timezone', 'Timezone')}
-                    {renderField('currency_code', 'Currency Code')}
-                    {renderField('currency_symbol', 'Currency Symbol')}
+                    <div className="col-span-1 md:col-span-2">
+                      <TimezoneSelect
+                        value={data.timezone}
+                        onChange={(v) => setData('timezone', v)}
+                        error={errors.timezone}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <CurrencySelect
+                        value={data.currency_code}
+                        onChange={(code) => {
+                          setData('currency_code', code);
+                          setData('currency_symbol', CURRENCY_MAP[code]?.symbol || '');
+                        }}
+                        error={errors.currency_code}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency Name</label>
+                      <input
+                        type="text"
+                        value={CURRENCY_MAP[data.currency_code]?.name || ''}
+                        readOnly
+                        className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency Symbol</label>
+                      <input
+                        type="text"
+                        value={data.currency_symbol}
+                        readOnly
+                        className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                      />
+                      {errors.currency_symbol && <p className="mt-1 text-sm text-red-600">{errors.currency_symbol}</p>}
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Decimal Places</label>
+                      <input
+                        type="text"
+                        value={CURRENCY_MAP[data.currency_code]?.decimalPlaces ?? ''}
+                        readOnly
+                        className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                      />
+                    </div>
 
                     {/* Theme Color Picker */}
                     <div className="col-span-1 md:col-span-2">

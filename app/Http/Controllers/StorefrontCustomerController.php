@@ -250,7 +250,7 @@ class StorefrontCustomerController extends Controller
         }
 
         $request->validate([
-            'payment_proof' => 'required|image|max:2048',
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
             'transaction_id' => 'nullable|string|max:100',
         ]);
 

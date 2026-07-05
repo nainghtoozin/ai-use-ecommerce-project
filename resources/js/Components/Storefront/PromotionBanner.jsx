@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { assetUrl } from '@/Utils/helpers';
 
 export default function PromotionBanner({ banners }) {
     const { tenant } = usePage().props;
@@ -45,7 +44,7 @@ export default function PromotionBanner({ banners }) {
                             {banner.image && (
                                 <div className="hidden sm:block w-40 lg:w-56 flex-shrink-0">
                                     <img
-                                        src={assetUrl(banner.image)}
+                                        src={banner.image_url}
                                         alt={banner.title}
                                         className="w-full h-28 lg:h-36 object-cover rounded-xl shadow-lg"
                                         loading="lazy"

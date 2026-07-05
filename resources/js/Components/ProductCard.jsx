@@ -2,6 +2,7 @@ import { useState, useEffect, memo } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -102,6 +103,7 @@ const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo })
 
 const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     const { display, original, savings, label } = displayPrice || {};
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
 
     if (product.is_variable) {
         return (
@@ -111,13 +113,13 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{label}</span>
                     )}
                     <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
-                        {display || Number(product.price ?? 0).toLocaleString()}
+                        {formatCurrency(display || Number(product.price ?? 0), cc)}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">MMK</span>
+                    <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
                 </div>
                 {original && (
                     <span className="text-xs text-gray-400 line-through w-full sm:w-auto block leading-tight">
-                        {original} MMK
+                        {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
                 {savings > 0 && (
@@ -125,7 +127,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Save {Number(savings).toLocaleString()} MMK
+                        Save {formatCurrency(savings, cc)}
                     </p>
                 )}
             </div>
@@ -137,12 +139,12 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
             <div className="mt-1.5">
                 <div className="flex items-baseline gap-1 flex-wrap">
                     <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
-                        {display || Number(product.price ?? 0).toLocaleString()}
+                        {formatCurrency(display || Number(product.price ?? 0), cc)}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">MMK</span>
+                    <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
                     {product.display_price_summary?.base_price > 0 && (
                         <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
-                            {Number(product.display_price_summary.base_price).toLocaleString()} MMK
+                            {Number(product.display_price_summary.base_price).toLocaleString()} <span className="text-[10px]">{cc.code}</span>
                         </span>
                     )}
                 </div>
@@ -151,7 +153,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Bundle Save {Number(product.display_price_summary.savings).toLocaleString()} MMK
+                        Bundle Save {formatCurrency(product.display_price_summary.savings, cc)}
                     </p>
                 )}
                 {savings > 0 && (
@@ -159,7 +161,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Save {Number(savings).toLocaleString()} MMK
+                        Save {formatCurrency(savings, cc)}
                     </p>
                 )}
             </div>
@@ -169,13 +171,13 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     return (
         <div className="mt-1.5">
             <div className="flex items-baseline gap-1 flex-wrap">
-                <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
-                    {display || Number(product.price ?? 0).toLocaleString()}
-                </span>
-                <span className="text-[10px] text-gray-400 font-medium">MMK</span>
+                    <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
+                        {display || Number(product.price ?? 0).toLocaleString()}
+                    </span>
+                <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
                 {original && (
                     <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
-                        {original} MMK
+                        {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
             </div>
@@ -184,7 +186,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Save {Number(savings).toLocaleString()} MMK
+                    Save {formatCurrency(savings, cc)}
                 </p>
             )}
         </div>
@@ -194,6 +196,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
 const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVariant, addingId = null }) {
     const { props } = usePage();
     const { auth, website_info, wishlisted_ids = [], tenant } = props;
+    const cc = getCurrencyConfig(props.platform_setting, props.website_info);
     const wishlistEnabled = website_info?.enable_wishlist !== false;
     const { toggleWishlist } = useWishlist();
     const productUrl = tenant?.slug

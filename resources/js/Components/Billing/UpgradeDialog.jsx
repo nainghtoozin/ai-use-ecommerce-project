@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { X, ArrowRight, Check } from 'lucide-react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { adminUrl } from '@/Utils/adminUrl';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan, featureKey, allFeatureDefs }) {
     const dialogRef = useRef(null);
@@ -62,6 +62,7 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
     };
 
     const gainedFeatures = diffFeatures();
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
     return (
         <div
@@ -139,7 +140,7 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
                             <span className="text-sm text-gray-700">Monthly price</span>
                             {targetPlan.monthly_price !== null ? (
                                 <span className="text-lg font-bold text-gray-900">
-                                    {`${CURRENCY_SYMBOL}${targetPlan.monthly_price}`}
+                                    {formatCurrency(targetPlan.monthly_price, pc)}
                                     <span className="text-sm font-normal text-gray-400">/month</span>
                                 </span>
                             ) : (

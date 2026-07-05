@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\TenantAware;
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
@@ -19,9 +20,18 @@ class Brand extends Model
         'is_active',
     ];
 
+    protected $appends = [
+        'logo_url',
+    ];
+
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return ImageService::url($this->logo);
+    }
 
     protected static function booted()
     {

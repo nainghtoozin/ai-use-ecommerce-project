@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\TenantAware;
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,9 +21,18 @@ class PromotionBanner extends Model
         'is_active',
     ];
 
+    protected $appends = [
+        'image_url',
+    ];
+
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return ImageService::url($this->image);
+    }
 
     public function scopeActive($query)
     {

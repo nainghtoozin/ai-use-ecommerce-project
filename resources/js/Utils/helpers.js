@@ -13,10 +13,15 @@ export function assetUrl(path, placeholder = true) {
     return `/storage/${path}`;
 }
 
-export function formatCurrency(amount, currency = 'MMK') {
-    if (!amount) return `0 ${currency}`;
-    return `${Number(amount).toLocaleString()} ${currency}`;
+import { formatCurrency as _formatCurrency } from '@/Utils/currency';
+export function formatCurrency(amount, config = { code: 'MMK', symbol: '', decimals: 0 }) {
+    if (!amount && amount !== 0) return `0 ${config.code || 'MMK'}`;
+    const cfg = typeof config === 'string' ? { code: config, symbol: '', decimals: config === 'MMK' ? 0 : 2 } : config;
+    return _formatCurrency(amount, cfg);
 }
+
+// Deprecated: use formatCurrency from '@/Utils/currency' with config instead
+export { formatCurrency as formatCurrencyLegacy } from '@/Utils/currency';
 
 export function formatDate(date, options = {}) {
     if (!date) return '';

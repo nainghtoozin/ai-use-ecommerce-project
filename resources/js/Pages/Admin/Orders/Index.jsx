@@ -3,9 +3,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function AdminOrdersIndex({ orders, filters = {}, showPagination = true, warning = null }) {
-    const { auth } = usePage().props;
+    const { auth, platform_setting, website_info } = usePage().props;
+    const cc = getCurrencyConfig(platform_setting, website_info);
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
 
@@ -185,7 +187,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                                 {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} items
                                             </td>
                                             <td className="px-4 py-4 text-sm font-medium text-gray-900 text-right">
-                                                {Number(order.total_amount).toLocaleString()} MMK
+                                                {formatCurrency(order.total_amount, cc)}
                                             </td>
                                             <td className="px-4 py-4 text-right text-sm">
                                                 <div className="flex justify-end gap-2">

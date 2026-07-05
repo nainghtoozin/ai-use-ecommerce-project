@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Enums\ProductType;
 use App\Models\Traits\TenantAware;
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -473,7 +473,7 @@ class Product extends Model
                 'subtotal' => $item->getItemSubtotal(),
                 'stock_available' => $item->getEffectiveStock(),
                 'is_available' => $item->isAvailable(),
-                'photo_url' => $comboProduct?->photo1_url ?? $comboProduct?->photo1 ?? null,
+                'photo_url' => $comboProduct?->photo1_url,
             ];
         })->toArray();
 
@@ -776,11 +776,7 @@ class Product extends Model
             return null;
         }
 
-        if (str_starts_with($this->photo1, 'http://') || str_starts_with($this->photo1, 'https://')) {
-            return $this->photo1;
-        }
-
-        return asset('storage/' . $this->photo1);
+        return ImageService::url($this->photo1);
     }
 
     public function getPhoto2UrlAttribute(): ?string
@@ -789,29 +785,21 @@ class Product extends Model
             return null;
         }
 
-        if (str_starts_with($this->photo2, 'http://') || str_starts_with($this->photo2, 'https://')) {
-            return $this->photo2;
-        }
-
-        return asset('storage/' . $this->photo2);
+        return ImageService::url($this->photo2);
     }
 
     public function getGalleryImagesUrlAttribute(): array
     {
         $images = $this->gallery_images ?? [];
 
-        return array_map(function ($path) {
-            if (empty($path)) return null;
-            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
-            return asset('storage/' . $path);
-        }, $images);
+        return array_map(fn($path) => $path ? ImageService::url($path) : null, $images);
     }
 
     public function getSeoImageUrlAttribute(): ?string
     {
         if (empty($this->seo_image)) return null;
-        if (str_starts_with($this->seo_image, 'http://') || str_starts_with($this->seo_image, 'https://')) return $this->seo_image;
-        return asset('storage/' . $this->seo_image);
+
+        return ImageService::url($this->seo_image);
     }
 
     public function getHasOrdersAttribute(): bool

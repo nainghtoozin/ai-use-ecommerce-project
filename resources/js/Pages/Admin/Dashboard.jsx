@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useState } from 'react';
 
 const paymentMethodStyles = {
@@ -40,11 +41,12 @@ export default function AdminDashboard({
     startDate,
     endDate,
 }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
     const [customStartDate, setCustomStartDate] = useState(startDate || '');
     const [customEndDate, setCustomEndDate] = useState(endDate || '');
 
-    const formatMoney = (amount) => Number(amount || 0).toLocaleString() + ' MMK';
+    const formatMoney = (amount) => formatCurrency(amount);
 
     const timeAgo = (date) => {
         const now = new Date();
@@ -333,7 +335,7 @@ export default function AdminDashboard({
                                                                 {pm.name}
                                                             </span>
                                                             <span className="text-sm font-semibold text-gray-900 tabular-nums shrink-0">
-                                                                {Number(total).toLocaleString()} MMK
+                                                                {formatCurrency(total, cc)}
                                                             </span>
                                                         </div>
                                                         <div className="mt-1.5 w-full bg-gray-100 rounded-full h-2">

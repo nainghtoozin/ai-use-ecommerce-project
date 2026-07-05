@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import PaymentIntentBadge from '@/Components/Billing/PaymentIntentBadge';
+import { formatCurrency as _formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import {
     Search, X, Filter, Clock, Check, XCircle,
     CreditCard, DollarSign, TrendingUp, Eye,
@@ -23,12 +24,6 @@ const statusOptions = [
     { value: 'expired', label: 'Expired' },
     { value: 'failed', label: 'Failed' },
 ];
-
-function formatCurrency(amount, currency) {
-    if (amount === null || amount === undefined) return '—';
-    const val = Number(amount).toLocaleString('en-US', { minimumFractionDigits: currency === 'MMK' ? 0 : 2, maximumFractionDigits: 2 });
-    return currency === 'MMK' ? `${val} MMK` : `$${val}`;
-}
 
 function formatDate(dateStr) {
     if (!dateStr) return '—';
@@ -157,7 +152,7 @@ function TransactionDetailDrawer({ txn, open, onClose }) {
                         )}
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Amount</span>
-                            <span className="font-bold text-gray-900">{formatCurrency(txn.amount, txn.currency)}</span>
+                            <span className="font-bold text-gray-900">{fmt(txn.amount, txn.currency)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Currency</span>
@@ -193,10 +188,10 @@ function TransactionDetailDrawer({ txn, open, onClose }) {
                                     <div key={ev.id}>
                                         <div className="rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
                                             <img
-                                                src={`/storage/${ev.file_path}`}
+                                                src={ev.file_path_url}
                                                 alt="Payment evidence"
                                                 className="w-full max-h-64 object-contain cursor-pointer"
-                                                onClick={() => window.open(`/storage/${ev.file_path}`, '_blank')}
+                                                onClick={() => window.open(ev.file_path_url, '_blank')}
                                             />
                                         </div>
                                         {ev.note && <p className="text-xs text-gray-500 mt-2 italic">"{ev.note}"</p>}
@@ -313,7 +308,7 @@ function TransactionDetailDrawer({ txn, open, onClose }) {
                                                     {le.description && <p className="text-xs text-gray-500">{le.description}</p>}
                                                 </td>
                                                 <td className="px-5 py-3 font-mono font-semibold text-gray-900">
-                                                    {formatCurrency(le.amount, le.currency)}
+                                                    {fmt(le.amount, le.currency)}
                                                 </td>
                                                 <td className="px-5 py-3 text-gray-500">{formatDateTime(le.recorded_at)}</td>
                                             </tr>
@@ -360,6 +355,10 @@ function Pagination({ links }) {
 }
 
 export default function SuperAdminFinancialConsole({ transactions, filters, plans, stats }) {
+    const { platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
+    const fmt = (a, c) => a == null ? '—' : _formatCurrency(a, { code: c || pc.code, symbol: pc.symbol, position: pc.position, decimals: pc.decimals });
+
     const [showFilters, setShowFilters] = useState(false);
     const [searchValue, setSearchValue] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
@@ -417,14 +416,14 @@ export default function SuperAdminFinancialConsole({ transactions, filters, plan
 
                 {stats && (
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard icon={TrendingUp} label="Total Revenue" value={formatCurrency(stats.total_revenue, 'MMK')} color={{ bg: 'bg-emerald-100', text: 'text-emerald-600' }} />
-                        <StatCard icon={DollarSign} label="Monthly Revenue" value={formatCurrency(stats.monthly_revenue, 'MMK')} color={{ bg: 'bg-blue-100', text: 'text-blue-600' }} />
-                        <StatCard icon={Clock} label="Today's Revenue" value={formatCurrency(stats.today_revenue, 'MMK')} color={{ bg: 'bg-purple-100', text: 'text-purple-600' }} />
-                        <StatCard icon={AlertCircle} label="Pending Revenue" value={formatCurrency(stats.pending_revenue, 'MMK')} color={{ bg: 'bg-amber-100', text: 'text-amber-600' }} />
+                        <StatCard icon={TrendingUp} label="Total Revenue" value={fmt(stats.total_revenue)} color={{ bg: 'bg-emerald-100', text: 'text-emerald-600' }} />
+                        <StatCard icon={DollarSign} label="Monthly Revenue" value={fmt(stats.monthly_revenue)} color={{ bg: 'bg-blue-100', text: 'text-blue-600' }} />
+                        <StatCard icon={Clock} label="Today's Revenue" value={fmt(stats.today_revenue)} color={{ bg: 'bg-purple-100', text: 'text-purple-600' }} />
+                        <StatCard icon={AlertCircle} label="Pending Revenue" value={fmt(stats.pending_revenue)} color={{ bg: 'bg-amber-100', text: 'text-amber-600' }} />
                         <StatCard icon={Check} label="Completed Transactions" value={stats.completed_transactions} color={{ bg: 'bg-emerald-100', text: 'text-emerald-600' }} />
                         <StatCard icon={Clock} label="Pending Review" value={stats.pending_review} color={{ bg: 'bg-purple-100', text: 'text-purple-600' }} />
                         <StatCard icon={XCircle} label="Rejected Payments" value={stats.rejected_payments} color={{ bg: 'bg-red-100', text: 'text-red-600' }} />
-                        <StatCard icon={BarChart3} label="Avg Transaction" value={formatCurrency(stats.avg_transaction, 'MMK')} color={{ bg: 'bg-gray-100', text: 'text-gray-600' }} />
+                        <StatCard icon={BarChart3} label="Avg Transaction" value={fmt(stats.avg_transaction)} color={{ bg: 'bg-gray-100', text: 'text-gray-600' }} />
                     </div>
                 )}
 
@@ -539,7 +538,7 @@ export default function SuperAdminFinancialConsole({ transactions, filters, plan
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-600">{txn.plan?.name || '—'}</td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{formatCurrency(txn.amount, txn.currency)}</td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{fmt(txn.amount, txn.currency)}</td>
                                             <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(txn.created_at)}</td>
                                             <td className="px-5 py-4 whitespace-nowrap"><PaymentIntentBadge status={txn.status} size="sm" /></td>
                                             <td className="px-5 py-4 whitespace-nowrap text-right">

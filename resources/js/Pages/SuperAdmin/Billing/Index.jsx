@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import PaymentIntentBadge from '@/Components/Billing/PaymentIntentBadge';
+import { formatCurrency as _formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import {
     Search, X, Filter, Clock, Check, XCircle,
     CreditCard, Eye, AlertCircle, Image,
@@ -34,13 +35,6 @@ const statusColors = {
     expired: 'bg-gray-100 text-gray-600',
     failed: 'bg-red-100 text-red-700',
 };
-
-function formatCurrency(amount, currency) {
-    if (amount === null || amount === undefined) return '—';
-    return currency === 'MMK'
-        ? `${Number(amount).toFixed(0)} MMK`
-        : `$${Number(amount).toFixed(2)}`;
-}
 
 function formatDate(dateStr) {
     if (!dateStr) return '—';
@@ -291,7 +285,7 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500">Amount</span>
-                            <span className="font-semibold text-gray-900">{formatCurrency(intent.amount, intent.currency)}</span>
+                            <span className="font-semibold text-gray-900">{fmt(intent.amount, intent.currency)}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500">Currency</span>
@@ -339,7 +333,7 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                                             {ev.transferred_amount && (
                                                 <div className="flex items-center justify-between text-sm">
                                                     <span className="text-gray-500">Transferred Amount</span>
-                                                    <span className="font-semibold text-gray-900">{formatCurrency(ev.transferred_amount, intent.currency)}</span>
+                                                    <span className="font-semibold text-gray-900">{fmt(ev.transferred_amount, intent.currency)}</span>
                                                 </div>
                                             )}
                                             {ev.transfer_date && (
@@ -351,10 +345,10 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                                         </div>
                                         <div className="relative rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
                                             <img
-                                                src={`/storage/${ev.file_path}`}
+                                                src={ev.file_path_url}
                                                 alt="Payment evidence"
                                                 className="w-full max-h-64 object-contain cursor-pointer"
-                                                onClick={() => window.open(`/storage/${ev.file_path}`, '_blank')}
+                                                onClick={() => window.open(ev.file_path_url, '_blank')}
                                             />
                                         </div>
                                         {ev.note && <p className="text-xs text-gray-500 italic">"{ev.note}"</p>}
@@ -462,6 +456,10 @@ function Pagination({ links }) {
 }
 
 export default function SuperAdminBillingConsole({ intents, filters, plans, stats }) {
+    const { platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
+    const fmt = (a, c) => a == null ? '—' : _formatCurrency(a, { code: c || pc.code, symbol: pc.symbol, position: pc.position, decimals: pc.decimals });
+
     const [showFilters, setShowFilters] = useState(false);
     const [searchValue, setSearchValue] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
@@ -685,7 +683,7 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                                 <span className="text-sm text-gray-600">{intent.plan?.name || '—'}</span>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-semibold text-gray-900">{formatCurrency(intent.amount, intent.currency)}</span>
+                                                <span className="text-sm font-semibold text-gray-900">{fmt(intent.amount, intent.currency)}</span>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <span className="text-sm text-gray-500">{formatDate(intent.created_at)}</span>

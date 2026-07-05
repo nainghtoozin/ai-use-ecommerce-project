@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\ImageService;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,6 +14,10 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, HasRoles;
+
+    protected $appends = [
+        'profile_image_url',
+    ];
 
     const ROLE_CUSTOMER = 'customer';
     const ROLE_ADMIN = 'admin';
@@ -190,6 +196,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isInactive(): bool
     {
         return $this->status === self::STATUS_INACTIVE;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        if ($this->tenant) {
+            $slug = $this->tenant->slug;
+            ResetPasswordNotification::$createUrlCallback = function ($notifiable, $token) use ($slug) {
+                return url("/store/{$slug}/reset-password/{$token}");
+            };
+        }
+
+        $this->notify(new ResetPasswordNotification($token));
+
+        ResetPasswordNotification::$createUrlCallback = null;
+    }
+
+    public function getProfileImageUrlAttribute(): ?string
+    {
+        return ImageService::url($this->profile_image);
     }
 
     public function getDefaultNotificationPreferences(): array

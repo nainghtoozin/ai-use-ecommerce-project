@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\App;
@@ -9,6 +10,10 @@ use Illuminate\Support\Facades\Notification;
 
 class Tenant extends Model
 {
+    protected $appends = [
+        'logo_url',
+    ];
+
     protected $fillable = [
         'name',
         'slug',
@@ -51,6 +56,11 @@ class Tenant extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return ImageService::url($this->logo);
     }
 
     public function categories()

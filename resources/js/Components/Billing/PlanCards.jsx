@@ -1,17 +1,12 @@
-import { Check, Sparkles } from 'lucide-react';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
-
-const highlightFeatures = {
-    free: ['Standard Products', 'Order Management', 'Cash on Delivery'],
-    starter: ['Variable Products', 'Analytics & Reports', 'Coupons', 'Custom Domain', 'Telegram Integration'],
-    business: ['Combo Products', 'Digital Products', 'AI Features', 'All Payment Gateways', 'Advanced SEO'],
-};
-
-function getFeaturesForPlan(planSlug) {
-    return highlightFeatures[planSlug] || [];
-}
+import { Sparkles } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
+import PlanFeatureList from '@/Components/Billing/PlanFeatureList';
 
 export default function PlanCards({ plans, onUpgrade }) {
+    const { allFeatureDefs, featureCategories, platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
+
     const handleUpgrade = (plan) => {
         if (onUpgrade && !plan.is_current) {
             onUpgrade(plan);
@@ -24,7 +19,11 @@ export default function PlanCards({ plans, onUpgrade }) {
                 const price = plan.monthly_price;
                 const isCurrent = plan.is_current;
                 const isFree = plan.slug === 'free';
-                const savings = plan.yearly_savings_percent;
+                const savingsPct = plan.yearly_savings_percent;
+                const yearlySavings = plan.monthly_price && plan.yearly_price
+                    ? (parseFloat(plan.monthly_price) * 12) - parseFloat(plan.yearly_price)
+                    : 0;
+                const hasSavings = yearlySavings > 0;
 
                 return (
                     <div
@@ -44,10 +43,10 @@ export default function PlanCards({ plans, onUpgrade }) {
                                 </span>
                             </div>
                         )}
-                        {!isCurrent && savings > 0 && (
+                        {!isCurrent && hasSavings && (
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                                 <span className="px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-100 rounded-full">
-                                    Save {savings}% yearly
+                                    Save {formatCurrency(yearlySavings, pc)}/yr ({savingsPct}% off)
                                 </span>
                             </div>
                         )}
@@ -64,22 +63,22 @@ export default function PlanCards({ plans, onUpgrade }) {
                             )}
                             <div className="mt-3 flex items-baseline gap-1">
                                 <span className="text-3xl font-bold text-gray-900">
-                                    {price === 0 ? 'Free' : price !== null ? `${CURRENCY_SYMBOL}${price}` : '—'}
+                                    {price === 0 ? 'Free' : price !== null ? formatCurrency(price, pc) : '—'}
                                 </span>
                                 {!isFree && price !== null && (
                                     <span className="text-sm text-gray-400">/month</span>
                                 )}
                             </div>
+                            {hasSavings && (
+                                <p className="text-xs text-emerald-600 font-medium mt-1">
+                                    {formatCurrency(plan.yearly_price, pc)}/year — Save {savingsPct}%
+                                </p>
+                            )}
                         </div>
 
-                        <ul className="space-y-2.5 flex-1 mb-6" aria-label={`${plan.name} plan highlights`}>
-                            {getFeaturesForPlan(plan.slug).map((feat, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm">
-                                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                    <span className="text-gray-600">{feat}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        <div className="flex-1 mb-6">
+                            <PlanFeatureList plan={plan} allFeatureDefs={allFeatureDefs || []} featureCategories={featureCategories || []} />
+                        </div>
 
                         <button
                             type="button"

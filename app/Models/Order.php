@@ -261,13 +261,13 @@ class Order extends Model
         return $this->isPaymentAmountCorrect();
     }
 
-    public function getPaymentScreenshotUrlAttribute(): string
+    public function getPaymentScreenshotUrlAttribute(): ?string
     {
-        return image_url($this->payment_screenshot);
+        return $this->payment_screenshot ? image_url($this->payment_screenshot) : null;
     }
 
-    public function getPaymentProofUrlAttribute(): string
+    public function getPaymentProofUrlAttribute(): ?string
     {
-        return image_url($this->payment_proof);
+        return $this->payment_proof ? image_url($this->payment_proof) : null;
     }
 }

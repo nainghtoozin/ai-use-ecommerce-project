@@ -41,6 +41,9 @@ use App\Services\Webhook\Adapters\WavePayWebhookAdapter;
 use App\Services\Webhook\Adapters\PayPalWebhookAdapter;
 use App\Services\Webhook\Adapters\LemonSqueezyWebhookAdapter;
 use App\Services\Webhook\Adapters\PaddleWebhookAdapter;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Gate;
@@ -195,9 +198,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (env('APP_ENV') !== 'local') {
+        if (!app()->environment('local')) {
             URL::forceScheme('https');
         }
+
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
 
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Order::class, CustomerOrderPolicy::class);

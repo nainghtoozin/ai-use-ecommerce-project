@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentIntent;
 use App\Models\PaymentTransaction;
 use App\Models\Plan;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -87,7 +88,7 @@ class SuperAdminFinancialController extends Controller
                     'evidences' => $intent->evidences->map(fn($ev) => [
                         'id' => $ev->id,
                         'type' => $ev->type,
-                        'file_path' => $ev->file_path,
+                        'file_path' => ImageService::url($ev->file_path),
                         'note' => $ev->note,
                     ])->values()->all(),
                     'timeline' => $intent->timelineEvents->sortBy('occurred_at')->values()->map(fn($tl) => [

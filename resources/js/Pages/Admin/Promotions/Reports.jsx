@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
 import { adminUrl } from '@/Utils/adminUrl';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function Reports({ promotions, products, categories }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const [filters, setFilters] = useState({
         start_date: '',
         end_date: '',
@@ -15,7 +17,7 @@ export default function Reports({ promotions, products, categories }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const formatMoney = (amount) => Number(amount || 0).toLocaleString() + ' MMK';
+    const formatMoney = (amount) => formatCurrency(amount);
 
     useEffect(() => {
         const now = new Date();
@@ -243,7 +245,7 @@ export default function Reports({ promotions, products, categories }) {
                                                         <div className="flex items-center gap-2 mt-0.5">
                                                             {p.code && <span className="text-xs font-mono text-gray-400">{p.code}</span>}
                                                             <TypeBadge type={p.type} />
-                                                            <span className="text-xs text-gray-400">{p.value}{p.type === 'percentage' ? '%' : ' MMK'}</span>
+                                                            <span className="text-xs text-gray-400">{p.type === 'percentage' ? `${p.value}%` : formatCurrency(p.value, cc)}</span>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">

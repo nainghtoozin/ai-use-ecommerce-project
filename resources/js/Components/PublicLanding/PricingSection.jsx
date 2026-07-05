@@ -1,20 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Check, Sparkles } from 'lucide-react';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { Sparkles } from 'lucide-react';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { useState } from 'react';
-
-const highlightFeatures = {
-    free: ['Standard Products', 'Order Management', 'Cash on Delivery'],
-    starter: ['Variable Products', 'Analytics & Reports', 'Coupons', 'Custom Domain', 'Telegram Integration'],
-    business: ['Combo Products', 'Digital Products', 'AI Features', 'All Payment Gateways', 'Advanced SEO'],
-};
-
-function getFeaturesForPlan(planSlug) {
-    return highlightFeatures[planSlug] || [];
-}
+import PlanFeatureList from '@/Components/Billing/PlanFeatureList';
 
 export default function PricingSection({ plans }) {
-    const { auth } = usePage().props;
+    const { auth, allFeatureDefs, featureCategories, platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
     const [isYearly, setIsYearly] = useState(false);
 
     if (!plans || plans.length === 0) return null;
@@ -62,7 +54,6 @@ export default function PricingSection({ plans }) {
                     </button>
                     <span className={`text-sm font-medium ${isYearly ? 'text-gray-900' : 'text-gray-400'}`}>
                         Yearly
-                        {isYearly && <span className="text-emerald-600 ml-1 text-xs font-normal">Save ~17%</span>}
                     </span>
                 </div>
 
@@ -75,6 +66,14 @@ export default function PricingSection({ plans }) {
                         const effectiveMonthly = getEffectiveMonthly(plan);
                         const isFree = planSlug === 'free';
                         const isCurrentPlan = auth?.user && (plan.is_current);
+
+                        const yearlySavings = plan.monthly_price && plan.yearly_price
+                            ? (parseFloat(plan.monthly_price) * 12) - parseFloat(plan.yearly_price)
+                            : 0;
+                        const savingsPercent = yearlySavings > 0 && plan.monthly_price > 0
+                            ? ((yearlySavings / (parseFloat(plan.monthly_price) * 12)) * 100).toFixed(1)
+                            : 0;
+                        const showSavings = isYearly && yearlySavings > 0;
 
                         return (
                             <div
@@ -116,7 +115,7 @@ export default function PricingSection({ plans }) {
                                         {price !== null ? (
                                             <>
                                                 <span className="text-4xl font-bold text-gray-900">
-                                                    {price === 0 ? 'Free' : `${CURRENCY_SYMBOL}${price}`}
+                                                    {price === 0 ? 'Free' : formatCurrency(price, pc)}
                                                 </span>
                                                 <span className="text-sm text-gray-400">{period}</span>
                                             </>
@@ -126,19 +125,19 @@ export default function PricingSection({ plans }) {
                                     </div>
                                     {effectiveMonthly !== null && (
                                         <p className="text-xs text-gray-400 mt-1">
-                                            {CURRENCY_SYMBOL}{effectiveMonthly}/month billed yearly
+                                            {pc.symbol}{effectiveMonthly}/month billed yearly
+                                        </p>
+                                    )}
+                                    {showSavings && (
+                                        <p className="text-xs text-emerald-600 font-medium mt-1">
+                                            Save {formatCurrency(yearlySavings, pc)}/year ({savingsPercent}% off)
                                         </p>
                                     )}
                                 </div>
 
-                                <ul className="space-y-3 flex-1 mb-6" aria-label={`${planName} plan features`}>
-                                    {getFeaturesForPlan(planSlug).map((feat, i) => (
-                                        <li key={i} className="flex items-start gap-2.5 text-sm">
-                                            <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-gray-600">{feat || ''}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <div className="flex-1 mb-6">
+                                    <PlanFeatureList plan={plan} allFeatureDefs={allFeatureDefs || []} featureCategories={featureCategories || []} />
+                                </div>
 
                                 {isCurrentPlan ? (
                                     <div className="w-full py-2.5 rounded-lg text-sm font-medium text-center bg-gray-100 text-gray-400 cursor-not-allowed">

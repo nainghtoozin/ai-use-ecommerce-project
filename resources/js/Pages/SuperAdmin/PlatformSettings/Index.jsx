@@ -14,6 +14,10 @@ export default function PlatformSettingsIndex({ settings }) {
     const [trialDays, setTrialDays] = useState(settings.trial_days ?? 14);
     const [allowTrialRenewal, setAllowTrialRenewal] = useState(settings.allow_trial_renewal ?? true);
     const [maxTrialRenewals, setMaxTrialRenewals] = useState(settings.max_trial_renewals ?? 0);
+    const [currencyCode, setCurrencyCode] = useState(settings.platform_currency_code || 'MMK');
+    const [currencySymbol, setCurrencySymbol] = useState(settings.platform_currency_symbol || 'Ks');
+    const [currencyPosition, setCurrencyPosition] = useState(settings.platform_currency_position || 'before');
+    const [decimalPlaces, setDecimalPlaces] = useState(settings.platform_decimal_places ?? 0);
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
 
@@ -31,6 +35,10 @@ export default function PlatformSettingsIndex({ settings }) {
         formData.append('trial_days', trialDays.toString());
         formData.append('allow_trial_renewal', allowTrialRenewal ? '1' : '0');
         formData.append('max_trial_renewals', maxTrialRenewals.toString());
+        formData.append('platform_currency_code', currencyCode);
+        formData.append('platform_currency_symbol', currencySymbol);
+        formData.append('platform_currency_position', currencyPosition);
+        formData.append('platform_decimal_places', decimalPlaces.toString());
 
         if (logo instanceof File) {
             formData.append('logo', logo);
@@ -193,7 +201,67 @@ export default function PlatformSettingsIndex({ settings }) {
                                 </div>
                             </div>
 
-                            {/* Section 4: System Settings */}
+                            {/* Section 4: Currency Settings */}
+                            <div className="border-b border-gray-200 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">Platform Currency</h3>
+                                <p className="text-sm text-gray-500 mb-4">Used across all SuperAdmin pages (Plans, Billing, Financial Console, etc.). Merchant stores use their own Website Settings currency.</p>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label htmlFor="platform_currency_code" className="block text-sm font-medium text-gray-700 mb-1">Currency Code</label>
+                                        <input
+                                            id="platform_currency_code"
+                                            type="text"
+                                            value={currencyCode}
+                                            onChange={(e) => setCurrencyCode(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="MMK"
+                                            maxLength={10}
+                                        />
+                                        {errors.platform_currency_code && <p className="text-xs text-red-600 mt-1">{errors.platform_currency_code}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="platform_currency_symbol" className="block text-sm font-medium text-gray-700 mb-1">Currency Symbol</label>
+                                        <input
+                                            id="platform_currency_symbol"
+                                            type="text"
+                                            value={currencySymbol}
+                                            onChange={(e) => setCurrencySymbol(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="Ks"
+                                            maxLength={10}
+                                        />
+                                        {errors.platform_currency_symbol && <p className="text-xs text-red-600 mt-1">{errors.platform_currency_symbol}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="platform_currency_position" className="block text-sm font-medium text-gray-700 mb-1">Symbol Position</label>
+                                        <select
+                                            id="platform_currency_position"
+                                            value={currencyPosition}
+                                            onChange={(e) => setCurrencyPosition(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        >
+                                            <option value="before">Before (e.g. Ks1,000)</option>
+                                            <option value="after">After (e.g. 1,000 Ks)</option>
+                                        </select>
+                                        {errors.platform_currency_position && <p className="text-xs text-red-600 mt-1">{errors.platform_currency_position}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="platform_decimal_places" className="block text-sm font-medium text-gray-700 mb-1">Decimal Places</label>
+                                        <input
+                                            id="platform_decimal_places"
+                                            type="number"
+                                            min="0"
+                                            max="4"
+                                            value={decimalPlaces}
+                                            onChange={(e) => setDecimalPlaces(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        />
+                                        {errors.platform_decimal_places && <p className="text-xs text-red-600 mt-1">{errors.platform_decimal_places}</p>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section 5: System Settings */}
                             <div className="pb-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-1">System Settings</h3>
                                 <p className="text-sm text-gray-500 mb-4">Control platform-wide features.</p>

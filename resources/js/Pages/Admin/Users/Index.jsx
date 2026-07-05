@@ -3,7 +3,6 @@ import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
-import { assetUrl } from '@/Utils/helpers';
 
 export default function UsersIndex({ users, filters, roles, showPagination = true, warning = null }) {
     const { auth } = usePage().props;
@@ -149,8 +148,8 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
                                                         <div className="flex-shrink-0 h-10 w-10">
-                                                            {user.profile_image ? (
-                                                                <img className="h-10 w-10 rounded-full object-cover" src={assetUrl(user.profile_image)} alt="" />
+                                                            {user.profile_image_url ? (
+                                                                <img className="h-10 w-10 rounded-full object-cover" src={user.profile_image_url} alt="" />
                                                             ) : (
                                                                 <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                                                                     <span className="text-sm font-medium text-blue-600">{user.name.charAt(0).toUpperCase()}</span>

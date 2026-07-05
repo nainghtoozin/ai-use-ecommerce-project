@@ -10,7 +10,7 @@
         $siteTitle = $page['props']['platform_setting']['site_name'] ?? 'My E-Commerce Store';
         $tenantFavicon = $page['props']['website_info']['favicon_url'] ?? null;
         $platformFavicon = $page['props']['platform_setting']['favicon'] ?? null;
-        $faviconUrl = $tenantFavicon ?? ($platformFavicon ? (str_starts_with($platformFavicon, 'http') ? $platformFavicon : asset('storage/' . $platformFavicon)) : null);
+        $faviconUrl = $tenantFavicon ?? ($platformFavicon ? \App\Services\ImageService::url($platformFavicon) : null);
     @endphp
 
     <title inertia>{{ $siteTitle }}</title>

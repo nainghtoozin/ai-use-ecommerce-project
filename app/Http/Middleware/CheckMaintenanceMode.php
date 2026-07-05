@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
 use App\Models\WebsiteInfo;
 use Closure;
 use Illuminate\Http\Request;
@@ -23,6 +24,10 @@ class CheckMaintenanceMode
 
     public function handle(Request $request, Closure $next): Response
     {
+        if (!Tenant::getCurrent()) {
+            return $next($request);
+        }
+
         $settings = WebsiteInfo::getSettings();
 
         if (!$settings->maintenance_mode) {

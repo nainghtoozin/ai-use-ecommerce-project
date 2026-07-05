@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Link, router, Head } from '@inertiajs/react';
+import { Link, router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 export default function PlansIndex({ plans, filters }) {
+    const { platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
 
@@ -39,8 +42,7 @@ export default function PlansIndex({ plans, filters }) {
     };
 
     function formatPrice(price) {
-        if (price === null || price === undefined) return '—';
-        return '$' + parseFloat(price).toFixed(2);
+        return formatCurrency(price, pc);
     }
 
     function formatLimit(value) {

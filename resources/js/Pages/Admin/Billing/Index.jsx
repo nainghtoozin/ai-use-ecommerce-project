@@ -10,7 +10,7 @@ import ActivityTimeline from '@/Components/Billing/ActivityTimeline';
 import PlanCards from '@/Components/Billing/PlanCards';
 import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
 import { adminUrl } from '@/Utils/adminUrl';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+
 
 function formatBytes(v) {
     if (v === null || v === undefined) return null;

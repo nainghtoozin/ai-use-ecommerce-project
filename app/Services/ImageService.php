@@ -9,41 +9,17 @@ use Illuminate\Support\Facades\Storage;
 
 class ImageService
 {
+    public function __construct(
+        private readonly ImageUploadService $uploadService,
+    ) {}
+
     public function upload(UploadedFile $file, string $folder): string
     {
         $this->assertStorageLimit($file);
 
-        if (app()->environment('production')) {
-            $path = $this->uploadToCloudinary($file, $folder);
-        } else {
-            $path = $this->uploadToLocal($file, $folder);
-        }
+        $path = $this->uploadService->upload($file, $folder);
 
         $this->trackStorage($file->getSize());
-
-        return $path;
-    }
-
-    private function uploadToCloudinary(UploadedFile $file, string $folder): string
-    {
-        $path = $file->store($folder, 'cloudinary');
-
-        if (!$path || !str_starts_with($path, 'http')) {
-            Log::error('Cloudinary upload did not return a URL', ['path' => $path]);
-            throw new \RuntimeException('Cloudinary upload failed. Check your Cloudinary configuration.');
-        }
-
-        Log::info('Image uploaded to Cloudinary', ['folder' => $folder, 'path' => $path]);
-
-        return $path;
-    }
-
-    private function uploadToLocal(UploadedFile $file, string $folder): string
-    {
-        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs($folder, $filename, 'public');
-
-        Log::info('Image uploaded to local storage', ['folder' => $folder, 'path' => $path]);
 
         return $path;
     }
@@ -59,9 +35,10 @@ class ImageService
         $deleted = false;
 
         if (str_starts_with($path, 'http')) {
-            $deleted = $this->deleteFromCloudinary($path);
+            $deleted = $this->getDefaultDisk() === 'cloudinary'
+                && $this->deleteFromCloudinary($path);
         } else {
-            $deleted = $this->deleteFromLocal($path);
+            $deleted = $this->deleteFromDefaultDisk($path);
         }
 
         if ($deleted && $fileSize > 0) {
@@ -89,12 +66,13 @@ class ImageService
         return false;
     }
 
-    private function deleteFromLocal(string $path): bool
+    private function deleteFromDefaultDisk(string $path): bool
     {
         try {
-            return Storage::disk('public')->delete($path);
+            return Storage::disk($this->getDefaultDisk())->delete($path);
         } catch (\Throwable $e) {
-            Log::warning('Failed to delete local image', [
+            Log::warning('Failed to delete image from default disk', [
+                'disk' => $this->getDefaultDisk(),
                 'path' => $path,
                 'error' => $e->getMessage(),
             ]);
@@ -139,10 +117,15 @@ class ImageService
         }
 
         try {
-            return Storage::disk('public')->size($path) ?: 0;
+            return Storage::disk($this->getDefaultDisk())->size($path) ?: 0;
         } catch (\Throwable) {
             return 0;
         }
+    }
+
+    private function getDefaultDisk(): string
+    {
+        return config('filesystems.default', 'public');
     }
 
     private function resolveTenant(): ?Tenant
@@ -187,7 +170,14 @@ class ImageService
             return $path;
         }
 
-        return asset('storage/' . $path);
+        $disk = config('filesystems.default', 'public');
+        $driver = config("filesystems.disks.{$disk}.driver");
+
+        if ($driver === 'local') {
+            return asset('storage/' . $path);
+        }
+
+        return Storage::disk($disk)->url($path);
     }
 
     public static function placeholderUrl(): string
@@ -205,7 +195,7 @@ class ImageService
             return true;
         }
 
-        return Storage::disk('public')->exists($path);
+        return Storage::disk(config('filesystems.default', 'public'))->exists($path);
     }
 
     public static function isLocalPath(?string $path): bool

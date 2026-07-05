@@ -1,8 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function CitiesIndex({ cities }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     function handleToggle(id) {
         router.post(adminUrl(`/admin/cities/${id}/toggle`));
     }
@@ -55,7 +57,7 @@ export default function CitiesIndex({ cities }) {
                             ) : cities.data.map((city) => (
                                 <tr key={city.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{city.name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{Number(city.delivery_fee).toLocaleString()} MMK</td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">{formatCurrency(city.delivery_fee, cc)}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600">{city.townships_count ?? 0}</td>
                                     <td className="px-6 py-4 text-center">
                                         <button onClick={() => handleToggle(city.id)}

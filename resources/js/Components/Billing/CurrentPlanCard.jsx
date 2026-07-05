@@ -1,5 +1,6 @@
+import { usePage } from '@inertiajs/react';
 import UsageProgressBar from '@/Components/Billing/UsageProgressBar';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 const statusConfig = {
     active:    { label: 'Active',        classes: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
@@ -21,7 +22,8 @@ export default function CurrentPlanCard({ subscription, usage }) {
     const cfg = statusConfig[subscription?.status] || statusConfig.expired;
     const price = plan?.monthly_price ?? plan?.yearly_price;
     const interval = subscription?.billing_interval === 'yearly' ? '/year' : '/month';
-    const formatMoney = (v) => v !== null && v !== undefined ? CURRENCY_SYMBOL + Number(v).toFixed(2) : null;
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+    const formatMoney = (v) => v !== null && v !== undefined ? formatCurrency(v, pc) : null;
 
     const limitRows = [
         { key: 'product_limit', label: 'Products', format: null },

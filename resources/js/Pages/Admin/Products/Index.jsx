@@ -18,10 +18,7 @@ import {
     Eye,
     Pencil,
 } from 'lucide-react';
-
-function formatPrice(price) {
-    return Number(price).toLocaleString();
-}
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 function formatStockForProduct(product) {
     if (product.type === 'variable') {
@@ -90,6 +87,7 @@ function InlineActions({ product, onDelete, can }) {
 }
 
 export default function AdminProductsIndex({ products, categories, brands = [], filters = {}, showPagination = true, warning = null }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const { url, props: { auth } } = usePage();
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
@@ -572,11 +570,11 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                         <DollarSign className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                                                         {product.type === 'variable' && product.price_range ? (
                                                             <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
-                                                                {formatPrice(product.price_range[0])} - {formatPrice(product.price_range[1])} MMK
+                                                                {formatCurrency(product.price_range[0], cc)} - {formatCurrency(product.price_range[1], cc)}
                                                             </span>
                                                         ) : (
                                                             <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
-                                                                {formatPrice(product.price)} MMK
+                                                                {formatCurrency(product.price, cc)}
                                                             </span>
                                                         )}
                                                     </div>

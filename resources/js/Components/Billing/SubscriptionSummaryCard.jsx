@@ -1,5 +1,6 @@
+import { usePage } from '@inertiajs/react';
 import StatusBadge from '@/Components/Billing/StatusBadge';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 function formatBytes(mb) {
     if (mb === null || mb === undefined) return null;
@@ -13,7 +14,8 @@ export default function SubscriptionSummaryCard({ subscription }) {
     const plan = subscription.plan;
     const interval = subscription.billing_interval === 'yearly' ? '/yr' : '/mo';
     const price = plan?.monthly_price ?? plan?.yearly_price;
-    const formatMoney = (v) => v !== null && v !== undefined ? CURRENCY_SYMBOL + Number(v).toFixed(2) : null;
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+    const formatMoney = (v) => v !== null && v !== undefined ? formatCurrency(v, pc) : null;
 
     const summaryRows = [
         { label: 'Plan', value: plan?.name || '—' },

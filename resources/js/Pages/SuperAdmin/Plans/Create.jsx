@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, router, Head } from '@inertiajs/react';
+import { Link, router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
 function Input({ field, label, type = 'text', placeholder = '', required = false, helpText = null, form, errors, handleChange }) {
     const id = `field_${field}`;
@@ -35,6 +36,9 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
 }
 
 export default function CreatePlan({ allFeatures = [] }) {
+    const { platform_setting } = usePage().props;
+    const pc = getPlatformCurrencyConfig(platform_setting);
+
     const [form, setForm] = useState({
         name: '',
         slug: '',
@@ -70,9 +74,28 @@ export default function CreatePlan({ allFeatures = [] }) {
             if (field === 'name' && !prev.slug) {
                 updated.slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
             }
+            if (field === 'monthly_price') {
+                const monthly = parseFloat(value);
+                if (!isNaN(monthly) && monthly > 0) {
+                    updated.yearly_price = (monthly * 12).toFixed(2);
+                } else {
+                    updated.yearly_price = '';
+                }
+            }
             return updated;
         });
     }
+
+    const monthlyNum = parseFloat(form.monthly_price);
+    const yearlyNum = parseFloat(form.yearly_price);
+    const hasMonthly = !isNaN(monthlyNum) && monthlyNum > 0;
+    const calculatedYearly = hasMonthly ? (monthlyNum * 12) : 0;
+    const hasYearly = !isNaN(yearlyNum) && yearlyNum > 0;
+    const actualYearly = hasYearly ? yearlyNum : (hasMonthly ? calculatedYearly : 0);
+    const yearlySavings = hasMonthly && hasYearly ? (calculatedYearly - yearlyNum) : 0;
+    const savingsPercent = hasMonthly && hasYearly && calculatedYearly > 0
+        ? ((calculatedYearly - yearlyNum) / calculatedYearly * 100).toFixed(1)
+        : 0;
 
     function handleFeatureToggle(key, checked) {
         setFeatures(prev => ({ ...prev, [key]: checked }));
@@ -151,9 +174,29 @@ export default function CreatePlan({ allFeatures = [] }) {
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <Input field="monthly_price" label="Monthly Price ($)" type="number" placeholder="29" helpText="Set to 0 for free plan. Leave empty if not available." form={form} errors={errors} handleChange={handleChange} />
-                                    <Input field="yearly_price" label="Yearly Price ($)" type="number" placeholder="290" helpText="Leave empty if not available." form={form} errors={errors} handleChange={handleChange} />
+                                    <Input field="monthly_price" label={`Monthly Price (${pc.symbol})`} type="number" placeholder="29" helpText="Set to 0 for free plan. Leave empty if not available." form={form} errors={errors} handleChange={handleChange} />
+                                    <Input field="yearly_price" label={`Yearly Price (${pc.symbol})`} type="number" placeholder="290" helpText="Auto-calculated from monthly × 12. Manually edit to apply a discount." form={form} errors={errors} handleChange={handleChange} />
                                 </div>
+
+                                {hasMonthly && (
+                                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                        <h4 className="text-sm font-semibold text-blue-800 mb-3">Pricing Summary</h4>
+                                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                            <span className="text-blue-600">Calculated Yearly (×12):</span>
+                                            <span className="text-blue-900 font-medium">{formatCurrency(calculatedYearly, pc)}</span>
+                                            <span className="text-blue-600">Actual Yearly Price:</span>
+                                            <span className="text-blue-900 font-medium">{formatCurrency(actualYearly, pc)}</span>
+                                            {yearlySavings > 0 && (
+                                                <>
+                                                    <span className="text-green-700">Yearly Savings:</span>
+                                                    <span className="text-green-600 font-medium">{formatCurrency(yearlySavings, pc)}</span>
+                                                    <span className="text-green-700">Savings:</span>
+                                                    <span className="text-green-600 font-medium">{savingsPercent}%</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-b border-gray-200 pb-6">

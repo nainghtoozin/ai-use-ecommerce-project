@@ -3,9 +3,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { assetUrl } from '@/Utils/helpers';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
  
 export default function Checkout({ cartItems, subtotal, paymentMethods, cities, errors, appliedPromotion: initialAppliedPromotion, discountAmount: initialDiscountAmount, autoPromotions }) {
-    const { auth } = usePage().props;
+    const { auth, platform_setting, website_info } = usePage().props;
+    const cc = getCurrencyConfig(platform_setting, website_info);
     const [localAppliedPromotion, setLocalAppliedPromotion] = useState(initialAppliedPromotion || null);
     const [localDiscount, setLocalDiscount] = useState(initialDiscountAmount || 0);
     const [promotionCode, setPromotionCode] = useState('');
@@ -296,7 +298,7 @@ return (
                                     <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                                     <select value={form.city_id} onChange={(e) => { updateField('city_id', e.target.value); fetchTownships(e.target.value); setForm((p) => ({ ...p, township_id: '' })); }} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">Select City</option>
-                                        {cities?.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.delivery_fee} MMK)</option>)}
+                                        {cities?.map((c) => <option key={c.id} value={c.id}>{c.name} ({formatCurrency(c.delivery_fee, cc)})</option>)}
                                     </select>
                                     {formErrors.city_id && <p className="text-red-500 text-xs mt-1">{formErrors.city_id}</p>}
                                 </div>
@@ -565,7 +567,7 @@ return (
                                                     <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity}</p>
                                                 </div>
                                                 <p className="text-sm font-semibold text-gray-900 whitespace-nowrap self-center">
-                                                    {(Number(item.price) * Number(item.quantity)).toLocaleString()} MMK
+                                                    {formatCurrency(Number(item.price) * Number(item.quantity), cc)}
                                                 </p>
                                             </div>
                                         ))}
@@ -596,7 +598,7 @@ return (
                                     <div className="space-y-3">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Subtotal ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
-                                            <span className="text-gray-900 font-medium">{Number(subtotal).toLocaleString()} MMK</span>
+                                            <span className="text-gray-900 font-medium">{formatCurrency(subtotal, cc)}</span>
                                         </div>
 
                                         {totalDiscount > 0 && (
@@ -605,14 +607,14 @@ return (
                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     Discount
                                                 </span>
-                                                <span className="font-medium text-emerald-600">-{Number(totalDiscount).toLocaleString()} MMK</span>
+                                                <span className="font-medium text-emerald-600">-{formatCurrency(totalDiscount, cc)}</span>
                                             </div>
                                         )}
 
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Delivery Fee</span>
                                             <span className={`font-medium ${deliveryFee > 0 ? 'text-gray-900' : 'text-green-600'}`}>
-                                                {deliveryFee > 0 ? `${Number(deliveryFee).toLocaleString()} MMK` : 'Free'}
+                                                {deliveryFee > 0 ? `${formatCurrency(deliveryFee, cc)}` : 'Free'}
                                             </span>
                                         </div>
                                     </div>
@@ -628,7 +630,7 @@ return (
                                                     <p className="text-sm font-bold text-emerald-800">You Save</p>
                                                 </div>
                                                 <p className="text-2xl font-extrabold text-emerald-700">
-                                                    {Number(totalDiscount).toLocaleString()} MMK
+                                                    {formatCurrency(totalDiscount, cc)}
                                                 </p>
                                                 <p className="text-xs text-emerald-600 mt-0.5">
                                                     on this order with applied discounts
@@ -650,12 +652,12 @@ return (
                                                             <div className="min-w-0 flex-1">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-md">
-                                                                        {ap.type === 'percentage' ? `${ap.value}%` : ap.type === 'fixed' ? `${Number(ap.discount).toLocaleString()} MMK` : 'FREE'}
+                                                                        {ap.type === 'percentage' ? `${ap.value}%` : ap.type === 'fixed' ? `${formatCurrency(ap.discount, cc)}` : 'FREE'}
                                                                     </span>
                                                                     <p className="text-sm font-semibold text-gray-900 truncate">{ap.name}</p>
                                                                 </div>
                                                                 <p className="text-xs text-gray-500 mt-1 ml-1">
-                                                                    {ap.type === 'percentage' ? `${ap.value}% Off` : ap.type === 'fixed' ? `${Number(ap.discount).toLocaleString()} MMK Off` : 'Free Shipping'}
+                                                                    {ap.type === 'percentage' ? `${ap.value}% Off` : ap.type === 'fixed' ? `${formatCurrency(ap.discount, cc)} Off` : 'Free Shipping'}
                                                                     {ap.description ? ` — ${ap.description}` : ''}
                                                                 </p>
                                                             </div>
@@ -701,7 +703,7 @@ return (
                                                         <div className="flex items-center gap-1.5">
                                                             <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                             <p className="text-sm font-semibold text-emerald-800 truncate">{localAppliedPromotion.name || 'Promotion'}</p>
-                                                            <span className="px-1.5 py-0.5 bg-emerald-600 text-white text-xs font-bold rounded">-{Number(localAppliedPromotion.discount).toLocaleString()} MMK</span>
+                                                            <span className="px-1.5 py-0.5 bg-emerald-600 text-white text-xs font-bold rounded">-{formatCurrency(localAppliedPromotion.discount, cc)}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-1 ml-5">
                                                             <span className="text-xs font-mono font-medium text-emerald-700">{localAppliedPromotion.code}</span>
@@ -751,7 +753,7 @@ return (
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                         <div className="flex justify-between items-baseline">
                                             <span className="text-base font-bold text-gray-900">Total</span>
-                                            <span className="text-xl font-extrabold text-gray-900">{Number(total).toLocaleString()} MMK</span>
+                                            <span className="text-xl font-extrabold text-gray-900">{formatCurrency(total, cc)}</span>
                                         </div>
                                     </div>
 
@@ -771,7 +773,7 @@ return (
                                                     Placing Order...
                                                 </>
                                             ) : (
-                                                `Place Order — ${Number(total).toLocaleString()} MMK`
+                                                `Place Order — ${formatCurrency(total, cc)}`
                                             )}
                                         </button>
                                         {uploading && (

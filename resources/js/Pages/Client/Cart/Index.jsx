@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { assetUrl } from '@/Utils/helpers';
 import { useCart } from '@/Hooks/useCart';
 import axios from 'axios';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function CartIndex({ cartItems: initialCartItems, subtotal: initialSubtotal, appliedPromotion: initialPromotion, appliedCoupon: initialCoupon, totalDiscount: initialDiscount }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const { updateQuantity, removeItem, loading } = useCart();
     const [cartItems, setCartItems] = useState(initialCartItems || []);
     const [subtotal, setSubtotal] = useState(initialSubtotal || 0);
@@ -250,7 +252,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 <div className="mt-2 space-y-1.5 text-sm">
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500">Unit Price</span>
-                                                        <span className="text-gray-800 font-medium">{Number(item.price).toLocaleString()} MMK</span>
+                                                        <span className="text-gray-800 font-medium">{formatCurrency(item.price, cc)}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className="text-gray-500">Qty</span>
@@ -283,7 +285,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                     </div>
                                                     <div className="flex justify-between border-t border-gray-100 pt-1.5">
                                                         <span className="text-gray-700 font-semibold">Subtotal</span>
-                                                        <span className="text-gray-900 font-bold">{Number(lineSubtotal).toLocaleString()} MMK</span>
+                                                        <span className="text-gray-900 font-bold">{formatCurrency(lineSubtotal, cc)}</span>
                                                     </div>
                                                 </div>
                                                 <button
@@ -324,7 +326,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                             </div>
 
                                             <div className="text-center">
-                                                <span className="text-sm text-gray-800 font-medium">{Number(item.price).toLocaleString()} MMK</span>
+                                                <span className="text-sm text-gray-800 font-medium">{formatCurrency(item.price, cc)}</span>
                                             </div>
 
                                             <div className="flex justify-center">
@@ -357,7 +359,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                             </div>
 
                                             <div className="text-right">
-                                                <span className="text-sm font-bold text-gray-900">{Number(lineSubtotal).toLocaleString()} MMK</span>
+                                                <span className="text-sm font-bold text-gray-900">{formatCurrency(lineSubtotal, cc)}</span>
                                             </div>
 
                                             <div className="flex justify-center">
@@ -383,7 +385,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                 <div className="space-y-3 text-sm">
                                     <div className="flex justify-between text-gray-600">
                                         <span>Subtotal ({cartItems.reduce((s, i) => s + i.quantity, 0)} items)</span>
-                                        <span>{Number(subtotal).toLocaleString()} MMK</span>
+                                        <span>{formatCurrency(subtotal, cc)}</span>
                                     </div>
 
                                     {totalDiscount > 0 && (
@@ -394,7 +396,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 </svg>
                                                 <span>Discount</span>
                                             </div>
-                                            <span className="font-medium">-{Number(totalDiscount).toLocaleString()} MMK</span>
+                                            <span className="font-medium">-{formatCurrency(totalDiscount, cc)}</span>
                                         </div>
                                     )}
 
@@ -405,7 +407,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
 
                                     <div className="border-t border-gray-200 pt-3 flex justify-between font-semibold text-gray-900">
                                         <span>Total</span>
-                                        <span>{Number(finalTotal).toLocaleString()} MMK</span>
+                                        <span>{formatCurrency(finalTotal, cc)}</span>
                                     </div>
                                 </div>
 

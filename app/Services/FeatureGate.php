@@ -33,12 +33,15 @@ class FeatureGate
     protected const CACHE_TTL = 300;
 
     /**
-     * Development mode: bypasses all feature restrictions.
+     * Check if development mode is active (bypasses all feature restrictions).
      *
-     * Now disabled — plan limits are seeded and FeatureGate reads
-     * real PlanFeature records from the database.
+     * Controlled via DEV_MODE env variable — enables unrestricted feature access
+     * during development without requiring seeded plan features.
      */
-    protected const DEV_MODE = false;
+    public static function isDevMode(): bool
+    {
+        return (bool) config('app.dev_mode', false);
+    }
 
     /**
      * Feature key to product type mapping.
@@ -182,8 +185,7 @@ class FeatureGate
      */
     public function isEnabled(string $featureKey): bool
     {
-        // TODO: Remove this dev mode bypass once billing/subscriptions are live.
-        if (self::DEV_MODE) {
+        if (self::isDevMode()) {
             return true;
         }
 
@@ -275,8 +277,7 @@ class FeatureGate
      */
     public function getEnabledFeatures(): array
     {
-        // TODO: Remove this dev mode bypass once billing/subscriptions are live.
-        if (self::DEV_MODE) {
+        if (self::isDevMode()) {
             return array_keys(self::FEATURE_LABELS);
         }
 
@@ -300,8 +301,7 @@ class FeatureGate
      */
     public function getAllFeaturesStatus(): array
     {
-        // TODO: Remove this dev mode bypass once billing/subscriptions are live.
-        if (self::DEV_MODE) {
+        if (self::isDevMode()) {
             $features = [];
             foreach (array_keys(self::FEATURE_LABELS) as $key) {
                 $features[$key] = [
@@ -386,8 +386,7 @@ class FeatureGate
      */
     public function require(string $featureKey): void
     {
-        // TODO: Remove this dev mode bypass once billing/subscriptions are live.
-        if (self::DEV_MODE) {
+        if (self::isDevMode()) {
             return;
         }
 

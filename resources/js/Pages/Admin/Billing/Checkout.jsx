@@ -4,7 +4,9 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import StatusBadge from '@/Components/Billing/StatusBadge';
 import { Check, Copy, CheckCheck, ArrowRight, Clock, ShieldCheck, Upload, Eye, Zap } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
+
+const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
 function formatBytes(v) {
     if (v === null || v === undefined) return null;
@@ -77,6 +79,11 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
 
+    const yearlySavingsAmount = selectedPlan?.monthly_price && selectedPlan?.yearly_price
+        ? (parseFloat(selectedPlan.monthly_price) * 12) - parseFloat(selectedPlan.yearly_price)
+        : 0;
+    const hasYearlySavings = yearlySavingsAmount > 0;
+
     const handleContinue = () => {
         router.get(adminUrl('/admin/billing/payment'), {
             intent: intent?.reference_number,
@@ -140,14 +147,14 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                 <div className="flex items-baseline gap-1 mb-6">
                                     <span className="text-3xl font-extrabold text-gray-900">
                                         {selectedPlan?.monthly_price === 0 ? 'Free' :
-                                            selectedPlan?.monthly_price !== null ? `${CURRENCY_SYMBOL}${selectedPlan.monthly_price}` : '—'}
+                                            selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                     </span>
                                     {selectedPlan?.monthly_price > 0 && (
                                         <span className="text-sm text-gray-400">/month</span>
                                     )}
-                                    {selectedPlan?.yearly_savings_percent > 0 && (
+                                    {hasYearlySavings && (
                                         <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700 rounded-full">
-                                            Save {selectedPlan.yearly_savings_percent}% yearly
+                                            Save {formatCurrency(yearlySavingsAmount, pc)}/yr
                                         </span>
                                     )}
                                 </div>
@@ -292,7 +299,7 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                         <span className="text-gray-600">{selectedPlan?.name} Plan</span>
                                         <span className="font-semibold text-gray-900">
                                             {selectedPlan?.monthly_price === 0 ? 'Free' :
-                                                selectedPlan?.monthly_price !== null ? `${CURRENCY_SYMBOL}${selectedPlan.monthly_price}` : '—'}
+                                                selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
@@ -308,7 +315,7 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                             <span className="text-sm font-semibold text-gray-900">Subtotal</span>
                                             <span className="text-sm font-semibold text-gray-900">
                                                 {selectedPlan?.monthly_price === 0 ? 'Free' :
-                                                    selectedPlan?.monthly_price !== null ? `${CURRENCY_SYMBOL}${selectedPlan.monthly_price}` : '—'}
+                                                    selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                             </span>
                                         </div>
                                     </div>
@@ -321,12 +328,12 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                             <span className="text-base font-bold text-gray-900">Total</span>
                                             <span className="text-base font-bold text-gray-900">
                                                 {selectedPlan?.monthly_price === 0 ? 'Free' :
-                                                    selectedPlan?.monthly_price !== null ? `${CURRENCY_SYMBOL}${selectedPlan.monthly_price}` : '—'}
+                                                    selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                             </span>
                                         </div>
-                                        {selectedPlan?.yearly_savings_percent > 0 && (
+                                        {hasYearlySavings && (
                                             <p className="text-xs text-emerald-600 font-medium mt-1 text-right">
-                                                Save {selectedPlan.yearly_savings_percent}% with yearly billing
+                                                Save {formatCurrency(yearlySavingsAmount, pc)}/yr with yearly billing
                                             </p>
                                         )}
                                     </div>

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { assetUrl } from '@/Utils/helpers';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function ClientOrdersShow({ order }) {
     const { props } = usePage();
+    const cc = getCurrencyConfig(props.platform_setting, props.website_info);
     const flash = props.flash || {};
     const { data, setData, post, processing, reset } = useForm({
         transaction_id: '',
@@ -89,9 +91,9 @@ export default function ClientOrdersShow({ order }) {
                                             {order.items?.length ? order.items.map((item) => (
                                                 <tr key={item.id} className="border-b border-gray-100">
                                                     <td className="py-3 text-sm font-medium text-gray-900">{item.product?.name || `Product #${item.product_id}`}</td>
-                                                    <td className="py-3 text-sm text-right">{Number(item.price).toLocaleString()} MMK</td>
+                                                    <td className="py-3 text-sm text-right">{formatCurrency(item.price, cc)}</td>
                                                     <td className="py-3 text-sm text-right">{item.quantity}</td>
-                                                    <td className="py-3 text-sm text-right font-medium">{(item.price * item.quantity).toLocaleString()} MMK</td>
+                                                    <td className="py-3 text-sm text-right font-medium">{formatCurrency(item.price * item.quantity, cc)}</td>
                                                 </tr>
                                             )) : (
                                                 <tr><td colSpan="4" className="py-4 text-center text-gray-500 text-sm">No items found.</td></tr>
@@ -100,15 +102,15 @@ export default function ClientOrdersShow({ order }) {
                                         <tfoot>
                                             <tr>
                                                 <td colSpan="3" className="text-right py-2 text-sm text-gray-600">Subtotal</td>
-                                                <td className="text-right py-2 text-sm text-gray-900">{Number(order.subtotal || order.items_total).toLocaleString()} MMK</td>
+                                                <td className="text-right py-2 text-sm text-gray-900">{formatCurrency(order.subtotal || order.items_total, cc)}</td>
                                             </tr>
                                             <tr>
                                                 <td colSpan="3" className="text-right py-2 text-sm text-gray-600">Delivery Fee</td>
-                                                <td className="text-right py-2 text-sm text-gray-900">{Number(order.delivery_fee || 0).toLocaleString()} MMK</td>
+                                                <td className="text-right py-2 text-sm text-gray-900">{formatCurrency(order.delivery_fee || 0, cc)}</td>
                                             </tr>
                                             <tr className="font-bold">
                                                 <td colSpan="3" className="text-right py-2 text-sm text-gray-900">Total</td>
-                                                <td className="text-right py-2 text-sm text-gray-900">{Number(order.total_amount).toLocaleString()} MMK</td>
+                                                <td className="text-right py-2 text-sm text-gray-900">{formatCurrency(order.total_amount, cc)}</td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -188,7 +190,7 @@ export default function ClientOrdersShow({ order }) {
                                 {order.paid_amount && (
                                     <div>
                                         <p className="text-sm text-gray-500">Paid Amount</p>
-                                        <p className="font-medium text-green-600">{Number(order.paid_amount).toLocaleString()} MMK</p>
+                                        <p className="font-medium text-green-600">{formatCurrency(order.paid_amount, cc)}</p>
                                     </div>
                                 )}
                                 {order.payment_proof && (

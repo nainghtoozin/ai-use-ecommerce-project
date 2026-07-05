@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function AdminOrdersShow({ order }) {
-    const { auth, flash: pageFlash } = usePage().props;
+    const { auth, flash: pageFlash, platform_setting, website_info } = usePage().props;
+    const cc = getCurrencyConfig(platform_setting, website_info);
     const flash = pageFlash || {};
     const [imagePreview, setImagePreview] = useState(null);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -315,9 +317,9 @@ export default function AdminOrdersShow({ order }) {
                                                     <p className="font-medium text-gray-900 text-sm">{item.product?.name || `Product #${item.product_id}`}</p>
                                                     {item.product && <p className="text-xs text-gray-500">SKU: {item.product.id}</p>}
                                                 </td>
-                                                <td className="py-3 text-sm text-right">{Number(item.price).toLocaleString()} MMK</td>
+                                                <td className="py-3 text-sm text-right">{formatCurrency(item.price, cc)}</td>
                                                 <td className="py-3 text-sm text-right">{item.quantity}</td>
-                                                <td className="py-3 text-sm text-right font-medium">{(item.price * item.quantity).toLocaleString()} MMK</td>
+                                                <td className="py-3 text-sm text-right font-medium">{formatCurrency(item.price * item.quantity, cc)}</td>
                                             </tr>
                                         )) : (
                                             <tr><td colSpan="4" className="py-4 text-center text-gray-500 text-sm">No items found</td></tr>
@@ -326,15 +328,15 @@ export default function AdminOrdersShow({ order }) {
                                     <tfoot>
                                         <tr>
                                             <td colSpan="3" className="text-right py-2 text-sm text-gray-600">Subtotal:</td>
-                                            <td className="text-right py-2 text-sm font-medium">{Number(order.items_total).toLocaleString()} MMK</td>
+                                            <td className="text-right py-2 text-sm font-medium">{formatCurrency(order.items_total, cc)}</td>
                                         </tr>
                                         <tr>
                                             <td colSpan="3" className="text-right py-2 text-sm text-gray-600">Delivery Fee:</td>
-                                            <td className="text-right py-2 text-sm font-medium">{Number(order.delivery_fee || 0).toLocaleString()} MMK</td>
+                                            <td className="text-right py-2 text-sm font-medium">{formatCurrency(order.delivery_fee || 0, cc)}</td>
                                         </tr>
                                         <tr className="font-bold">
                                             <td colSpan="3" className="text-right py-2 text-sm">Total:</td>
-                                            <td className="text-right py-2 text-sm">{Number(order.total_amount).toLocaleString()} MMK</td>
+                                            <td className="text-right py-2 text-sm">{formatCurrency(order.total_amount, cc)}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -412,13 +414,13 @@ export default function AdminOrdersShow({ order }) {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Total Payable:</span>
-                                    <span className="font-bold text-lg">{Number(order.total_payable || order.total_amount).toLocaleString()} MMK</span>
+                                    <span className="font-bold text-lg">{formatCurrency(order.total_payable || order.total_amount, cc)}</span>
                                 </div>
                                 {order.paid_amount && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-gray-600">Paid Amount:</span>
                                         <span className={`font-medium ${order.is_payment_amount_correct ? 'text-green-600' : 'text-red-600'}`}>
-                                            {Number(order.paid_amount).toLocaleString()} MMK
+                                            {formatCurrency(order.paid_amount, cc)}
                                             {!order.is_payment_amount_correct && <span className="text-xs text-red-500 ml-1">(Short payment)</span>}
                                         </span>
                                     </div>

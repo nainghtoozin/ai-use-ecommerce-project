@@ -10,10 +10,7 @@ import {
 } from 'lucide-react';
 
 const PER_PAGE_OPTIONS = [25, 50, 100, 1000];
-
-function formatCurrency(amount) {
-    return Number(amount || 0).toLocaleString() + ' MMK';
-}
+import { formatCurrency } from '@/Utils/currency';
 
 const paymentStatusConfig = {
     paid:     { label: 'Paid',     className: 'bg-emerald-100 text-emerald-700' },

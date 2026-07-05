@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
 import { assetUrl } from '@/Utils/helpers';
+import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 function safeNum(val) {
     const n = Number(val);
@@ -32,6 +33,7 @@ function StockStatusBadge({ status, label }) {
 }
 
 export default function ProductShow({ product, promotion, detail }) {
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const [activeImage, setActiveImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
@@ -177,8 +179,8 @@ export default function ProductShow({ product, promotion, detail }) {
                 {product.seo_keywords && <meta name="keywords" content={product.seo_keywords} />}
                 <meta property="og:title" content={product.seo_title || product.name} />
                 <meta property="og:description" content={product.seo_description || product.short_description || ''} />
-                <meta property="og:image" content={assetUrl(product.seo_image || product.photo1_url)} />
-                <meta name="twitter:image" content={assetUrl(product.seo_image || product.photo1_url)} />
+                <meta property="og:image" content={product.seo_image_url || product.photo1_url} />
+                <meta name="twitter:image" content={product.seo_image_url || product.photo1_url} />
             </Head>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -279,7 +281,7 @@ export default function ProductShow({ product, promotion, detail }) {
                                             ) : (
                                                 <div className="flex items-baseline gap-2">
                                                     <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                                                        {safeNum(displayPrice).toLocaleString()} <span className="text-base sm:text-lg font-medium text-gray-500">MMK</span>
+{formatCurrency(displayPrice, cc)}
                                                     </span>
                                                 </div>
                                             )
@@ -290,7 +292,7 @@ export default function ProductShow({ product, promotion, detail }) {
                                                 </span>
                                                 {originalPrice > 0 && (
                                                     <span className="text-base sm:text-lg text-gray-400 line-through">
-                                                        {safeNum(originalPrice).toLocaleString()} MMK
+                                                        {formatCurrency(originalPrice, cc)}
                                                     </span>
                                                 )}
                                             </div>
@@ -306,11 +308,11 @@ export default function ProductShow({ product, promotion, detail }) {
                                 </div>
                                 {isCombo && detail?.combo_summary?.savings > 0 && (
                                     <p className="text-xs text-green-600 font-semibold mt-1">
-                                        Save {safeNum(detail.combo_summary.savings).toLocaleString()} MMK ({detail.combo_summary.savings_percentage}%)
+                                        Save {formatCurrency(detail.combo_summary.savings, cc)} ({detail.combo_summary.savings_percentage}%)
                                     </p>
                                 )}
                                 {hasPromotion && savings > 0 && (
-                                    <p className="text-xs text-green-600 font-semibold mt-1">You save {savings.toLocaleString()} MMK</p>
+                                    <p className="text-xs text-green-600 font-semibold mt-1">You save {formatCurrency(savings, cc)}</p>
                                 )}
                             </div>
 
@@ -541,11 +543,11 @@ export default function ProductShow({ product, promotion, detail }) {
                         <div className="flex-shrink-0">
                             {isVariable && displayPrice ? (
                                 <span className="text-lg font-extrabold text-gray-900">
-                                    {safeNum(displayPrice).toLocaleString()} <span className="text-xs font-medium text-gray-500">MMK</span>
+                                    {formatCurrency(displayPrice, cc)}
                                 </span>
                             ) : !isVariable ? (
                                 <span className="text-lg font-extrabold text-gray-900">
-                                    {safeNum(displayPrice).toLocaleString()} <span className="text-xs font-medium text-gray-500">MMK</span>
+                                    {formatCurrency(displayPrice, cc)}
                                 </span>
                             ) : (
                                 <span className="text-sm text-gray-400">Select options</span>

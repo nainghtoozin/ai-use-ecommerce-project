@@ -91,9 +91,7 @@ class FeatureGateTest extends TestCase
 
     public function test_dev_mode_is_false(): void
     {
-        $reflection = new \ReflectionClass(FeatureGate::class);
-        $devMode = $reflection->getConstant('DEV_MODE');
-        $this->assertFalse($devMode);
+        $this->assertFalse(FeatureGate::isDevMode());
     }
 
     /* ── Free Plan Feature Checks ── */

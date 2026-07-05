@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import StatusBadge from '@/Components/Billing/StatusBadge';
 import PlanFeatureMatrix from '@/Components/Billing/PlanFeatureMatrix';
 import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
-import { CURRENCY_SYMBOL } from '@/Utils/currency';
-import { Check, X, Sparkles, TrendingUp, Lightbulb, Star, Zap, HelpCircle, ShieldCheck } from 'lucide-react';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
+import { X, Sparkles, TrendingUp, Lightbulb, Star, Zap, HelpCircle, ShieldCheck } from 'lucide-react';
+import PlanFeatureList from '@/Components/Billing/PlanFeatureList';
 
 function formatBytes(v) {
     if (v === null || v === undefined) return null;
@@ -27,12 +28,6 @@ const planMeta = {
     free: { audience: 'For small stores just getting started', badge: null, color: 'gray' },
     starter: { audience: 'For growing businesses ready to scale', badge: 'most_popular', color: 'blue' },
     business: { audience: 'For established stores needing full power', badge: 'best_value', color: 'purple' },
-};
-
-const highlightFeatures = {
-    free: ['Standard Products', 'Order Management', 'Cash on Delivery'],
-    starter: ['Variable Products', 'Analytics & Reports', 'Coupons', 'Custom Domain', 'Telegram Integration'],
-    business: ['Combo Products', 'Digital Products', 'AI Features', 'All Payment Gateways', 'Advanced SEO'],
 };
 
 function UpgradeRecommendations({ usage, plans }) {
@@ -84,18 +79,23 @@ function UpgradeRecommendations({ usage, plans }) {
     );
 }
 
-function PlanCard({ plan, isRecommended, onUpgradeClick }) {
+function PlanCard({ plan, isRecommended, onUpgradeClick, allFeatureDefs, featureCategories }) {
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
     const price = plan.monthly_price;
     const isCurrent = plan.is_current;
     const meta = planMeta[plan.slug] || { audience: '', badge: null, color: 'gray' };
-    const savings = plan.yearly_savings_percent;
+    const savingsPct = plan.yearly_savings_percent;
+    const yearlySavings = plan.monthly_price && plan.yearly_price
+        ? (parseFloat(plan.monthly_price) * 12) - parseFloat(plan.yearly_price)
+        : 0;
+    const hasSavings = yearlySavings > 0;
 
     const badge = (() => {
         if (isCurrent) return { label: 'Current Plan', classes: 'bg-blue-600 text-white' };
         if (isRecommended) return { label: 'Recommended', classes: 'bg-emerald-600 text-white' };
         if (meta.badge === 'most_popular') return { label: 'Most Popular', classes: 'bg-blue-600 text-white' };
         if (meta.badge === 'best_value') return { label: 'Best Value', classes: 'bg-purple-600 text-white' };
-        if (savings > 0) return { label: `Save ${savings}%`, classes: 'bg-emerald-100 text-emerald-700' };
+        if (hasSavings) return { label: `Save ${formatCurrency(yearlySavings, pc)}/yr (${savingsPct}% off)`, classes: 'bg-emerald-100 text-emerald-700' };
         return null;
     })();
 
@@ -106,12 +106,7 @@ function PlanCard({ plan, isRecommended, onUpgradeClick }) {
 
     return (
         <div className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all duration-200 bg-white ${borderClass} hover:shadow-lg`} role="region" aria-label={`${plan.name} plan`}>
-            {badge && !savings && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${badge.classes}`}>{badge.label}</span>
-                </div>
-            )}
-            {badge && savings > 0 && !isCurrent && (
+            {badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${badge.classes}`}>{badge.label}</span>
                 </div>
@@ -125,44 +120,21 @@ function PlanCard({ plan, isRecommended, onUpgradeClick }) {
                 <p className="text-sm text-gray-500">{meta.audience}</p>
                 <div className="mt-4 flex items-baseline gap-1">
                     <span className="text-4xl font-extrabold text-gray-900">
-                        {price === 0 ? 'Free' : price !== null ? `${CURRENCY_SYMBOL}${price}` : '—'}
+                        {price === 0 ? 'Free' : price !== null ? formatCurrency(price, pc) : '—'}
                     </span>
-                    {!isCurrent && price !== null && price > 0 && (
-                        <span className="text-sm text-gray-400">/month</span>
-                    )}
-                    {isCurrent && price !== null && price > 0 && (
+                    {price !== null && price > 0 && (
                         <span className="text-sm text-gray-400">/month</span>
                     )}
                 </div>
-                {!isCurrent && savings > 0 && (
+                {!isCurrent && hasSavings && (
                     <p className="text-xs text-emerald-600 font-medium mt-1">
-                        {CURRENCY_SYMBOL}{plan.yearly_price}/year — Save {savings}%
+                        {formatCurrency(plan.yearly_price, pc)}/year — Save {savingsPct}%
                     </p>
                 )}
             </div>
 
-            <ul className="space-y-2.5 flex-1 mb-6" aria-label={`${plan.name} plan highlights`}>
-                {(highlightFeatures[plan.slug] || []).map((feat, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-600">{feat}</span>
-                    </li>
-                ))}
-            </ul>
-
-            <div className="space-y-2 mb-6">
-                <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">Products</span>
-                    <span className="font-medium text-gray-700">{plan.product_limit === null ? 'Unlimited' : `Up to ${plan.product_limit}`}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">Staff</span>
-                    <span className="font-medium text-gray-700">{plan.staff_limit === null ? 'Unlimited' : `Up to ${plan.staff_limit}`}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">Storage</span>
-                    <span className="font-medium text-gray-700">{plan.storage_limit === null ? 'Unlimited' : formatBytes(plan.storage_limit)}</span>
-                </div>
+            <div className="flex-1 mb-6">
+                <PlanFeatureList plan={plan} allFeatureDefs={allFeatureDefs || []} featureCategories={featureCategories || []} />
             </div>
 
             <button
@@ -306,6 +278,8 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                                 plan={plan}
                                 isRecommended={!plan.is_current && recommendedSlug === plan.slug}
                                 onUpgradeClick={openUpgradeFlow}
+                                allFeatureDefs={allFeatureDefs}
+                                featureCategories={featureCategories}
                             />
                         ))}
                     </div>
