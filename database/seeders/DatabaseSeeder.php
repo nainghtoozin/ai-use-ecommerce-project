@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             PlanSeeder::class,
             LocationSeeder::class,
             PlatformSettingSeeder::class,
+            BillingPaymentMethodSeeder::class,
 
             // TENANT BOOTSTRAP CANDIDATES (move to TenantBootstrapService in future)
             WebsiteSettingsSeeder::class,

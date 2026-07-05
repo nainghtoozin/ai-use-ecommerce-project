@@ -8,7 +8,6 @@ import FeatureAvailability from '@/Components/Billing/FeatureAvailability';
 import QuickActions from '@/Components/Billing/QuickActions';
 import ActivityTimeline from '@/Components/Billing/ActivityTimeline';
 import PlanCards from '@/Components/Billing/PlanCards';
-import PlanFeatureMatrix from '@/Components/Billing/PlanFeatureMatrix';
 import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
 import { adminUrl } from '@/Utils/adminUrl';
 import { CURRENCY_SYMBOL } from '@/Utils/currency';
@@ -218,14 +217,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                     </div>
                 )}
 
-                {plans && plans.length > 1 && featureCategories && (
-                    <PlanFeatureMatrix
-                        plans={plans}
-                        featureCategories={featureCategories}
-                        allFeatureDefs={allFeatureDefs}
-                        onLockedFeatureClick={handleLockedFeature}
-                    />
-                )}
             </div>
 
             <UpgradeDialog

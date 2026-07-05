@@ -26,7 +26,7 @@ class LedgerEntry extends Model
 
     public function transaction(): BelongsTo
     {
-        return $this->belongsTo(PaymentTransaction::class);
+        return $this->belongsTo(PaymentTransaction::class, 'transaction_id');
     }
 
     public function paymentIntent(): BelongsTo

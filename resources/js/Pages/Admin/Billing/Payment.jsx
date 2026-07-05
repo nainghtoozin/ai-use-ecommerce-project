@@ -188,6 +188,11 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
     const flash = props?.flash || {};
 
     const [selectedMethod, setSelectedMethod] = useState(null);
+    const [senderName, setSenderName] = useState('');
+    const [senderAccount, setSenderAccount] = useState('');
+    const [transactionReference, setTransactionReference] = useState('');
+    const [transferredAmount, setTransferredAmount] = useState('');
+    const [transferDate, setTransferDate] = useState('');
     const [evidenceFile, setEvidenceFile] = useState(null);
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -199,16 +204,26 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
     const errors = {};
 
+    function validateForm() {
+        const errs = [];
+        if (!senderName.trim()) errs.push('Account holder name is required.');
+        if (!senderAccount.trim()) errs.push('Sender account/phone is required.');
+        if (!transactionReference.trim()) errs.push('Transaction reference is required.');
+        if (!transferredAmount || parseFloat(transferredAmount) <= 0) errs.push('Enter a valid transferred amount greater than zero.');
+        if (!transferDate) errs.push('Transfer date is required.');
+        if (transferDate && new Date(transferDate) > new Date()) errs.push('Transfer date cannot be in the future.');
+        if (!evidenceFile) errs.push('Receipt image is required.');
+        if (!selectedMethod) errs.push('Please select a payment method.');
+        return errs;
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setUploadError(null);
 
-        if (!evidenceFile) {
-            setUploadError('Please upload payment evidence.');
-            return;
-        }
-
-        if (!selectedMethod) {
+        const errs = validateForm();
+        if (errs.length > 0) {
+            setUploadError(errs.join(' | '));
             return;
         }
 
@@ -216,6 +231,11 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
         const formData = new FormData();
         formData.append('intent_reference', intent?.reference_number || '');
+        formData.append('sender_name', senderName.trim());
+        formData.append('sender_account', senderAccount.trim());
+        formData.append('transaction_reference', transactionReference.trim());
+        formData.append('transferred_amount', transferredAmount);
+        formData.append('transfer_date', transferDate);
         formData.append('evidence', evidenceFile);
         formData.append('note', note);
         if (selectedMethod) formData.append('payment_method_id', selectedMethod);
@@ -470,9 +490,91 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="bg-white rounded-xl border border-gray-200">
                                     <div className="px-6 py-4 border-b border-gray-100">
-                                        <h2 className="text-base font-semibold text-gray-900">Upload Payment Evidence</h2>
+                                        <h2 className="text-base font-semibold text-gray-900">Payment Information</h2>
                                     </div>
-                                    <div className="p-6 space-y-4">
+                                    <div className="p-6 space-y-5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label htmlFor="sender-name" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Account Holder Name <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="sender-name"
+                                                    type="text"
+                                                    value={senderName}
+                                                    onChange={(e) => setSenderName(e.target.value)}
+                                                    placeholder="e.g. John Doe"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    maxLength={255}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="sender-account" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Sender Account / Phone <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="sender-account"
+                                                    type="text"
+                                                    value={senderAccount}
+                                                    onChange={(e) => setSenderAccount(e.target.value)}
+                                                    placeholder="e.g. 09123456789"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    maxLength={255}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="transaction-ref" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Transaction Reference / Transaction ID <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                id="transaction-ref"
+                                                type="text"
+                                                value={transactionReference}
+                                                onChange={(e) => setTransactionReference(e.target.value)}
+                                                placeholder="e.g. TRX20260704123456"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                maxLength={255}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label htmlFor="transfer-amount" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Transferred Amount <span className="text-red-500">*</span>
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                                        {CURRENCY_SYMBOL}
+                                                    </span>
+                                                    <input
+                                                        id="transfer-amount"
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={transferredAmount}
+                                                        onChange={(e) => setTransferredAmount(e.target.value)}
+                                                        placeholder="0.00"
+                                                        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="transfer-date" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Transfer Date <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="transfer-date"
+                                                    type="date"
+                                                    value={transferDate}
+                                                    onChange={(e) => setTransferDate(e.target.value)}
+                                                    max={new Date().toISOString().split('T')[0]}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
                                         <UploadArea
                                             file={evidenceFile}
                                             onFileSelect={(f) => { setEvidenceFile(f); setUploadError(null); }}
@@ -487,14 +589,14 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
                                         <div>
                                             <label htmlFor="payment-note" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Additional Note (optional)
+                                                Remark (optional)
                                             </label>
                                             <textarea
                                                 id="payment-note"
                                                 value={note}
                                                 onChange={(e) => setNote(e.target.value.slice(0, 500))}
-                                                rows={3}
-                                                placeholder="Bank transfer remark or any additional information..."
+                                                rows={2}
+                                                placeholder="Any additional information..."
                                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-shadow"
                                             />
                                             <p className="text-xs text-gray-400 mt-1 text-right">{note.length}/500</p>

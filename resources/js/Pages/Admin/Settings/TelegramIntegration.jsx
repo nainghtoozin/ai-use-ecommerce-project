@@ -111,17 +111,17 @@ export default function TelegramIntegration({ integration }) {
             bot_token: botToken,
             bot_name: botName,
             bot_username: botUsername,
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': null,
+            },
         })
             .then(({ data }) => {
                 setSuccess(data.message);
-                setIntegrationData({
-                    bot_name: botName || data.data?.integration?.bot_name,
-                    bot_username: botUsername || data.data?.integration?.bot_username,
-                    verification_status: 'pending_verification',
-                    verification_status_label: 'Pending Verification',
-                    is_enabled: true,
-                });
-                setPolling(true);
+                if (data.data?.integration) {
+                    setIntegrationData(data.data.integration);
+                    fetchStatus();
+                }
             })
             .catch((err) => {
                 setError(err.response?.data?.message || err.message);
@@ -134,25 +134,21 @@ export default function TelegramIntegration({ integration }) {
     function handleDisconnect() {
         if (!confirm('Disconnect Telegram bot? This will not remove the webhook.')) return;
 
-        apiFetch('/telegram-integration', {
-            method: 'POST',
-            body: JSON.stringify({
-                bot_token: '',
-                bot_name: '',
-                bot_username: '',
-                parse_mode: 'HTML',
-                is_enabled: false,
-            }),
-        })
-            .then(() => {
+        setError(null);
+        setSuccess(null);
+
+        apiFetch('/telegram-integration/disconnect', { method: 'POST' })
+            .then((data) => {
                 setIntegrationData(null);
                 setBotToken('');
                 setBotName('');
                 setBotUsername('');
                 setPolling(false);
-                setSuccess('Telegram bot disconnected.');
+                setSuccess(data.message || 'Telegram bot disconnected.');
             })
-            .catch(() => {});
+            .catch((err) => {
+                setError(err.message);
+            });
     }
 
     function handleSendTest() {

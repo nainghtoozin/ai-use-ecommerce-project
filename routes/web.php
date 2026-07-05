@@ -221,6 +221,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/telegram-integration/status', [TelegramIntegrationController::class, 'status'])->name('telegram-integration.status');
     Route::patch('/telegram-integration/toggle', [TelegramIntegrationController::class, 'toggle'])->name('telegram-integration.toggle');
     Route::post('/telegram-integration/test', [TelegramIntegrationController::class, 'sendTestMessage'])->name('telegram-integration.test');
+    Route::post('/telegram-integration/disconnect', [TelegramIntegrationController::class, 'disconnect'])->name('telegram-integration.disconnect');
     Route::post('/telegram-integration/reconnect-personal', [TelegramIntegrationController::class, 'reconnectPersonalChat'])->name('telegram-integration.reconnect-personal');
     Route::post('/telegram-integration/group/disconnect', [TelegramIntegrationController::class, 'disconnectGroup'])->name('telegram-integration.group.disconnect');
     Route::post('/telegram-integration/group/test', [TelegramIntegrationController::class, 'testGroupNotification'])->name('telegram-integration.group.test');
@@ -512,15 +513,15 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:supe
 
     Route::get('/operations', [\App\Http\Controllers\SuperAdmin\SuperAdminOperationsController::class, 'index'])->name('operations.index');
 
-    Route::get('/payment-methods', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
-    Route::get('/payment-methods/create', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'create'])->name('payment-methods.create');
-    Route::post('/payment-methods', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'store'])->name('payment-methods.store');
-    Route::get('/payment-methods/{paymentMethod}/edit', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'edit'])->name('payment-methods.edit');
-    Route::put('/payment-methods/{paymentMethod}', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'update'])->name('payment-methods.update');
-    Route::post('/payment-methods/{paymentMethod}/toggle', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'toggleActive'])->name('payment-methods.toggle');
-    Route::post('/payment-methods/reorder', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'reorder'])->name('payment-methods.reorder');
-    Route::delete('/payment-methods/{paymentMethod}', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
-    Route::post('/payment-methods/{id}/restore', [\App\Http\Controllers\SuperAdmin\SuperAdminPaymentMethodController::class, 'restore'])->name('payment-methods.restore');
+    Route::get('/billing-payment-methods', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'index'])->name('billing-payment-methods.index');
+    Route::get('/billing-payment-methods/create', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'create'])->name('billing-payment-methods.create');
+    Route::post('/billing-payment-methods', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'store'])->name('billing-payment-methods.store');
+    Route::get('/billing-payment-methods/{billingPaymentMethod}/edit', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'edit'])->name('billing-payment-methods.edit');
+    Route::put('/billing-payment-methods/{billingPaymentMethod}', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'update'])->name('billing-payment-methods.update');
+    Route::post('/billing-payment-methods/{billingPaymentMethod}/toggle', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'toggleActive'])->name('billing-payment-methods.toggle');
+    Route::post('/billing-payment-methods/reorder', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'reorder'])->name('billing-payment-methods.reorder');
+    Route::delete('/billing-payment-methods/{billingPaymentMethod}', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'destroy'])->name('billing-payment-methods.destroy');
+    Route::post('/billing-payment-methods/{id}/restore', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'restore'])->name('billing-payment-methods.restore');
 
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');

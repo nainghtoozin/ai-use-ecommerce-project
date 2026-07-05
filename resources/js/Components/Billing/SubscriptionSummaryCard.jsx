@@ -24,6 +24,11 @@ export default function SubscriptionSummaryCard({ subscription }) {
         { label: 'Expires', value: subscription.expires_at || '—' },
     ];
 
+    if (['active', 'trialing', 'past_due'].includes(subscription.status) && subscription.expires_at) {
+        summaryRows.push({ label: 'Remaining Days', value: subscription.days_until_expiry === 2147483647 ? '—' : `${subscription.days_until_expiry} days` });
+        summaryRows.push({ label: 'Next Billing', value: subscription.next_billing_date || subscription.expires_at || '—' });
+    }
+
     if (subscription.trial_ends_at) {
         summaryRows.push({ label: 'Trial Ends', value: subscription.trial_ends_at });
     }

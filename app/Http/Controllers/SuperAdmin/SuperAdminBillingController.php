@@ -41,7 +41,10 @@ class SuperAdminBillingController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('reference_number', 'like', "%{$search}%")
                   ->orWhereHas('tenant', fn($t) => $t->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('plan', fn($p) => $p->where('name', 'like', "%{$search}%"));
+                  ->orWhereHas('plan', fn($p) => $p->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('evidences', fn($e) => $e->where('transaction_reference', 'like', "%{$search}%"))
+                  ->orWhereHas('evidences', fn($e) => $e->where('sender_name', 'like', "%{$search}%"))
+                  ->orWhereHas('evidences', fn($e) => $e->where('sender_account', 'like', "%{$search}%"));
             });
         }
 
@@ -77,6 +80,11 @@ class SuperAdminBillingController extends Controller
                     'type' => $ev->type,
                     'file_path' => $ev->file_path,
                     'note' => $ev->note,
+                    'sender_name' => $ev->sender_name,
+                    'sender_account' => $ev->sender_account,
+                    'transaction_reference' => $ev->transaction_reference,
+                    'transferred_amount' => $ev->transferred_amount ? (float) $ev->transferred_amount : null,
+                    'transfer_date' => $ev->transfer_date?->toDateString(),
                 ])->values()->all(),
                 'timeline' => $intent->timelineEvents->sortBy('occurred_at')->values()->map(fn($tl) => [
                     'id' => $tl->id,
@@ -98,6 +106,10 @@ class SuperAdminBillingController extends Controller
                     'reason' => $r->reason,
                     'created_at' => $r->created_at?->toDateTimeString(),
                 ])->all(),
+                'subscription_event' => $intent->timelineEvents
+                    ->sortBy('occurred_at')
+                    ->first(fn($tl) => in_array($tl->type, ['subscription_activated', 'subscription_renewed']))
+                    ?->type,
             ];
         });
 

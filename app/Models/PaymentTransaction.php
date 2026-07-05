@@ -49,6 +49,6 @@ class PaymentTransaction extends Model
 
     public function ledgerEntries(): HasMany
     {
-        return $this->hasMany(LedgerEntry::class);
+        return $this->hasMany(LedgerEntry::class, 'transaction_id');
     }
 }

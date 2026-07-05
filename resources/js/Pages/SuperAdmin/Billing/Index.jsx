@@ -236,7 +236,19 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
 
                 <div className="p-6 space-y-6">
                     <div className="flex items-center justify-between">
-                        <PaymentIntentBadge status={intent.status} />
+                        <div className="flex items-center gap-2">
+                            <PaymentIntentBadge status={intent.status} />
+                            {intent.subscription_event === 'subscription_activated' && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Activated
+                                </span>
+                            )}
+                            {intent.subscription_event === 'subscription_renewed' && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                    Renewed
+                                </span>
+                            )}
+                        </div>
                         <span className="text-xs text-gray-400">{formatDateTime(intent.created_at)}</span>
                     </div>
 
@@ -302,9 +314,41 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                                     <Image className="w-4 h-4 text-gray-400" /> Payment Evidence
                                 </h3>
                             </div>
-                            <div className="p-5 space-y-3">
+                            <div className="p-5 space-y-4">
                                 {intent.evidences.map((ev) => (
-                                    <div key={ev.id}>
+                                    <div key={ev.id} className="space-y-3">
+                                        <div className="bg-gray-50 rounded-lg p-4 space-y-2.5">
+                                            {ev.sender_name && (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Sender Name</span>
+                                                    <span className="font-semibold text-gray-900">{ev.sender_name}</span>
+                                                </div>
+                                            )}
+                                            {ev.sender_account && (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Account / Phone</span>
+                                                    <span className="font-semibold text-gray-900">{ev.sender_account}</span>
+                                                </div>
+                                            )}
+                                            {ev.transaction_reference && (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Transaction Ref</span>
+                                                    <span className="font-mono font-semibold text-gray-900">{ev.transaction_reference}</span>
+                                                </div>
+                                            )}
+                                            {ev.transferred_amount && (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Transferred Amount</span>
+                                                    <span className="font-semibold text-gray-900">{formatCurrency(ev.transferred_amount, intent.currency)}</span>
+                                                </div>
+                                            )}
+                                            {ev.transfer_date && (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Transfer Date</span>
+                                                    <span className="font-semibold text-gray-900">{formatDate(ev.transfer_date)}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="relative rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
                                             <img
                                                 src={`/storage/${ev.file_path}`}
@@ -313,7 +357,7 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                                                 onClick={() => window.open(`/storage/${ev.file_path}`, '_blank')}
                                             />
                                         </div>
-                                        {ev.note && <p className="text-xs text-gray-500 mt-2 italic">"{ev.note}"</p>}
+                                        {ev.note && <p className="text-xs text-gray-500 italic">"{ev.note}"</p>}
                                     </div>
                                 ))}
                             </div>
@@ -519,7 +563,7 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                     type="text"
                                     value={searchValue}
                                     onChange={(e) => setSearchValue(e.target.value)}
-                                    placeholder="Search by reference, merchant, or plan..."
+                                    placeholder="Search by reference, merchant, plan, transaction ref, sender..."
                                     className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                     aria-label="Search payments"
                                 />

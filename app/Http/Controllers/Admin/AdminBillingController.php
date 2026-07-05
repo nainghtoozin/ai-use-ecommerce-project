@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Data\Currency;
 use App\Enums\CurrencyCode;
 use App\Models\PaymentIntent;
-use App\Models\PaymentMethod;
+use App\Models\BillingPaymentMethod;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\SubscriptionAuditLog;
@@ -23,6 +23,10 @@ use Inertia\Inertia;
 
 class AdminBillingController extends Controller
 {
+    public function __construct(
+        private readonly ImageService $imageService
+    ) {}
+
     public function index()
     {
         if (!auth()->user()->can('billing.view')) {
@@ -151,6 +155,11 @@ class AdminBillingController extends Controller
                 'days_until_expiry' => $subscription->daysUntilExpiry(),
                 'days_since_expiry' => $subscription->daysSinceExpiry(),
                 'on_trial' => $subscription->isTrialing(),
+                'next_billing_date' => $subscription->expires_at?->isFuture()
+                    ? $subscription->expires_at->toDateString()
+                    : ($subscription->plan && !$subscription->plan->isFree()
+                        ? $subscription->plan->calculateExpiryDate(now(), $subscription->billing_interval ?? 'monthly')?->toDateString()
+                        : null),
             ] : null,
             'usage' => $usage,
             'plans' => $plans,
@@ -368,6 +377,11 @@ class AdminBillingController extends Controller
                     'type' => $ev->type,
                     'file_path' => $ev->file_path,
                     'note' => $ev->note,
+                    'sender_name' => $ev->sender_name,
+                    'sender_account' => $ev->sender_account,
+                    'transaction_reference' => $ev->transaction_reference,
+                    'transferred_amount' => $ev->transferred_amount ? (float) $ev->transferred_amount : null,
+                    'transfer_date' => $ev->transfer_date?->toDateString(),
                 ])->values()->all(),
                 'timeline' => $intent->timelineEvents->sortBy('occurred_at')->values()->map(fn($tl) => [
                     'id' => $tl->id,
@@ -389,6 +403,10 @@ class AdminBillingController extends Controller
                     'reason' => $r->reason,
                     'created_at' => $r->created_at?->toDateTimeString(),
                 ])->all(),
+                'subscription_event' => $intent->timelineEvents
+                    ->sortBy('occurred_at')
+                    ->first(fn($tl) => in_array($tl->type, ['subscription_activated', 'subscription_renewed']))
+                    ?->type,
             ];
         });
 
@@ -629,14 +647,14 @@ class AdminBillingController extends Controller
             }
         }
 
-        $paymentMethods = PaymentMethod::active()
-            ->where('type', 'bank_transfer')
+        $paymentMethods = BillingPaymentMethod::active()
+            ->where('supports_manual_payment', true)
             ->orderBy('sort_order')
-            ->orderBy('name')
+            ->orderBy('display_name')
             ->get()
             ->map(fn($pm) => [
                 'id' => $pm->id,
-                'name' => $pm->name,
+                'name' => $pm->display_name,
                 'display_name' => $pm->display_name,
                 'type' => $pm->type,
                 'account_name' => $pm->account_name,
@@ -682,9 +700,14 @@ class AdminBillingController extends Controller
 
         $validated = $request->validate([
             'intent_reference' => ['required', 'string'],
+            'sender_name' => ['required', 'string', 'max:255'],
+            'sender_account' => ['required', 'string', 'max:255'],
+            'transaction_reference' => ['required', 'string', 'max:255'],
+            'transferred_amount' => ['required', 'numeric', 'gt:0'],
+            'transfer_date' => ['required', 'date', 'before_or_equal:today'],
             'evidence' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'note' => ['nullable', 'string', 'max:500'],
-            'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
+            'payment_method_id' => ['nullable', 'exists:billing_payment_methods,id'],
         ]);
 
         $intentService = app(PaymentIntentService::class);
@@ -699,7 +722,7 @@ class AdminBillingController extends Controller
         }
 
         try {
-            $filePath = ImageService::upload($request->file('evidence'), 'payment-evidence');
+            $filePath = $this->imageService->upload($request->file('evidence'), 'payment-evidence');
 
             $evidenceService = app(PaymentEvidenceService::class);
             $evidenceService->store(
@@ -710,7 +733,12 @@ class AdminBillingController extends Controller
                 metadata: [
                     'payment_method_id' => $validated['payment_method_id'],
                     'uploaded_by' => 'merchant',
-                ]
+                ],
+                senderName: $validated['sender_name'],
+                senderAccount: $validated['sender_account'],
+                transactionReference: $validated['transaction_reference'],
+                transferredAmount: (float) $validated['transferred_amount'],
+                transferDate: $validated['transfer_date'],
             );
 
             $manualPayment = app(ManualPaymentService::class);

@@ -127,7 +127,19 @@ function PaymentDetailDrawer({ intent, open, onClose }) {
 
                 <div className="p-6 space-y-6">
                     <div className="flex items-center justify-between">
-                        <PaymentIntentBadge status={intent.status} />
+                        <div className="flex items-center gap-2">
+                            <PaymentIntentBadge status={intent.status} />
+                            {intent.subscription_event === 'subscription_activated' && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Activated
+                                </span>
+                            )}
+                            {intent.subscription_event === 'subscription_renewed' && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                    Renewed
+                                </span>
+                            )}
+                        </div>
                         <span className="text-xs text-gray-400">{formatDateTime(intent.created_at)}</span>
                     </div>
 
@@ -348,6 +360,7 @@ export default function AdminBillingPaymentHistory({ intents, filters, plans, su
         timeline: intent.timeline || [],
         comments: intent.comments || [],
         reviews: intent.reviews || [],
+        subscription_event: intent.subscription_event,
     }));
 
     return (

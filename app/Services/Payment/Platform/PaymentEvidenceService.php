@@ -18,6 +18,11 @@ class PaymentEvidenceService
         ?string $filePath = null,
         ?string $note = null,
         array $metadata = [],
+        ?string $senderName = null,
+        ?string $senderAccount = null,
+        ?string $transactionReference = null,
+        ?float $transferredAmount = null,
+        ?string $transferDate = null,
     ): PaymentEvidence {
         $evidence = PaymentEvidence::create([
             'payment_intent_id' => $intent->id,
@@ -25,6 +30,11 @@ class PaymentEvidenceService
             'file_path' => $filePath,
             'note' => $note,
             'metadata' => $metadata,
+            'sender_name' => $senderName,
+            'sender_account' => $senderAccount,
+            'transaction_reference' => $transactionReference,
+            'transferred_amount' => $transferredAmount,
+            'transfer_date' => $transferDate,
         ]);
 
         $this->timeline->record(

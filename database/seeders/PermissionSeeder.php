@@ -136,6 +136,12 @@ class PermissionSeeder extends Seeder
             // Platform Settings (SuperAdmin)
             'platform.settings.view',
             'platform.settings.update',
+
+            // Billing Payment Methods
+            'billing-payment-method.view',
+            'billing-payment-method.create',
+            'billing-payment-method.update',
+            'billing-payment-method.delete',
         ];
 
         foreach ($permissions as $name) {

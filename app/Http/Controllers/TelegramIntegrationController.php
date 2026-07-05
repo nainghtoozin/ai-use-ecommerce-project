@@ -165,6 +165,10 @@ class TelegramIntegrationController extends Controller
             ], 500);
         }
 
+        $integration->verification_status = 'verified';
+        $integration->last_verified_at = now();
+        $integration->save();
+
         Log::info('Telegram integration connected with webhook', [
             'user_id' => auth()->id(),
             'integration_id' => $integration->id,
@@ -173,7 +177,7 @@ class TelegramIntegrationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Telegram bot connected successfully. Send /start to your bot to complete verification.',
+            'message' => 'Telegram bot connected successfully.',
             'data' => [
                 'integration' => $integration,
                 'webhook_url' => route('webhooks.telegram', $integration->id),
@@ -264,9 +268,58 @@ class TelegramIntegrationController extends Controller
         ]);
     }
 
+    public function disconnect(Request $request, TelegramWebhookService $webhookService): JsonResponse
+    {
+        $integration = TelegramIntegration::where('user_id', auth()->id())->first();
+
+        Log::info('disconnect - start', [
+            'integration_id' => $integration?->id,
+            'user_id' => auth()->id(),
+            'has_bot_token' => !empty($integration?->bot_token),
+        ]);
+
+        if (!$integration) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Telegram integration disconnected.',
+            ]);
+        }
+
+        $integrationId = $integration->id;
+
+        if (!empty($integration->bot_token)) {
+            $webhookResult = $webhookService->removeWebhook($integration);
+            if (!$webhookResult['success']) {
+                Log::warning('disconnect - webhook removal failed, continuing', [
+                    'integration_id' => $integrationId,
+                    'error' => $webhookResult['message'],
+                ]);
+            }
+        }
+
+        $integration->delete();
+
+        Log::info('Telegram integration disconnected', [
+            'user_id' => auth()->id(),
+            'integration_id' => $integrationId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Telegram integration disconnected.',
+        ]);
+    }
+
     public function disconnectGroup(Request $request): JsonResponse
     {
         $integration = TelegramIntegration::where('user_id', auth()->id())->first();
+
+        Log::info('disconnectGroup - start', [
+            'integration_id' => $integration?->id,
+            'user_id' => auth()->id(),
+            'current_group_chat_id' => $integration?->group_chat_id,
+            'is_group_verified' => $integration?->isGroupVerified(),
+        ]);
 
         if (!$integration) {
             return response()->json([
@@ -280,11 +333,12 @@ class TelegramIntegrationController extends Controller
         Log::info('Group chat disconnected', [
             'user_id' => auth()->id(),
             'integration_id' => $integration->id,
+            'was_already_disconnected' => empty($integration->group_chat_id) && empty($integration->group_verified_at),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Group disconnected successfully.',
+            'message' => 'Telegram group disconnected.',
         ]);
     }
 
@@ -327,6 +381,13 @@ class TelegramIntegrationController extends Controller
     {
         $integration = TelegramIntegration::where('user_id', auth()->id())->first();
 
+        Log::info('reconnectPersonalChat - start', [
+            'integration_id' => $integration?->id,
+            'user_id' => auth()->id(),
+            'current_personal_chat_id' => $integration?->personal_chat_id,
+            'is_personal_verified' => $integration?->isPersonalVerified(),
+        ]);
+
         if (!$integration) {
             return response()->json([
                 'success' => false,
@@ -340,14 +401,15 @@ class TelegramIntegrationController extends Controller
         $integration->personal_verified_at = null;
         $integration->save();
 
-        Log::info('Personal chat reset for reconnection', [
+        Log::info('Personal chat disconnected', [
             'user_id' => auth()->id(),
             'integration_id' => $integration->id,
+            'was_already_disconnected' => empty($integration->personal_chat_id) && empty($integration->personal_verified_at),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Personal chat reset. Send /start to your bot to reconnect.',
+            'message' => 'Personal chat disconnected.',
         ]);
     }
 
@@ -626,14 +688,77 @@ class TelegramIntegrationController extends Controller
             return response()->json(['success' => false, 'message' => $message], 400);
         }
 
+        $destination = $integration->default_destination;
+
+        Log::info('sendTestMessage - selected destination', [
+            'integration_id' => $integration->id,
+            'default_destination' => $destination,
+            'is_personal_verified' => $integration->isPersonalVerified(),
+            'is_group_verified' => $integration->isGroupVerified(),
+        ]);
+
+        if ($destination === null || $destination === 'disabled') {
+            $destination = $integration->isPersonalVerified() ? 'personal'
+                : ($integration->isGroupVerified() ? 'group' : null);
+        }
+
+        Log::info('sendTestMessage - resolved destination', [
+            'integration_id' => $integration->id,
+            'resolved_destination' => $destination,
+        ]);
+
+        $targets = match ($destination) {
+            'personal' => $integration->isPersonalVerified()
+                ? [['chat_id' => $integration->personal_chat_id, 'channel' => 'personal']]
+                : [],
+            'group' => $integration->isGroupVerified()
+                ? [['chat_id' => $integration->group_chat_id, 'channel' => 'group']]
+                : [],
+            'both' => array_values(array_filter([
+                $integration->isPersonalVerified()
+                    ? ['chat_id' => $integration->personal_chat_id, 'channel' => 'personal']
+                    : null,
+                $integration->isGroupVerified()
+                    ? ['chat_id' => $integration->group_chat_id, 'channel' => 'group']
+                    : null,
+            ])),
+            default => [],
+        };
+
+        Log::info('sendTestMessage - dispatch target', [
+            'integration_id' => $integration->id,
+            'resolved_destination' => $destination,
+            'targets' => $targets,
+        ]);
+
+        if (empty($targets)) {
+            $message = 'No targets resolved for test message. Check your destination settings and chat connections.';
+
+            if ($request->inertia()) {
+                return redirect()->back()->with('error', $message);
+            }
+
+            return response()->json(['success' => false, 'message' => $message], 400);
+        }
+
         $testMessage = "✅ Telegram integration connected successfully\n\nThis is a test message from your ecommerce system.";
 
-        SendTelegramMessageJob::dispatch($integration, $testMessage)
-            ->onQueue('default');
+        foreach ($targets as $target) {
+            SendTelegramMessageJob::dispatch($integration, $testMessage, $target['chat_id'])
+                ->onQueue('default');
+
+            Log::info('sendTestMessage - dispatched to target', [
+                'integration_id' => $integration->id,
+                'target_chat_id' => $target['chat_id'],
+                'channel' => $target['channel'] ?? 'unknown',
+            ]);
+        }
 
         Log::info('SendTelegramMessageJob dispatched for test', [
             'user_id' => auth()->id(),
             'integration_id' => $integration->id,
+            'destination' => $destination,
+            'target_count' => count($targets),
         ]);
 
         if ($request->inertia()) {
@@ -642,7 +767,7 @@ class TelegramIntegrationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Test message queued successfully.',
+            'message' => 'Test message queued to ' . count($targets) . ' target(s) (' . $destination . ').',
         ]);
     }
 }
