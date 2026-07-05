@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\PaymentProvider;
 use App\Models\CustomerAddress;
 use App\Models\Order;
+use App\Models\PaymentIntent;
 use App\Models\User;
 use App\Policies\CustomerAddressPolicy;
 use App\Policies\CustomerOrderPolicy;
@@ -163,6 +164,8 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(BillingNotificationService::class);
+
         $this->app->singleton(LedgerService::class);
 
         $this->app->singleton(WebhookRouter::class, function ($app) {
@@ -199,5 +202,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Order::class, CustomerOrderPolicy::class);
         Gate::policy(CustomerAddress::class, CustomerAddressPolicy::class);
+
+        PaymentIntent::observe(\App\Observers\PaymentIntentObserver::class);
     }
 }

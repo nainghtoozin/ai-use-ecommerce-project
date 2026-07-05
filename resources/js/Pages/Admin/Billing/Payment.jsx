@@ -191,7 +191,8 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
     const [senderName, setSenderName] = useState('');
     const [senderAccount, setSenderAccount] = useState('');
     const [transactionReference, setTransactionReference] = useState('');
-    const [transferredAmount, setTransferredAmount] = useState('');
+    const autoAmount = intent?.amount ?? selectedPlan?.monthly_price ?? 0;
+    const [transferredAmount, setTransferredAmount] = useState(String(autoAmount));
     const [transferDate, setTransferDate] = useState('');
     const [evidenceFile, setEvidenceFile] = useState(null);
     const [note, setNote] = useState('');
@@ -209,7 +210,6 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
         if (!senderName.trim()) errs.push('Account holder name is required.');
         if (!senderAccount.trim()) errs.push('Sender account/phone is required.');
         if (!transactionReference.trim()) errs.push('Transaction reference is required.');
-        if (!transferredAmount || parseFloat(transferredAmount) <= 0) errs.push('Enter a valid transferred amount greater than zero.');
         if (!transferDate) errs.push('Transfer date is required.');
         if (transferDate && new Date(transferDate) > new Date()) errs.push('Transfer date cannot be in the future.');
         if (!evidenceFile) errs.push('Receipt image is required.');
@@ -541,24 +541,15 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label htmlFor="transfer-amount" className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Transferred Amount <span className="text-red-500">*</span>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Transfer Amount <span className="text-red-500">*</span>
                                                 </label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                                                        {CURRENCY_SYMBOL}
-                                                    </span>
-                                                    <input
-                                                        id="transfer-amount"
-                                                        type="number"
-                                                        step="0.01"
-                                                        min="0"
-                                                        value={transferredAmount}
-                                                        onChange={(e) => setTransferredAmount(e.target.value)}
-                                                        placeholder="0.00"
-                                                        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                                    />
+                                                <div className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-semibold flex items-center gap-1">
+                                                    <span>{CURRENCY_SYMBOL}</span>
+                                                    <span>{Number(transferredAmount).toLocaleString()}</span>
+                                                    {intent?.currency === 'MMK' && <span className="text-gray-400 font-normal ml-1">MMK</span>}
                                                 </div>
+                                                <p className="text-xs text-gray-400 mt-1">This amount is fixed based on your selected plan.</p>
                                             </div>
                                             <div>
                                                 <label htmlFor="transfer-date" className="block text-sm font-medium text-gray-700 mb-1">

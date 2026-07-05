@@ -146,6 +146,18 @@ export default function usePusherNotifications() {
             addNotification({ title: e.title, message: e.message, productId: e.id, createdAt: new Date().toISOString() });
         });
 
+        channel.listen('.billing.payment_submitted', (e) => {
+            addNotification({ title: e.title, message: e.message, actionUrl: e.action_url, createdAt: new Date().toISOString() });
+        });
+
+        channel.listen('.billing.payment_approved', (e) => {
+            addNotification({ title: e.title, message: e.message, actionUrl: e.action_url, createdAt: new Date().toISOString() });
+        });
+
+        channel.listen('.billing.payment_rejected', (e) => {
+            addNotification({ title: e.title, message: e.message, actionUrl: e.action_url, createdAt: new Date().toISOString() });
+        });
+
         channel.listen('.message.sent', (e) => {
             if (e.receiver_id === userId) {
                 setUnreadCount((prev) => prev + 1);
