@@ -6,8 +6,6 @@ import { Check, Copy, CheckCheck, ArrowRight, Clock, ShieldCheck, Upload, Eye, Z
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
-const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
-
 function formatBytes(v) {
     if (v === null || v === undefined) return null;
     if (v >= 1024) return (v / 1024).toFixed(1) + ' GB';
@@ -76,6 +74,7 @@ const steps = [
 
 export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan, subscription, allFeatureDefs, plans }) {
     const { auth } = usePage().props;
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
     const permissions = auth?.user?.permissions || [];
     const can = (perm) => permissions.includes(perm);
 
