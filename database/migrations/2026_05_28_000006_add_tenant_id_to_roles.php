@@ -103,13 +103,14 @@ return new class extends Migration
         DB::table('roles')->whereNotNull('tenant_id')->delete();
 
         Schema::table('roles', function (Blueprint $table) {
+            $table->dropForeign(['tenant_id']);
             $table->dropUnique('roles_tenant_id_name_guard_name_unique');
         });
 
         DB::statement('ALTER TABLE roles ADD UNIQUE INDEX roles_name_guard_name_unique (name, guard_name)');
 
         Schema::table('roles', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('tenant_id');
+            $table->dropColumn('tenant_id');
         });
     }
 };

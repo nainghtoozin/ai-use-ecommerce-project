@@ -9,16 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            if (!Schema::hasColumn('orders', 'subtotal')) {
-                $table->decimal('subtotal', 10, 2)->nullable()->after('total_amount');
-            }
+            $table->foreignId('tenant_membership_id')->nullable()->after('user_id')->constrained('tenant_memberships')->nullOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn('subtotal');
+            $table->dropConstrainedForeignId('tenant_membership_id');
         });
     }
 };

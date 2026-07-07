@@ -17,8 +17,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('settings', function (Blueprint $table) {
+            $table->dropForeign(['tenant_id']);
             $table->dropUnique('settings_tenant_id_key_unique');
             $table->unique('key', 'settings_key_unique');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
         });
     }
 };

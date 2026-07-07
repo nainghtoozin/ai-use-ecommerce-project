@@ -41,8 +41,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('notifications', function (Blueprint $table) {
-            $table->dropIndex('notifications_tenant_id_index');
             $table->dropForeign(['tenant_id']);
+            $table->dropIndex('notifications_tenant_id_index');
             $table->dropColumn('tenant_id');
         });
     }

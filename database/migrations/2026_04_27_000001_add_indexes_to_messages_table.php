@@ -18,8 +18,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('messages', function (Blueprint $table) {
+            $table->dropForeign(['sender_id']);
+            $table->dropForeign(['receiver_id']);
             $table->dropIndex('messages_conversation_index');
             $table->dropIndex('messages_unread_index');
+            $table->foreign('sender_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('receiver_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 };

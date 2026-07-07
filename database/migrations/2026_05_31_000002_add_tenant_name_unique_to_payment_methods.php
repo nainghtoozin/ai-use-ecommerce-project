@@ -16,7 +16,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('payment_methods', function (Blueprint $table) {
+            $table->dropForeign(['tenant_id']);
             $table->dropUnique('payment_methods_tenant_name_unique');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
         });
     }
 };
