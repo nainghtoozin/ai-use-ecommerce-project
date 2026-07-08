@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Auth\IdentityContext;
+use App\Auth\IdentityResolver;
 use App\Contracts\PaymentProvider;
 use App\Models\CustomerAddress;
 use App\Models\Order;
@@ -194,6 +196,9 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(LedgerService::class),
             );
         });
+
+        $this->app->singleton(IdentityResolver::class);
+        $this->app->singleton(IdentityContext::class, fn() => IdentityContext::empty());
     }
 
     public function boot(): void

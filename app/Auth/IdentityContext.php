@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Auth;
+
+use App\Contracts\AuthenticatableIdentity;
+use App\Models\TenantMembership;
+
+class IdentityContext
+{
+    private ?AuthenticatableIdentity $identity;
+
+    private ?TenantMembership $membership;
+
+    private ?int $tenantId;
+
+    public function __construct(
+        ?AuthenticatableIdentity $identity = null,
+        ?TenantMembership $membership = null,
+        ?int $tenantId = null,
+    ) {
+        $this->identity = $identity;
+        $this->membership = $membership;
+        $this->tenantId = $tenantId;
+    }
+
+    public function isAuthenticated(): bool
+    {
+        return $this->identity !== null;
+    }
+
+    public function getIdentity(): ?AuthenticatableIdentity
+    {
+        return $this->identity;
+    }
+
+    public function getMembership(): ?TenantMembership
+    {
+        return $this->membership;
+    }
+
+    public function getTenantId(): ?int
+    {
+        return $this->tenantId;
+    }
+
+    public function getId(): mixed
+    {
+        return $this->identity?->getId();
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->identity?->getEmail();
+    }
+
+    public function withIdentity(?AuthenticatableIdentity $identity): static
+    {
+        $clone = clone $this;
+        $clone->identity = $identity;
+
+        return $clone;
+    }
+
+    public function withMembership(?TenantMembership $membership): static
+    {
+        $clone = clone $this;
+        $clone->membership = $membership;
+
+        if ($membership) {
+            $clone->tenantId = $membership->tenant_id;
+        }
+
+        return $clone;
+    }
+
+    public function withTenantId(?int $tenantId): static
+    {
+        $clone = clone $this;
+        $clone->tenantId = $tenantId;
+
+        return $clone;
+    }
+
+    public static function empty(): self
+    {
+        return new self(null, null, null);
+    }
+}
