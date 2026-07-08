@@ -3,7 +3,7 @@
 namespace App\Events;
 
 use App\Models\Tenant;
-use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Events\Dispatchable;
 
 class TenantCreated
@@ -12,6 +12,6 @@ class TenantCreated
 
     public function __construct(
         public readonly Tenant $tenant,
-        public readonly User $owner,
+        public readonly Authenticatable $owner,
     ) {}
 }

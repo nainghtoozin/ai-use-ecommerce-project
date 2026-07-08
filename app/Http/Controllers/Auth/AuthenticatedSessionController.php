@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Account;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -25,55 +26,79 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        $user = User::where('email', $request->email)->first();
+        $useAccounts = config('identity.use_accounts');
 
-        // Root /login is for SuperAdmin only.
-        // Tenant users (customers and admins) must login through their store URL.
-        if ($user && $user->tenant_id && !$user->isSuperAdmin()) {
-            return back()->withErrors([
-                'email' => 'Please login through your store URL.',
-            ])->onlyInput('email');
-        }
+        if ($useAccounts) {
+            $account = Account::where('email', $request->email)->first();
 
-        if ($user && !$user->isActive()) {
-            if ($user->isSuspended()) {
+            if ($account && !$account->isActive()) {
+                if ($account->isSuspended()) {
+                    return back()->withErrors([
+                        'email' => 'Your account has been suspended. Please contact support.',
+                    ])->onlyInput('email');
+                }
+
+                if ($account->isBanned()) {
+                    return back()->withErrors([
+                        'email' => 'Your account has been banned. Please contact support.',
+                    ])->onlyInput('email');
+                }
+
+                return back()->withErrors([
+                    'email' => 'Your account is inactive.',
+                ])->onlyInput('email');
+            }
+        } else {
+            $user = User::where('email', $request->email)->first();
+
+            // Root /login is for SuperAdmin only.
+            // Tenant users (customers and admins) must login through their store URL.
+            if ($user && $user->tenant_id && !$user->isSuperAdmin()) {
+                return back()->withErrors([
+                    'email' => 'Please login through your store URL.',
+                ])->onlyInput('email');
+            }
+
+            if ($user && !$user->isActive()) {
+                if ($user->isSuspended()) {
+                    return back()->withErrors([
+                        'email' => 'Your account has been suspended. Please contact support.',
+                    ])->onlyInput('email');
+                }
+
+                if ($user->isBanned()) {
+                    return back()->withErrors([
+                        'email' => 'Your account has been banned. Please contact support.',
+                    ])->onlyInput('email');
+                }
+
+                return back()->withErrors([
+                    'email' => 'Your account is inactive.',
+                ])->onlyInput('email');
+            }
+
+            if ($user && $user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
                 return back()->withErrors([
                     'email' => 'Your account has been suspended. Please contact support.',
                 ])->onlyInput('email');
             }
-
-            if ($user->isBanned()) {
-                return back()->withErrors([
-                    'email' => 'Your account has been banned. Please contact support.',
-                ])->onlyInput('email');
-            }
-
-            return back()->withErrors([
-                'email' => 'Your account is inactive.',
-            ])->onlyInput('email');
-        }
-
-        if ($user && $user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
-            return back()->withErrors([
-                'email' => 'Your account has been suspended. Please contact support.',
-            ])->onlyInput('email');
         }
 
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        $user = Auth::user();
+        $authenticatable = Auth::user();
 
         ActivityLogger::log(
             'User logged in',
             'login',
-            $user,
+            $authenticatable,
             ['ip' => $request->ip(), 'user_agent' => $request->userAgent()],
             'auth'
         );
 
-        if ($user->isAdmin()) {
+        if ($authenticatable->isAdmin()) {
             $tenant = \App\Models\Tenant::getCurrent();
             if ($tenant) {
                 return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]);
@@ -86,20 +111,23 @@ class AuthenticatedSessionController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        $user = Auth::user();
+        $useAccounts = config('identity.use_accounts');
+        $guard = $useAccounts ? 'accounts' : 'web';
 
-        if ($user) {
+        $authenticatable = Auth::user();
+
+        if ($authenticatable) {
             ActivityLogger::log(
                 'User logged out',
                 'logout',
-                $user,
+                $authenticatable,
                 ['ip' => $request->ip()],
                 'auth'
             );
         }
 
-        $isSuperAdmin = $user && $user->isSuperAdmin();
-        $tenant = $user ? \App\Models\Tenant::getCurrent() : null;
+        $isSuperAdmin = $authenticatable && $authenticatable->isSuperAdmin();
+        $tenant = $authenticatable ? \App\Models\Tenant::getCurrent() : null;
         $storeSlug = $request->input('store_slug') ?: ($tenant ? $tenant->slug : null);
         $context = $request->input('context');
 
@@ -107,14 +135,14 @@ class AuthenticatedSessionController extends Controller
         if (!$context) {
             if ($isSuperAdmin) {
                 $context = 'superadmin';
-            } elseif ($storeSlug && $user && $user->isAdmin()) {
+            } elseif ($storeSlug && $authenticatable && $authenticatable->isAdmin()) {
                 $context = 'admin';
             } elseif ($storeSlug) {
                 $context = 'storefront';
             }
         }
 
-        Auth::guard('web')->logout();
+        Auth::guard($guard)->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

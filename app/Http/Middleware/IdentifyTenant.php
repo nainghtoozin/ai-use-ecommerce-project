@@ -2,7 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -11,24 +14,38 @@ class IdentifyTenant
     public function handle(Request $request, Closure $next)
     {
         if (auth()->check()) {
-            $user = auth()->user();
+            $authenticatable = auth()->user();
 
-            if (! $user->relationLoaded('roles')) {
-                $user->load('roles');
+            if (! $authenticatable->relationLoaded('roles')) {
+                $authenticatable->load('roles');
             }
 
-            if ($user->isSuperAdmin()) {
+            if ($authenticatable->isSuperAdmin()) {
                 return $next($request);
             }
 
-            $tenant = $user->tenant_id
-                ? Tenant::find($user->tenant_id)
-                : null;
+            if ($authenticatable instanceof Account) {
+                $membership = TenantMembership::where('account_id', $authenticatable->id)
+                    ->with('tenant')
+                    ->first();
 
-            if ($tenant) {
-                app()->instance('current.tenant', $tenant);
-                $request->merge(['tenant' => $tenant]);
-                return $next($request);
+                if ($membership && $membership->tenant) {
+                    app()->instance('current.tenant', $membership->tenant);
+                    $request->merge(['tenant' => $membership->tenant]);
+                    return $next($request);
+                }
+            }
+
+            if ($authenticatable instanceof User) {
+                $tenant = $authenticatable->tenant_id
+                    ? Tenant::find($authenticatable->tenant_id)
+                    : null;
+
+                if ($tenant) {
+                    app()->instance('current.tenant', $tenant);
+                    $request->merge(['tenant' => $tenant]);
+                    return $next($request);
+                }
             }
         }
 

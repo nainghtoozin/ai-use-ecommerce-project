@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\PlatformSetting;
 use App\Models\Tenant;
 use App\Models\WebsiteInfo;
@@ -33,13 +34,17 @@ class CreateStoreController extends Controller
 
     public function store(Request $request)
     {
+        $useAccounts = config('identity.use_accounts');
+
+        $emailUniqueTable = $useAccounts ? 'accounts,email' : 'users,email';
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:tenants,slug|regex:/^[a-z0-9\-]+$/',
             'description' => 'nullable|string|max:500',
             'domain' => 'nullable|string|max:255|unique:tenants,domain',
             'owner_name' => 'required|string|max:255',
-            'owner_email' => 'required|email|max:255|unique:users,email',
+            'owner_email' => 'required|email|max:255|unique:' . $emailUniqueTable,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -69,7 +74,11 @@ class CreateStoreController extends Controller
 
         event(new Registered($admin));
 
-        return redirect()->route('create-store.success', ['store' => $admin->tenant->slug]);
+        $tenantSlug = $admin instanceof Account
+            ? $admin->memberships()->with('tenant')->first()->tenant->slug
+            : $admin->tenant->slug;
+
+        return redirect()->route('create-store.success', ['store' => $tenantSlug]);
     }
 
     public function onboarding($store_slug)

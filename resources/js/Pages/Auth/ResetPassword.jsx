@@ -2,12 +2,13 @@ import { useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
 
-export default function ResetPassword({ token, email }) {
+export default function ResetPassword({ token, email, store_slug }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         token,
         email: email || '',
         password: '',
         password_confirmation: '',
+        ...(store_slug ? { store_slug } : {}),
     });
 
     useEffect(() => {
@@ -16,7 +17,7 @@ export default function ResetPassword({ token, email }) {
 
     function submit(e) {
         e.preventDefault();
-        post('/reset-password', {
+        post(store_slug ? `/store/${store_slug}/reset-password` : '/reset-password', {
             onFinish: () => reset('password', 'password_confirmation'),
         });
     }

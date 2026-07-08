@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -51,11 +53,39 @@ class RegisteredUserController extends Controller
                 ->with('error', 'Please register from a specific store.');
         }
 
+        $useAccounts = config('identity.use_accounts');
+
+        $modelClass = $useAccounts ? Account::class : User::class;
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.$modelClass],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        if ($useAccounts) {
+            $account = Account::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'status' => Account::STATUS_ACTIVE,
+            ]);
+
+            $customerRole = app(TenantBootstrapService::class)->ensureCustomerRole($tenant);
+
+            TenantMembership::create([
+                'account_id' => $account->id,
+                'tenant_id' => $tenant->id,
+                'role_id' => $customerRole->id,
+            ]);
+
+            $account->assignRole($customerRole);
+
+            event(new Registered($account));
+
+            Auth::guard('accounts')->login($account);
+
+            return redirect()->route('storefront.index', ['store_slug' => $tenant->slug]);
+        }
 
         $user = User::create([
             'name' => $request->name,

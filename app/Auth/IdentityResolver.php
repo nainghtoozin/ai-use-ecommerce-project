@@ -36,7 +36,7 @@ class IdentityResolver
 
     public function supportsAccount(): bool
     {
-        return false;
+        return config('identity.use_accounts', false);
     }
 
     public function getCurrentModelClass(): string

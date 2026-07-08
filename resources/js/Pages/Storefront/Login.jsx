@@ -84,7 +84,7 @@ export default function StorefrontLogin({ status, tenant }) {
 
                 <div className="flex items-center justify-between mt-4">
                     <Link
-                        href="/forgot-password"
+                        href={route('storefront.password.request', { store_slug: tenant.slug })}
                         className="underline text-sm text-gray-600 hover:text-gray-900"
                     >
                         Forgot your password?

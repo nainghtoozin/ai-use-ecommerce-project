@@ -2,10 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
 use App\Models\Category;
 use App\Models\PlatformSetting;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Services\FeatureGate;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
@@ -24,24 +26,35 @@ class HandleInertiaRequests extends Middleware
     {
         $cart = $this->getCartData($request);
 
-        $user = $request->user();
-        $subscriptionExpired = $user && $user->tenant ? $user->tenant->subscriptionExpired() : false;
-        $subscription = $user && $user->tenant && $user->tenant->subscription ? $user->tenant->subscription : null;
-        $isImpersonating = $user && session()->has('impersonator_id') && !$user->isSuperAdmin();
+        $authenticatable = $request->user();
+        $useAccounts = config('identity.use_accounts');
+
+        $subscriptionExpired = false;
+        $subscription = null;
+
+        if ($authenticatable instanceof User) {
+            $tenant = $authenticatable->tenant;
+            $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
+            $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
+        }
+
+        $isImpersonating = $authenticatable && session()->has('impersonator_id') && !$authenticatable->isSuperAdmin();
         $impersonatorName = $isImpersonating ? session('impersonator_name') : null;
 
-        $userData = $user ? [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->getRoleNames()->first(),
-            'status' => $user->status,
-            'profile_image' => $user->profile_image,
-            'email_verified_at' => $user->email_verified_at,
-            'is_admin' => $user->isAdmin(),
-            'is_superadmin' => $user->isSuperAdmin(),
-            'tenant_id' => $user->tenant_id,
-            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        $permissions = $authenticatable ? $authenticatable->getAllPermissions()->pluck('name')->toArray() : [];
+
+        $userData = $authenticatable ? [
+            'id' => $authenticatable->id,
+            'name' => $authenticatable instanceof Account ? $authenticatable->email : $authenticatable->name,
+            'email' => $authenticatable->email,
+            'role' => $authenticatable->getRoleNames()->first(),
+            'status' => $authenticatable->status,
+            'profile_image' => $authenticatable->profile_image,
+            'email_verified_at' => $authenticatable->email_verified_at,
+            'is_admin' => $authenticatable->isAdmin(),
+            'is_superadmin' => $authenticatable->isSuperAdmin(),
+            'tenant_id' => $authenticatable instanceof User ? $authenticatable->tenant_id : null,
+            'permissions' => $permissions,
             'subscription_expired' => $subscriptionExpired,
             'subscription_past_due' => $subscription && $subscription->status === 'past_due',
             'subscription' => $subscription ? [
@@ -76,11 +89,11 @@ class HandleInertiaRequests extends Middleware
                 'logo' => $tenant->logo,
                 'settings' => $tenant->settings,
                 'status' => $tenant->status,
-                'subscription_expired' => $user && $user->tenant ? $user->tenant->subscriptionExpired() : false,
+                'subscription_expired' => $authenticatable instanceof User && $authenticatable->tenant ? $authenticatable->tenant->subscriptionExpired() : false,
             ] : null,
             'cart' => $cart,
-            'wishlist_count' => $wishlistEnabled && $user ? (int) $user->wishlistItems()->count() : 0,
-            'wishlisted_ids' => $wishlistEnabled && $user ? $user->wishlistItems()->pluck('product_id')->toArray() : [],
+            'wishlist_count' => $wishlistEnabled && $authenticatable ? (int) $this->getWishlistCount($authenticatable) : 0,
+            'wishlisted_ids' => $wishlistEnabled && $authenticatable ? $this->getWishlistedIds($authenticatable) : [],
             'notifications' => [
                 'unread_count' => $this->getUnreadCount($request),
             ],
@@ -100,7 +113,7 @@ class HandleInertiaRequests extends Middleware
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
             'featureStatus' => FeatureGate::forUser()->getAllFeaturesStatus(),
-            'subscription_limits' => $user ? SubscriptionLimitService::for()->getAllLimits() : [],
+            'subscription_limits' => $authenticatable ? SubscriptionLimitService::for()->getAllLimits() : [],
         ]);
     }
 
@@ -156,5 +169,21 @@ class HandleInertiaRequests extends Middleware
         return cache()->remember('unread_notifications_' . $request->user()->id, 30, function() {
             return (int) request()->user()->unreadNotifications()->count();
         });
+    }
+
+    private function getWishlistCount($authenticatable): int
+    {
+        if ($authenticatable instanceof User && method_exists($authenticatable, 'wishlistItems')) {
+            return (int) $authenticatable->wishlistItems()->count();
+        }
+        return 0;
+    }
+
+    private function getWishlistedIds($authenticatable): array
+    {
+        if ($authenticatable instanceof User && method_exists($authenticatable, 'wishlistItems')) {
+            return $authenticatable->wishlistItems()->pluck('product_id')->toArray();
+        }
+        return [];
     }
 }

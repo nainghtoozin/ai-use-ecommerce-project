@@ -14,6 +14,7 @@ class PasswordResetLinkController extends Controller
     {
         return Inertia::render('Auth/ForgotPassword', [
             'status' => session('status'),
+            'store_slug' => request()->route('store_slug'),
         ]);
     }
 
@@ -23,7 +24,9 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink(
+        $broker = config('identity.use_accounts') ? 'accounts' : 'users';
+
+        $status = Password::broker($broker)->sendResetLink(
             $request->only('email')
         );
 

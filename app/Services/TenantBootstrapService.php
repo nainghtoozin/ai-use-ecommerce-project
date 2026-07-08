@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Events\TenantCreated;
+use App\Models\Account;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\PaymentMethod;
@@ -11,6 +12,7 @@ use App\Models\PlatformSetting;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\SubscriptionAuditService;
@@ -24,7 +26,7 @@ class TenantBootstrapService
     /**
      * Full tenant bootstrap.
      *
-     * Creates roles, subscription, owner user, assigns permissions,
+     * Creates roles, subscription, owner user/account, assigns permissions,
      * and dispatches TenantCreated event.
      *
      * @param Tenant $tenant  The newly created tenant (must have id)
@@ -37,9 +39,9 @@ class TenantBootstrapService
      *     @type bool    $email_verified  Pre-verify owner email (default: false)
      *     @type bool    $create_owner    Create owner user (default: true)
      * }
-     * @return User|null  The created owner user, or null if create_owner is false
+     * @return User|Account|null  The created owner user or account, or null
      */
-    public function bootstrap(Tenant $tenant, array $options = []): ?User
+    public function bootstrap(Tenant $tenant, array $options = []): User|Account|null
     {
         $steps = ['roles', 'subscription', 'owner'];
 
@@ -59,7 +61,13 @@ class TenantBootstrapService
                     return null;
                 }
 
-                $owner = $this->createOwner($tenant, $options);
+                $useAccounts = config('identity.use_accounts');
+
+                if ($useAccounts) {
+                    $owner = $this->createOwnerAccount($tenant, $options);
+                } else {
+                    $owner = $this->createOwner($tenant, $options);
+                }
 
                 $this->assignOwnerRole($owner, $tenant);
 
@@ -171,9 +179,40 @@ class TenantBootstrapService
     }
 
     /**
+     * Create the owner account for a tenant (identity architecture).
+     */
+    protected function createOwnerAccount(Tenant $tenant, array $options): Account
+    {
+        $ownerData = [
+            'email' => $options['owner_email'],
+            'password' => Hash::make($options['owner_password']),
+            'status' => Account::STATUS_ACTIVE,
+        ];
+
+        if (!empty($options['email_verified'])) {
+            $ownerData['email_verified_at'] = now();
+        }
+
+        $owner = Account::create($ownerData);
+
+        $adminRole = Role::where('name', 'admin')
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        TenantMembership::create([
+            'account_id' => $owner->id,
+            'tenant_id' => $tenant->id,
+            'role_id' => $adminRole->id,
+            'is_owner' => true,
+        ]);
+
+        return $owner;
+    }
+
+    /**
      * Assign the admin role to the owner.
      */
-    protected function assignOwnerRole(User $owner, Tenant $tenant): void
+    protected function assignOwnerRole(User|Account $owner, Tenant $tenant): void
     {
         $adminRole = Role::where('name', 'admin')
             ->where('tenant_id', $tenant->id)

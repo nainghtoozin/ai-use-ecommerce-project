@@ -132,6 +132,12 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('admin.login');
     Route::post('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
+    // Store-based password reset (tenant-aware)
+    Route::get('/forgot-password', [\App\Http\Controllers\Auth\PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [\App\Http\Controllers\Auth\PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [\App\Http\Controllers\Auth\NewPasswordController::class, 'store'])->name('password.store');
+
     // Onboarding completion (after email verification)
     Route::get('/onboarding/complete', [\App\Http\Controllers\CreateStoreController::class, 'onboarding'])->name('onboarding.complete');
 

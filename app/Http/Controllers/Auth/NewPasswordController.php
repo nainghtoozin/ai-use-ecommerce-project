@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,7 @@ class NewPasswordController extends Controller
         return Inertia::render('Auth/ResetPassword', [
             'email' => $request->email,
             'token' => $request->route('token'),
+            'store_slug' => $request->route('store_slug'),
         ]);
     }
 
@@ -31,21 +33,38 @@ class NewPasswordController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $redirectTo = route('login');
+        $useAccounts = config('identity.use_accounts');
+        $broker = $useAccounts ? 'accounts' : 'users';
+        $storeSlug = $request->route('store_slug') ?? $request->input('store_slug');
 
-        $status = Password::reset(
+        $redirectTo = route('login');
+        if ($storeSlug) {
+            $redirectTo = url("/store/{$storeSlug}/login");
+        }
+
+        $status = Password::broker($broker)->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user) use ($request, &$redirectTo) {
-                $user->forceFill([
+            function ($authenticatable) use ($request, &$redirectTo, $storeSlug) {
+                $authenticatable->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
-                if ($user->tenant) {
-                    $redirectTo = url("/store/{$user->tenant->slug}/login");
+                // Respect explicit store_slug from the request
+                if (!$storeSlug) {
+                    if ($authenticatable instanceof User && $authenticatable->tenant) {
+                        $redirectTo = url("/store/{$authenticatable->tenant->slug}/login");
+                    }
+
+                    if ($authenticatable instanceof Account) {
+                        $membership = $authenticatable->memberships()->with('tenant')->first();
+                        if ($membership && $membership->tenant) {
+                            $redirectTo = url("/store/{$membership->tenant->slug}/login");
+                        }
+                    }
                 }
 
-                event(new PasswordReset($user));
+                event(new PasswordReset($authenticatable));
             }
         );
 

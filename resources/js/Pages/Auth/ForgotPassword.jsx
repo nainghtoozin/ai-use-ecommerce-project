@@ -1,12 +1,12 @@
 import { Head, useForm } from '@inertiajs/react';
 import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
 
-export default function ForgotPassword({ status }) {
+export default function ForgotPassword({ status, store_slug }) {
     const { data, setData, post, processing, errors } = useForm({ email: '' });
 
     function submit(e) {
         e.preventDefault();
-        post('/forgot-password');
+        post(store_slug ? `/store/${store_slug}/forgot-password` : '/forgot-password');
     }
 
     return (
