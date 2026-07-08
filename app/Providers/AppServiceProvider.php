@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Auth\AuthorizationContext;
+use App\Auth\AuthorizationResolver;
+use App\Auth\CurrentRoleResolver;
 use App\Auth\IdentityContext;
 use App\Auth\IdentityResolver;
 use App\Auth\MembershipResolver;
 use App\Auth\TenantContextResolver;
 use App\Contracts\PaymentProvider;
+use App\Contracts\ResolvesAuthorization;
 use App\Contracts\ResolvesMembership;
 use App\Models\CustomerAddress;
 use App\Models\Order;
@@ -202,6 +206,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(TenantContextResolver::class);
         $this->app->singleton(ResolvesMembership::class, MembershipResolver::class);
+        $this->app->singleton(CurrentRoleResolver::class);
+        $this->app->singleton(ResolvesAuthorization::class, AuthorizationResolver::class);
+        $this->app->singleton(AuthorizationContext::class, fn() => AuthorizationContext::empty());
         $this->app->singleton(IdentityResolver::class);
         $this->app->singleton(IdentityContext::class, fn() => IdentityContext::empty());
     }
