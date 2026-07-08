@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\TelegramIntegration;
 use App\Services\TelegramNotificationRouter;
 use App\Services\TelegramOrderMessageBuilder;
+use App\Services\TelegramSampleOrderFactory;
 use App\Services\TelegramService;
 use App\Services\TelegramSystemAlertMessageBuilder;
 use App\Services\TelegramWebhookService;
@@ -543,20 +544,7 @@ class TelegramIntegrationController extends Controller
             ->first();
 
         if (!$order) {
-            $order = new Order([
-                'id' => 99999,
-                'customer_name' => 'Sample Customer',
-                'phone' => '09-123-456-789',
-                'total_amount' => 50000,
-                'delivery_fee' => 3000,
-                'order_status' => 'pending',
-                'payment_status' => 'pending',
-                'tenant_id' => auth()->user()->tenant_id,
-                'created_at' => now(),
-            ]);
-            $order->setRelation('items', collect());
-            $order->setRelation('paymentMethod', null);
-            $order->setRelation('tenant', auth()->user()->tenant);
+            $order = app(TelegramSampleOrderFactory::class)->create();
         }
 
         $payload = $builder->buildSample($order);
@@ -599,19 +587,7 @@ class TelegramIntegrationController extends Controller
             ->first();
 
         if (!$order) {
-            $order = new Order([
-                'customer_name' => 'Sample Customer',
-                'phone' => '09-123-456-789',
-                'total_amount' => 50000,
-                'delivery_fee' => 3000,
-                'order_status' => 'pending',
-                'payment_status' => 'pending',
-                'tenant_id' => $tenantId,
-                'created_at' => now(),
-            ]);
-            $order->setRelation('items', collect());
-            $order->setRelation('paymentMethod', null);
-            $order->setRelation('tenant', auth()->user()->tenant);
+            $order = app(TelegramSampleOrderFactory::class)->create($tenantId);
         }
 
         $payload = match ($type) {

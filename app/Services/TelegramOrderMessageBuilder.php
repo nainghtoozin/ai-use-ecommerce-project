@@ -12,13 +12,25 @@ class TelegramOrderMessageBuilder
     {
         $order->loadMissing('items.product', 'paymentMethod', 'tenant');
 
+        $missing = [];
+        if (!$order->customer_name) $missing[] = 'customer_name';
+        if (!$order->phone) $missing[] = 'phone';
+        if (!$order->total_amount) $missing[] = 'total_amount';
+        if (!$order->created_at) $missing[] = 'created_at';
+        if ($missing) {
+            Log::warning('[TelegramOrderMessageBuilder] Building order.new with missing fields', [
+                'order_id' => $order->id,
+                'missing' => $missing,
+            ]);
+        }
+
         $lines = [];
         $lines[] = "<b>🛒 New Order Received</b>";
         $lines[] = "";
         $lines[] = "📋 <b>Order:</b> #{$order->id}";
         $lines[] = "👤 <b>Customer:</b> " . e($order->customer_name);
         $lines[] = "📞 <b>Phone:</b> " . e($order->phone);
-        $lines[] = "📅 <b>Date:</b> " . $order->created_at->format('M j, Y g:i A');
+        $lines[] = "📅 <b>Date:</b> " . ($order->created_at?->format('M j, Y g:i A') ?? 'N/A');
         $lines[] = "📦 <b>Items:</b> " . $order->items->count();
         $lines[] = "💰 <b>Total:</b> " . number_format((float) $order->total_amount) . ' ' . config('payments.default_currency');
         $lines[] = "💳 <b>Payment:</b> " . ($order->paymentMethod?->name ?? 'N/A');

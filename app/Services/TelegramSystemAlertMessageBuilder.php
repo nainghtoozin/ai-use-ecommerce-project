@@ -19,7 +19,7 @@ class TelegramSystemAlertMessageBuilder
         $lines[] = "";
         $lines[] = "📋 <b>Order:</b> #{$order->id}";
         $lines[] = "👤 <b>Customer:</b> " . e($order->customer_name);
-        $lines[] = "💰 <b>Amount:</b> " . number_format((float) $order->paid_amount ?? $order->total_amount) . ' ' . config('payments.default_currency');
+        $lines[] = "💰 <b>Amount:</b> " . number_format((float) ($order->paid_amount ?? $order->total_amount)) . ' ' . config('payments.default_currency');
         $lines[] = "💳 <b>Method:</b> " . ($order->paymentMethod?->name ?? 'N/A');
 
         if ($order->tenant) {
@@ -152,7 +152,7 @@ class TelegramSystemAlertMessageBuilder
             $lines[] = "📞 <b>Phone:</b> " . e($user->phone);
         }
 
-        $lines[] = "📅 <b>Joined:</b> " . $user->created_at->format('M j, Y g:i A');
+        $lines[] = "📅 <b>Joined:</b> " . ($user->created_at?->format('M j, Y g:i A') ?? 'N/A');
 
         $lines[] = "";
         $lines[] = "🕐 " . now()->format('M j, Y g:i A');
