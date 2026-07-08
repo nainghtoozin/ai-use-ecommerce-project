@@ -2,13 +2,18 @@
 
 namespace App\Auth;
 
-use App\Contracts\AuthenticatableIdentity;
+use App\Contracts\ResolvesMembership;
 use App\Models\Account;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 class IdentityResolver
 {
+    public function __construct(
+        private readonly ResolvesMembership $membershipResolver,
+        private readonly TenantContextResolver $tenantContextResolver,
+    ) {}
+
     public function resolveFromAuth(?Authenticatable $authenticatable): ?Authenticatable
     {
         return $authenticatable;
@@ -46,13 +51,44 @@ class IdentityResolver
 
     public function createContextFromCurrentUser(?User $user): IdentityContext
     {
-        if (! $user || ! $user instanceof AuthenticatableIdentity) {
+        if ($user === null) {
             return IdentityContext::empty();
+        }
+
+        $membership = $this->membershipResolver->resolve($user);
+
+        if ($membership !== null) {
+            return new IdentityContext(
+                identity: $user,
+                membership: $membership,
+            );
         }
 
         return new IdentityContext(
             identity: $user,
             tenantId: $user->tenant_id,
+        );
+    }
+
+    public function createContextFromIdentity(?Authenticatable $identity): IdentityContext
+    {
+        if ($identity === null) {
+            return IdentityContext::empty();
+        }
+
+        $membership = $this->membershipResolver->resolve($identity);
+        $tenant = $this->tenantContextResolver->fromAuthenticatable($identity);
+
+        if ($membership !== null) {
+            return new IdentityContext(
+                identity: $identity,
+                membership: $membership,
+            );
+        }
+
+        return new IdentityContext(
+            identity: $identity,
+            tenantId: $tenant?->id,
         );
     }
 }

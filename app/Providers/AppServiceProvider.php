@@ -4,7 +4,10 @@ namespace App\Providers;
 
 use App\Auth\IdentityContext;
 use App\Auth\IdentityResolver;
+use App\Auth\MembershipResolver;
+use App\Auth\TenantContextResolver;
 use App\Contracts\PaymentProvider;
+use App\Contracts\ResolvesMembership;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\PaymentIntent;
@@ -197,6 +200,8 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(TenantContextResolver::class);
+        $this->app->singleton(ResolvesMembership::class, MembershipResolver::class);
         $this->app->singleton(IdentityResolver::class);
         $this->app->singleton(IdentityContext::class, fn() => IdentityContext::empty());
     }

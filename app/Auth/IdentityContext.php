@@ -2,19 +2,19 @@
 
 namespace App\Auth;
 
-use App\Contracts\AuthenticatableIdentity;
 use App\Models\TenantMembership;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class IdentityContext
 {
-    private ?AuthenticatableIdentity $identity;
+    private ?Authenticatable $identity;
 
     private ?TenantMembership $membership;
 
     private ?int $tenantId;
 
     public function __construct(
-        ?AuthenticatableIdentity $identity = null,
+        ?Authenticatable $identity = null,
         ?TenantMembership $membership = null,
         ?int $tenantId = null,
     ) {
@@ -28,7 +28,7 @@ class IdentityContext
         return $this->identity !== null;
     }
 
-    public function getIdentity(): ?AuthenticatableIdentity
+    public function getIdentity(): ?Authenticatable
     {
         return $this->identity;
     }
@@ -45,15 +45,23 @@ class IdentityContext
 
     public function getId(): mixed
     {
-        return $this->identity?->getId();
+        return $this->identity?->getAuthIdentifier();
     }
 
     public function getEmail(): ?string
     {
-        return $this->identity?->getEmail();
+        if ($this->identity === null) {
+            return null;
+        }
+
+        if (method_exists($this->identity, 'getEmail')) {
+            return $this->identity->getEmail();
+        }
+
+        return $this->identity->email ?? null;
     }
 
-    public function withIdentity(?AuthenticatableIdentity $identity): static
+    public function withIdentity(?Authenticatable $identity): static
     {
         $clone = clone $this;
         $clone->identity = $identity;
