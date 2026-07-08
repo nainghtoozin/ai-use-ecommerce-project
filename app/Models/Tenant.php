@@ -190,6 +190,26 @@ class Tenant extends Model
         return $query->where('status', 'trialing');
     }
 
+    public function memberships()
+    {
+        return $this->hasMany(TenantMembership::class);
+    }
+
+    public function activeMemberships()
+    {
+        return $this->memberships()->where('status', 'active');
+    }
+
+    public function ownerMembership()
+    {
+        return $this->hasOne(TenantMembership::class)->where('is_owner', true);
+    }
+
+    public function adminMemberships()
+    {
+        return $this->memberships()->whereHas('role', fn($q) => $q->where('name', 'admin'));
+    }
+
     public function notifyAdmins($notification): void
     {
         $admins = $this->users()->whereHas('roles', function ($q) {

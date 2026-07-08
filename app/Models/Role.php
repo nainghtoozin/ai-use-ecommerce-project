@@ -15,4 +15,9 @@ class Role extends SpatieRole
         'updated_at',
         'created_at',
     ];
+
+    public function memberships()
+    {
+        return $this->hasMany(TenantMembership::class);
+    }
 }
