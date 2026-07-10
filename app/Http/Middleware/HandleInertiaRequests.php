@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Contracts\HasSubscription;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\PlatformSetting;
@@ -36,6 +37,10 @@ class HandleInertiaRequests extends Middleware
             $tenant = $authenticatable->tenant;
             $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
             $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
+        } elseif ($authenticatable instanceof Account) {
+            $tenant = Tenant::getCurrent();
+            $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
+            $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
         }
 
         $isImpersonating = $authenticatable && session()->has('impersonator_id') && !$authenticatable->isSuperAdmin();
@@ -43,17 +48,24 @@ class HandleInertiaRequests extends Middleware
 
         $permissions = $authenticatable ? $authenticatable->getAllPermissions()->pluck('name')->toArray() : [];
 
+        $displayName = $authenticatable ? $authenticatable->getDisplayName() : null;
+        $roleLabel = $authenticatable ? $authenticatable->getRoleLabel() : null;
+
         $userData = $authenticatable ? [
             'id' => $authenticatable->id,
-            'name' => $authenticatable instanceof Account ? $authenticatable->email : $authenticatable->name,
+            'name' => $displayName,
+            'display_name' => $displayName,
             'email' => $authenticatable->email,
             'role' => $authenticatable->getRoleNames()->first(),
+            'role_label' => $roleLabel,
             'status' => $authenticatable->status,
             'profile_image' => $authenticatable->profile_image,
             'email_verified_at' => $authenticatable->email_verified_at,
             'is_admin' => $authenticatable->isAdmin(),
             'is_superadmin' => $authenticatable->isSuperAdmin(),
-            'tenant_id' => $authenticatable instanceof User ? $authenticatable->tenant_id : null,
+            'tenant_id' => $authenticatable instanceof User
+                ? $authenticatable->tenant_id
+                : Tenant::getCurrent()?->id,
             'permissions' => $permissions,
             'subscription_expired' => $subscriptionExpired,
             'subscription_past_due' => $subscription && $subscription->status === 'past_due',
@@ -89,7 +101,7 @@ class HandleInertiaRequests extends Middleware
                 'logo' => $tenant->logo,
                 'settings' => $tenant->settings,
                 'status' => $tenant->status,
-                'subscription_expired' => $authenticatable instanceof User && $authenticatable->tenant ? $authenticatable->tenant->subscriptionExpired() : false,
+                'subscription_expired' => $subscriptionExpired,
             ] : null,
             'cart' => $cart,
             'wishlist_count' => $wishlistEnabled && $authenticatable ? (int) $this->getWishlistCount($authenticatable) : 0,

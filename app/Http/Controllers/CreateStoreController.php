@@ -68,7 +68,7 @@ class CreateStoreController extends Controller
                 'owner_name' => $validated['owner_name'],
                 'owner_email' => $validated['owner_email'],
                 'owner_password' => $validated['password'],
-                'status' => 'pending',
+                'status' => 'active',
             ]);
         });
 

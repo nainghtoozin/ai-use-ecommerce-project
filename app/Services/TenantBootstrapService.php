@@ -284,6 +284,8 @@ class TenantBootstrapService
 
         FeatureGate::clearCache($plan);
 
+        $tenant->update(['status' => $subscription->status]);
+
         return $subscription;
     }
 

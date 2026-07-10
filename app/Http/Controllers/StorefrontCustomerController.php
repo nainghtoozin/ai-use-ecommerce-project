@@ -32,13 +32,19 @@ class StorefrontCustomerController extends Controller
             abort(403, 'Unauthorized access to this store.');
         }
 
-        if ($user->tenant_id !== null && $user->tenant_id !== $tenant->id) {
-            abort(403, 'Unauthorized access to this store.');
-        }
+        if (config('identity.use_accounts')) {
+            if (!$user->memberships()->where('tenant_id', $tenant->id)->exists() && !$user->isSuperAdmin()) {
+                abort(403, 'Unauthorized access to this store.');
+            }
+        } else {
+            if ($user->tenant_id !== null && $user->tenant_id !== $tenant->id) {
+                abort(403, 'Unauthorized access to this store.');
+            }
 
-        // Auto-assign tenant_id for legacy users
-        if ($user->tenant_id === null) {
-            $user->update(['tenant_id' => $tenant->id]);
+            // Auto-assign tenant_id for legacy users
+            if ($user->tenant_id === null) {
+                $user->update(['tenant_id' => $tenant->id]);
+            }
         }
 
         return $tenant;

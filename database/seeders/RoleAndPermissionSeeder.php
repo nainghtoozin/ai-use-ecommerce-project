@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Account;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Seeder;
@@ -159,6 +160,22 @@ class RoleAndPermissionSeeder extends Seeder
         );
 
         $superAdmin->assignRole('superadmin');
+
+        // When Account mode is active, create a matching Account record so the
+        // Super Admin can log in via the 'accounts' guard. Without this, the
+        // seeder-created credentials exist only in the users table and the
+        // accounts guard ("These credentials do not match our records.").
+        if (config('identity.use_accounts')) {
+            $superAdminAccount = Account::updateOrCreate(
+                ['email' => 'admin@shop.com'],
+                [
+                    'password' => bcrypt('password'),
+                    'status' => 'active',
+                    'email_verified_at' => now(),
+                ]
+            );
+            $superAdminAccount->assignRole('superadmin');
+        }
 
         $this->command->info('Roles, permissions, and Super Admin user seeded successfully.');
     }

@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\PaymentIntent;
-use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -20,11 +20,7 @@ class BillingPaymentRejected implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return User::where('tenant_id', $this->intent->tenant_id)
-            ->where(function ($q) {
-                $q->where('is_owner', true)->orWhereHas('roles', fn($r) => $r->where('name', 'admin'));
-            })
-            ->pluck('id')
+        return IdentityResolver::resolveTenantOwnersAndAdmins($this->intent->tenant_id)
             ->map(fn($id) => new PrivateChannel('notifications.user.' . $id))
             ->toArray();
     }

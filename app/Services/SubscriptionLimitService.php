@@ -41,12 +41,7 @@ class SubscriptionLimitService
 
     private function resolveTenant(): ?Tenant
     {
-        if ($this->tenant) {
-            return $this->tenant;
-        }
-
-        $user = auth()->user();
-        return $user?->tenant;
+        return $this->tenant ?? Tenant::getCurrent();
     }
 
     private function resolvePlan(): ?Plan
@@ -229,6 +224,9 @@ class SubscriptionLimitService
         $tenant = $this->resolveTenant();
         if (!$tenant) {
             return 0;
+        }
+        if (config('identity.use_accounts')) {
+            return \App\Auth\IdentityResolver::resolveTenantAdmins($tenant->id)->count();
         }
         return $tenant->users()
             ->whereHas('roles', fn($q) => $q->where('name', 'admin'))

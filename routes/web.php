@@ -151,7 +151,7 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::post('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'store'])->name('checkout.store');
 
     // Store-based customer area (authenticated)
-    Route::middleware(['auth', 'tenant.access'])->prefix('customer')->name('customer.')->group(function () {
+    Route::middleware(['auth:web,accounts', 'tenant.access'])->prefix('customer')->name('customer.')->group(function () {
         Route::get('/account', [\App\Http\Controllers\StorefrontCustomerController::class, 'account'])->name('account');
         Route::get('/orders', [\App\Http\Controllers\StorefrontCustomerController::class, 'orders'])->name('orders');
         Route::get('/orders/{order}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showOrder'])->name('orders.show');
@@ -180,7 +180,7 @@ Route::middleware('guest')->group(function () {
 // ============================================================
 // AUTHENTICATED ROUTES
 // ============================================================
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:web,accounts')->group(function () {
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -274,7 +274,7 @@ Route::middleware('auth')->group(function () {
 //   or the tenant.active middleware (operations routes).
 //
 // ============================================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenant.valid', 'tenant.binding'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:admin', 'tenant.valid', 'tenant.binding'])->group(function () {
     // ── Account routes (accessible even when subscription expired/suspended) ──
     Route::get('/expired', fn() => \Inertia\Inertia::render('Standalone/Expired', [
         'store_slug' => null,
@@ -475,14 +475,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin', 'tenan
 // ============================================================
 // IMPERSONATION LEAVE (before superadmin group to avoid route collision)
 // ============================================================
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:web,accounts')->group(function () {
     Route::post('/superadmin/impersonate/leave', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'leave'])->name('superadmin.impersonate.leave');
 });
 
 // ============================================================
 // SUPERADMIN ROUTES
 // ============================================================
-Route::prefix('superadmin')->name('superadmin.')->middleware(['auth', 'role:superadmin'])->group(function () {
+Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts', 'role:superadmin'])->group(function () {
     Route::get('/', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
@@ -550,7 +550,7 @@ Route::prefix('payment')->name('payment.')->group(function () {
         ->name('webhook.handle');
 
     // Authenticated payment routes
-    Route::middleware('auth')->group(function () {
+    Route::middleware('auth:web,accounts')->group(function () {
         Route::get('gateways', [\App\Http\Controllers\Payment\PaymentController::class, 'gateways'])
             ->name('gateways');
         Route::post('checkout/{gateway}', [\App\Http\Controllers\Payment\PaymentController::class, 'checkout'])
@@ -566,7 +566,7 @@ Route::prefix('payment')->name('payment.')->group(function () {
 require __DIR__ . '/auth.php';
 
 // Coupon/Promotion apply/remove API (authenticated)
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:web,accounts')->group(function () {
     Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.apply-coupon');
     Route::post('/cart/remove-coupon', [CartController::class, 'removeCoupon'])->name('cart.remove-coupon');
     Route::post('/cart/apply-promotion', [CartController::class, 'applyPromotion'])->name('cart.apply-promotion');
@@ -574,7 +574,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Wishlist (literal routes before parameterized routes)
-Route::prefix('wishlist')->name('wishlist.')->middleware('auth')->group(function () {
+Route::prefix('wishlist')->name('wishlist.')->middleware('auth:web,accounts')->group(function () {
     Route::get('/', [WishlistController::class, 'index'])->name('index');
     Route::post('/move-all-to-cart', [WishlistController::class, 'moveAllToCart'])->name('move-all-to-cart');
     Route::post('/move-to-cart/{product}', [WishlistController::class, 'moveToCart'])->name('move-to-cart');

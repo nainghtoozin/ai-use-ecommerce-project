@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Contracts\HasSubscription;
 use App\Models\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 {
     use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, HasRoles;
 
@@ -97,6 +98,34 @@ class User extends Authenticatable implements MustVerifyEmail
                 }
             }
         });
+    }
+
+    public function getDisplayName(): string
+    {
+        return $this->name ?: $this->email;
+    }
+
+    public function getRoleLabel(): string
+    {
+        if ($this->isSuperAdmin()) {
+            return 'Super Admin';
+        }
+
+        if ($this->isOwner()) {
+            return 'Owner';
+        }
+
+        $roleName = $this->getRoleNames()->first();
+        if (!$roleName) {
+            return '';
+        }
+
+        return match ($roleName) {
+            'admin' => 'Admin',
+            'customer' => 'Customer',
+            'staff' => 'Staff',
+            default => str($roleName)->title(),
+        };
     }
 
     public function tenant()

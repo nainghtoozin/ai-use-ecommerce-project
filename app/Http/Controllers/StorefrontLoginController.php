@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Account;
 use App\Models\Tenant;
-use App\Models\TenantMembership;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -64,28 +63,6 @@ class StorefrontLoginController extends Controller
                     ])->onlyInput('email');
                 }
 
-                // Account must have membership for this tenant
-                $membership = TenantMembership::where('account_id', $account->id)
-                    ->where('tenant_id', $tenant->id)
-                    ->first();
-
-                if (!$membership) {
-                    return back()->withErrors([
-                        'email' => 'These credentials do not match our records.',
-                    ])->onlyInput('email');
-                }
-
-                if ($membership->tenant && $membership->tenant->status === 'pending' && !$account->isSuperAdmin() && $account->isAdmin()) {
-                    return back()->withErrors([
-                        'email' => 'Please verify your email first.',
-                    ])->onlyInput('email');
-                }
-
-                if ($membership->tenant && $membership->tenant->status === 'suspended' && !$account->isSuperAdmin()) {
-                    return back()->withErrors([
-                        'email' => 'Your account has been suspended. Please contact support.',
-                    ])->onlyInput('email');
-                }
             }
         } else {
             $user = User::where('email', $request->email)->first();
@@ -108,7 +85,7 @@ class StorefrontLoginController extends Controller
                 }
 
                 // Pending — owner has not verified email; block admin login
-                if ($user->tenant && $user->tenant->status === 'pending' && !$user->isSuperAdmin() && $user->isAdmin()) {
+                if ($user->tenant && $user->tenant->status === 'pending' && !$user->isSuperAdmin() && $user->isAdmin() && !$user->hasVerifiedEmail()) {
                     return back()->withErrors([
                         'email' => 'Please verify your email first.',
                     ])->onlyInput('email');
@@ -134,10 +111,12 @@ class StorefrontLoginController extends Controller
 
         $request->authenticate();
 
+        $guard = $useAccounts ? 'accounts' : 'web';
+
         if (!$useAccounts) {
             // Auto-assign tenant_id for legacy users registered before tenant_id was stored.
             // Runs after authenticate() to avoid persisting tenant_id on failed login attempts.
-            $user = Auth::user();
+            $user = Auth::guard($guard)->user();
             if ($user->tenant_id === null) {
                 $user->update(['tenant_id' => $tenant->id]);
             }
@@ -145,7 +124,7 @@ class StorefrontLoginController extends Controller
 
         $request->session()->regenerate();
 
-        $authenticatable = Auth::user();
+        $authenticatable = Auth::guard($guard)->user();
 
         ActivityLogger::log(
             'User logged in',

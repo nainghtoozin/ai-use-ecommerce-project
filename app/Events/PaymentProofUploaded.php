@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\Order;
-use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -21,11 +21,9 @@ class PaymentProofUploaded implements ShouldBroadcast
     public function broadcastOn(): array
     {
         $channels = [];
-        $admins = User::role('admin')
-            ->where('users.tenant_id', $this->order->tenant_id)
-            ->pluck('id');
-        foreach ($admins as $adminId) {
-            $channels[] = new PrivateChannel('notifications.user.'.$adminId);
+        $admins = IdentityResolver::resolveTenantAdmins($this->order->tenant_id);
+        foreach ($admins as $admin) {
+            $channels[] = new PrivateChannel('notifications.user.'.$admin->id);
         }
         return $channels;
     }

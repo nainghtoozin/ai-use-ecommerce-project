@@ -369,7 +369,7 @@ export default function AdminSidebar() {
                         {!collapsed && (
                             <div className="ml-3 flex-1 min-w-0">
                                 <p className="text-sm font-semibold truncate">{auth?.user?.name}</p>
-                                <p className="text-xs text-slate-500 truncate">Admin</p>
+                                <p className="text-xs text-slate-500 truncate">{auth?.user?.role_label || 'Admin'}</p>
                             </div>
                         )}
                     </div>

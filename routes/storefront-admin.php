@@ -51,7 +51,7 @@ use Illuminate\Support\Facades\Route;
 // ============================================================
 Route::prefix('store/{store_slug}/admin')
     ->name('storefront.admin.')
-    ->middleware(['storefront', 'auth', 'role:admin', 'tenant.valid', 'tenant.access', 'tenant.binding'])
+    ->middleware(['storefront', 'auth:web,accounts', 'role:admin', 'tenant.valid', 'tenant.access', 'tenant.binding'])
     ->group(function () {
 
     // ── Account routes (accessible even when subscription expired/suspended) ──

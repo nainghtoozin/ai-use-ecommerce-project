@@ -66,6 +66,29 @@ class TenantSeeder extends Seeder
         );
 
         $this->command?->info('Default tenant (ID=1) ensured.');
+
+        $this->ensureAdditionalTestTenants();
+    }
+
+    private function ensureAdditionalTestTenants(): void
+    {
+        $tenants = [
+            ['name' => 'Khine Electronics', 'slug' => 'khine', 'domain' => 'khine.localhost', 'email' => 'khine@example.com'],
+            ['name' => 'Gadget World',     'slug' => 'gadget', 'domain' => 'gadget.localhost', 'email' => 'hello@gadget.test'],
+        ];
+
+        foreach ($tenants as $data) {
+            DB::table('tenants')->updateOrInsert(
+                ['slug' => $data['slug']],
+                $data + [
+                    'status' => 'active',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
+
+        $this->command?->info(count($tenants) . ' additional test tenant(s) ensured.');
     }
 
     private function backfillNullTenantIds(): void

@@ -41,6 +41,11 @@ class CurrentRoleResolver
             return collect();
         }
 
+        // Use membership-scoped resolution for Account, Spatie global for User
+        if ($identity instanceof Account) {
+            return $identity->getRoleNames();
+        }
+
         if ($identity instanceof User) {
             return $identity->getRoleNames();
         }
@@ -58,6 +63,11 @@ class CurrentRoleResolver
 
         if ($identity === null) {
             return false;
+        }
+
+        // Use membership-scoped resolution for Account
+        if ($identity instanceof Account) {
+            return $identity->hasRole($role);
         }
 
         if ($identity instanceof User) {

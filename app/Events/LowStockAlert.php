@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\Product;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -22,11 +23,9 @@ class LowStockAlert implements ShouldBroadcast
     public function broadcastOn(): array
     {
         $channels = [];
-        $admins = \App\Models\User::role('admin')
-            ->where('users.tenant_id', $this->product->tenant_id)
-            ->pluck('id');
-        foreach ($admins as $adminId) {
-            $channels[] = new PrivateChannel('notifications.user.'.$adminId);
+        $admins = IdentityResolver::resolveTenantAdmins($this->product->tenant_id);
+        foreach ($admins as $admin) {
+            $channels[] = new PrivateChannel('notifications.user.'.$admin->id);
         }
 
         return $channels;

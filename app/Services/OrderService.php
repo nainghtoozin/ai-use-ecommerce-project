@@ -6,10 +6,10 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Auth\IdentityResolver;
 use App\Models\ProductVariant;
 use App\Models\City;
 use App\Models\Township;
-use App\Models\User;
 use App\Models\Coupon;
 use App\Models\Promotion;
 use App\Events\OrderStatusChanged;
@@ -446,11 +446,9 @@ class OrderService
     private function fireLowStockAlert($product, int $threshold): void
     {
         $tenantId = is_object($product) ? $product->tenant_id : null;
-        $admins = User::role('admin');
-        if ($tenantId) {
-            $admins->where('users.tenant_id', $tenantId);
-        }
-        $admins = $admins->get();
+        $admins = $tenantId
+            ? IdentityResolver::resolveTenantAdmins($tenantId)
+            : collect();
         $adminsWhoWantLowStock = $this->preferenceService->filterUsersByPreference($admins, 'low_stock');
 
         if ($adminsWhoWantLowStock->isNotEmpty()) {

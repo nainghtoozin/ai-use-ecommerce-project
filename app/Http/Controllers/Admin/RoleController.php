@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Auth\IdentityResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
@@ -14,6 +15,10 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
+    public function __construct(
+        private readonly IdentityResolver $identityResolver,
+    ) {}
+
     private function getTenantFilter(): mixed
     {
         if (auth()->check() && auth()->user()->isSuperAdmin()) {
@@ -29,12 +34,21 @@ class RoleController extends Controller
         }
 
         $search = $request->input('search');
+        $tenant = $this->getTenantFilter();
+        $useAccounts = $this->identityResolver->supportsAccount();
 
         $roles = Role::with('permissions')
-            ->withCount(['users' => function ($q) {
-                $q->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id));
-            }])
-            ->when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
+            ->when($useAccounts, fn($q) => $q
+                ->withCount(['accounts' => function ($q) use ($tenant) {
+                    $q->when($tenant, fn($q, $t) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $t->id)));
+                }])
+            )
+            ->when(!$useAccounts, fn($q) => $q
+                ->withCount(['users' => function ($q) use ($tenant) {
+                    $q->when($tenant, fn($q, $t) => $q->where('users.tenant_id', $t->id));
+                }])
+            )
+            ->when($tenant, fn($q, $t) => $q->where('tenant_id', $t->id))
             ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->paginate(10)
@@ -43,7 +57,7 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'guard_name' => $role->guard_name,
                 'permissions_count' => $role->permissions->count(),
-                'users_count' => $role->users_count,
+                'users_count' => $useAccounts ? ($role->accounts_count ?? 0) : ($role->users_count ?? 0),
                 'created_at' => $role->created_at->format('Y-m-d H:i:s'),
             ]);
 
@@ -96,11 +110,21 @@ class RoleController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $tenant = $this->getTenantFilter();
+        $useAccounts = $this->identityResolver->supportsAccount();
+
         $role = Role::with('permissions')
-            ->withCount(['users' => function ($q) {
-                $q->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id));
-            }])
-            ->when($this->getTenantFilter(), fn($q, $tenant) => $q->where('tenant_id', $tenant->id))
+            ->when($useAccounts, fn($q) => $q
+                ->withCount(['accounts' => function ($q) use ($tenant) {
+                    $q->when($tenant, fn($q, $t) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $t->id)));
+                }])
+            )
+            ->when(!$useAccounts, fn($q) => $q
+                ->withCount(['users' => function ($q) use ($tenant) {
+                    $q->when($tenant, fn($q, $t) => $q->where('users.tenant_id', $t->id));
+                }])
+            )
+            ->when($tenant, fn($q, $t) => $q->where('tenant_id', $t->id))
             ->findOrFail($id);
 
         $groupedPermissions = $role->permissions
@@ -118,7 +142,7 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'guard_name' => $role->guard_name,
                 'permissions_count' => $role->permissions->count(),
-                'users_count' => $role->users_count,
+                'users_count' => $useAccounts ? ($role->accounts_count ?? 0) : ($role->users_count ?? 0),
                 'created_at' => $role->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $role->updated_at->format('Y-m-d H:i:s'),
             ],
@@ -207,13 +231,21 @@ class RoleController extends Controller
                 ->with('error', "The '{$role->name}' role cannot be deleted.");
         }
 
-        $roleUserCount = $role->users()
-            ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
-            ->count();
+        $tenant = $this->getTenantFilter();
+        $useAccounts = $this->identityResolver->supportsAccount();
 
-        if ($roleUserCount > 0) {
+        $assignedCount = $useAccounts
+            ? $role->accounts()
+                ->when($tenant, fn($q, $t) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $t->id)))
+                ->count()
+            : $role->users()
+                ->when($tenant, fn($q, $t) => $q->where('users.tenant_id', $t->id))
+                ->count();
+
+        if ($assignedCount > 0) {
+            $label = $useAccounts ? 'account(s)' : 'user(s)';
             return admin_redirect('admin.roles.index')
-                ->with('error', "Cannot delete role '{$role->name}' because it is assigned to {$roleUserCount} user(s). Please reassign them first.");
+                ->with('error', "Cannot delete role '{$role->name}' because it is assigned to {$assignedCount} {$label}. Please reassign them first.");
         }
 
         $roleName = $role->name;

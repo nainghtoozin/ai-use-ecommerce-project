@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Auth\IdentityResolver;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessOrderStatusChange;
 use App\Models\Order;
@@ -21,8 +22,11 @@ class AdminOrderController extends Controller
     protected $orderService;
     protected $orderWorkflow;
 
-    public function __construct(OrderService $orderService, OrderWorkflow $orderWorkflow)
-    {
+    public function __construct(
+        OrderService $orderService,
+        OrderWorkflow $orderWorkflow,
+        private readonly IdentityResolver $identityResolver,
+    ) {
         $this->orderService = $orderService;
         $this->orderWorkflow = $orderWorkflow;
     }
@@ -31,6 +35,9 @@ class AdminOrderController extends Controller
     {
         if (auth()->user()->isSuperAdmin()) {
             return false;
+        }
+        if ($this->identityResolver->supportsAccount()) {
+            return $this->identityResolver->getCurrentTenantId();
         }
         return auth()->user()->tenant_id;
     }

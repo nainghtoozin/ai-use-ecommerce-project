@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\PaymentIntent;
-use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -20,9 +20,9 @@ class BillingPaymentSubmitted implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        $superAdmins = User::role('superadmin')->pluck('id');
-
-        return $superAdmins->map(fn($id) => new PrivateChannel('notifications.user.' . $id))->toArray();
+        return IdentityResolver::resolveSuperAdmins()
+            ->map(fn($id) => new PrivateChannel('notifications.user.' . $id))
+            ->toArray();
     }
 
     public function broadcastAs(): string

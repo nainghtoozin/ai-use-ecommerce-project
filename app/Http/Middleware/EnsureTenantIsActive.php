@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
+use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -19,16 +21,22 @@ class EnsureTenantIsActive
             return $next($request);
         }
 
-        $tenant = $user->tenant;
+        $tenant = $user instanceof Account ? Tenant::getCurrent() : $user->tenant;
 
         if (! $tenant) {
-            abort(403, 'Store not found.');
+            $storeSlug = $request->route('store_slug');
+            if ($storeSlug) {
+                $tenant = Tenant::where('slug', $storeSlug)->first();
+            }
+            if (! $tenant) {
+                abort(403, 'Store not found.');
+            }
         }
 
         $storeSlug = $request->route('store_slug');
 
         // Pending — owner has not verified email yet
-        if ($tenant->status === 'pending') {
+        if ($tenant->status === 'pending' && !$user->hasVerifiedEmail()) {
             return $this->redirectToSuspended($storeSlug)
                 ->with('error', 'Please verify your email first.');
         }

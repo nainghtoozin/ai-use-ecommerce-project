@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Data\Currency;
 use App\Enums\CurrencyCode;
-use App\Models\PaymentIntent;
 use App\Models\BillingPaymentMethod;
+use App\Models\PaymentIntent;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\SubscriptionAuditLog;
+use App\Models\Tenant;
 use App\Services\FeatureGate;
 use App\Services\ImageService;
 use App\Services\Payment\Platform\CheckoutService;
@@ -33,7 +34,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');
@@ -175,7 +176,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');
@@ -213,7 +214,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');
@@ -314,7 +315,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');
@@ -450,7 +451,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');
@@ -607,7 +608,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');
@@ -692,7 +693,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             return response()->json(['error' => 'Store not found.'], 403);
@@ -763,7 +764,7 @@ class AdminBillingController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $tenant = auth()->user()->tenant;
+        $tenant = Tenant::getCurrent();
 
         if (!$tenant) {
             abort(403, 'Store not found.');

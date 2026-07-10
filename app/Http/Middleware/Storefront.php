@@ -27,6 +27,7 @@ class Storefront
 
         app()->instance('current.tenant', $tenant);
         $request->merge(['tenant' => $tenant]);
+        $request->session()->put('current_tenant_slug', $tenant->slug);
 
         $settings = WebsiteInfo::first();
         \Inertia\Inertia::share('website_info', $settings ? $settings->toArray() : []);

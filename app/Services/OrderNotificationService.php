@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Auth\IdentityResolver;
 use App\Models\Order;
-use App\Models\User;
 use App\Notifications\NewOrderAdminNotification;
 use App\Notifications\OrderPlacedClientNotification;
 use Illuminate\Support\Facades\Log;
@@ -18,9 +18,7 @@ class OrderNotificationService
     public function notifyOrderPlaced(Order $order): void
     {
         try {
-            $admins = User::role('admin')
-                ->where('users.tenant_id', $order->tenant_id)
-                ->get();
+            $admins = IdentityResolver::resolveTenantAdmins($order->tenant_id);
 
             $admins = $this->preferenceService->filterUsersByPreference($admins, 'new_order');
 

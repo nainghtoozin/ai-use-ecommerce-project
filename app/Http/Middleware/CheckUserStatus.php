@@ -67,7 +67,10 @@ class CheckUserStatus
 
             // Check tenant suspension for Account via membership
             if ($authenticatable instanceof Account && !$authenticatable->isSuperAdmin()) {
-                $currentTenant = \App\Models\Tenant::getCurrent();
+                $storeSlug = $request->route('store_slug');
+                $currentTenant = $storeSlug
+                    ? \App\Models\Tenant::where('slug', $storeSlug)->first()
+                    : \App\Models\Tenant::getCurrent();
                 if ($currentTenant && $currentTenant->status === 'suspended') {
                     $route = $request->route();
                     if ($route && in_array($route->getName(), [

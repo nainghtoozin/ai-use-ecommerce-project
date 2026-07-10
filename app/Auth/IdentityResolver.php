@@ -4,8 +4,10 @@ namespace App\Auth;
 
 use App\Contracts\ResolvesMembership;
 use App\Models\Account;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 
 class IdentityResolver
 {
@@ -90,5 +92,96 @@ class IdentityResolver
             identity: $identity,
             tenantId: $tenant?->id,
         );
+    }
+
+    public function queryUsersForTenant(?int $tenantId): Builder
+    {
+        if ($this->supportsAccount()) {
+            $query = Account::with('roles');
+            if ($tenantId) {
+                $query->whereHas('memberships', fn($q) => $q->where('tenant_id', $tenantId));
+            }
+            return $query;
+        }
+
+        $query = User::with('roles');
+        if ($tenantId) {
+            $query->where('users.tenant_id', $tenantId);
+        }
+        return $query;
+    }
+
+    public function findUserForTenant(int $id, ?int $tenantId): ?Authenticatable
+    {
+        return $this->queryUsersForTenant($tenantId)->where('id', $id)->first();
+    }
+
+    public function getCurrentTenantId(): ?int
+    {
+        return $this->tenantContextResolver->tenantId();
+    }
+
+    public static function resolveTenantAdmins(int $tenantId, array $columns = ['id']): \Illuminate\Support\Collection
+    {
+        if (config('identity.use_accounts')) {
+            return Account::whereHas('memberships', fn($q) => $q
+                ->where('tenant_id', $tenantId)
+                ->where(fn($q) => $q
+                    ->where('is_owner', true)
+                    ->orWhereHas('role', fn($r) => $r->where('name', 'admin'))
+                )
+            )->get($columns);
+        }
+        return User::role('admin')
+            ->where('users.tenant_id', $tenantId)
+            ->get($columns);
+    }
+
+    public static function resolveTenantOwnersAndAdmins(int $tenantId): \Illuminate\Support\Collection
+    {
+        if (config('identity.use_accounts')) {
+            return Account::whereHas('memberships', fn($q) => $q
+                ->where('tenant_id', $tenantId)
+                ->where(fn($q) => $q->where('is_owner', true)
+                    ->orWhereHas('role', fn($r) => $r->where('name', 'admin'))
+                )
+            )->pluck('id');
+        }
+        return User::where('tenant_id', $tenantId)
+            ->where(function ($q) {
+                $q->where('is_owner', true)->orWhereHas('roles', fn($r) => $r->where('name', 'admin'));
+            })
+            ->pluck('id');
+    }
+
+    public static function resolveSuperAdmins(): \Illuminate\Support\Collection
+    {
+        if (config('identity.use_accounts')) {
+            return Account::whereHas('roles', fn($q) => $q->where('name', 'superadmin'))->pluck('id');
+        }
+        return User::role('superadmin')->pluck('id');
+    }
+
+    public static function resolveRoleCount(int $roleId, ?int $tenantId): int
+    {
+        if (config('identity.use_accounts')) {
+            $query = Account::whereHas('memberships', fn($q) => $q
+                ->where('tenant_id', $tenantId)
+                ->where('role_id', $roleId)
+            );
+            return $query->count();
+        }
+        $query = User::role(
+            \App\Models\Role::where('id', $roleId)->value('name')
+        );
+        if ($tenantId) {
+            $query->where('users.tenant_id', $tenantId);
+        }
+        return $query->count();
+    }
+
+    public static function resolveModelClass(): string
+    {
+        return config('identity.use_accounts') ? Account::class : User::class;
     }
 }

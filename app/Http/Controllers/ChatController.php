@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\IdentityResolver;
 use App\Events\MessageSent;
 use App\Events\UserTyping;
 use App\Models\Message;
@@ -62,9 +63,10 @@ class ChatController extends Controller
         }
 
         if (empty($result)) {
-            $admin = User::role('admin')
-                ->when($this->getTenantFilter(), fn($q, $t) => $q->where('users.tenant_id', $t->id))
-                ->first();
+            $tenant = $this->getTenantFilter();
+            $admin = $tenant
+                ? IdentityResolver::resolveTenantAdmins($tenant->id, ['id', 'name'])->first()
+                : null;
             if ($admin && $admin->id !== $currentUserId) {
                 $result[] = [
                     'user' => $admin,

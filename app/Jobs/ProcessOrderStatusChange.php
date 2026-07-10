@@ -2,9 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Auth\IdentityResolver;
 use App\Models\Order;
 use App\Models\Setting;
-use App\Models\User;
 use App\Services\TelegramNotificationRouter;
 use App\Services\TelegramOrderMessageBuilder;
 use App\Services\TelegramRecipientResolver;
@@ -68,9 +68,7 @@ class ProcessOrderStatusChange implements ShouldQueue
 
             $adminNotif = $this->getAdminNotification();
             if ($adminNotif) {
-                $admins = User::role('admin')
-                    ->where('users.tenant_id', $this->order->tenant_id)
-                    ->get();
+                $admins = IdentityResolver::resolveTenantAdmins($this->order->tenant_id);
                 $adminsWhoWant = $preferenceService->filterUsersByPreference($admins, $adminNotif['pref_key']);
                 if ($adminsWhoWant->isNotEmpty()) {
                     try {

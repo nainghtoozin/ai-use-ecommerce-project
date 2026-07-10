@@ -2,9 +2,10 @@
 
 namespace App\Services;
 
+use App\Contracts\HasSubscription;
 use App\Models\Plan;
 use App\Models\PlanFeature;
-use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -146,13 +147,13 @@ class FeatureGate
         'referral_system' => 'Business',
     ];
 
-    protected ?User $user = null;
+    protected ?HasSubscription $user = null;
     protected ?Plan $plan = null;
 
     /**
      * Set the user to check features for.
      */
-    public static function forUser(?User $user = null): static
+    public static function forUser(?HasSubscription $user = null): static
     {
         $gate = new static();
         $gate->user = $user ?? auth()->user();
@@ -429,9 +430,10 @@ class FeatureGate
         }
 
         if (auth()->check()) {
-            /** @var User $user */
             $user = auth()->user();
-            return $user->getActivePlan();
+            if ($user instanceof HasSubscription) {
+                return $user->getActivePlan();
+            }
         }
 
         return Plan::free();

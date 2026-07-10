@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Auth\IdentityResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Account;
 use App\Models\ActivityLog;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\PerPageTrait;
 use App\Services\SubscriptionLimitService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +24,8 @@ class AdminUserController extends Controller
     use PerPageTrait;
 
     public function __construct(
-        private readonly \App\Services\ImageService $imageService
+        private readonly IdentityResolver $identityResolver,
+        private readonly \App\Services\ImageService $imageService,
     ) {}
 
     private function isSuperAdmin(): bool
@@ -29,13 +33,17 @@ class AdminUserController extends Controller
         return auth()->check() && auth()->user()->isSuperAdmin();
     }
 
-    private function protectOwner(User $user): void
+    private function protectOwner(Model $user): void
     {
         if ($this->isSuperAdmin()) {
             return;
         }
 
-        if ($user->isOwner()) {
+        $isOwner = $user instanceof Account
+            ? $user->isOwner($this->getTenantFilter())
+            : $user->isOwner();
+
+        if ($isOwner) {
             abort(403, 'The merchant owner account cannot be modified or removed. Contact SuperAdmin.');
         }
     }
@@ -44,6 +52,9 @@ class AdminUserController extends Controller
     {
         if ($this->isSuperAdmin()) {
             return false;
+        }
+        if ($this->identityResolver->supportsAccount()) {
+            return $this->identityResolver->getCurrentTenantId();
         }
         return auth()->user()->tenant_id;
     }
@@ -57,9 +68,9 @@ class AdminUserController extends Controller
         $search = $request->get('search');
         $role = $request->get('role');
         $status = $request->get('status');
+        $tenantId = $this->getTenantFilter();
 
-        $users = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
+        $users = $this->identityResolver->queryUsersForTenant($tenantId)
             ->when($search, fn($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%");
@@ -90,7 +101,7 @@ class AdminUserController extends Controller
         }
 
         $roles = Role::orderBy('name')
-            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
+            ->when($tenantId, fn($q, $id) => $q->where('tenant_id', $id))
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Index', [
@@ -125,26 +136,48 @@ class AdminUserController extends Controller
 
         $data = $request->validated();
 
-        // Enforce plan staff limit for admin role users
         if (($data['role'] ?? null) === 'admin') {
             SubscriptionLimitService::for()->assertCanCreateStaff();
         }
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'status' => $data['status'] ?? User::STATUS_ACTIVE,
-            'allow_cod' => $data['allow_cod'] ?? false,
-        ]);
+        $tenantId = $this->getTenantFilter();
 
-        $user->syncRoles([$data['role']]);
+        if ($this->identityResolver->supportsAccount()) {
+            $user = Account::create([
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'status' => $data['status'] ?? User::STATUS_ACTIVE,
+            ]);
 
-        if ($request->hasFile('profile_image')) {
-            $path = $this->imageService->upload($request->file('profile_image'), 'profile-images');
-            $user->update(['profile_image' => $path]);
+            $user->memberships()->create([
+                'tenant_id' => $tenantId,
+                'role_id' => Role::where('name', $data['role'])->first()?->id,
+                'is_owner' => false,
+                'status' => 'active',
+                'invited_at' => now(),
+                'joined_at' => now(),
+            ]);
+
+            if ($request->hasFile('profile_image')) {
+                $path = $this->imageService->upload($request->file('profile_image'), 'profile-images');
+                $user->update(['profile_image' => $path]);
+            }
+        } else {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'status' => $data['status'] ?? User::STATUS_ACTIVE,
+                'allow_cod' => $data['allow_cod'] ?? false,
+            ]);
+
+            if ($request->hasFile('profile_image')) {
+                $path = $this->imageService->upload($request->file('profile_image'), 'profile-images');
+                $user->update(['profile_image' => $path]);
+            }
         }
 
+        $user->syncRoles([$data['role']]);
         $user->logActivity('created', "User created by admin", [
             'created_by' => auth()->id(),
             'assigned_role' => $data['role'],
@@ -160,13 +193,14 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
 
         $activities = auth()->user()->can('users.view-activity')
             ? ActivityLog::query()
-                ->where('subject_type', User::class)
+                ->where('subject_type', $user::class)
                 ->where('subject_id', $user->id)
                 ->latest()
                 ->limit(20)
@@ -185,9 +219,11 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
+
         $roles = Role::orderBy('name')
             ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
             ->pluck('name');
@@ -204,9 +240,10 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
         $data = $request->validated();
         $changes = [];
 
@@ -218,13 +255,19 @@ class AdminUserController extends Controller
         }
 
         $updateData = [];
-        foreach (['name', 'email'] as $field) {
-            if (isset($data[$field])) {
-                $updateData[$field] = $data[$field];
+        if ($user instanceof User) {
+            foreach (['name', 'email'] as $field) {
+                if (isset($data[$field])) {
+                    $updateData[$field] = $data[$field];
+                }
+            }
+        } else {
+            if (isset($data['email'])) {
+                $updateData['email'] = $data['email'];
             }
         }
 
-        if (array_key_exists('allow_cod', $data)) {
+        if ($user instanceof User && array_key_exists('allow_cod', $data)) {
             $updateData['allow_cod'] = $data['allow_cod'];
             $changes[] = 'allow_cod';
         }
@@ -234,9 +277,10 @@ class AdminUserController extends Controller
             $changes[] = 'password';
         }
 
+        $statusConst = $user instanceof User ? User::class : Account::class;
         if (!empty($data['status'])) {
             if ($data['status'] !== $user->status) {
-                if ($data['status'] !== User::STATUS_ACTIVE && auth()->id() === $user->id) {
+                if ($data['status'] !== ($statusConst)::STATUS_ACTIVE && auth()->id() === $user->id) {
                     return redirect()->back()->with('error', 'You cannot change your own status.');
                 }
                 $updateData['status'] = $data['status'];
@@ -253,14 +297,17 @@ class AdminUserController extends Controller
                 abort(403, 'Unauthorized');
             }
 
-            $currentRoles = $user->roles->pluck('name')->toArray();
-            if ($data['role'] !== ($currentRoles[0] ?? null)) {
+            $currentRoleNames = $user->getRoleNames()->toArray();
+            if ($data['role'] !== ($currentRoleNames[0] ?? null)) {
                 if ($user->isOwner() && $data['role'] !== 'admin' && !$this->isSuperAdmin()) {
                     return redirect()->back()->with('error', 'The merchant owner role cannot be changed. Contact SuperAdmin.');
                 }
 
                 if ($user->hasRole('superadmin') && $data['role'] !== 'superadmin') {
-                    $superadminCount = User::role('superadmin')->count();
+                    $superadminQuery = $this->identityResolver->supportsAccount()
+                        ? Account::role('superadmin')
+                        : User::role('superadmin');
+                    $superadminCount = $superadminQuery->count();
                     if ($superadminCount <= 1) {
                         return redirect()->back()->with('error', 'Cannot remove the last remaining superadmin.');
                     }
@@ -293,14 +340,18 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::with('roles')
-            ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
 
         $this->protectOwner($user);
 
         if ($user->hasRole('superadmin')) {
-            $superadminCount = User::role('superadmin')->count();
+            $superadminQuery = $this->identityResolver->supportsAccount()
+                ? Account::role('superadmin')
+                : User::role('superadmin');
+            $superadminCount = $superadminQuery->count();
             if ($superadminCount <= 1) {
                 return admin_redirect('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining superadmin.');
@@ -308,9 +359,11 @@ class AdminUserController extends Controller
         }
 
         if ($user->hasRole('admin') && !$user->hasRole('superadmin')) {
-            $adminCount = User::role('admin')
-                ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-                ->count();
+            $tenantId = $this->getTenantFilter();
+            $adminQuery = $this->identityResolver->supportsAccount()
+                ? Account::role('admin')->when($tenantId, fn($q, $id) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $id)))
+                : User::role('admin')->when($tenantId, fn($q, $id) => $q->where('users.tenant_id', $id));
+            $adminCount = $adminQuery->count();
             if ($adminCount <= 1) {
                 return admin_redirect('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining admin.');
@@ -338,8 +391,10 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
 
         $this->protectOwner($user);
 
@@ -347,7 +402,7 @@ class AdminUserController extends Controller
             return redirect()->back()->with('error', 'You cannot suspend your own account.');
         }
 
-        $user->update(['status' => User::STATUS_SUSPENDED]);
+        $user->update(['status' => $user instanceof User ? User::STATUS_SUSPENDED : Account::STATUS_SUSPENDED]);
 
         $user->logActivity('suspended', "User suspended by admin", [
             'suspended_by' => auth()->id(),
@@ -363,8 +418,10 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
 
         $this->protectOwner($user);
 
@@ -372,7 +429,7 @@ class AdminUserController extends Controller
             return redirect()->back()->with('error', 'You cannot ban your own account.');
         }
 
-        $user->update(['status' => User::STATUS_BANNED]);
+        $user->update(['status' => $user instanceof User ? User::STATUS_BANNED : Account::STATUS_BANNED]);
 
         $user->logActivity('banned', "User banned by admin", [
             'banned_by' => auth()->id(),
@@ -388,10 +445,12 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $user = User::when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('users.tenant_id', $tenantId))
-            ->findOrFail($id);
+        $user = $this->identityResolver->findUserForTenant($id, $this->getTenantFilter());
+        if (!$user) {
+            abort(404);
+        }
 
-        $user->update(['status' => User::STATUS_ACTIVE]);
+        $user->update(['status' => $user instanceof User ? User::STATUS_ACTIVE : Account::STATUS_ACTIVE]);
 
         $user->logActivity('activated', "User reactivated by admin", [
             'activated_by' => auth()->id(),

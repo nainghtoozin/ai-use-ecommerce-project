@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\Order;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -24,16 +25,14 @@ class OrderPlaced implements ShouldBroadcast
         $customerChannel = 'notifications.user.'.$this->order->user_id;
         $channels = [new PrivateChannel($customerChannel)];
 
-        $admins = \App\Models\User::role('admin')
-            ->where('users.tenant_id', $this->order->tenant_id)
-            ->pluck('id');
-        foreach ($admins as $adminId) {
-            $channels[] = new PrivateChannel('notifications.user.'.$adminId);
+        $admins = IdentityResolver::resolveTenantAdmins($this->order->tenant_id);
+        foreach ($admins as $admin) {
+            $channels[] = new PrivateChannel('notifications.user.'.$admin->id);
         }
 
         Log::debug('[OrderPlaced] Broadcasting to channels:', [
             'customer_channel' => $customerChannel,
-            'admin_channels' => $admins->toArray(),
+            'admin_channels' => $admins->pluck('id')->toArray(),
         ]);
 
         return $channels;

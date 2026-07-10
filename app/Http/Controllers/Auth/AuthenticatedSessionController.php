@@ -86,9 +86,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->authenticate();
 
+        $guard = $useAccounts ? 'accounts' : 'web';
+
         $request->session()->regenerate();
 
-        $authenticatable = Auth::user();
+        $authenticatable = Auth::guard($guard)->user();
 
         ActivityLogger::log(
             'User logged in',
@@ -114,7 +116,7 @@ class AuthenticatedSessionController extends Controller
         $useAccounts = config('identity.use_accounts');
         $guard = $useAccounts ? 'accounts' : 'web';
 
-        $authenticatable = Auth::user();
+        $authenticatable = Auth::guard($guard)->user();
 
         if ($authenticatable) {
             ActivityLogger::log(
@@ -128,7 +130,9 @@ class AuthenticatedSessionController extends Controller
 
         $isSuperAdmin = $authenticatable && $authenticatable->isSuperAdmin();
         $tenant = $authenticatable ? \App\Models\Tenant::getCurrent() : null;
-        $storeSlug = $request->input('store_slug') ?: ($tenant ? $tenant->slug : null);
+        $storeSlug = $request->input('store_slug')
+            ?: ($tenant ? $tenant->slug : null)
+            ?: $request->session()->get('current_tenant_slug');
         $context = $request->input('context');
 
         // Determine context from POST data or user role

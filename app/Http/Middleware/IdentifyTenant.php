@@ -8,11 +8,18 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class IdentifyTenant
 {
     public function handle(Request $request, Closure $next)
     {
+        if (Auth::guard('web')->check()) {
+            Auth::shouldUse('web');
+        } elseif (Auth::guard('accounts')->check()) {
+            Auth::shouldUse('accounts');
+        }
+
         if (auth()->check()) {
             $authenticatable = auth()->user();
 
@@ -25,13 +32,24 @@ class IdentifyTenant
             }
 
             if ($authenticatable instanceof Account) {
-                $membership = TenantMembership::where('account_id', $authenticatable->id)
-                    ->with('tenant')
-                    ->first();
+                $membershipQuery = TenantMembership::where('account_id', $authenticatable->id)
+                    ->with('tenant');
+
+                $membership = null;
+                $sessionSlug = $request->session()->get('current_tenant_slug');
+
+                if ($sessionSlug) {
+                    $membership = (clone $membershipQuery)->whereHas('tenant', fn($q) => $q->where('slug', $sessionSlug))->first();
+                }
+
+                if (!$membership) {
+                    $membership = $membershipQuery->first();
+                }
 
                 if ($membership && $membership->tenant) {
                     app()->instance('current.tenant', $membership->tenant);
                     $request->merge(['tenant' => $membership->tenant]);
+                    $request->session()->put('current_tenant_slug', $membership->tenant->slug);
                     return $next($request);
                 }
             }
@@ -44,6 +62,7 @@ class IdentifyTenant
                 if ($tenant) {
                     app()->instance('current.tenant', $tenant);
                     $request->merge(['tenant' => $tenant]);
+                    $request->session()->put('current_tenant_slug', $tenant->slug);
                     return $next($request);
                 }
             }
@@ -57,6 +76,7 @@ class IdentifyTenant
         if ($tenant) {
             app()->instance('current.tenant', $tenant);
             $request->merge(['tenant' => $tenant]);
+            $request->session()->put('current_tenant_slug', $tenant->slug);
         }
 
         return $next($request);

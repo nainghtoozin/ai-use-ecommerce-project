@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
+use App\Auth\IdentityResolver;
 use App\Events\BillingPaymentApproved;
 use App\Events\BillingPaymentRejected;
 use App\Events\BillingPaymentSubmitted;
 use App\Models\PaymentIntent;
-use App\Models\User;
 use App\Notifications\BillingPaymentApprovedMerchantNotification;
 use App\Notifications\BillingPaymentRejectedMerchantNotification;
 use App\Notifications\BillingPaymentSubmittedAdminNotification;
@@ -18,7 +18,7 @@ class BillingNotificationService
     public function notifyPaymentSubmitted(PaymentIntent $intent): void
     {
         try {
-            $superAdmins = User::role('superadmin')->get();
+            $superAdmins = IdentityResolver::resolveSuperAdmins();
 
             if ($superAdmins->isNotEmpty()) {
                 Notification::send($superAdmins, new BillingPaymentSubmittedAdminNotification($intent));

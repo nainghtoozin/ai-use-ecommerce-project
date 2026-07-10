@@ -131,7 +131,11 @@ class ImageService
     private function resolveTenant(): ?Tenant
     {
         if (auth()->check()) {
-            return auth()->user()->tenant;
+            $user = auth()->user();
+            if ($user instanceof \App\Models\Account) {
+                return Tenant::getCurrent();
+            }
+            return $user->tenant;
         }
 
         return Tenant::getCurrent();

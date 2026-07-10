@@ -5,13 +5,14 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Tenant;
 use Illuminate\Support\Facades\Log;
 
 class TelegramSampleOrderFactory
 {
     public function create(?int $tenantId = null): Order
     {
-        $tenantId = $tenantId ?? auth()->user()?->tenant_id;
+        $tenantId = $tenantId ?? Tenant::getCurrent()?->id;
 
         $order = new Order([
             'customer_name' => 'Sample Customer',
@@ -37,7 +38,7 @@ class TelegramSampleOrderFactory
 
         $order->setRelation('items', collect([$item]));
         $order->setRelation('paymentMethod', null);
-        $order->setRelation('tenant', auth()->user()?->tenant);
+        $order->setRelation('tenant', Tenant::getCurrent());
 
         Log::info('[TelegramSampleOrderFactory] Sample order created', [
             'order_id' => $order->id,
