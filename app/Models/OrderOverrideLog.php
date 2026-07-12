@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasUser;
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class OrderOverrideLog extends Model
 {
-    use TenantAware;
+    use TenantAware, HasUser;
 
     protected $fillable = [
         'order_id',
@@ -25,8 +26,8 @@ class OrderOverrideLog extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function user(): BelongsTo
+    public function user(): MorphTo
     {
-        return $this->belongsTo(User::class);
+        return $this->morphTo();
     }
 }

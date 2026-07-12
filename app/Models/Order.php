@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasUser;
 use App\Models\Traits\TenantAware;
 use App\Services\OrderWorkflow;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends Model
 {
-    use HasFactory, TenantAware;
+    use HasFactory, TenantAware, HasUser;
 
     const PAYMENT_STATUS_PENDING = 'pending';
     const PAYMENT_STATUS_PAID = 'paid';
@@ -84,7 +85,7 @@ class Order extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->morphTo();
     }
 
     public function items()

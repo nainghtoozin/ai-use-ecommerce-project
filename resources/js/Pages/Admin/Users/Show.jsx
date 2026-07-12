@@ -55,7 +55,7 @@ export default function UsersShow({ user, activities }) {
                                         <p className="text-sm text-gray-500">{user.email}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {user.roles?.[0]?.name || 'N/A'}
+                                                {user.role_name || '—'}
                                             </span>
                                             {ownerBadge}
                                             {statusBadge(user.status)}

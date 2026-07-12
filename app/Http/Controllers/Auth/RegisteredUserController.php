@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\LoginRedirectResolver;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\CustomerProfile;
+use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -80,14 +82,10 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        if ($user->isAdmin()) {
-            return redirect()->intended(route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]));
-        }
-
-        return redirect()->route('storefront.index', ['store_slug' => $tenant->slug]);
+        return app(LoginRedirectResolver::class)->intended($user, $tenant);
     }
 
-    protected function storeAccount(Request $request, \App\Models\Tenant $tenant): RedirectResponse
+    protected function storeAccount(Request $request, Tenant $tenant): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -101,6 +99,7 @@ class RegisteredUserController extends Controller
         if (!$account) {
             $isNewAccount = true;
             $account = Account::create([
+                'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'status' => Account::STATUS_ACTIVE,
@@ -143,6 +142,6 @@ class RegisteredUserController extends Controller
 
         Auth::guard('accounts')->login($account);
 
-        return redirect()->route('storefront.index', ['store_slug' => $tenant->slug]);
+        return redirect()->to(app(LoginRedirectResolver::class)->resolveAfterRegistration($account, $tenant));
     }
 }

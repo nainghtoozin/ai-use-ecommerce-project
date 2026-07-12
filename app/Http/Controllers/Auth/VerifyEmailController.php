@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\LoginRedirectResolver;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\User;
@@ -50,23 +51,14 @@ class VerifyEmailController extends Controller
         return $this->redirectAfterVerification($user);
     }
 
-    private function redirectAfterVerification($authenticatable): RedirectResponse
+    private function redirectAfterVerification(User|Account $authenticatable): RedirectResponse
     {
-        if ($authenticatable instanceof User && $authenticatable->tenant_id && $authenticatable->tenant) {
-            return redirect()->route('storefront.onboarding.complete', [
-                'store_slug' => $authenticatable->tenant->slug,
-            ]);
+        $url = app(LoginRedirectResolver::class)->resolveAfterEmailVerification($authenticatable);
+
+        if ($url === route('login')) {
+            return redirect()->to($url)->with('status', 'email-verified');
         }
 
-        if ($authenticatable instanceof Account) {
-            $membership = $authenticatable->memberships()->with('tenant')->first();
-            if ($membership && $membership->tenant) {
-                return redirect()->route('storefront.onboarding.complete', [
-                    'store_slug' => $membership->tenant->slug,
-                ]);
-            }
-        }
-
-        return redirect()->route('login')->with('status', 'email-verified');
+        return redirect()->to($url);
     }
 }

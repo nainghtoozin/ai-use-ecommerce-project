@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLog extends Model
@@ -43,14 +42,14 @@ class ActivityLog extends Model
         return $this->morphTo();
     }
 
-    public function impersonator(): BelongsTo
+    public function impersonator(): MorphTo
     {
-        return $this->belongsTo(User::class, 'impersonator_id');
+        return $this->morphTo();
     }
 
-    public function impersonatedUser(): BelongsTo
+    public function impersonatedUser(): MorphTo
     {
-        return $this->belongsTo(User::class, 'impersonated_user_id');
+        return $this->morphTo();
     }
 
     public function scopeInLog($query, string $logName)

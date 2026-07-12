@@ -73,8 +73,8 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
     const [formErrors, setFormErrors] = useState(errors || {});
 
     const [form, setForm] = useState({
-        first_name: auth?.user?.name?.split(' ')[0] || '',
-        last_name: auth?.user?.name?.split(' ').slice(1).join(' ') || '',
+        first_name: auth?.user?.first_name || auth?.user?.name?.split(' ')[0] || '',
+        last_name: auth?.user?.last_name || auth?.user?.name?.split(' ').slice(1).join(' ') || '',
         email: auth?.user?.email || '',
         phone: '',
         address: '',

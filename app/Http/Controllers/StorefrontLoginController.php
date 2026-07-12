@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\LoginRedirectResolver;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Account;
 use App\Models\Tenant;
@@ -47,6 +48,12 @@ class StorefrontLoginController extends Controller
             $account = Account::where('email', $request->email)->first();
 
             if ($account) {
+                if ($account->isSuperAdmin()) {
+                    return back()->withErrors([
+                        'email' => 'Please use the platform login page for super admin access.',
+                    ])->onlyInput('email');
+                }
+
                 if (!$account->isActive()) {
                     if ($account->isSuspended()) {
                         return back()->withErrors([
@@ -68,6 +75,12 @@ class StorefrontLoginController extends Controller
             $user = User::where('email', $request->email)->first();
 
             if ($user) {
+                if ($user->isSuperAdmin()) {
+                    return back()->withErrors([
+                        'email' => 'Please use the platform login page for super admin access.',
+                    ])->onlyInput('email');
+                }
+
                 if (!$user->isActive()) {
                     if ($user->isSuspended()) {
                         return back()->withErrors([
@@ -84,28 +97,23 @@ class StorefrontLoginController extends Controller
                     ])->onlyInput('email');
                 }
 
-                // Pending — owner has not verified email; block admin login
-                if ($user->tenant && $user->tenant->status === 'pending' && !$user->isSuperAdmin() && $user->isAdmin() && !$user->hasVerifiedEmail()) {
+                if ($user->tenant && $user->tenant->status === 'pending' && $user->isAdmin() && !$user->hasVerifiedEmail()) {
                     return back()->withErrors([
                         'email' => 'Please verify your email first.',
                     ])->onlyInput('email');
                 }
 
-                if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
+                if ($user->tenant && $user->tenant->status === 'suspended') {
                     return back()->withErrors([
                         'email' => 'Your account has been suspended. Please contact support.',
                     ])->onlyInput('email');
                 }
 
-                // Tenant verification: the user must belong to the current store
                 if ($user->tenant_id !== null && $user->tenant_id !== $tenant->id) {
                     return back()->withErrors([
                         'email' => 'These credentials do not match our records.',
                     ])->onlyInput('email');
                 }
-
-                // Legacy users (null tenant_id): remember email for post-auth assignment
-                // Must not update tenant_id before authenticate() — see below
             }
         }
 
@@ -114,8 +122,6 @@ class StorefrontLoginController extends Controller
         $guard = $useAccounts ? 'accounts' : 'web';
 
         if (!$useAccounts) {
-            // Auto-assign tenant_id for legacy users registered before tenant_id was stored.
-            // Runs after authenticate() to avoid persisting tenant_id on failed login attempts.
             $user = Auth::guard($guard)->user();
             if ($user->tenant_id === null) {
                 $user->update(['tenant_id' => $tenant->id]);
@@ -134,10 +140,6 @@ class StorefrontLoginController extends Controller
             'auth'
         );
 
-        if ($authenticatable->isAdmin()) {
-            return redirect()->intended(route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]));
-        }
-
-        return redirect()->intended(route('storefront.index', ['store_slug' => $tenant->slug]));
+        return app(LoginRedirectResolver::class)->intended($authenticatable, $tenant);
     }
 }

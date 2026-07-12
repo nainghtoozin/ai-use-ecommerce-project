@@ -5,16 +5,19 @@ namespace App\Models;
 use App\Contracts\HasSubscription;
 use App\Models\Plan;
 use App\Models\Role;
-use App\Models\Permission;
 use App\Models\Tenant;
+use Spatie\Permission\Models\Permission;
 use App\Models\TenantMembership;
 use App\Models\Traits\LogsActivity;
+use App\Models\Traits\SyncsIdentity;
 use App\Services\ImageService;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,7 +28,12 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Account extends Authenticatable implements MustVerifyEmailContract, HasSubscription
 {
-    use HasFactory, SoftDeletes, Notifiable, MustVerifyEmail, HasRoles, LogsActivity;
+    use HasFactory, SoftDeletes, Notifiable, MustVerifyEmail, HasRoles, LogsActivity, SyncsIdentity;
+
+    protected function getCounterpartClass(): string
+    {
+        return User::class;
+    }
 
     private ?TenantMembership $resolvedMembership = null;
 
@@ -43,6 +51,7 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
     const STATUS_INACTIVE = 'inactive';
 
     protected $fillable = [
+        'name',
         'email',
         'password',
         'email_verified_at',
@@ -63,6 +72,7 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
         'profile_image_url',
         'name',
         'is_owner',
+        'role_name',
     ];
 
     protected function casts(): array
@@ -123,7 +133,16 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
     public function getDisplayName(): string
     {
         if (!config('identity.use_accounts')) {
-            return $this->email;
+            return $this->name ?: $this->email;
+        }
+
+        $nameColumn = $this->attributes['name'] ?? null;
+        if ($nameColumn) {
+            return $nameColumn;
+        }
+
+        if ($this->isSuperAdmin()) {
+            return 'Super Admin';
         }
 
         $membership = $this->getCurrentMembership();
@@ -192,6 +211,11 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
         return $this->isOwner();
     }
 
+    public function getRoleNameAttribute(): ?string
+    {
+        return $this->getRoleNames()->first();
+    }
+
     public function memberships(): HasMany
     {
         return $this->hasMany(TenantMembership::class);
@@ -200,6 +224,43 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);
+    }
+
+    /* ---- business model relationships (polymorphic) ---- */
+
+    public function orders(): MorphMany
+    {
+        return $this->morphMany(Order::class, 'user');
+    }
+
+    public function wishlistItems(): MorphMany
+    {
+        return $this->morphMany(Wishlist::class, 'user');
+    }
+
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(CustomerAddress::class, 'user');
+    }
+
+    public function sentMessages(): MorphMany
+    {
+        return $this->morphMany(Message::class, 'sender');
+    }
+
+    public function receivedMessages(): MorphMany
+    {
+        return $this->morphMany(Message::class, 'receiver');
+    }
+
+    public function promotionUsages(): MorphMany
+    {
+        return $this->morphMany(PromotionUsage::class, 'user');
+    }
+
+    public function telegramIntegration(): MorphOne
+    {
+        return $this->morphOne(TelegramIntegration::class, 'user');
     }
 
     public function wantsNotification(string $type): bool

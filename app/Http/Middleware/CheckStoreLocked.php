@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
+use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -19,7 +21,7 @@ class CheckStoreLocked
             return $next($request);
         }
 
-        $tenant = $user->tenant;
+        $tenant = $user instanceof Account ? Tenant::getCurrent() : $user->tenant;
 
         if (!$tenant || !$tenant->isLocked()) {
             return $next($request);

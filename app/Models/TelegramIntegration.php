@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasUser;
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use App\Casts\Encrypted;
 
 class TelegramIntegration extends Model
 {
-    use HasFactory, TenantAware;
+    use HasFactory, TenantAware, HasUser;
 
     protected $fillable = [
         'user_id',
@@ -61,7 +62,7 @@ class TelegramIntegration extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->morphTo();
     }
 
     public function scopeVerified($query)

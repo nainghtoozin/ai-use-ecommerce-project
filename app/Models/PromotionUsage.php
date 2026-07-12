@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasUser;
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PromotionUsage extends Model
 {
-    use HasFactory, TenantAware;
+    use HasFactory, TenantAware, HasUser;
 
     protected $table = 'promotion_usages';
 
@@ -34,9 +36,9 @@ class PromotionUsage extends Model
         return $this->belongsTo(Promotion::class);
     }
 
-    public function user(): BelongsTo
+    public function user(): MorphTo
     {
-        return $this->belongsTo(User::class);
+        return $this->morphTo();
     }
 
     public function order(): BelongsTo

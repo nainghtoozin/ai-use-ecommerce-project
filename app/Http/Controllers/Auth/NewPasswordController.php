@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\LoginRedirectResolver;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\User;
@@ -50,18 +51,8 @@ class NewPasswordController extends Controller
                     'remember_token' => Str::random(60),
                 ])->save();
 
-                // Respect explicit store_slug from the request
                 if (!$storeSlug) {
-                    if ($authenticatable instanceof User && $authenticatable->tenant) {
-                        $redirectTo = url("/store/{$authenticatable->tenant->slug}/login");
-                    }
-
-                    if ($authenticatable instanceof Account) {
-                        $membership = $authenticatable->memberships()->with('tenant')->first();
-                        if ($membership && $membership->tenant) {
-                            $redirectTo = url("/store/{$membership->tenant->slug}/login");
-                        }
-                    }
+                    $redirectTo = app(LoginRedirectResolver::class)->resolveAfterPasswordReset($authenticatable);
                 }
 
                 event(new PasswordReset($authenticatable));

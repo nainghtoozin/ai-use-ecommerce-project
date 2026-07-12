@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Auth\LoginRedirectResolver;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -82,12 +84,9 @@ class ImpersonationController extends Controller
 
         request()->session()->regenerate();
 
-        $tenant = $user->tenant;
-        if ($tenant) {
-            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug])
-                ->with('success', "Logged in as {$user->name}.");
-        }
-        return redirect()->route('admin.dashboard')
+        $redirectUrl = app(LoginRedirectResolver::class)->resolveAfterImpersonation($user);
+
+        return redirect()->to($redirectUrl)
             ->with('success', "Logged in as {$user->name}.");
     }
 
@@ -139,7 +138,7 @@ class ImpersonationController extends Controller
 
         request()->session()->regenerate();
 
-        return redirect()->route('superadmin.dashboard')
+        return redirect()->to(app(LoginRedirectResolver::class)->resolveAfterImpersonationLeave())
             ->with('success', 'Returned to SuperAdmin account.');
     }
 }

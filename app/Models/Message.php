@@ -6,6 +6,7 @@ use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Message extends Model
 {
@@ -13,7 +14,9 @@ class Message extends Model
 
     protected $fillable = [
         'sender_id',
+        'sender_type',
         'receiver_id',
+        'receiver_type',
         'message',
         'is_read',
         'reply_to_id',
@@ -24,14 +27,26 @@ class Message extends Model
         'updated_at' => 'datetime',
     ];
 
-    public function sender(): BelongsTo
+    protected static function booted(): void
     {
-        return $this->belongsTo(User::class, 'sender_id');
+        static::creating(function (self $message) {
+            if ($message->sender_id && !$message->sender_type) {
+                $message->sender_type = auth()->user()?->getMorphClass() ?? (new User)->getMorphClass();
+            }
+            if ($message->receiver_id && !$message->receiver_type) {
+                $message->receiver_type = auth()->user()?->getMorphClass() ?? (new User)->getMorphClass();
+            }
+        });
     }
 
-    public function receiver(): BelongsTo
+    public function sender(): MorphTo
     {
-        return $this->belongsTo(User::class, 'receiver_id');
+        return $this->morphTo();
+    }
+
+    public function receiver(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function replyTo(): BelongsTo

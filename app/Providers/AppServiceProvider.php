@@ -6,6 +6,7 @@ use App\Auth\AuthorizationContext;
 use App\Auth\AuthorizationResolver;
 use App\Auth\CurrentRoleResolver;
 use App\Auth\IdentityContext;
+use App\Auth\IdentityProjection;
 use App\Auth\IdentityResolver;
 use App\Auth\MembershipResolver;
 use App\Auth\TenantContextResolver;
@@ -210,6 +211,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ResolvesAuthorization::class, AuthorizationResolver::class);
         $this->app->singleton(AuthorizationContext::class, fn() => AuthorizationContext::empty());
         $this->app->singleton(IdentityResolver::class);
+        $this->app->singleton(IdentityProjection::class);
         $this->app->singleton(IdentityContext::class, fn() => IdentityContext::empty());
     }
 

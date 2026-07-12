@@ -44,6 +44,7 @@ class UserSeeder extends Seeder
                 $account = Account::updateOrCreate(
                     ['email' => $customer['email']],
                     [
+                        'name' => $customer['name'],
                         'password' => bcrypt('password'),
                         'email_verified_at' => now(),
                     ]
@@ -51,6 +52,9 @@ class UserSeeder extends Seeder
                 if (!$account->hasRole('customer')) {
                     $account->assignRole('customer');
                 }
+
+                // Customer memberships are handled by MembershipSeeder
+                // which runs after TenantSeeder.
             }
         }
     }

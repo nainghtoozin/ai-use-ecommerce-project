@@ -14,9 +14,11 @@ class StoreUserRequest extends FormRequest
 
     public function rules(): array
     {
+        $emailTable = config('identity.use_accounts') ? 'accounts,email' : 'users,email';
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . $emailTable],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'string', 'exists:roles,name'],
             'status' => ['required', 'string', 'in:active,suspended,banned'],

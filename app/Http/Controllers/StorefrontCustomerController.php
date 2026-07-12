@@ -68,15 +68,15 @@ class StorefrontCustomerController extends Controller
         $user = $request->user();
 
         $orderStats = [
-            'total' => Order::where('user_id', $user->id)->count(),
-            'pending' => Order::where('user_id', $user->id)->where('order_status', Order::ORDER_STATUS_PENDING)->count(),
-            'processing' => Order::where('user_id', $user->id)->where('order_status', Order::ORDER_STATUS_PROCESSING)->count(),
-            'shipped' => Order::where('user_id', $user->id)->where('order_status', Order::ORDER_STATUS_SHIPPED)->count(),
-            'delivered' => Order::where('user_id', $user->id)->where('order_status', Order::ORDER_STATUS_DELIVERED)->count(),
-            'cancelled' => Order::where('user_id', $user->id)->where('order_status', Order::ORDER_STATUS_CANCELLED)->count(),
+            'total' => $user->orders()->count(),
+            'pending' => $user->orders()->where('order_status', Order::ORDER_STATUS_PENDING)->count(),
+            'processing' => $user->orders()->where('order_status', Order::ORDER_STATUS_PROCESSING)->count(),
+            'shipped' => $user->orders()->where('order_status', Order::ORDER_STATUS_SHIPPED)->count(),
+            'delivered' => $user->orders()->where('order_status', Order::ORDER_STATUS_DELIVERED)->count(),
+            'cancelled' => $user->orders()->where('order_status', Order::ORDER_STATUS_CANCELLED)->count(),
         ];
 
-        $addressesCount = CustomerAddress::forUser($user->id)->count();
+        $addressesCount = $user->addresses()->count();
 
         return Inertia::render('Storefront/Account', [
             'tenant' => $this->tenantData($tenant),
@@ -96,8 +96,8 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        $orders = Order::with(['items.product', 'items.variant', 'paymentMethod'])
-            ->where('user_id', $user->id)
+        $orders = $user->orders()
+            ->with(['items.product', 'items.variant', 'paymentMethod'])
             ->orderBy('created_at', 'desc')
             ->simplePaginate(10);
 
@@ -112,7 +112,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($order->user_id !== $user->id) {
+        if ($order->user_id !== $user->id || $order->user_type !== $user->getMorphClass()) {
             abort(404);
         }
 
@@ -129,8 +129,8 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        $addresses = CustomerAddress::with(['city', 'township'])
-            ->forUser($user->id)
+        $addresses = $user->addresses()
+            ->with(['city', 'township'])
             ->orderBy('is_default', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -163,12 +163,10 @@ class StorefrontCustomerController extends Controller
         ]);
 
         if (!empty($validated['is_default'])) {
-            CustomerAddress::forUser($user->id)->update(['is_default' => false]);
+            $user->addresses()->update(['is_default' => false]);
         }
 
-        $validated['user_id'] = $user->id;
-
-        CustomerAddress::create($validated);
+        $user->addresses()->create($validated);
 
         return redirect()->route('storefront.customer.addresses', ['store_slug' => $tenant->slug])
             ->with('success', 'Address added successfully.');
@@ -179,7 +177,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($address->user_id !== $user->id) {
+        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass()) {
             abort(404);
         }
 
@@ -197,7 +195,7 @@ class StorefrontCustomerController extends Controller
         ]);
 
         if (!empty($validated['is_default'])) {
-            CustomerAddress::forUser($user->id)->where('id', '!=', $address->id)->update(['is_default' => false]);
+            $user->addresses()->where('id', '!=', $address->id)->update(['is_default' => false]);
         }
 
         $address->update($validated);
@@ -211,7 +209,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($address->user_id !== $user->id) {
+        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass()) {
             abort(404);
         }
 
@@ -226,7 +224,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($order->user_id !== $user->id) {
+        if ($order->user_id !== $user->id || $order->user_type !== $user->getMorphClass()) {
             abort(404);
         }
 
@@ -251,7 +249,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($order->user_id !== $user->id) {
+        if ($order->user_id !== $user->id || $order->user_type !== $user->getMorphClass()) {
             abort(404);
         }
 

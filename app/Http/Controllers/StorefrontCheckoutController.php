@@ -71,7 +71,7 @@ class StorefrontCheckoutController extends Controller
         $addresses = collect();
         $defaultAddress = null;
         if (auth()->check()) {
-            $addresses = CustomerAddress::forUser(auth()->id())
+            $addresses = auth()->user()->addresses()
                 ->orderBy('is_default', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->get();

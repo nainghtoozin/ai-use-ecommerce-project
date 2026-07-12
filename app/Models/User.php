@@ -10,14 +10,21 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Contracts\HasSubscription;
 use App\Models\Traits\LogsActivity;
+use App\Models\Traits\SyncsIdentity;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 {
-    use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, HasRoles;
+    use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, HasRoles, SyncsIdentity;
+
+    protected function getCounterpartClass(): string
+    {
+        return Account::class;
+    }
 
     protected $appends = [
         'profile_image_url',
+        'role_name',
     ];
 
     const ROLE_CUSTOMER = 'customer';
@@ -33,7 +40,9 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         'name',
         'email',
         'password',
+        'email_verified_at',
         'status',
+        'remember_token',
         'tenant_id',
         'is_owner',
         'is_admin',
@@ -105,6 +114,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         return $this->name ?: $this->email;
     }
 
+    public function getRoleNameAttribute(): ?string
+    {
+        return $this->getRoleNames()->first();
+    }
+
     public function getRoleLabel(): string
     {
         if ($this->isSuperAdmin()) {
@@ -150,7 +164,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 
     public function orders()
     {
-        return $this->hasMany(Order::class);
+        return $this->morphMany(Order::class, 'user');
     }
 
     public function plan()
@@ -194,7 +208,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 
     public function wishlistItems()
     {
-        return $this->hasMany(Wishlist::class);
+        return $this->morphMany(Wishlist::class, 'user');
     }
 
     public function wishlistedProducts()
@@ -204,7 +218,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 
     public function telegramIntegration()
     {
-        return $this->hasOne(TelegramIntegration::class);
+        return $this->morphOne(TelegramIntegration::class, 'user');
     }
 
     public function isActive(): bool

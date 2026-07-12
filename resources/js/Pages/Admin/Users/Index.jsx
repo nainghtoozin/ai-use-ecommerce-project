@@ -165,7 +165,7 @@ export default function UsersIndex({ users, filters, roles, showPagination = tru
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                            {user.roles?.[0]?.name || 'N/A'}
+                                                            {user.role_name || '—'}
                                                         </span>
                                                         {user.is_owner && (
                                                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">

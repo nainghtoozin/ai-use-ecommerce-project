@@ -70,12 +70,17 @@ class AdminUserController extends Controller
         $status = $request->get('status');
         $tenantId = $this->getTenantFilter();
 
+        $useAccounts = $this->identityResolver->supportsAccount();
+
         $users = $this->identityResolver->queryUsersForTenant($tenantId)
             ->when($search, fn($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%");
             }))
-            ->when($role, fn($q, $r) => $q->whereHas('roles', fn($q) => $q->where('name', $r)))
+            ->when($role, fn($q, $r) => $useAccounts
+                ? $q->whereHas('memberships.role', fn($q) => $q->where('name', $r))
+                : $q->whereHas('roles', fn($q) => $q->where('name', $r))
+            )
             ->when($status, fn($q, $s) => $q->where('status', $s))
             ->orderBy('created_at', 'desc');
 
@@ -143,15 +148,32 @@ class AdminUserController extends Controller
         $tenantId = $this->getTenantFilter();
 
         if ($this->identityResolver->supportsAccount()) {
-            $user = Account::create([
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
-                'status' => $data['status'] ?? User::STATUS_ACTIVE,
-            ]);
+            $user = Account::where('email', $data['email'])->first();
+
+            if ($user) {
+                $existingMembership = $user->memberships()
+                    ->where('tenant_id', $tenantId)
+                    ->exists();
+
+                if ($existingMembership) {
+                    return back()->withErrors([
+                        'email' => 'This account is already a member of this store.',
+                    ])->onlyInput('email');
+                }
+            } else {
+                $user = Account::create([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => Hash::make($data['password']),
+                    'status' => $data['status'] ?? Account::STATUS_ACTIVE,
+                ]);
+            }
 
             $user->memberships()->create([
                 'tenant_id' => $tenantId,
-                'role_id' => Role::where('name', $data['role'])->first()?->id,
+                'role_id' => Role::where('name', $data['role'])
+                    ->where('tenant_id', $tenantId)
+                    ->first()?->id,
                 'is_owner' => false,
                 'status' => 'active',
                 'invited_at' => now(),

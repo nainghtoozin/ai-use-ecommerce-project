@@ -184,6 +184,7 @@ class TenantBootstrapService
     protected function createOwnerAccount(Tenant $tenant, array $options): Account
     {
         $ownerData = [
+            'name' => $options['owner_name'],
             'email' => $options['owner_email'],
             'password' => Hash::make($options['owner_password']),
             'status' => Account::STATUS_ACTIVE,
@@ -204,6 +205,7 @@ class TenantBootstrapService
             'tenant_id' => $tenant->id,
             'role_id' => $adminRole->id,
             'is_owner' => true,
+            'joined_at' => now(),
         ]);
 
         return $owner;

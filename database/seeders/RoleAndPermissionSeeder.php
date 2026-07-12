@@ -169,6 +169,7 @@ class RoleAndPermissionSeeder extends Seeder
             $superAdminAccount = Account::updateOrCreate(
                 ['email' => 'admin@shop.com'],
                 [
+                    'name' => 'Super Admin',
                     'password' => bcrypt('password'),
                     'status' => 'active',
                     'email_verified_at' => now(),

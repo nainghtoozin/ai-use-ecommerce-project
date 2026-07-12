@@ -38,11 +38,7 @@ class WishlistController extends Controller
 
         $user = auth()->user();
 
-        $exists = Wishlist::where('user_id', $user->id)
-            ->where('product_id', $product->id)
-            ->exists();
-
-        if ($exists) {
+        if ($user->wishlistItems()->where('product_id', $product->id)->exists()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Product is already in your wishlist.',
@@ -50,8 +46,7 @@ class WishlistController extends Controller
             ]);
         }
 
-        Wishlist::create([
-            'user_id' => $user->id,
+        $user->wishlistItems()->create([
             'product_id' => $product->id,
         ]);
 
@@ -70,7 +65,7 @@ class WishlistController extends Controller
 
         $user = auth()->user();
 
-        Wishlist::where('user_id', $user->id)
+        $user->wishlistItems()
             ->where('product_id', $product->id)
             ->delete();
 

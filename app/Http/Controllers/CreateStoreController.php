@@ -56,6 +56,7 @@ class CreateStoreController extends Controller
                 'slug' => $slug,
                 'domain' => $validated['domain'] ?? null,
                 'store_url' => '/store/' . $slug,
+                'email' => $validated['owner_email'],
                 'status' => 'pending',
                 'settings' => $validated['description']
                     ? ['description' => $validated['description']]

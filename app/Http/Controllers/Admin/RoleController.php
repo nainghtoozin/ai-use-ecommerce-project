@@ -39,8 +39,8 @@ class RoleController extends Controller
 
         $roles = Role::with('permissions')
             ->when($useAccounts, fn($q) => $q
-                ->withCount(['accounts' => function ($q) use ($tenant) {
-                    $q->when($tenant, fn($q, $t) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $t->id)));
+                ->withCount(['memberships' => function ($q) use ($tenant) {
+                    $q->when($tenant, fn($q, $t) => $q->where('tenant_id', $t instanceof \App\Models\Tenant ? $t->id : $t));
                 }])
             )
             ->when(!$useAccounts, fn($q) => $q
@@ -57,7 +57,7 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'guard_name' => $role->guard_name,
                 'permissions_count' => $role->permissions->count(),
-                'users_count' => $useAccounts ? ($role->accounts_count ?? 0) : ($role->users_count ?? 0),
+                'users_count' => $useAccounts ? ($role->memberships_count ?? 0) : ($role->users_count ?? 0),
                 'created_at' => $role->created_at->format('Y-m-d H:i:s'),
             ]);
 
@@ -115,8 +115,8 @@ class RoleController extends Controller
 
         $role = Role::with('permissions')
             ->when($useAccounts, fn($q) => $q
-                ->withCount(['accounts' => function ($q) use ($tenant) {
-                    $q->when($tenant, fn($q, $t) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $t->id)));
+                ->withCount(['memberships' => function ($q) use ($tenant) {
+                    $q->when($tenant, fn($q, $t) => $q->where('tenant_id', $t instanceof \App\Models\Tenant ? $t->id : $t));
                 }])
             )
             ->when(!$useAccounts, fn($q) => $q
@@ -142,7 +142,7 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'guard_name' => $role->guard_name,
                 'permissions_count' => $role->permissions->count(),
-                'users_count' => $useAccounts ? ($role->accounts_count ?? 0) : ($role->users_count ?? 0),
+                'users_count' => $useAccounts ? ($role->memberships_count ?? 0) : ($role->users_count ?? 0),
                 'created_at' => $role->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $role->updated_at->format('Y-m-d H:i:s'),
             ],
@@ -235,8 +235,8 @@ class RoleController extends Controller
         $useAccounts = $this->identityResolver->supportsAccount();
 
         $assignedCount = $useAccounts
-            ? $role->accounts()
-                ->when($tenant, fn($q, $t) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $t->id)))
+            ? $role->memberships()
+                ->when($tenant, fn($q, $t) => $q->where('tenant_id', $t instanceof \App\Models\Tenant ? $t->id : $t))
                 ->count()
             : $role->users()
                 ->when($tenant, fn($q, $t) => $q->where('users.tenant_id', $t->id))

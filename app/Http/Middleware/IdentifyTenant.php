@@ -70,8 +70,7 @@ class IdentifyTenant
 
         $tenant = $this->resolveFromSubdomain($request)
             ?? $this->resolveFromHeader($request)
-            ?? $this->resolveFromSession($request)
-            ?? Tenant::getDefault();
+            ?? $this->resolveFromSession($request);
 
         if ($tenant) {
             app()->instance('current.tenant', $tenant);

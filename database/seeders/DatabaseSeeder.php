@@ -27,6 +27,9 @@ class DatabaseSeeder extends Seeder
 
             // Must run last: backfills any records created above that lack tenant_id
             TenantSeeder::class,
+
+            // Creates TenantMemberships for seeded data (Account mode only)
+            MembershipSeeder::class,
         ]);
     }
 }

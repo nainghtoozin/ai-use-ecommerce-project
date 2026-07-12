@@ -37,9 +37,9 @@ class ClientOrderController extends Controller
 
     public function index()
     {
-        $orders = Order::query()
+        $orders = auth()->user()
+            ->orders()
             ->with(['items.product', 'items.variant', 'paymentMethod'])
-            ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->simplePaginate(10);
 
@@ -293,9 +293,9 @@ class ClientOrderController extends Controller
 
     public function show(string $id)
     {
-        $order = Order::query()
+        $order = auth()->user()
+            ->orders()
             ->with(['items.product', 'paymentMethod', 'city', 'township'])
-            ->where('user_id', auth()->id())
             ->findOrFail($id);
 
         return Inertia::render('Client/Orders/Show', [
@@ -310,9 +310,9 @@ class ClientOrderController extends Controller
             return redirect()->back()->with('error', 'Your subscription has expired. Please renew to continue.');
         }
 
-        $order = Order::query()
+        $order = auth()->user()
+            ->orders()
             ->with('user')
-            ->where('user_id', auth()->id())
             ->findOrFail($id);
 
         $request->validate([
@@ -346,9 +346,9 @@ class ClientOrderController extends Controller
             return redirect()->back()->with('error', 'Your subscription has expired. Please renew to continue.');
         }
 
-        $order = Order::query()
+        $order = auth()->user()
+            ->orders()
             ->with('user')
-            ->where('user_id', auth()->id())
             ->findOrFail($id);
 
         if (! $order->canCancel()) {
@@ -372,8 +372,8 @@ class ClientOrderController extends Controller
             return redirect()->back()->with('error', 'Your subscription has expired. Please renew to continue.');
         }
 
-        $order = Order::query()
-            ->where('user_id', auth()->id())
+        $order = auth()->user()
+            ->orders()
             ->findOrFail($id);
 
         if ($order->payment_status !== Order::PAYMENT_STATUS_PENDING) {

@@ -206,7 +206,8 @@ class ChatController extends Controller
         ]);
 
         $senderId = Auth::id();
-        $senderName = Auth::user()->name;
+        $sender = Auth::user();
+        $senderName = method_exists($sender, 'getDisplayName') ? $sender->getDisplayName() : $sender->name;
         $receiverId = (int) $request->receiver_id;
         $isTyping = $request->is_typing ?? true;
 

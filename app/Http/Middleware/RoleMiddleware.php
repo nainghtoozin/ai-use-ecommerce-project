@@ -16,11 +16,6 @@ class RoleMiddleware
 
         $user = Auth::user();
 
-        // Superadmin bypass — one user to rule them all
-        if ($role === 'admin' && $user->hasRole('superadmin')) {
-            return $next($request);
-        }
-
         // Exact role name match (e.g. user assigned the "admin" role)
         if ($user->hasRole($role)) {
             return $next($request);

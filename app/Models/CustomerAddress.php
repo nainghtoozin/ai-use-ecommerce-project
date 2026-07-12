@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CustomerAddress extends Model
 {
-    use HasFactory, TenantAware;
+    use HasFactory, TenantAware, HasUser;
 
     protected $fillable = [
         'tenant_id',
@@ -32,11 +32,6 @@ class CustomerAddress extends Model
         ];
     }
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function city()
     {
         return $this->belongsTo(City::class);
@@ -45,10 +40,5 @@ class CustomerAddress extends Model
     public function township()
     {
         return $this->belongsTo(Township::class);
-    }
-
-    public function scopeForUser($query, $userId)
-    {
-        return $query->where('user_id', $userId);
     }
 }

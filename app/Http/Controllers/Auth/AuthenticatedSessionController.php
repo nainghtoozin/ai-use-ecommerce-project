@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\LoginRedirectResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Account;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -31,56 +33,64 @@ class AuthenticatedSessionController extends Controller
         if ($useAccounts) {
             $account = Account::where('email', $request->email)->first();
 
-            if ($account && !$account->isActive()) {
-                if ($account->isSuspended()) {
+            if ($account) {
+                if (!$account->isActive()) {
+                    if ($account->isSuspended()) {
+                        return back()->withErrors([
+                            'email' => 'Your account has been suspended. Please contact support.',
+                        ])->onlyInput('email');
+                    }
+
+                    if ($account->isBanned()) {
+                        return back()->withErrors([
+                            'email' => 'Your account has been banned. Please contact support.',
+                        ])->onlyInput('email');
+                    }
+
                     return back()->withErrors([
-                        'email' => 'Your account has been suspended. Please contact support.',
+                        'email' => 'Your account is inactive.',
                     ])->onlyInput('email');
                 }
 
-                if ($account->isBanned()) {
+                if ($account->getCurrentMembership() && !$account->isSuperAdmin()) {
                     return back()->withErrors([
-                        'email' => 'Your account has been banned. Please contact support.',
+                        'email' => 'Please login through your store URL.',
                     ])->onlyInput('email');
                 }
-
-                return back()->withErrors([
-                    'email' => 'Your account is inactive.',
-                ])->onlyInput('email');
             }
         } else {
             $user = User::where('email', $request->email)->first();
 
-            // Root /login is for SuperAdmin only.
-            // Tenant users (customers and admins) must login through their store URL.
-            if ($user && $user->tenant_id && !$user->isSuperAdmin()) {
-                return back()->withErrors([
-                    'email' => 'Please login through your store URL.',
-                ])->onlyInput('email');
-            }
+            if ($user) {
+                if ($user->tenant_id && !$user->isSuperAdmin()) {
+                    return back()->withErrors([
+                        'email' => 'Please login through your store URL.',
+                    ])->onlyInput('email');
+                }
 
-            if ($user && !$user->isActive()) {
-                if ($user->isSuspended()) {
+                if (!$user->isActive()) {
+                    if ($user->isSuspended()) {
+                        return back()->withErrors([
+                            'email' => 'Your account has been suspended. Please contact support.',
+                        ])->onlyInput('email');
+                    }
+
+                    if ($user->isBanned()) {
+                        return back()->withErrors([
+                            'email' => 'Your account has been banned. Please contact support.',
+                        ])->onlyInput('email');
+                    }
+
+                    return back()->withErrors([
+                        'email' => 'Your account is inactive.',
+                    ])->onlyInput('email');
+                }
+
+                if ($user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
                     return back()->withErrors([
                         'email' => 'Your account has been suspended. Please contact support.',
                     ])->onlyInput('email');
                 }
-
-                if ($user->isBanned()) {
-                    return back()->withErrors([
-                        'email' => 'Your account has been banned. Please contact support.',
-                    ])->onlyInput('email');
-                }
-
-                return back()->withErrors([
-                    'email' => 'Your account is inactive.',
-                ])->onlyInput('email');
-            }
-
-            if ($user && $user->tenant && $user->tenant->status === 'suspended' && !$user->isSuperAdmin()) {
-                return back()->withErrors([
-                    'email' => 'Your account has been suspended. Please contact support.',
-                ])->onlyInput('email');
             }
         }
 
@@ -92,6 +102,8 @@ class AuthenticatedSessionController extends Controller
 
         $authenticatable = Auth::guard($guard)->user();
 
+        $request->session()->forget('current_tenant_slug');
+
         ActivityLogger::log(
             'User logged in',
             'login',
@@ -100,15 +112,7 @@ class AuthenticatedSessionController extends Controller
             'auth'
         );
 
-        if ($authenticatable->isAdmin()) {
-            $tenant = \App\Models\Tenant::getCurrent();
-            if ($tenant) {
-                return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]);
-            }
-            return redirect()->route('admin.dashboard');
-        }
-
-        return redirect()->route('client.dashboard');
+        return redirect()->to(app(LoginRedirectResolver::class)->resolveLogin($authenticatable));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -129,47 +133,22 @@ class AuthenticatedSessionController extends Controller
         }
 
         $isSuperAdmin = $authenticatable && $authenticatable->isSuperAdmin();
-        $tenant = $authenticatable ? \App\Models\Tenant::getCurrent() : null;
+        $tenant = !$isSuperAdmin && $authenticatable ? Tenant::getCurrent() : null;
         $storeSlug = $request->input('store_slug')
             ?: ($tenant ? $tenant->slug : null)
             ?: $request->session()->get('current_tenant_slug');
         $context = $request->input('context');
 
-        // Determine context from POST data or user role
-        if (!$context) {
-            if ($isSuperAdmin) {
-                $context = 'superadmin';
-            } elseif ($storeSlug && $authenticatable && $authenticatable->isAdmin()) {
-                $context = 'admin';
-            } elseif ($storeSlug) {
-                $context = 'storefront';
-            }
-        }
-
         Auth::guard($guard)->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return match ($context) {
-            'superadmin' => redirect()->route('superadmin.login'),
-            'admin' => $storeSlug
-                ? redirect()->route('storefront.admin.login', ['store_slug' => $storeSlug])
-                : redirect()->route('admin.login'),
-            'storefront' => $storeSlug
-                ? redirect()->route('storefront.index', ['store_slug' => $storeSlug])
-                : redirect('/'),
-            default => $this->fallbackLogoutRedirect($isSuperAdmin, $storeSlug),
-        };
-    }
+        $redirectUrl = app(LoginRedirectResolver::class)->resolveLogout(
+            $authenticatable,
+            $storeSlug,
+            $context
+        );
 
-    private function fallbackLogoutRedirect(bool $isSuperAdmin, ?string $storeSlug): RedirectResponse
-    {
-        if ($isSuperAdmin) {
-            return redirect()->route('superadmin.login');
-        }
-        if ($storeSlug) {
-            return redirect()->route('storefront.index', ['store_slug' => $storeSlug]);
-        }
-        return redirect('/');
+        return redirect()->to($redirectUrl);
     }
 }

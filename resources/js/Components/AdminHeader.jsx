@@ -88,7 +88,7 @@ export default function AdminHeader() {
                         </div>
                         <div className="hidden lg:block">
                             <span className="text-sm font-medium text-gray-700 block">{auth?.user?.name}</span>
-                            <span className="text-xs text-gray-500">{auth?.user?.role_label || 'Administrator'}</span>
+                            <span className="text-xs text-gray-500">{auth?.user?.role_label}</span>
                         </div>
                     </div>
                 </div>

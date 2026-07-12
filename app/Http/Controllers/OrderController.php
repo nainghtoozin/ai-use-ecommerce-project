@@ -28,8 +28,9 @@ class OrderController extends Controller
 
     public function index(Request $request): \Inertia\Response
     {
-        $orders = Order::with(['items.product', 'items.variant', 'paymentMethod'])
-            ->where('user_id', auth()->id())
+        $orders = auth()->user()
+            ->orders()
+            ->with(['items.product', 'items.variant', 'paymentMethod'])
             ->orderBy('created_at', 'desc')
             ->simplePaginate(10);
 
@@ -40,8 +41,9 @@ class OrderController extends Controller
 
     public function show(string $id): \Inertia\Response
     {
-        $order = Order::with(['items.product', 'items.variant', 'paymentMethod', 'city', 'township'])
-            ->where('user_id', auth()->id())
+        $order = auth()->user()
+            ->orders()
+            ->with(['items.product', 'items.variant', 'paymentMethod', 'city', 'township'])
             ->findOrFail($id);
 
         return Inertia::render('Client/Orders/Show', [
@@ -145,7 +147,6 @@ class OrderController extends Controller
         $totalAmount = ($subtotal + $deliveryFee) - $totalDiscount;
 
         $orderData = [
-            'user_id' => auth()->id(),
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'phone' => $validated['phone'],
@@ -172,7 +173,9 @@ class OrderController extends Controller
             $orderData['promotion_code'] = $promotionData['promotion']->code ?? 'AUTO';
         }
 
-        $order = Order::create($orderData);
+        $order = auth()->check()
+            ? auth()->user()->orders()->create($orderData)
+            : Order::create($orderData);
 
         if (!empty($couponData['coupon'])) {
             $this->couponService->applyCouponToOrder(

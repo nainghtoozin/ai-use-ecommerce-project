@@ -39,6 +39,7 @@ class Promotion extends Model
         'priority',
         'stackable',
         'created_by',
+        'created_by_type',
     ];
 
     protected $casts = [
@@ -71,9 +72,9 @@ class Promotion extends Model
         return $this->hasMany(PromotionUsage::class);
     }
 
-    public function creator()
+    public function creator(): \Illuminate\Database\Eloquent\Relations\MorphTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->morphTo('creator', 'created_by_type', 'created_by');
     }
 
     public function scopeActive(Builder $query): Builder
@@ -306,6 +307,15 @@ class Promotion extends Model
     {
         return (float) collect($cart)->sum(function ($item) {
             return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
+        });
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $promotion) {
+            if ($promotion->created_by && !$promotion->created_by_type) {
+                $promotion->created_by_type = auth()->user()?->getMorphClass() ?? (new User)->getMorphClass();
+            }
         });
     }
 }

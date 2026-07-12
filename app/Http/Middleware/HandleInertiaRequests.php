@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Auth\IdentityProjection;
 use App\Contracts\HasSubscription;
 use App\Models\Account;
 use App\Models\Category;
@@ -28,71 +29,58 @@ class HandleInertiaRequests extends Middleware
         $cart = $this->getCartData($request);
 
         $authenticatable = $request->user();
-        $useAccounts = config('identity.use_accounts');
+        $isSuperAdmin = $authenticatable && $authenticatable->isSuperAdmin();
 
         $subscriptionExpired = false;
         $subscription = null;
 
-        if ($authenticatable instanceof User) {
-            $tenant = $authenticatable->tenant;
-            $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
-            $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
-        } elseif ($authenticatable instanceof Account) {
-            $tenant = Tenant::getCurrent();
-            $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
-            $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
+        if (!$isSuperAdmin) {
+            if ($authenticatable instanceof User) {
+                $tenant = $authenticatable->tenant;
+                $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
+                $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
+            } elseif ($authenticatable instanceof Account) {
+                $tenant = Tenant::getCurrent();
+                $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
+                $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
+            }
         }
 
-        $isImpersonating = $authenticatable && session()->has('impersonator_id') && !$authenticatable->isSuperAdmin();
+        $isImpersonating = $authenticatable && session()->has('impersonator_id') && !$isSuperAdmin;
         $impersonatorName = $isImpersonating ? session('impersonator_name') : null;
 
-        $permissions = $authenticatable ? $authenticatable->getAllPermissions()->pluck('name')->toArray() : [];
-
-        $displayName = $authenticatable ? $authenticatable->getDisplayName() : null;
-        $roleLabel = $authenticatable ? $authenticatable->getRoleLabel() : null;
-
-        $userData = $authenticatable ? [
-            'id' => $authenticatable->id,
-            'name' => $displayName,
-            'display_name' => $displayName,
-            'email' => $authenticatable->email,
-            'role' => $authenticatable->getRoleNames()->first(),
-            'role_label' => $roleLabel,
-            'status' => $authenticatable->status,
-            'profile_image' => $authenticatable->profile_image,
-            'email_verified_at' => $authenticatable->email_verified_at,
-            'is_admin' => $authenticatable->isAdmin(),
-            'is_superadmin' => $authenticatable->isSuperAdmin(),
-            'tenant_id' => $authenticatable instanceof User
-                ? $authenticatable->tenant_id
-                : Tenant::getCurrent()?->id,
-            'permissions' => $permissions,
-            'subscription_expired' => $subscriptionExpired,
-            'subscription_past_due' => $subscription && $subscription->status === 'past_due',
-            'subscription' => $subscription ? [
+        $projection = app(IdentityProjection::class)->forAuthenticatable($authenticatable);
+        if ($projection) {
+            $projection['subscription_expired'] = $subscriptionExpired;
+            $projection['subscription_past_due'] = $subscription && $subscription->status === 'past_due';
+            $projection['subscription'] = $subscription ? [
                 'status' => $subscription->status,
                 'plan_name' => $subscription->plan?->name,
                 'expires_at' => $subscription->expires_at?->toDateString(),
-            ] : null,
-            'is_impersonating' => $isImpersonating,
-            'impersonator_name' => $impersonatorName,
-        ] : null;
+            ] : null;
+            $projection['is_impersonating'] = $isImpersonating;
+            $projection['impersonator_name'] = $impersonatorName;
+        }
 
-        $tenant = Tenant::getCurrent();
+        $superAdminRoute = $isSuperAdmin && $request->route() && str_starts_with($request->route()->getName(), 'superadmin.');
 
-        $settingsModel = $tenant ? \App\Models\WebsiteInfo::first() : null;
+        if ($isSuperAdmin) {
+            $tenant = null;
+        } else {
+            $tenant = Tenant::getCurrent();
+        }
+
+        $settingsModel = !$isSuperAdmin && $tenant ? \App\Models\WebsiteInfo::first() : null;
         $websiteSettings = $settingsModel ? $settingsModel->toArray() : [];
 
-        $wishlistEnabled = $settingsModel && ($settingsModel->enable_wishlist ?? true);
-        // Only share tenant on pages with an explicit store_slug in the URL.
-        // This prevents /store/default/... links on the root domain landing page.
+        $wishlistEnabled = !$isSuperAdmin && $settingsModel && ($settingsModel->enable_wishlist ?? true);
         if ($tenant && !$request->route('store_slug')) {
             $tenant = null;
         }
 
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $userData,
+                'user' => $projection,
             ],
             'tenant' => $tenant ? [
                 'id' => $tenant->id,
@@ -103,9 +91,9 @@ class HandleInertiaRequests extends Middleware
                 'status' => $tenant->status,
                 'subscription_expired' => $subscriptionExpired,
             ] : null,
-            'cart' => $cart,
-            'wishlist_count' => $wishlistEnabled && $authenticatable ? (int) $this->getWishlistCount($authenticatable) : 0,
-            'wishlisted_ids' => $wishlistEnabled && $authenticatable ? $this->getWishlistedIds($authenticatable) : [],
+            'cart' => $isSuperAdmin ? ['count' => 0, 'total' => 0, 'items' => []] : $cart,
+            'wishlist_count' => !$isSuperAdmin && $wishlistEnabled && $authenticatable ? (int) $this->getWishlistCount($authenticatable) : 0,
+            'wishlisted_ids' => !$isSuperAdmin && $wishlistEnabled && $authenticatable ? $this->getWishlistedIds($authenticatable) : [],
             'notifications' => [
                 'unread_count' => $this->getUnreadCount($request),
             ],
@@ -121,11 +109,11 @@ class HandleInertiaRequests extends Middleware
             'platform_setting' => PlatformSetting::current()->toArray(),
             'website_info' => $websiteSettings,
             'websiteSettings' => $websiteSettings,
-            'categories' => cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {
+            'categories' => $isSuperAdmin ? [] : cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
-            'featureStatus' => FeatureGate::forUser()->getAllFeaturesStatus(),
-            'subscription_limits' => $authenticatable ? SubscriptionLimitService::for()->getAllLimits() : [],
+            'featureStatus' => $isSuperAdmin ? [] : FeatureGate::forUser()->getAllFeaturesStatus(),
+            'subscription_limits' => $isSuperAdmin ? [] : ($authenticatable ? SubscriptionLimitService::for()->getAllLimits() : []),
         ]);
     }
 
