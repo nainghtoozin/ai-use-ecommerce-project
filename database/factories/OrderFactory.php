@@ -2,9 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Account;
 use App\Models\City;
 use App\Models\Order;
 use App\Models\PaymentMethod;
+use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\Township;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,15 +18,22 @@ class OrderFactory extends Factory
 
     public function definition(): array
     {
-        $users = User::role('customer')->pluck('id')->toArray();
+        $useAccounts = config('identity.use_accounts');
         $cities = City::pluck('id')->toArray();
         $paymentMethods = PaymentMethod::where('is_active', true)->pluck('id')->toArray();
 
-        if (empty($users) || empty($cities) || empty($paymentMethods)) {
+        if (empty($cities) || empty($paymentMethods)) {
             return [];
         }
 
-        $userId = $this->faker->randomElement($users);
+        // Resolve customer IDs based on identity mode
+        $customerIds = $this->resolveCustomerIds($useAccounts);
+
+        if (empty($customerIds)) {
+            return [];
+        }
+
+        $customerId = $this->faker->randomElement($customerIds);
         $cityId = $this->faker->randomElement($cities);
         $city = City::find($cityId);
         $townships = Township::where('city_id', $cityId)->pluck('id')->toArray();
@@ -35,13 +45,17 @@ class OrderFactory extends Factory
 
         $paymentStatuses = ['unpaid', 'paid', 'verified', 'rejected'];
         $orderStatuses = ['pending', 'verified', 'confirmed', 'shipped', 'delivered', 'cancelled'];
-        
+
         $paymentStatus = $this->faker->randomElement($paymentStatuses);
         $orderStatus = $this->faker->randomElement($orderStatuses);
 
+        // Resolve customer name
+        $customerName = $this->resolveCustomerName($useAccounts, $customerId);
+
         return [
-            'user_id' => $userId,
-            'customer_name' => User::find($userId)?->name ?? 'Customer',
+            'user_id' => $customerId,
+            'user_type' => $useAccounts ? Account::class : User::class,
+            'customer_name' => $customerName,
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
             'phone' => $this->faker->phoneNumber(),
@@ -75,5 +89,35 @@ class OrderFactory extends Factory
             'order_status' => 'delivered',
             'payment_status' => 'verified',
         ]);
+    }
+
+    private function resolveCustomerIds(bool $useAccounts): array
+    {
+        $defaultTenant = Tenant::where('slug', 'default')->first();
+
+        if (!$defaultTenant) {
+            return [];
+        }
+
+        if ($useAccounts) {
+            return TenantMembership::where('tenant_id', $defaultTenant->id)
+                ->whereHas('role', fn ($q) => $q->where('name', 'customer'))
+                ->pluck('account_id')
+                ->toArray();
+        }
+
+        return User::role('customer')
+            ->where('tenant_id', $defaultTenant->id)
+            ->pluck('id')
+            ->toArray();
+    }
+
+    private function resolveCustomerName(bool $useAccounts, int $customerId): string
+    {
+        if ($useAccounts) {
+            return Account::find($customerId)?->getDisplayName() ?? 'Customer';
+        }
+
+        return User::find($customerId)?->name ?? 'Customer';
     }
 }

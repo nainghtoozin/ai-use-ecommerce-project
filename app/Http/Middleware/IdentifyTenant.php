@@ -23,12 +23,20 @@ class IdentifyTenant
         if (auth()->check()) {
             $authenticatable = auth()->user();
 
-            if (! $authenticatable->relationLoaded('roles')) {
-                $authenticatable->load('roles');
-            }
-
+            // ─────────────────────────────────────────────────────────
+            // PLATFORM IDENTITY BYPASS
+            //
+            // Per Platform Identity Design Lock:
+            //   - SuperAdmin is platform-only — no tenant context
+            //   - Skip tenant resolution entirely
+            //   - Do NOT load roles (not needed for platform identity)
+            // ─────────────────────────────────────────────────────────
             if ($authenticatable->isSuperAdmin()) {
                 return $next($request);
+            }
+
+            if (! $authenticatable->relationLoaded('roles')) {
+                $authenticatable->load('roles');
             }
 
             if ($authenticatable instanceof Account) {

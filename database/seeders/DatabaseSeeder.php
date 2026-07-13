@@ -9,27 +9,31 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // Permissions -> Roles & Super Admin -> Other seeders
-            // SYSTEM SEEDERS
-            PermissionSeeder::class,
-            RoleAndPermissionSeeder::class,
-            PlanSeeder::class,
-            LocationSeeder::class,
-            PlatformSettingSeeder::class,
-            BillingPaymentMethodSeeder::class,
+            // ─────────────────────────────────────────────────────────
+            // PLATFORM SEEDERS (no tenant dependency)
+            // ─────────────────────────────────────────────────────────
+            PermissionSeeder::class,         // Global permissions
+            RoleAndPermissionSeeder::class,   // Global superadmin role + SuperAdmin Account
+            PlanSeeder::class,               // Subscription plans
+            PlatformSettingSeeder::class,     // Platform settings
+            BillingPaymentMethodSeeder::class, // Platform billing methods
 
-            // TENANT BOOTSTRAP CANDIDATES (move to TenantBootstrapService in future)
-            WebsiteSettingsSeeder::class,
-            PaymentMethodSeeder::class,
-            CategorySeeder::class,
-            UnitSeeder::class,
-            BrandSeeder::class,
+            // ─────────────────────────────────────────────────────────
+            // TENANT BOOTSTRAP (creates tenants + memberships)
+            // Must run BEFORE tenant-scoped seeders
+            // ─────────────────────────────────────────────────────────
+            TenantSeeder::class,             // Demo tenants
+            MembershipSeeder::class,         // Tenant roles + owner + customer memberships
 
-            // Must run last: backfills any records created above that lack tenant_id
-            TenantSeeder::class,
-
-            // Creates TenantMemberships for seeded data (Account mode only)
-            MembershipSeeder::class,
+            // ─────────────────────────────────────────────────────────
+            // TENANT-SCOPED SEEDERS (require tenants to exist)
+            // ─────────────────────────────────────────────────────────
+            LocationSeeder::class,           // Cities + townships (per tenant)
+            WebsiteSettingsSeeder::class,    // Website info (per tenant)
+            PaymentMethodSeeder::class,      // Payment methods (per tenant)
+            CategorySeeder::class,           // Product categories (per tenant)
+            UnitSeeder::class,               // Product units (per tenant)
+            BrandSeeder::class,              // Product brands (per tenant)
         ]);
     }
 }

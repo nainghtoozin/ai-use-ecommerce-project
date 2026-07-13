@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @mixin \Illuminate\Database\Eloquent\Model
+ */
 trait HasUser
 {
     public static function bootHasUser(): void

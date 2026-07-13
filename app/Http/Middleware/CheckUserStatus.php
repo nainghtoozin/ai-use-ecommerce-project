@@ -18,6 +18,31 @@ class CheckUserStatus
             $useAccounts = config('identity.use_accounts');
             $guard = $useAccounts ? 'accounts' : 'web';
 
+            // ─────────────────────────────────────────────────────────
+            // PLATFORM IDENTITY: SuperAdmin status check
+            //
+            // Per Platform Identity Design Lock:
+            //   - SuperAdmin is platform-only
+            //   - Redirect to /superadmin/login on suspension/ban
+            //   - Never redirect to tenant login page
+            // ─────────────────────────────────────────────────────────
+            if ($authenticatable->isSuperAdmin()) {
+                if ($authenticatable->isSuspended() || $authenticatable->isBanned()) {
+                    Auth::guard($guard)->logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+
+                    $message = $authenticatable->isSuspended()
+                        ? 'Your account has been suspended. Please contact support.'
+                        : 'Your account has been banned. Please contact support.';
+
+                    return redirect()->route('superadmin.login')
+                        ->with('error', $message);
+                }
+
+                return $next($request);
+            }
+
             if ($authenticatable->isSuspended()) {
                 Auth::guard($guard)->logout();
                 $request->session()->invalidate();

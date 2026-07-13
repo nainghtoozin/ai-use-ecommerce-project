@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\TenantAware;
+use App\Models\Traits\HasUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 

@@ -133,17 +133,30 @@ class LoginRedirectResolver
         }
 
         if ($authenticatable instanceof Account) {
-            $current = Tenant::getCurrent();
-            if ($current) {
-                return $current;
+            // ─────────────────────────────────────────────────────────
+            // OWNER MEMBERSHIP FIRST
+            //
+            // After email verification, Tenant::getCurrent() may return
+            // a stale tenant from session. The canonical source of truth
+            // is the Account's owner membership.
+            // ─────────────────────────────────────────────────────────
+            $ownerMembership = $authenticatable->memberships()
+                ->where('is_owner', true)
+                ->with('tenant')
+                ->first();
+
+            if ($ownerMembership && $ownerMembership->tenant) {
+                return $ownerMembership->tenant;
             }
 
+            // Fall back to current membership (any tenant)
             $membership = $authenticatable->getCurrentMembership();
             if ($membership) {
                 $tenant = $membership->relationLoaded('tenant') ? $membership->tenant : $membership->tenant()->first();
                 if ($tenant) return $tenant;
             }
 
+            // Fall back to any membership
             $membership = $authenticatable->memberships()->with('tenant')->first();
             if ($membership && $membership->tenant) {
                 return $membership->tenant;

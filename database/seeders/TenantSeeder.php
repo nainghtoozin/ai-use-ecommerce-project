@@ -2,124 +2,71 @@
 
 namespace Database\Seeders;
 
+use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class TenantSeeder extends Seeder
 {
-    private array $tablesWithTenantId;
-
-    public function __construct()
-    {
-        $this->tablesWithTenantId = [
-            'users',
-            'categories',
-            'products',
-            'product_variants',
-            'product_combos',
-            'orders',
-            'order_items',
-            'order_coupon',
-            'coupons',
-            'coupon_product',
-            'coupon_category',
-            'promotions',
-            'promotion_banners',
-            'promotion_product',
-            'promotion_category',
-            'promotion_usages',
-            'payment_methods',
-            'cities',
-            'townships',
-            'messages',
-            'website_infos',
-            'settings',
-            'wishlists',
-            'telegram_integrations',
-            'notifications',
-            'activity_logs',
-        ];
-    }
-
     public function run(): void
     {
-        $this->ensureDefaultTenant();
-        $this->backfillNullTenantIds();
+        $this->ensureDemoTenants();
         $this->clearCaches();
     }
 
-    private function ensureDefaultTenant(): void
+    private function ensureDemoTenants(): void
     {
-        $host = parse_url(config('app.url'), PHP_URL_HOST) ?? 'localhost';
+        // ─────────────────────────────────────────────────────────────
+        // DEMO TENANTS
+        //
+        // Per Platform Identity Design Lock:
+        //   - Each tenant must have exactly one owner (created by MembershipSeeder)
+        //   - Default Store is a migration artifact — kept for backward compatibility
+        //   - Test tenants are demo data only — must NOT exist in production
+        // ─────────────────────────────────────────────────────────────
 
-        DB::table('tenants')->updateOrInsert(
-            ['id' => 1],
+        $tenants = [
             [
                 'name' => 'Default Store',
                 'slug' => 'default',
-                'domain' => $host,
-                'email' => config('app.name') . '@example.com',
+                'domain' => parse_url(config('app.url'), PHP_URL_HOST) ?? 'localhost',
+                'email' => 'owner@defaultstore.com',
                 'status' => 'active',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        $this->command?->info('Default tenant (ID=1) ensured.');
-
-        $this->ensureAdditionalTestTenants();
-    }
-
-    private function ensureAdditionalTestTenants(): void
-    {
-        $tenants = [
-            ['name' => 'Khine Electronics', 'slug' => 'khine', 'domain' => 'khine.localhost', 'email' => 'khine@example.com'],
-            ['name' => 'Gadget World',     'slug' => 'gadget', 'domain' => 'gadget.localhost', 'email' => 'hello@gadget.test'],
+            ],
+            [
+                'name' => 'Khine Electronics',
+                'slug' => 'khine',
+                'domain' => 'khine.localhost',
+                'email' => 'owner@khine.com',
+                'status' => 'active',
+            ],
+            [
+                'name' => 'Gadget World',
+                'slug' => 'gadget',
+                'domain' => 'gadget.localhost',
+                'email' => 'owner@gadget.com',
+                'status' => 'active',
+            ],
         ];
 
         foreach ($tenants as $data) {
-            DB::table('tenants')->updateOrInsert(
+            Tenant::updateOrCreate(
                 ['slug' => $data['slug']],
-                $data + [
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                [
+                    'name' => $data['name'],
+                    'domain' => $data['domain'],
+                    'email' => $data['email'],
+                    'status' => $data['status'],
                 ]
             );
-        }
 
-        $this->command?->info(count($tenants) . ' additional test tenant(s) ensured.');
-    }
-
-    private function backfillNullTenantIds(): void
-    {
-        $fixed = 0;
-
-        foreach ($this->tablesWithTenantId as $table) {
-            if (!DB::getSchemaBuilder()->hasColumn($table, 'tenant_id')) {
-                continue;
-            }
-
-            $affected = DB::table($table)
-                ->whereNull('tenant_id')
-                ->update(['tenant_id' => 1]);
-
-            if ($affected > 0) {
-                $fixed += $affected;
-                $this->command?->warn("  {$table}: {$affected} row(s) backfilled.");
-            }
-        }
-
-        if ($fixed === 0) {
-            $this->command?->info('No null tenant_id values found. All data is already assigned.');
-        } else {
-            $this->command?->info("Total: {$fixed} row(s) backfilled to default tenant.");
+            $this->command?->info("  Tenant '{$data['name']}' ensured.");
         }
     }
 
     private function clearCaches(): void
     {
-        cache()->forget('tenant_default');
+        Tenant::clearDefaultCache();
         $this->command?->info('Tenant cache cleared.');
     }
 }

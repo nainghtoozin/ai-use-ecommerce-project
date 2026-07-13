@@ -180,33 +180,59 @@ class TenantBootstrapService
 
     /**
      * Create the owner account for a tenant (identity architecture).
+     *
+     * If an Account with the same email already exists, it is reused.
+     * Only the TenantMembership is created (or updated to owner).
      */
     protected function createOwnerAccount(Tenant $tenant, array $options): Account
     {
-        $ownerData = [
-            'name' => $options['owner_name'],
-            'email' => $options['owner_email'],
-            'password' => Hash::make($options['owner_password']),
-            'status' => Account::STATUS_ACTIVE,
-        ];
+        $existingAccount = Account::where('email', $options['owner_email'])->first();
 
-        if (!empty($options['email_verified'])) {
-            $ownerData['email_verified_at'] = now();
+        if ($existingAccount) {
+            // Reuse existing Account — update name/password if provided
+            $existingAccount->update([
+                'name' => $options['owner_name'] ?? $existingAccount->name,
+                'password' => Hash::make($options['owner_password']),
+                'status' => Account::STATUS_ACTIVE,
+            ]);
+
+            if (!empty($options['email_verified'])) {
+                $existingAccount->markEmailAsVerified();
+            }
+
+            $owner = $existingAccount;
+        } else {
+            $ownerData = [
+                'name' => $options['owner_name'],
+                'email' => $options['owner_email'],
+                'password' => Hash::make($options['owner_password']),
+                'status' => Account::STATUS_ACTIVE,
+            ];
+
+            if (!empty($options['email_verified'])) {
+                $ownerData['email_verified_at'] = now();
+            }
+
+            $owner = Account::create($ownerData);
         }
-
-        $owner = Account::create($ownerData);
 
         $adminRole = Role::where('name', 'admin')
             ->where('tenant_id', $tenant->id)
             ->first();
 
-        TenantMembership::create([
-            'account_id' => $owner->id,
-            'tenant_id' => $tenant->id,
-            'role_id' => $adminRole->id,
-            'is_owner' => true,
-            'joined_at' => now(),
-        ]);
+        // Create or update membership — set as owner
+        TenantMembership::updateOrCreate(
+            [
+                'account_id' => $owner->id,
+                'tenant_id' => $tenant->id,
+            ],
+            [
+                'role_id' => $adminRole->id,
+                'is_owner' => true,
+                'status' => 'active',
+                'joined_at' => now(),
+            ]
+        );
 
         return $owner;
     }

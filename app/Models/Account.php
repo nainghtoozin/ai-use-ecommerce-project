@@ -528,6 +528,10 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
     /*
      * ---------------------------------------------------------------
      * Override assignRole() — update TenantMembership role_id.
+     *
+     * For global roles (tenant_id = NULL, e.g. superadmin), delegates
+     * to standard Spatie assignment via model_has_roles.
+     * For tenant-scoped roles, updates TenantMembership role_id.
      */
     public function assignRole(...$roles): self
     {
@@ -558,6 +562,20 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
             return $this;
         }
 
+        // ─────────────────────────────────────────────────────────
+        // GLOBAL ROLE: delegate to Spatie model_has_roles
+        //
+        // Global roles (tenant_id = NULL) are for platform identity
+        // only (e.g. superadmin). They must be stored in model_has_roles,
+        // not in TenantMembership.
+        // ─────────────────────────────────────────────────────────
+        if (is_null($roleModel->tenant_id)) {
+            return $this->assignSpatieRole($roleModel);
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // TENANT-SCOPED ROLE: update TenantMembership role_id
+        // ─────────────────────────────────────────────────────────
         $tenantId = $roleModel->tenant_id ?? Tenant::getCurrent()?->id;
         if (!$tenantId) {
             return $this;

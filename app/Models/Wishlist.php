@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasUser;
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 

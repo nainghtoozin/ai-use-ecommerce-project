@@ -44,7 +44,19 @@ class CheckMaintenanceMode
 
         if (Auth::check()) {
             $user = Auth::user();
-            if ($user->isSuperAdmin() || $user->can('bypass maintenance mode') || session()->has('impersonator_id')) {
+
+            // ─────────────────────────────────────────────────────────
+            // PLATFORM IDENTITY BYPASS
+            //
+            // Per Platform Identity Design Lock:
+            //   - SuperAdmin is platform-only — bypass maintenance mode
+            //   - Never blocked by tenant maintenance settings
+            // ─────────────────────────────────────────────────────────
+            if ($user->isSuperAdmin()) {
+                return $next($request);
+            }
+
+            if ($user->can('bypass maintenance mode') || session()->has('impersonator_id')) {
                 return $next($request);
             }
         }

@@ -36,7 +36,12 @@ class CreateStoreController extends Controller
     {
         $useAccounts = config('identity.use_accounts');
 
-        $emailUniqueTable = $useAccounts ? 'accounts,email' : 'users,email';
+        // In Account mode, owner_email is validated as a valid email only.
+        // Uniqueness is NOT enforced because existing Accounts must be reusable.
+        // The TenantBootstrapService will find or create the Account.
+        $emailRule = $useAccounts
+            ? 'required|email|max:255'
+            : 'required|email|max:255|unique:users,email';
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -44,7 +49,7 @@ class CreateStoreController extends Controller
             'description' => 'nullable|string|max:500',
             'domain' => 'nullable|string|max:255|unique:tenants,domain',
             'owner_name' => 'required|string|max:255',
-            'owner_email' => 'required|email|max:255|unique:' . $emailUniqueTable,
+            'owner_email' => $emailRule,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
