@@ -44,18 +44,30 @@ class CheckUserStatus
             }
 
             if ($authenticatable->isSuspended()) {
+                $storeSlug = $request->route('store_slug');
                 Auth::guard($guard)->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+
+                if ($storeSlug) {
+                    return redirect()->route('storefront.login', ['store_slug' => $storeSlug])
+                        ->with('error', 'Your account has been suspended. Please contact support.');
+                }
 
                 return redirect()->route('login')
                     ->with('error', 'Your account has been suspended. Please contact support.');
             }
 
             if ($authenticatable->isBanned()) {
+                $storeSlug = $request->route('store_slug');
                 Auth::guard($guard)->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+
+                if ($storeSlug) {
+                    return redirect()->route('storefront.login', ['store_slug' => $storeSlug])
+                        ->with('error', 'Your account has been banned. Please contact support.');
+                }
 
                 return redirect()->route('login')
                     ->with('error', 'Your account has been banned. Please contact support.');
@@ -84,6 +96,12 @@ class CheckUserStatus
                     Auth::guard('web')->logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
+
+                    $storeSlug = $request->route('store_slug');
+                    if ($storeSlug) {
+                        return redirect()->route('storefront.login', ['store_slug' => $storeSlug])
+                            ->with('error', 'This store has been suspended. Please contact support.');
+                    }
 
                     return redirect()->route('login')
                         ->with('error', 'This store has been suspended. Please contact support.');
@@ -116,6 +134,12 @@ class CheckUserStatus
                     Auth::guard('accounts')->logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
+
+                    $storeSlug = $request->route('store_slug');
+                    if ($storeSlug) {
+                        return redirect()->route('storefront.login', ['store_slug' => $storeSlug])
+                            ->with('error', 'This store has been suspended. Please contact support.');
+                    }
 
                     return redirect()->route('login')
                         ->with('error', 'This store has been suspended. Please contact support.');

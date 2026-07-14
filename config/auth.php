@@ -104,6 +104,7 @@ return [
         ],
 
         'accounts' => [
+            'driver' => 'account',
             'provider' => 'accounts',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE_ACCOUNT', 'password_reset_tokens_new'),
             'expire' => 60,

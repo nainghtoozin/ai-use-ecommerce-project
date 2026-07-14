@@ -59,6 +59,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'store/*/login',
         ]);
     })
+    ->withProviders([
+        \App\Providers\PermissionObserverServiceProvider::class,
+        \App\Providers\AccountPasswordBrokerServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

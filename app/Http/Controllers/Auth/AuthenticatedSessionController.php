@@ -133,8 +133,19 @@ class AuthenticatedSessionController extends Controller
         }
 
         $isSuperAdmin = $authenticatable && $authenticatable->isSuperAdmin();
+
+        // ─────────────────────────────────────────────────────────
+        // CAPTURE TENANT SLUG BEFORE SESSION INVALIDATION
+        //
+        // Priority order:
+        // 1. Explicit store_slug from request input (form field)
+        // 2. Route parameter store_slug (from URL)
+        // 3. Current tenant from middleware
+        // 4. Session value (before invalidation)
+        // ─────────────────────────────────────────────────────────
         $tenant = !$isSuperAdmin && $authenticatable ? Tenant::getCurrent() : null;
         $storeSlug = $request->input('store_slug')
+            ?: $request->route('store_slug')
             ?: ($tenant ? $tenant->slug : null)
             ?: $request->session()->get('current_tenant_slug');
         $context = $request->input('context');

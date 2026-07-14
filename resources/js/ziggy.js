@@ -33,6 +33,8 @@ const routes = {
     'storefront.admin.suspended': '/store/{store_slug}/admin/suspended',
     'admin.expired': '/admin/expired',
     'admin.suspended': '/admin/suspended',
+    'storefront.team.invite.show': '/store/{store_slug}/team/invite/{token}',
+    'storefront.team.invite.accept': '/store/{store_slug}/team/invite/{token}',
 };
 
 export function route(name, params) {

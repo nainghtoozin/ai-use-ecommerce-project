@@ -141,6 +141,10 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     // Onboarding completion (after email verification)
     Route::get('/onboarding/complete', [\App\Http\Controllers\CreateStoreController::class, 'onboarding'])->name('onboarding.complete');
 
+    // Team invitation acceptance (public)
+    Route::get('/team/invite/{token}', [\App\Http\Controllers\TeamInvitationController::class, 'show'])->name('team.invite.show');
+    Route::post('/team/invite/{token}', [\App\Http\Controllers\TeamInvitationController::class, 'accept'])->name('team.invite.accept');
+
     // Store-based cart and checkout
     Route::get('/cart', [\App\Http\Controllers\StorefrontCartController::class, 'index'])->name('cart');
     Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.add');

@@ -26,7 +26,11 @@ class TenantIsValid
             $currentTenant = \App\Models\Tenant::getCurrent();
             if (!$currentTenant) {
                 auth()->guard('accounts')->logout();
-                return redirect()->route('login')->withErrors([
+                $storeSlug = $request->route('store_slug');
+                $redirectRoute = $storeSlug
+                    ? 'storefront.login'
+                    : 'login';
+                return redirect()->route($redirectRoute, $storeSlug ? ['store_slug' => $storeSlug] : [])->withErrors([
                     'email' => 'Your account is not associated with any store.',
                 ]);
             }
@@ -37,7 +41,11 @@ class TenantIsValid
 
             if (!$membership) {
                 auth()->guard('accounts')->logout();
-                return redirect()->route('login')->withErrors([
+                $storeSlug = $request->route('store_slug');
+                $redirectRoute = $storeSlug
+                    ? 'storefront.login'
+                    : 'login';
+                return redirect()->route($redirectRoute, $storeSlug ? ['store_slug' => $storeSlug] : [])->withErrors([
                     'email' => 'Your account is not associated with any store.',
                 ]);
             }
@@ -48,7 +56,11 @@ class TenantIsValid
         if ($authenticatable instanceof User) {
             if (empty($authenticatable->tenant_id)) {
                 auth()->logout();
-                return redirect()->route('login')->withErrors([
+                $storeSlug = $request->route('store_slug');
+                $redirectRoute = $storeSlug
+                    ? 'storefront.login'
+                    : 'login';
+                return redirect()->route($redirectRoute, $storeSlug ? ['store_slug' => $storeSlug] : [])->withErrors([
                     'email' => 'Your account is not associated with any store.',
                 ]);
             }

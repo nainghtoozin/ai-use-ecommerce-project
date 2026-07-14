@@ -10,6 +10,10 @@ Artisan::command('inspire', function () {
 
 Schedule::command('messages:cleanup')->daily();
 
+// ── Team invitations ──
+Schedule::command('invitations:expire')->everyFifteenMinutes();
+Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();
+
 // ── Subscription lifecycle ──
 // Process lifecycle transitions every 5 minutes during business hours,
 // hourly otherwise (prevents subscriptions lingering past thresholds).
