@@ -41,9 +41,19 @@ class MembershipSeeder extends Seeder
     protected function ensureTenantRoles(Tenant $tenant): void
     {
         foreach (['admin', 'staff', 'customer'] as $roleName) {
-            Role::firstOrCreate(
+            $role = Role::withoutTenantScope()->firstOrCreate(
                 ['name' => $roleName, 'guard_name' => 'web', 'tenant_id' => $tenant->id]
             );
+
+            // Sync permissions from global template role
+            $globalRole = Role::withoutTenantScope()
+                ->where('name', $roleName)
+                ->whereNull('tenant_id')
+                ->first();
+
+            if ($globalRole && $role->permissions->count() === 0) {
+                $role->syncPermissions($globalRole->permissions);
+            }
         }
 
         $this->command?->info("  Tenant roles ensured for '{$tenant->name}'.");

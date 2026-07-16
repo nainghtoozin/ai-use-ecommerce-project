@@ -35,13 +35,18 @@ class RoleAndPermissionSeeder extends Seeder
         $superadminRole->syncPermissions(Permission::all());
 
         // ─────────────────────────────────────────────────────────────
-        // SUPERADMIN ACCOUNT (platform-only identity)
+        // GLOBAL TEMPLATE ROLES (tenant_id = NULL)
         //
-        // Per Platform Identity Design Lock:
-        //   - SuperAdmin lives ONLY in accounts table
-        //   - NO tenant_id
-        //   - NO TenantMembership
-        //   - NO merchant/customer/staff profile
+        // These serve as permission templates for tenant-scoped roles.
+        // When TenantBootstrapService creates tenant roles, it copies
+        // permissions from these global templates.
+        // ─────────────────────────────────────────────────────────────
+
+        $this->createGlobalTemplateRole('admin', $this->adminPermissions());
+        $this->createGlobalTemplateRole('customer', $this->customerPermissions());
+
+        // ─────────────────────────────────────────────────────────────
+        // SUPERADMIN ACCOUNT (platform-only identity)
         // ─────────────────────────────────────────────────────────────
 
         $superAdmin = Account::updateOrCreate(
@@ -60,10 +65,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ─────────────────────────────────────────────────────────────
         // LEGACY USER RECORD (backward compatibility)
-        //
-        // Synced via SyncsIdentity trait. Created here to ensure the
-        // legacy users table has the SuperAdmin record for backward
-        // compatibility with existing model relationships.
         // ─────────────────────────────────────────────────────────────
 
         $superAdminUser = User::updateOrCreate(
@@ -82,5 +83,144 @@ class RoleAndPermissionSeeder extends Seeder
 
         $this->command->info('Platform seeder: SuperAdmin created (accounts + users).');
         $this->command->info('Platform seeder: Global superadmin role created.');
+        $this->command->info('Platform seeder: Global template roles (admin, customer) created.');
+    }
+
+    protected function createGlobalTemplateRole(string $name, array $permissions): Role
+    {
+        $role = Role::firstOrCreate(
+            ['name' => $name, 'guard_name' => 'web'],
+            ['tenant_id' => null]
+        );
+
+        $permissionModels = Permission::whereIn('name', $permissions)->get();
+        $role->syncPermissions($permissionModels);
+
+        return $role;
+    }
+
+    protected function adminPermissions(): array
+    {
+        return [
+            // Dashboard
+            'dashboard.view',
+
+            // User Management
+            'users.view',
+            'users.create',
+            'users.update',
+            'users.delete',
+            'users.suspend',
+            'users.ban',
+            'users.activate',
+            'users.assign-roles',
+            'users.view-activity',
+
+            // Role Management
+            'roles.view',
+            'roles.create',
+            'roles.update',
+            'roles.delete',
+
+            // Permission Management
+            'permissions.view',
+            'permissions.create',
+            'permissions.edit',
+            'permissions.delete',
+
+            // Product Management
+            'products.view',
+            'products.create',
+            'products.edit',
+            'products.delete',
+
+            // Category Management
+            'categories.view',
+            'categories.create',
+            'categories.update',
+            'categories.delete',
+
+            // Order Management
+            'orders.view',
+            'orders.update-status',
+            'orders.cancel-any',
+            'orders.override-status',
+            'orders.override-payment',
+
+            // Payment / Billing
+            'payments.view',
+            'payments.create',
+            'payments.update',
+            'payments.delete',
+            'payments.verify',
+            'billing.view',
+            'billing.renew',
+
+            // Dashboard
+            'activity-logs.view',
+
+            // Reports
+            'reports.view',
+            'reports.sales',
+            'reports.orders',
+            'reports.products',
+            'reports.payments',
+
+            // Settings
+            'settings.view',
+            'settings.edit',
+            'settings.website',
+            'settings.telegram',
+            'settings.notifications',
+
+            // Unit Management
+            'units.view',
+            'units.create',
+            'units.update',
+            'units.delete',
+
+            // Brand Management
+            'brands.view',
+            'brands.create',
+            'brands.update',
+            'brands.delete',
+
+            // Coupon Management
+            'coupons.view',
+            'coupons.create',
+            'coupons.update',
+            'coupons.delete',
+
+            // Promotion Management
+            'promotions.view',
+            'promotions.create',
+            'promotions.update',
+            'promotions.delete',
+
+            // City Management
+            'cities.view',
+            'cities.create',
+            'cities.update',
+            'cities.delete',
+
+            // Township Management
+            'townships.view',
+            'townships.create',
+            'townships.update',
+            'townships.delete',
+
+            // Maintenance
+            'bypass maintenance mode',
+        ];
+    }
+
+    protected function customerPermissions(): array
+    {
+        return [
+            'orders.view-own',
+            'orders.create',
+            'orders.cancel-own',
+            'payments.upload-proof',
+        ];
     }
 }

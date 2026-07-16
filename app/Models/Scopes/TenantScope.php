@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Scope;
 class TenantScope implements Scope
 {
     private array $exemptModels = [
-        Role::class,
         ActivityLog::class,
     ];
 

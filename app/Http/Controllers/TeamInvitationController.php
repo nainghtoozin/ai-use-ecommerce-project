@@ -32,6 +32,19 @@ class TeamInvitationController extends Controller
 
         $existingAccount = Account::where('email', $invitation->email)->first();
 
+        // Check if already a member
+        if ($existingAccount) {
+            $existingMembership = TenantMembership::where('tenant_id', $invitation->tenant_id)
+                ->where('account_id', $existingAccount->id)
+                ->first();
+
+            if ($existingMembership && !$existingMembership->trashed()) {
+                return Inertia::render('Public/InvitationExpired', [
+                    'message' => 'You already belong to this store.',
+                ]);
+            }
+        }
+
         return Inertia::render('Public/AcceptInvitation', [
             'invitation' => [
                 'token' => $invitation->token,
@@ -62,38 +75,84 @@ class TeamInvitationController extends Controller
         $existingAccount = Account::where('email', $invitation->email)->first();
 
         if ($existingAccount) {
-            return $this->acceptForExistingAccount($request, $invitation, $existingAccount);
+            return $this->acceptExistingAccount($request, $invitation, $existingAccount);
         }
 
-        return $this->acceptForNewAccount($request, $invitation);
+        return $this->acceptNewAccount($request, $invitation);
     }
 
-    protected function acceptForExistingAccount(Request $request, TeamInvitation $invitation, Account $account): RedirectResponse
+    /**
+     * CASE 2: Account already exists.
+     * Verify password, then create membership only.
+     */
+    protected function acceptExistingAccount(Request $request, TeamInvitation $invitation, Account $account): RedirectResponse
     {
+        // Check for duplicate membership
         $existingMembership = TenantMembership::where('tenant_id', $invitation->tenant_id)
             ->where('account_id', $account->id)
             ->first();
 
         if ($existingMembership && !$existingMembership->trashed()) {
-            $invitation->markAccepted();
-
-            ActivityLogger::log(
-                "Invitation accepted by {$account->email} (already a member)",
-                'team.invitation_accepted',
-                $invitation,
-                ['email' => $account->email, 'existing_member' => true],
-                'team'
-            );
-
-            $this->loginAndRedirect($request, $account, $invitation);
-
-            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $invitation->tenant->slug])
-                ->with('success', 'You are already a member of this store.');
+            return back()->withErrors([
+                'password' => 'You already belong to this store.',
+            ]);
         }
 
-        if ($existingMembership && $existingMembership->trashed()) {
-            $existingMembership->restore();
-            $existingMembership->update([
+        // Validate password only
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Verify password BEFORE consuming invitation
+        if (!Hash::check($request->password, $account->password)) {
+            return back()->withErrors([
+                'password' => 'The provided password is incorrect.',
+            ])->withInput();
+        }
+
+        // Password correct — complete invitation
+        return $this->completeInvitation($request, $invitation, $account, [
+            'restore_membership' => $existingMembership?->trashed() ? $existingMembership : null,
+        ]);
+    }
+
+    /**
+     * CASE 1: Account does not exist.
+     * Create account, then create membership.
+     */
+    protected function acceptNewAccount(Request $request, TeamInvitation $invitation): RedirectResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'password' => 'required|confirmed|min:8',
+        ]);
+
+        $account = Account::create([
+            'name' => $request->name,
+            'email' => $invitation->email,
+            'password' => Hash::make($request->password),
+            'status' => Account::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        return $this->completeInvitation($request, $invitation, $account, [
+            'new_account' => true,
+        ]);
+    }
+
+    /**
+     * Shared logic: create membership, mark accepted, login, redirect.
+     */
+    protected function completeInvitation(
+        Request $request,
+        TeamInvitation $invitation,
+        Account $account,
+        array $options = []
+    ): RedirectResponse {
+        // Restore soft-deleted membership or create new
+        if (!empty($options['restore_membership'])) {
+            $options['restore_membership']->restore();
+            $options['restore_membership']->update([
                 'status' => 'active',
                 'role_id' => $invitation->role_id,
             ]);
@@ -110,68 +169,30 @@ class TeamInvitationController extends Controller
             ]);
         }
 
+        // Mark invitation accepted ONLY after success
         $invitation->markAccepted();
 
+        // Log activity
         ActivityLogger::log(
-            "Invitation accepted by {$account->email}",
+            'Invitation accepted by ' . $account->email
+                . (!empty($options['new_account']) ? ' (new account)' : ''),
             'team.invitation_accepted',
             $invitation,
-            ['email' => $account->email, 'role' => $invitation->role->name],
+            [
+                'email' => $account->email,
+                'role' => $invitation->role->name,
+                'new_account' => !empty($options['new_account']),
+            ],
             'team'
         );
 
-        $this->loginAndRedirect($request, $account, $invitation);
-
-        return redirect()->route('storefront.admin.dashboard', ['store_slug' => $invitation->tenant->slug])
-            ->with('success', "Welcome to {$invitation->tenant->name}!");
-    }
-
-    protected function acceptForNewAccount(Request $request, TeamInvitation $invitation): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'password' => 'required|confirmed|min:8',
-        ]);
-
-        $account = Account::create([
-            'name' => $request->name,
-            'email' => $invitation->email,
-            'password' => Hash::make($request->password),
-            'status' => Account::STATUS_ACTIVE,
-            'email_verified_at' => now(),
-        ]);
-
-        TenantMembership::create([
-            'account_id' => $account->id,
-            'tenant_id' => $invitation->tenant_id,
-            'role_id' => $invitation->role_id,
-            'is_owner' => false,
-            'status' => 'active',
-            'invited_by' => $invitation->invited_by,
-            'invited_at' => $invitation->invited_at,
-            'joined_at' => now(),
-        ]);
-
-        $invitation->markAccepted();
-
-        ActivityLogger::log(
-            "Invitation accepted by {$account->email} (new account created)",
-            'team.invitation_accepted',
-            $invitation,
-            ['email' => $account->email, 'role' => $invitation->role->name, 'new_account' => true],
-            'team'
-        );
-
-        $this->loginAndRedirect($request, $account, $invitation);
-
-        return redirect()->route('storefront.admin.dashboard', ['store_slug' => $invitation->tenant->slug])
-            ->with('success', "Welcome to {$invitation->tenant->name}!");
-    }
-
-    protected function loginAndRedirect(Request $request, Account $account, TeamInvitation $invitation): void
-    {
+        // Login and redirect to invited tenant
         Auth::guard('accounts')->login($account);
         $request->session()->regenerate();
         $request->session()->put('current_tenant_slug', $invitation->tenant->slug);
+
+        return redirect()
+            ->route('storefront.admin.dashboard', ['store_slug' => $invitation->tenant->slug])
+            ->with('success', 'Welcome to ' . $invitation->tenant->name . '!');
     }
 }

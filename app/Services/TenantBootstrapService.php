@@ -96,14 +96,15 @@ class TenantBootstrapService
      */
     public function ensureCustomerRole(Tenant $tenant): Role
     {
-        $role = Role::firstOrCreate([
+        $role = Role::withoutTenantScope()->firstOrCreate([
             'name' => 'customer',
             'guard_name' => 'web',
             'tenant_id' => $tenant->id,
         ]);
 
         if ($role->wasRecentlyCreated) {
-            $globalRole = Role::where('name', 'customer')
+            $globalRole = Role::withoutTenantScope()
+                ->where('name', 'customer')
                 ->whereNull('tenant_id')
                 ->first();
 
@@ -130,7 +131,8 @@ class TenantBootstrapService
      */
     protected function createRole(Tenant $tenant, string $roleName): Role
     {
-        $role = Role::where('name', $roleName)
+        $role = Role::withoutTenantScope()
+            ->where('name', $roleName)
             ->where('guard_name', 'web')
             ->where('tenant_id', $tenant->id)
             ->first();
@@ -142,7 +144,9 @@ class TenantBootstrapService
             $role->tenant_id = $tenant->id;
             $role->save();
 
-            $globalRole = Role::where('name', $roleName)
+            // Query global template without tenant scope to find tenant_id=NULL
+            $globalRole = Role::withoutTenantScope()
+                ->where('name', $roleName)
                 ->whereNull('tenant_id')
                 ->first();
 
@@ -216,9 +220,16 @@ class TenantBootstrapService
             $owner = Account::create($ownerData);
         }
 
-        $adminRole = Role::where('name', 'admin')
+        $adminRole = Role::withoutTenantScope()
+            ->where('name', 'admin')
             ->where('tenant_id', $tenant->id)
             ->first();
+
+        if (!$adminRole) {
+            throw new \RuntimeException(
+                "Owner role 'admin' was not created for tenant '{$tenant->slug}'. Cannot create owner membership."
+            );
+        }
 
         // Create or update membership — set as owner
         TenantMembership::updateOrCreate(
@@ -242,13 +253,18 @@ class TenantBootstrapService
      */
     protected function assignOwnerRole(User|Account $owner, Tenant $tenant): void
     {
-        $adminRole = Role::where('name', 'admin')
+        $adminRole = Role::withoutTenantScope()
+            ->where('name', 'admin')
             ->where('tenant_id', $tenant->id)
             ->first();
 
-        if ($adminRole) {
-            $owner->assignRole($adminRole);
+        if (!$adminRole) {
+            throw new \RuntimeException(
+                "Owner role 'admin' was not created for tenant '{$tenant->slug}'. Cannot assign owner role."
+            );
         }
+
+        $owner->assignRole($adminRole);
     }
 
     /**
