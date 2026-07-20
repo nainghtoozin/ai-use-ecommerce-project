@@ -484,6 +484,13 @@ Route::middleware('auth:web,accounts')->group(function () {
 });
 
 // ============================================================
+// WORKSPACE SWITCHING (authenticated users)
+// ============================================================
+Route::middleware('auth:web,accounts')->group(function () {
+    Route::post('/workspace/switch/{tenantSlug}', [\App\Http\Controllers\WorkspaceSwitchController::class, 'switch'])->name('workspace.switch');
+});
+
+// ============================================================
 // SUPERADMIN ROUTES
 // ============================================================
 Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts', 'role:superadmin'])->group(function () {

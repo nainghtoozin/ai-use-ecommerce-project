@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
+import WorkspaceSwitcher from '@/Components/WorkspaceSwitcher';
 import {
     LayoutDashboard, Package, Tags, Megaphone,
     BarChart3, ShoppingBag, Receipt,
@@ -374,6 +375,9 @@ export default function AdminSidebar() {
                     })}
                 </nav>
 
+                {/* Workspace switcher */}
+                <WorkspaceSwitcher collapsed={collapsed} />
+
                 {/* User section */}
                 <div className="p-2.5 border-t border-white/[0.06] flex-shrink-0">
                     <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
@@ -383,7 +387,7 @@ export default function AdminSidebar() {
                         {!collapsed && (
                             <div className="ml-2.5 flex-1 min-w-0">
                                 <p className="text-[13px] font-medium truncate">{auth?.user?.name}</p>
-                                <p className="text-[11px] text-slate-500 truncate">{auth?.user?.role_label}</p>
+                                <p className="text-[11px] text-slate-500 truncate">{auth?.user?.email}</p>
                             </div>
                         )}
                     </div>

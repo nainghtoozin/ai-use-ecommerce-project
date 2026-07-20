@@ -43,6 +43,25 @@ class IdentityProjection
         $tenantName = $tenant?->name;
         $tenantSlug = $tenant?->slug;
 
+        $memberships = [];
+        if ($useAccounts && $user instanceof Account) {
+            $memberships = $user->memberships()
+                ->with('tenant', 'role')
+                ->where('status', 'active')
+                ->get()
+                ->map(fn($m) => [
+                    'tenant_id' => $m->tenant_id,
+                    'tenant_name' => $m->tenant->name ?? 'Unknown',
+                    'tenant_slug' => $m->tenant->slug ?? '',
+                    'tenant_logo' => $m->tenant->logo_url ?? null,
+                    'is_owner' => $m->is_owner,
+                    'is_default' => $m->is_default,
+                    'role_name' => $m->role?->name,
+                    'is_current' => $m->tenant_id === $tenant?->id,
+                ])
+                ->toArray();
+        }
+
         return [
             'id' => $user->id,
             'display_name' => $displayName,
@@ -69,6 +88,7 @@ class IdentityProjection
             'email_verified_at' => $user->email_verified_at,
             'joined_at' => $joinedAt,
             'created_at' => $user->created_at?->toDateString(),
+            'memberships' => $memberships,
         ];
     }
 }
