@@ -70,6 +70,9 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing/payment-history', [AdminBillingController::class, 'paymentHistory'])->name('billing.payment-history');
     Route::get('/billing/settings', [AdminBillingController::class, 'settings'])->name('billing.settings');
     Route::post('/billing/renew', [AdminBillingController::class, 'renew'])->name('billing.renew');
+    Route::post('/billing/change-plan/preview', [AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
+    Route::post('/billing/change-plan/execute', [AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
+    Route::post('/billing/change-plan/cancel', [AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

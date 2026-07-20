@@ -2,11 +2,13 @@ import FlashMessages from '@/Components/FlashMessages';
 import AdminSidebar from '@/Components/AdminSidebar';
 import AdminHeader from '@/Components/AdminHeader';
 import AdminFooter from '@/Components/AdminFooter';
+import SubscriptionStatusBanner from '@/Components/Billing/SubscriptionStatusBanner';
 
 export default function AdminLayout({ children, header = null }) {
     return (
         <>
             <FlashMessages />
+            <SubscriptionStatusBanner />
             <style>{`
                 :root {
                     --admin-theme: var(--theme-color, #3B82F6);

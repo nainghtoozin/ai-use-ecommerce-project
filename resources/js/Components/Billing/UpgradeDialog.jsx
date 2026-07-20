@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { X, ArrowRight, Check } from 'lucide-react';
+import { X, ArrowRight, Check, ArrowUpDown, Calendar } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
-export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan, featureKey, allFeatureDefs }) {
+export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan, featureKey, allFeatureDefs, subscription }) {
     const dialogRef = useRef(null);
     const previousFocusRef = useRef(null);
 
@@ -36,6 +36,8 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
         return () => document.removeEventListener('keydown', handler);
     }, [isOpen, onClose]);
 
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+
     if (!isOpen) return null;
 
     const featureLabel = featureKey
@@ -43,12 +45,32 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
         : null;
 
     const targetName = targetPlan?.name || (featureKey ? 'a higher-tier plan' : 'another plan');
+    const hasActiveSubscription = subscription?.status && ['active', 'trialing'].includes(subscription.status);
+    const isCurrentlyOnPlan = currentPlan?.id === targetPlan?.id;
+
+    const isUpgrade = (() => {
+        if (!currentPlan || !targetPlan) return null;
+        const cp = parseFloat(currentPlan.monthly_price || 0);
+        const tp = parseFloat(targetPlan.monthly_price || 0);
+        if (tp > cp) return true;
+        if (tp < cp) return false;
+        return null;
+    })();
 
     const handleUpgrade = () => {
         if (targetPlan?.slug) {
             router.get(adminUrl(`/admin/billing/checkout/${targetPlan.slug}`), {}, { preserveState: false });
         } else {
             router.get(adminUrl('/admin/billing'), {}, { preserveState: false });
+        }
+        onClose();
+    };
+
+    const handleDirectChange = () => {
+        if (targetPlan?.id) {
+            router.post(adminUrl('/admin/billing/change-plan/preview'), {
+                plan_id: targetPlan.id,
+            }, { preserveState: false });
         }
         onClose();
     };
@@ -62,7 +84,6 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
     };
 
     const gainedFeatures = diffFeatures();
-    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
     return (
         <div
@@ -149,6 +170,31 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
                         </div>
                     )}
 
+                    {hasActiveSubscription && !isCurrentlyOnPlan && isUpgrade !== null && (
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                            <div className="flex items-start gap-2">
+                                <ArrowUpDown className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-medium text-blue-800">
+                                        {isUpgrade ? 'Quick Upgrade' : 'Schedule Downgrade'}
+                                    </p>
+                                    <p className="text-xs text-blue-600 mt-0.5">
+                                        {isUpgrade
+                                            ? 'Change your plan immediately. You will be charged a prorated amount for the remaining billing period.'
+                                            : 'The change will take effect at the end of your current billing period.'}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleDirectChange}
+                                        className="mt-2 px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                    >
+                                        {isUpgrade ? `Upgrade to ${targetName}` : `Schedule ${targetName}`}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex gap-3 pt-2">
                         <button
                             type="button"
@@ -162,7 +208,7 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
                             onClick={handleUpgrade}
                             className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            Upgrade Now
+                            {isUpgrade === false ? 'Pay for Upgrade' : 'Pay Now'}
                         </button>
                     </div>
                 </div>

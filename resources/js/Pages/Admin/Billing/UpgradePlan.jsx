@@ -5,7 +5,7 @@ import StatusBadge from '@/Components/Billing/StatusBadge';
 import PlanFeatureMatrix from '@/Components/Billing/PlanFeatureMatrix';
 import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
-import { X, Sparkles, TrendingUp, Lightbulb, Star, Zap, HelpCircle, ShieldCheck } from 'lucide-react';
+import { X, Sparkles, TrendingUp, Lightbulb, Star, Zap, HelpCircle, ShieldCheck, Calendar } from 'lucide-react';
 import PlanFeatureList from '@/Components/Billing/PlanFeatureList';
 
 function formatBytes(v) {
@@ -246,6 +246,28 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                     </div>
                 )}
 
+                {subscription?.pending_plan && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <div className="flex items-start gap-3">
+                            <div className="p-1.5 rounded-lg bg-amber-100 flex-shrink-0">
+                                <Calendar className="w-5 h-5 text-amber-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-amber-800">Scheduled Plan Change</p>
+                                <p className="text-xs text-amber-600 mt-0.5">
+                                    Your plan will change to <strong>{subscription.pending_plan.name}</strong> on {subscription.pending_plan_effective_at}.
+                                </p>
+                                <button
+                                    onClick={() => router.post(adminUrl('/admin/billing/change-plan/cancel'))}
+                                    className="mt-2 px-3 py-1 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                                >
+                                    Cancel Scheduled Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {subscription && subscription.on_trial && subscription.trial_days_remaining > 0 && subscription.trial_days_remaining <= 7 && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                         <div className="flex items-start gap-3">
@@ -325,6 +347,7 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                 targetPlan={dialogTarget}
                 featureKey={dialogFeatureKey}
                 allFeatureDefs={allFeatureDefs}
+                subscription={subscription}
             />
         </AdminLayout>
     );

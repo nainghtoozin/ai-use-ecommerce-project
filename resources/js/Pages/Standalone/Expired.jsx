@@ -2,9 +2,12 @@ import { Head, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 
 export default function Expired() {
-    const { website_info, store_slug } = usePage().props;
+    const { website_info, store_slug, auth } = usePage().props;
     const logoUrl = assetUrl(website_info?.logo);
     const siteName = website_info?.site_name || website_info?.name || 'My Store';
+    const sub = auth?.user?.subscription;
+    const daysSince = sub?.days_since_expiry || 0;
+    const planName = sub?.plan_name || 'Current';
 
     const isStorefront = !!store_slug;
     const routePrefix = isStorefront ? 'storefront.admin' : 'admin';
@@ -44,8 +47,10 @@ export default function Expired() {
                         </h1>
 
                         <p className="text-gray-600 mb-4 leading-relaxed">
-                            Your subscription has expired. Your store data is safely preserved and
-                            no information has been lost. Renew your subscription to restore full access.
+                            Your <strong>{planName}</strong> plan subscription has expired
+                            {daysSince > 0 ? ` (${daysSince} day${daysSince !== 1 ? 's' : ''} ago)` : ''}.
+                            Your store data is safely preserved and no information has been lost.
+                            Renew your subscription to restore full access.
                         </p>
 
                         <div className="bg-amber-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 space-y-2">
@@ -54,6 +59,7 @@ export default function Expired() {
                                 <li>All your products, orders, and data are securely stored</li>
                                 <li>Your storefront is temporarily unavailable to customers</li>
                                 <li>You can still manage your billing and subscription</li>
+                                <li>Renew within the grace period to avoid suspension</li>
                             </ul>
                         </div>
 

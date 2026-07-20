@@ -1,5 +1,6 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { adminUrl } from '@/Utils/adminUrl';
 
 export default function AdminBillingSubscription({ subscription }) {
     return (
@@ -25,45 +26,69 @@ export default function AdminBillingSubscription({ subscription }) {
                 )}
 
                 {subscription && (
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-6 py-4 border-b border-gray-100">
-                            <h3 className="text-base font-semibold text-gray-900">Subscription Details</h3>
+                    <>
+                        <div className="bg-white rounded-xl border border-gray-200">
+                            <div className="px-6 py-4 border-b border-gray-100">
+                                <h3 className="text-base font-semibold text-gray-900">Subscription Details</h3>
+                            </div>
+                            <div className="p-6">
+                                <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Status</dt>
+                                        <dd className={`mt-1 text-sm font-semibold ${
+                                            subscription.status === 'active' ? 'text-green-600' :
+                                            subscription.status === 'trialing' ? 'text-blue-600' :
+                                            subscription.status === 'past_due' ? 'text-yellow-600' :
+                                            subscription.status === 'expired' ? 'text-red-600' :
+                                            'text-gray-600'
+                                        }`}>{subscription.status}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Plan</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.plan?.name || 'N/A'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Billing Interval</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900 capitalize">{subscription.billing_interval || 'N/A'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Price</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.price || 'N/A'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Started At</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.starts_at || 'N/A'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Expires At</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.expires_at || 'N/A'}</dd>
+                                    </div>
+                                    {subscription.pending_plan && (
+                                        <>
+                                            <div>
+                                                <dt className="text-sm font-medium text-amber-600">Pending Plan</dt>
+                                                <dd className="mt-1 text-sm font-semibold text-amber-700">{subscription.pending_plan.name}</dd>
+                                            </div>
+                                            <div>
+                                                <dt className="text-sm font-medium text-amber-600">Effective Date</dt>
+                                                <dd className="mt-1 text-sm font-semibold text-amber-700">{subscription.pending_plan_effective_at || 'End of period'}</dd>
+                                            </div>
+                                        </>
+                                    )}
+                                </dl>
+                                {subscription.pending_plan && (
+                                    <div className="mt-4 pt-4 border-t border-gray-100">
+                                        <button
+                                            onClick={() => router.post(adminUrl('/admin/billing/change-plan/cancel'))}
+                                            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                                        >
+                                            Cancel Scheduled Change
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="p-6">
-                            <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Status</dt>
-                                    <dd className={`mt-1 text-sm font-semibold ${
-                                        subscription.status === 'active' ? 'text-green-600' :
-                                        subscription.status === 'trialing' ? 'text-blue-600' :
-                                        subscription.status === 'past_due' ? 'text-yellow-600' :
-                                        subscription.status === 'expired' ? 'text-red-600' :
-                                        'text-gray-600'
-                                    }`}>{subscription.status}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Plan</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.plan?.name || 'N/A'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Billing Interval</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-gray-900 capitalize">{subscription.billing_interval || 'N/A'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Price</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.price || 'N/A'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Started At</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.starts_at || 'N/A'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500">Expires At</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.expires_at || 'N/A'}</dd>
-                                </div>
-                            </dl>
-                        </div>
-                    </div>
+                    </>
                 )}
 
                 <div className="bg-white rounded-xl border border-gray-200">

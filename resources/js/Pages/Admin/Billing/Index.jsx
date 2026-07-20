@@ -125,6 +125,28 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                     </div>
                 )}
 
+                {subscription?.pending_plan && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <div className="flex items-start gap-3">
+                            <div className="p-1.5 rounded-lg bg-amber-100 flex-shrink-0">
+                                <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-amber-800">Scheduled Plan Change</p>
+                                <p className="text-xs text-amber-600 mt-0.5">
+                                    Your plan will change to <strong>{subscription.pending_plan.name}</strong> on {subscription.pending_plan_effective_at}.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => router.post(adminUrl('/admin/billing/change-plan/cancel'))}
+                                className="ml-auto px-3 py-1.5 bg-white text-red-600 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-50 transition-colors flex-shrink-0"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {subscription && ['expired', 'past_due', 'canceled'].includes(subscription.status) && (
                     <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                         <div className="flex items-start gap-3">
@@ -225,6 +247,7 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                 targetPlan={dialogTarget}
                 featureKey={dialogFeatureKey}
                 allFeatureDefs={allFeatureDefs}
+                subscription={subscription}
             />
         </AdminLayout>
     );

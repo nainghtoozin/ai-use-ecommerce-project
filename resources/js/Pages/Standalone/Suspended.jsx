@@ -6,6 +6,8 @@ export default function Suspended() {
     const logoUrl = assetUrl(website_info?.logo);
     const siteName = website_info?.site_name || website_info?.name || 'My Store';
     const supportEmail = website_info?.support_email || 'support@example.com';
+    const sub = auth?.user?.subscription;
+    const planName = sub?.plan_name || 'Current';
 
     const handleLogout = () => {
         router.post(route('logout'));
@@ -35,7 +37,8 @@ export default function Suspended() {
                         </h1>
 
                         <p className="text-gray-600 mb-4 leading-relaxed">
-                            Your store has been suspended due to prolonged subscription inactivity.
+                            Your store has been suspended because your <strong>{planName}</strong> plan
+                            subscription expired and the grace period has passed.
                             All admin features are temporarily restricted.
                         </p>
 
@@ -46,6 +49,7 @@ export default function Suspended() {
                                 <li>Order processing and product management are disabled</li>
                                 <li>All admin features are temporarily restricted</li>
                                 <li>Your data remains securely stored and preserved</li>
+                                <li>Reactivating your subscription will restore full access</li>
                             </ul>
                         </div>
 

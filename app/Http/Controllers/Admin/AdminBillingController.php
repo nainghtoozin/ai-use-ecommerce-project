@@ -19,6 +19,7 @@ use App\Services\Payment\Platform\PaymentEvidenceService;
 use App\Services\Payment\Platform\PaymentIntentService;
 use App\Services\SubscriptionAuditService;
 use App\Services\SubscriptionLimitService;
+use App\Services\SubscriptionPlanChangeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -40,7 +41,7 @@ class AdminBillingController extends Controller
             abort(403, 'Store not found.');
         }
 
-        $subscription = $tenant->subscription;
+        $subscription = $tenant->subscription()->with('pendingPlan')->first();
         $currentPlan = $subscription?->plan;
 
         $usage = SubscriptionLimitService::for($tenant)->getAllLimits();
@@ -156,6 +157,12 @@ class AdminBillingController extends Controller
                 'days_until_expiry' => $subscription->daysUntilExpiry(),
                 'days_since_expiry' => $subscription->daysSinceExpiry(),
                 'on_trial' => $subscription->isTrialing(),
+                'pending_plan' => $subscription->pendingPlan ? [
+                    'id' => $subscription->pendingPlan->id,
+                    'name' => $subscription->pendingPlan->name,
+                    'slug' => $subscription->pendingPlan->slug,
+                ] : null,
+                'pending_plan_effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
                 'next_billing_date' => $subscription->expires_at?->isFuture()
                     ? $subscription->expires_at->toDateString()
                     : ($subscription->plan && !$subscription->plan->isFree()
@@ -195,6 +202,12 @@ class AdminBillingController extends Controller
                     'monthly_price' => $subscription->plan->monthly_price,
                     'yearly_price' => $subscription->plan->yearly_price,
                 ] : null,
+                'pending_plan' => $subscription->pendingPlan ? [
+                    'id' => $subscription->pendingPlan->id,
+                    'name' => $subscription->pendingPlan->name,
+                    'slug' => $subscription->pendingPlan->slug,
+                ] : null,
+                'pending_plan_effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
                 'billing_interval' => $subscription->billing_interval,
                 'price' => $subscription->billedPrice(),
                 'starts_at' => $subscription->starts_at?->toDateString(),
@@ -295,6 +308,12 @@ class AdminBillingController extends Controller
                     'name' => $subscription->plan->name,
                     'slug' => $subscription->plan->slug,
                 ] : null,
+                'pending_plan' => $subscription->pendingPlan ? [
+                    'id' => $subscription->pendingPlan->id,
+                    'name' => $subscription->pendingPlan->name,
+                    'slug' => $subscription->pendingPlan->slug,
+                ] : null,
+                'pending_plan_effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
                 'billing_interval' => $subscription->billing_interval,
                 'starts_at' => $subscription->starts_at?->toDateString(),
                 'expires_at' => $subscription->expires_at?->toDateString(),
@@ -443,6 +462,133 @@ class AdminBillingController extends Controller
         }
 
         return Inertia::render('Admin/Billing/Settings');
+    }
+
+    public function changePlanPreview(Request $request, SubscriptionPlanChangeService $planChange)
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403);
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $request->validate([
+            'plan_id' => ['required', 'exists:plans,id'],
+            'billing_interval' => ['nullable', 'in:monthly,yearly'],
+        ]);
+
+        $subscription = $tenant->subscription;
+        if (!$subscription || !$subscription->plan) {
+            return redirect()->route('admin.billing.upgrade')
+                ->with('error', 'No active subscription found.');
+        }
+
+        $targetPlan = Plan::active()->findOrFail($request->plan_id);
+
+        if ($targetPlan->id === $subscription->plan_id) {
+            return redirect()->route('admin.billing.upgrade')
+                ->with('info', 'You are already on this plan.');
+        }
+
+        $proration = $planChange->calculateProration(
+            $subscription,
+            $targetPlan,
+            $request->billing_interval
+        );
+
+        return Inertia::render('Admin/Billing/PlanChange', [
+            'currentPlan' => [
+                'id' => $subscription->plan->id,
+                'name' => $subscription->plan->name,
+                'slug' => $subscription->plan->slug,
+                'monthly_price' => $subscription->plan->monthly_price,
+                'yearly_price' => $subscription->plan->yearly_price,
+            ],
+            'targetPlan' => [
+                'id' => $targetPlan->id,
+                'name' => $targetPlan->name,
+                'slug' => $targetPlan->slug,
+                'description' => $targetPlan->description,
+                'monthly_price' => $targetPlan->monthly_price,
+                'yearly_price' => $targetPlan->yearly_price,
+            ],
+            'subscription' => [
+                'id' => $subscription->id,
+                'status' => $subscription->status,
+                'expires_at' => $subscription->expires_at?->toDateString(),
+                'billing_interval' => $subscription->billing_interval,
+            ],
+            'proration' => $proration,
+        ]);
+    }
+
+    public function changePlanExecute(Request $request, SubscriptionPlanChangeService $planChange)
+    {
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403);
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $request->validate([
+            'plan_id' => ['required', 'exists:plans,id'],
+            'billing_interval' => ['nullable', 'in:monthly,yearly'],
+        ]);
+
+        $subscription = $tenant->subscription;
+        if (!$subscription || !$subscription->plan) {
+            return redirect()->route('admin.billing.upgrade')
+                ->with('error', 'No active subscription found.');
+        }
+
+        $targetPlan = Plan::active()->findOrFail($request->plan_id);
+
+        if ($targetPlan->id === $subscription->plan_id) {
+            return redirect()->route('admin.billing')
+                ->with('info', 'You are already on this plan.');
+        }
+
+        $isUpgrade = $subscription->isUpgrade($targetPlan);
+
+        if ($isUpgrade) {
+            $planChange->executeUpgrade($subscription, $targetPlan, $request->billing_interval);
+        } else {
+            $planChange->executeDowngrade($subscription, $targetPlan, $request->billing_interval);
+        }
+
+        $action = $isUpgrade ? 'upgraded' : ($subscription->hasPendingDowngrade() ? 'downgrade scheduled' : 'changed');
+
+        return redirect()->route('admin.billing')
+            ->with('success', "Your plan has been {$action} successfully.");
+    }
+
+    public function cancelScheduledChange(Request $request, SubscriptionPlanChangeService $planChange)
+    {
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403);
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $subscription = $tenant->subscription;
+        if (!$subscription || !$subscription->hasPendingDowngrade()) {
+            return redirect()->route('admin.billing')
+                ->with('info', 'No scheduled plan change found.');
+        }
+
+        $planChange->cancelScheduledChange($subscription);
+
+        return redirect()->route('admin.billing')
+            ->with('success', 'Scheduled plan change has been cancelled.');
     }
 
     public function checkout(string $planSlug)

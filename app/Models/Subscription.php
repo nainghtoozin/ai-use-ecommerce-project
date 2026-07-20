@@ -22,6 +22,8 @@ class Subscription extends Model
         'cancelled_at',
         'suspended_at',
         'notes',
+        'pending_plan_id',
+        'pending_plan_effective_at',
     ];
 
     protected $casts = [
@@ -31,6 +33,7 @@ class Subscription extends Model
         'trial_renewals_count' => 'integer',
         'cancelled_at' => 'datetime',
         'suspended_at' => 'datetime',
+        'pending_plan_effective_at' => 'datetime',
     ];
 
     /* ── Billing helpers ── */
@@ -50,6 +53,11 @@ class Subscription extends Model
     public function plan()
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function pendingPlan()
+    {
+        return $this->belongsTo(Plan::class, 'pending_plan_id');
     }
 
     public function auditLogs()
@@ -236,6 +244,64 @@ class Subscription extends Model
             'cancelled_at' => now(),
             'expires_at' => now(),
         ]);
+    }
+
+    /* ── Plan change (upgrade / downgrade) ── */
+
+    public function changePlan(Plan $newPlan, ?string $billingInterval = null): void
+    {
+        $interval = $billingInterval ?? $this->billing_interval ?? 'monthly';
+        $oldPlanId = $this->plan_id;
+
+        $expiresAt = $newPlan->calculateExpiryDate($this->expires_at?->isFuture() ? $this->expires_at : now(), $interval);
+
+        $this->update([
+            'plan_id' => $newPlan->id,
+            'billing_interval' => $interval,
+            'expires_at' => $expiresAt,
+            'pending_plan_id' => null,
+            'pending_plan_effective_at' => null,
+        ]);
+
+        $this->tenant->unlock();
+    }
+
+    public function scheduleDowngrade(Plan $targetPlan): void
+    {
+        if (!$this->expires_at || $this->expires_at->isPast()) {
+            $this->changePlan($targetPlan);
+            return;
+        }
+
+        $this->update([
+            'pending_plan_id' => $targetPlan->id,
+            'pending_plan_effective_at' => $this->expires_at,
+        ]);
+    }
+
+    public function cancelScheduledDowngrade(): void
+    {
+        $this->update([
+            'pending_plan_id' => null,
+            'pending_plan_effective_at' => null,
+        ]);
+    }
+
+    public function hasPendingDowngrade(): bool
+    {
+        return $this->pending_plan_id !== null;
+    }
+
+    public function isUpgrade(Plan $targetPlan): bool
+    {
+        if (!$this->plan) {
+            return true;
+        }
+
+        $currentPrice = (float) ($this->plan->getPriceForInterval($this->billing_interval ?? 'monthly') ?? 0);
+        $targetPrice = (float) ($targetPlan->getPriceForInterval($this->billing_interval ?? 'monthly') ?? 0);
+
+        return $targetPrice >= $currentPrice;
     }
 
     /* ── Renewal via billing interval ── */

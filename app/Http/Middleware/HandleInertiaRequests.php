@@ -56,8 +56,20 @@ class HandleInertiaRequests extends Middleware
             $projection['subscription'] = $subscription ? [
                 'status' => $subscription->status,
                 'plan_name' => $subscription->plan?->name,
+                'plan_id' => $subscription->plan_id,
                 'expires_at' => $subscription->expires_at?->toDateString(),
+                'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+                'billing_interval' => $subscription->billing_interval,
+                'days_until_expiry' => $subscription->daysUntilExpiry(),
+                'days_since_expiry' => $subscription->daysSinceExpiry(),
+                'on_trial' => $subscription->isTrialing(),
+                'trial_days_remaining' => $subscription->daysLeftInTrial(),
+                'is_locked' => $tenant?->isLocked() ?? false,
+                'grace_days_remaining' => $subscription->status === 'past_due' && $subscription->expires_at
+                    ? max(0, \App\Models\Subscription::GRACE_DAYS - abs(now()->diffInDays($subscription->expires_at, false)))
+                    : 0,
             ] : null;
+            $projection['is_super_admin'] = $isSuperAdmin;
             $projection['is_impersonating'] = $isImpersonating;
             $projection['impersonator_name'] = $impersonatorName;
         }
@@ -89,6 +101,7 @@ class HandleInertiaRequests extends Middleware
                 'logo' => $tenant->logo,
                 'settings' => $tenant->settings,
                 'status' => $tenant->status,
+                'locked_at' => $tenant->locked_at?->toDateTimeString(),
                 'subscription_expired' => $subscriptionExpired,
             ] : null,
             'cart' => $isSuperAdmin ? ['count' => 0, 'total' => 0, 'items' => []] : $cart,

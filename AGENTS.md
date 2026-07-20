@@ -2,6 +2,21 @@
 
 Date: 2026-07-20
 
+## Sprint 9.2 — Subscription & Billing (Complete)
+
+| Area | Status |
+|------|--------|
+| Invoices (model, migration, service, controller, auto-generation listener, pages) | ✅ Complete |
+| Plan change with proration (upgrade immediate, downgrade scheduled) | ✅ Complete |
+| Subscription status banner (6 states in AdminLayout) | ✅ Complete |
+| Renewal with trial limit checks | ✅ Complete |
+| Expiry lifecycle (active→past_due→expired→suspended, trial→expired) | ✅ Complete |
+| Grace period (7-day, UI countdown) | ✅ Complete |
+| Payment verification flow (evidence upload, review, approve/reject) | ✅ Complete |
+| Console commands (`subscriptions:send-reminders`, `subscriptions:apply-scheduled-changes`) | ✅ Complete |
+
+**Audit report:** `docs/sprint-9.2-subscription-billing-audit.md`
+
 ## 9-Point Production Readiness Checklist
 
 ### 1. Logout & Session Cleanup ✅
@@ -84,3 +99,7 @@ Date: 2026-07-20
 | Missing idempotency key on order creation | Race condition window is small; transaction + stock validation reduce risk significantly |
 | Race condition in stock check (non-locking read) | `validateStock()` runs before transaction; concurrent orders could race. Future: add `lockForUpdate()` inside transaction |
 | AuthenticateSession middleware not registered | Adding it would break password confirmation flow without additional work. Deferred to post-launch hardening |
+| Invoice download as HTML (not PDF) | No PDF library (dompdf) available; browser "Save as PDF" is the workaround |
+| No Stripe/PayPal gateway integration | Only manual payment gateway implemented; real-time gateways deferred |
+| No idempotency key on plan change execution | Transaction wrapping prevents partial writes; race window is small |
+| Grace period hard-coded at 7 days | Future: make configurable per-plan or via platform settings |

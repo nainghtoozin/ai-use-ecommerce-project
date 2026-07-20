@@ -287,7 +287,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         'store_slug' => null,
     ]))->name('suspended');
     Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');
+    Route::get('/billing/subscription', [\App\Http\Controllers\Admin\AdminBillingController::class, 'subscription'])->name('billing.subscription');
+    Route::get('/billing/upgrade', [\App\Http\Controllers\Admin\AdminBillingController::class, 'upgrade'])->name('billing.upgrade');
+    Route::get('/billing/payment-history', [\App\Http\Controllers\Admin\AdminBillingController::class, 'paymentHistory'])->name('billing.payment-history');
+    Route::get('/billing/settings', [\App\Http\Controllers\Admin\AdminBillingController::class, 'settings'])->name('billing.settings');
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
+    Route::post('/billing/change-plan/preview', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
+    Route::post('/billing/change-plan/execute', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
+    Route::post('/billing/change-plan/cancel', [\App\Http\Controllers\Admin\AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
+
+    // ── Invoice routes ──
+    Route::get('/billing/invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'index'])->name('billing.invoices');
+    Route::get('/billing/invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'show'])->name('billing.invoices.show');
+    Route::get('/billing/invoices/{invoice}/download', [\App\Http\Controllers\Admin\InvoiceController::class, 'download'])->name('billing.invoices.download');
 
     // ── Operations routes (blocked when expired/suspended/locked) ──
     Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {

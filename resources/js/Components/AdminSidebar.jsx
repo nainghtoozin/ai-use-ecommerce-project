@@ -156,7 +156,8 @@ export default function AdminSidebar() {
                     { label: 'Overview', href: '/admin/billing', icon: 'CreditCard' },
                     { label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' },
                     { label: 'Upgrade', href: '/admin/billing/upgrade', icon: 'ArrowUp' },
-                    { label: 'History', href: '/admin/billing/payment-history', icon: 'Receipt' },
+                    { label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' },
+                    { label: 'History', href: '/admin/billing/payment-history', icon: 'Clock' },
                     { label: 'Settings', href: '/admin/billing/settings', icon: 'Settings' },
                 ]
             }] : []),
