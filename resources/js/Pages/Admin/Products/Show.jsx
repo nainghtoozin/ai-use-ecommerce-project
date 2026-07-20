@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
+import { usePermission } from '@/Hooks/usePermission';
 import {
     Eye,
     Edit3,
@@ -70,9 +71,7 @@ function VariantLabel({ attrs }) {
 }
 
 export default function ProductShow({ product, relatedCombos = [] }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
     const TypeIcon = TYPE_ICONS[product.type] || Package;
     const typeConfig = TYPE_COLORS[product.type] || TYPE_COLORS.single;
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);

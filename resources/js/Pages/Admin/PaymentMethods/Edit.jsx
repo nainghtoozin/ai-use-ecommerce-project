@@ -3,11 +3,10 @@ import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function PaymentMethodEdit({ paymentMethod }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
     const { data, setData, post, processing, errors } = useForm({
         name: paymentMethod.name || '',
         type: paymentMethod.type || 'bank_transfer',

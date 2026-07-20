@@ -1,12 +1,10 @@
 import { Link, Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function UsersShow({ user, activities }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
-    const isSuperAdmin = auth?.user?.is_superadmin ?? false;
+    const { can, isOwner, isSuperAdmin } = usePermission();
 
     const statusBadge = (status) => {
         const colors = {

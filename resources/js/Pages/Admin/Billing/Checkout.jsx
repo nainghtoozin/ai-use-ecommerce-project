@@ -5,6 +5,7 @@ import StatusBadge from '@/Components/Billing/StatusBadge';
 import { Check, Copy, CheckCheck, ArrowRight, Clock, ShieldCheck, Upload, Eye, Zap } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
+import { usePermission } from '@/Hooks/usePermission';
 
 function formatBytes(v) {
     if (v === null || v === undefined) return null;
@@ -73,10 +74,8 @@ const steps = [
 ];
 
 export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan, subscription, allFeatureDefs, plans }) {
-    const { auth } = usePage().props;
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
 
     const yearlySavingsAmount = selectedPlan?.monthly_price && selectedPlan?.yearly_price
         ? (parseFloat(selectedPlan.monthly_price) * 12) - parseFloat(selectedPlan.yearly_price)

@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function PermissionsEdit({ permission }) {
     const { props } = usePage();
-    const { auth } = props;
-    const userPermissions = auth?.user?.permissions || [];
-    if (!userPermissions.includes('permissions.update')) {
+    const { can } = usePermission();
+    if (!can('permissions.update')) {
         router.get(adminUrl('/admin/permissions'));
         return null;
     }

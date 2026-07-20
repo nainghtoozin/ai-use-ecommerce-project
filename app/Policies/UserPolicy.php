@@ -2,71 +2,68 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Models\Account;
+use App\Services\AuthorizationService;
 
 class UserPolicy
 {
-    public function viewAny(User $user): bool
+    public function viewAny(Account $account): bool
     {
-        return $user->isAdmin();
+        return AuthorizationService::can('users.view', $account);
     }
 
-    public function view(User $user, User $model): bool
+    public function view(Account $account, Account $target): bool
     {
-        return $user->isAdmin() || $user->id === $model->id;
+        return AuthorizationService::can('users.view', $account);
     }
 
-    public function create(User $user): bool
+    public function create(Account $account): bool
     {
-        return $user->isAdmin();
+        return AuthorizationService::can('users.create', $account);
     }
 
-    public function update(User $user, User $model): bool
+    public function update(Account $account, Account $target): bool
     {
-        return $user->isAdmin();
+        return AuthorizationService::can('users.update', $account);
     }
 
-    private function canModifyUser(User $user, User $model): bool
+    public function delete(Account $account, Account $target): bool
     {
-        if ($user->id === $model->id) {
+        // Cannot delete owner
+        if ($target->isOwner()) {
             return false;
         }
 
-        if ($model->hasRole('superadmin')) {
-            $count = User::role('superadmin')->count();
-            return $count > 1;
+        return AuthorizationService::can('users.delete', $account);
+    }
+
+    public function restore(Account $account, Account $target): bool
+    {
+        return AuthorizationService::can('users.update', $account);
+    }
+
+    public function forceDelete(Account $account, Account $target): bool
+    {
+        return AuthorizationService::isSuperAdmin($account);
+    }
+
+    public function suspend(Account $account, Account $target): bool
+    {
+        // Cannot suspend owner
+        if ($target->isOwner()) {
+            return false;
         }
 
-        if ($model->hasRole('admin')) {
-            $count = User::role('admin')->count();
-            return $count > 1;
+        return AuthorizationService::can('users.suspend', $account);
+    }
+
+    public function ban(Account $account, Account $target): bool
+    {
+        // Cannot ban owner
+        if ($target->isOwner()) {
+            return false;
         }
 
-        return $user->isAdmin();
-    }
-
-    public function delete(User $user, User $model): bool
-    {
-        return $this->canModifyUser($user, $model);
-    }
-
-    public function suspend(User $user, User $model): bool
-    {
-        return $user->isAdmin() && $user->id !== $model->id;
-    }
-
-    public function ban(User $user, User $model): bool
-    {
-        return $user->isAdmin() && $user->id !== $model->id;
-    }
-
-    public function activate(User $user, User $model): bool
-    {
-        return $user->isAdmin();
-    }
-
-    public function assignRole(User $user, User $model): bool
-    {
-        return $this->canModifyUser($user, $model);
+        return AuthorizationService::can('users.ban', $account);
     }
 }

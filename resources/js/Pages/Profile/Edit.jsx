@@ -16,12 +16,13 @@ const NOTIFICATION_LABELS = {
     notification_sound: { label: 'Notification Sound', desc: 'Play a sound when new notifications arrive' },
 };
 
-export default function ProfileEdit({ mustVerifyEmail, status, notificationPreferences, allowedNotificationTypes }) {
+export default function ProfileEdit({ mustVerifyEmail, status, notificationPreferences, allowedNotificationTypes, currentRole, currentPermissions }) {
     const { auth } = usePage().props;
 
     const profileForm = useForm({
         name: auth.user.name || '',
         email: auth.user.email || '',
+        profile_image: null,
     });
 
     const passwordForm = useForm({
@@ -35,11 +36,15 @@ export default function ProfileEdit({ mustVerifyEmail, status, notificationPrefe
     const [preferences, setPreferences] = useState(notificationPreferences || {});
     const [savingPrefs, setSavingPrefs] = useState(false);
     const [prefSuccess, setPrefSuccess] = useState(false);
+    const [avatarPreview, setAvatarPreview] = useState(null);
 
     function submitProfile(e) {
         e.preventDefault();
         profileForm.patch(adminUrl('/profile'), {
-            onSuccess: () => profileForm.reset(),
+            onSuccess: () => {
+                profileForm.reset('profile_image');
+                setAvatarPreview(null);
+            },
         });
     }
 
@@ -152,6 +157,71 @@ export default function ProfileEdit({ mustVerifyEmail, status, notificationPrefe
                         </div>
                     </form>
                 </div>
+
+                {/* Profile Photo */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-1">Profile Photo</h2>
+                    <p className="text-sm text-gray-500 mb-6">Update your profile photo.</p>
+
+                    <div className="flex items-center gap-6">
+                        <div className="shrink-0">
+                            {avatarPreview ? (
+                                <img src={avatarPreview} alt="Preview" className="w-20 h-20 rounded-full object-cover ring-2 ring-gray-200" />
+                            ) : auth.user.profile_image_url ? (
+                                <img src={auth.user.profile_image_url} alt="Avatar" className="w-20 h-20 rounded-full object-cover ring-2 ring-gray-200" />
+                            ) : (
+                                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 ring-2 ring-gray-200">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <label className="block">
+                                <span className="sr-only">Choose photo</span>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            profileForm.setData('profile_image', file);
+                                            setAvatarPreview(URL.createObjectURL(file));
+                                        }
+                                    }}
+                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                />
+                            </label>
+                            <p className="text-xs text-gray-400 mt-2">JPEG, PNG, GIF, or WebP. Max 2MB.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {currentRole && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-1">Role & Permissions</h2>
+                    <p className="text-sm text-gray-500 mb-4">Your current role and granted permissions.</p>
+
+                    <div className="mb-4">
+                        <span className="text-sm font-medium text-gray-700">Role: </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                            {currentRole}
+                        </span>
+                    </div>
+
+                    {currentPermissions?.length > 0 && (
+                        <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Permissions</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {currentPermissions.map((perm) => (
+                                    <span key={perm} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20">
+                                        {perm}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                )}
 
                 {/* Update Password */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">

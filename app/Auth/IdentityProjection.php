@@ -33,7 +33,7 @@ class IdentityProjection
         $permissions = $user->getAllPermissions()->pluck('name')->toArray();
 
         $isOwner = !$isSuperAdmin && $useAccounts && $user instanceof Account
-            ? ($membership ? $membership->is_owner : false)
+            ? $user->isOwner($tenant?->id)
             : ($user instanceof User && method_exists($user, 'isOwner') ? $user->isOwner() : false);
 
         $joinedAt = !$isSuperAdmin && $useAccounts && $user instanceof Account && $membership

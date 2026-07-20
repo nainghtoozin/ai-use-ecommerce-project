@@ -3,11 +3,10 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { Search, Plus, Trash2, Image } from 'lucide-react';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function BrandsIndex({ brands, query = '' }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
     const [search, setSearch] = useState(query);
     const [deleteModal, setDeleteModal] = useState(null);
     const searchTimeout = useRef(null);

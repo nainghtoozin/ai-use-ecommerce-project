@@ -157,6 +157,15 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         return (bool) $this->is_owner;
     }
 
+    public function getAllPermissions(): \Illuminate\Support\Collection
+    {
+        if ($this->isOwner()) {
+            return \Spatie\Permission\Models\Permission::all();
+        }
+
+        return parent::getAllPermissions();
+    }
+
     public function scopeOwners($query)
     {
         return $query->where('is_owner', true);

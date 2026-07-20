@@ -21,12 +21,12 @@ export default function AdminSidebar() {
     const { props, url } = usePage();
     const { auth, website_info, platform_setting, tenant, featureStatus } = props;
     const userPermissions = auth?.user?.permissions;
-    const can = (perm) => userPermissions?.includes(perm);
+    const isSuperAdmin = auth?.user?.is_superadmin;
+    const isOwner = auth?.user?.is_owner;
+    const can = (perm) => isSuperAdmin || isOwner || userPermissions?.includes(perm);
     const hasFeature = (key) => featureStatus?.[key]?.enabled !== false;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
-
-    const isSuperAdmin = auth?.user?.is_superadmin;
     const brandLogo = isSuperAdmin ? platform_setting?.site_logo : website_info?.logo;
     const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (website_info?.site_name || 'My Store');
     const logoUrl = assetUrl(brandLogo);

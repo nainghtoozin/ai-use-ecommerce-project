@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentMethodStoreRequest;
 use App\Http\Requests\PaymentMethodUpdateRequest;
 use App\Models\PaymentMethod;
+use App\Services\ActivityLogger;
 use App\Services\PaymentMethodService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -44,7 +45,9 @@ class AdminPaymentMethodController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $this->paymentMethodService->createPaymentMethod($request->validated());
+        $paymentMethod = $this->paymentMethodService->createPaymentMethod($request->validated());
+
+        ActivityLogger::log("Payment method '{$paymentMethod->name}' created", 'payment_method_created', $paymentMethod);
 
         return admin_redirect('admin.payment-methods.index')
             ->with('success', 'Payment method created successfully.');
@@ -69,6 +72,8 @@ class AdminPaymentMethodController extends Controller
 
         $this->paymentMethodService->updatePaymentMethod($paymentMethod, $request->validated());
 
+        ActivityLogger::log("Payment method '{$paymentMethod->name}' updated", 'payment_method_updated', $paymentMethod);
+
         return admin_redirect('admin.payment-methods.index')
             ->with('success', 'Payment method updated successfully.');
     }
@@ -78,6 +83,8 @@ class AdminPaymentMethodController extends Controller
         if (!auth()->user()->can('payments.delete')) {
             abort(403, 'Unauthorized');
         }
+
+        ActivityLogger::log("Payment method '{$paymentMethod->name}' deleted", 'payment_method_deleted', $paymentMethod);
 
         $this->paymentMethodService->deletePaymentMethod($paymentMethod);
 

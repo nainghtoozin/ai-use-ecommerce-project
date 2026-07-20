@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\Category;
@@ -43,7 +44,9 @@ class AdminCategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Category::create($request->only(['name', 'description']));
+        $category = Category::create($request->only(['name', 'description']));
+
+        ActivityLogger::log("Category '{$category->name}' created", 'category_created', $category);
 
         return admin_redirect('admin.categories.index')
                          ->with('success', 'Category created successfully!');
@@ -73,6 +76,8 @@ class AdminCategoryController extends Controller
 
         $category->update($request->only(['name', 'description']));
 
+        ActivityLogger::log("Category '{$category->name}' updated", 'category_updated', $category);
+
         return admin_redirect('admin.categories.index')
                          ->with('success', 'Category updated successfully!');
     }
@@ -82,6 +87,8 @@ class AdminCategoryController extends Controller
         if (!auth()->user()->can('categories.delete')) {
             abort(403, 'Unauthorized');
         }
+
+        ActivityLogger::log("Category '{$category->name}' deleted", 'category_deleted', $category);
 
         $category->delete();
         return admin_redirect('admin.categories.index')

@@ -2,13 +2,12 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 const SYSTEM_METHODS = ['Cash', 'Cash On Delivery'];
 
 export default function PaymentMethodsIndex({ paymentMethods }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
     const isSystemMethod = (name) => SYSTEM_METHODS.includes(name);
     function handleToggle(id) {
         router.post(adminUrl(`/admin/payment-methods/${id}/toggle`));

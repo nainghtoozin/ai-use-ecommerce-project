@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function UnitsIndex({ units, query = '' }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
     const [search, setSearch] = useState(query);
 
     function handleSearch(e) {

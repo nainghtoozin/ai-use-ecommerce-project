@@ -86,7 +86,8 @@ class RoleController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
+        $tenantId = Tenant::getCurrent()?->id;
+        $role = Role::create(['name' => $request->name, 'guard_name' => 'web', 'tenant_id' => $tenantId]);
 
         if ($request->filled('permissions')) {
             $role->syncPermissions($request->permissions);

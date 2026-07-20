@@ -3,6 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useState } from 'react';
+import { usePermission } from '@/Hooks/usePermission';
 
 const paymentMethodStyles = {
     kpay:      { icon: 'bi-phone',       bg: 'bg-blue-100', text: 'text-blue-600' },
@@ -156,9 +157,26 @@ export default function AdminDashboard({
     };
 
     const { auth } = usePage().props;
+    const { can } = usePermission();
     const subscriptionExpired = auth?.user?.subscription_expired;
     const subscriptionStatus = auth?.user?.subscription?.status;
     const showBanner = subscriptionExpired || subscriptionStatus === 'past_due' || subscriptionStatus === 'suspended';
+
+    const widgetPermissions = {
+        Orders: 'orders.view',
+        Pending: 'orders.view',
+        'Total Received Payments': 'payments.view',
+        Products: 'products.view',
+        'Low Stock': 'products.view',
+        Customers: 'customers.view',
+    };
+
+    const visibleStatCards = statCards.filter(s => can(widgetPermissions[s.label]));
+    const canViewOrders = can('orders.view');
+    const canViewPayments = can('payments.view');
+    const canViewProducts = can('products.view');
+    const ordersColSpan = canViewOrders && !canViewProducts ? 'lg:col-span-3' : 'lg:col-span-2';
+    const hasAnyWidgets = visibleStatCards.length > 0 || canViewOrders || canViewPayments || canViewProducts;
 
     return (
         <AdminLayout>
@@ -286,31 +304,44 @@ export default function AdminDashboard({
                     )}
                 </div>
 
+                {/* Empty State */}
+                {!hasAnyWidgets && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 mb-4">
+                            <i className="bi bi-grid-3x3-gap-fill text-2xl text-gray-300"></i>
+                        </div>
+                        <h3 className="text-base font-semibold text-gray-700 mb-1">No dashboard widgets available</h3>
+                        <p className="text-sm text-gray-500">No dashboard widgets are available for your current permissions.</p>
+                    </div>
+                )}
+
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
-                    {statCards.map((stat, idx) => {
-                        const colors = colorMap[stat.color];
-                        return (
-                            <div
-                                key={idx}
-                                className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
-                            >
-                                <div className="flex items-center gap-3 lg:gap-4">
-                                    <div className={`p-2 lg:p-2.5 rounded-lg shrink-0 ${colors.bg}`}>
-                                        <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-lg sm:text-xl font-bold text-gray-900 break-words">{stat.value}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                {visibleStatCards.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+                        {visibleStatCards.map((stat, idx) => {
+                            const colors = colorMap[stat.color];
+                            return (
+                                <div
+                                    key={idx}
+                                    className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
+                                >
+                                    <div className="flex items-center gap-3 lg:gap-4">
+                                        <div className={`p-2 lg:p-2.5 rounded-lg shrink-0 ${colors.bg}`}>
+                                            <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-lg sm:text-xl font-bold text-gray-900 break-words">{stat.value}</p>
+                                            <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Payment Methods Breakdown */}
-                {paymentMethodSummary?.length > 0 && (
+                {canViewPayments && paymentMethodSummary?.length > 0 && (
                     <div className="bg-white rounded-xl border border-gray-200">
                         <div className="px-5 py-4 border-b border-gray-100">
                             <h2 className="text-sm font-semibold text-gray-700">Payment Methods Breakdown</h2>
@@ -361,7 +392,8 @@ export default function AdminDashboard({
                 {/* Recent Orders + Stock Alerts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Recent Orders */}
-                    <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200">
+                    {canViewOrders && (
+                    <div className={`${ordersColSpan} bg-white rounded-xl border border-gray-200`}>
                         <div className="flex items-center justify-between p-5 border-b border-gray-100">
                             <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
                             <Link href={adminUrl('/admin/orders')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
@@ -419,8 +451,10 @@ export default function AdminDashboard({
                             </div>
                         )}
                     </div>
+                    )}
 
                     {/* Stock Alerts */}
+                    {canViewProducts && (
                     <div className="space-y-6">
                         {outOfStock?.data?.length > 0 && (
                             <div className="bg-white rounded-xl border border-red-200">
@@ -503,6 +537,7 @@ export default function AdminDashboard({
                             </div>
                         )}
                     </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>

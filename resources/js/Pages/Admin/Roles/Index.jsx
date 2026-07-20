@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function RolesIndex({ roles, filters }) {
     const { auth } = usePage().props;
-    const userPermissions = auth?.user?.permissions || [];
-    const canCreate = userPermissions.includes('roles.create');
-    const canUpdate = userPermissions.includes('roles.update');
-    const canDelete = userPermissions.includes('roles.delete');
+    const { can } = usePermission();
+    const canCreate = can('roles.create');
+    const canUpdate = can('roles.update');
+    const canDelete = can('roles.delete');
 
     const [search, setSearch] = useState(filters?.search || '');
 

@@ -21,6 +21,10 @@ class TeamController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         $members = TenantMembership::where('tenant_id', $tenant->id)
@@ -70,6 +74,10 @@ class TeamController extends Controller
 
     public function members(Request $request)
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
         $search = $request->input('search');
         $roleFilter = $request->input('role');
@@ -126,6 +134,10 @@ class TeamController extends Controller
 
     public function showJson(TenantMembership $member)
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         if ($member->tenant_id !== $tenant->id) {
@@ -160,6 +172,10 @@ class TeamController extends Controller
 
     public function invitations(Request $request)
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
         $search = $request->input('search');
         $statusFilter = $request->input('status');
@@ -199,6 +215,10 @@ class TeamController extends Controller
 
     public function invite(Request $request)
     {
+        if (!auth()->user()->can('users.create')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
         $inviter = auth()->user();
 
@@ -268,6 +288,10 @@ class TeamController extends Controller
 
     public function revokeInvitation(TeamInvitation $invitation)
     {
+        if (!auth()->user()->can('users.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         if ($invitation->tenant_id !== $tenant->id) {
@@ -289,6 +313,10 @@ class TeamController extends Controller
 
     public function updateRole(Request $request, TenantMembership $member)
     {
+        if (!auth()->user()->can('users.update')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         if ($member->tenant_id !== $tenant->id) {
@@ -326,6 +354,10 @@ class TeamController extends Controller
 
     public function suspend(TenantMembership $member)
     {
+        if (!auth()->user()->can('users.suspend')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         if ($member->tenant_id !== $tenant->id) {
@@ -351,6 +383,10 @@ class TeamController extends Controller
 
     public function restore(TenantMembership $member)
     {
+        if (!auth()->user()->can('users.activate')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         if ($member->tenant_id !== $tenant->id) {
@@ -372,6 +408,10 @@ class TeamController extends Controller
 
     public function remove(TenantMembership $member)
     {
+        if (!auth()->user()->can('users.delete')) {
+            abort(403, 'Unauthorized');
+        }
+
         $tenant = Tenant::getCurrent();
 
         if ($member->tenant_id !== $tenant->id) {

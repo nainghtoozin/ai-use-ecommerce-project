@@ -1,11 +1,10 @@
-import { Link, Head, router, usePage } from '@inertiajs/react';
+import { Link, Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function RolesShow({ role, grouped_permissions }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
 
     function confirmDelete() {
         const protectedRoles = ['superadmin', 'admin'];

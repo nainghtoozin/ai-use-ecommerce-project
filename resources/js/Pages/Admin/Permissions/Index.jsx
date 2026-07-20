@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { router, Head, usePage } from '@inertiajs/react';
+import { router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function PermissionsIndex({ permissions, grouped, filters }) {
-    const { auth } = usePage().props;
-    const userPermissions = auth?.user?.permissions || [];
-    const can = (perm) => userPermissions.includes(perm);
+    const { can } = usePermission();
     const [search, setSearch] = useState(filters?.search || '');
 
     function handleSearch(e) {

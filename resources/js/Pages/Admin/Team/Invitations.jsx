@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { Link, router, Head, usePage } from '@inertiajs/react';
+import { Link, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 function SkeletonRow() {
     return (
@@ -61,9 +62,8 @@ function StatusBadge({ isExpired, isPending }) {
 }
 
 export default function TeamInvitations({ invitations, filters }) {
-    const { auth } = usePage().props;
-    const isOwner = auth?.user?.is_owner;
-    const canManage = isOwner || auth?.user?.permissions?.includes('users.view');
+    const { can } = usePermission();
+    const canManage = can('users.view');
 
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');

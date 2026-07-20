@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessOrderNotifications;
 use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\CouponService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\ImageService;
 use App\Services\NotificationPreferenceService;
@@ -129,6 +132,11 @@ class OrderController extends Controller
             $items[] = $itemData;
         }
 
+        $stockErrors = $this->validateStock($items);
+        if (!empty($stockErrors)) {
+            return back()->with('error', implode(' ', $stockErrors));
+        }
+
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
 
         $deliveryFee = (float) 0;
@@ -173,38 +181,51 @@ class OrderController extends Controller
             $orderData['promotion_code'] = $promotionData['promotion']->code ?? 'AUTO';
         }
 
-        $order = auth()->check()
-            ? auth()->user()->orders()->create($orderData)
-            : Order::create($orderData);
+        try {
+            DB::beginTransaction();
 
-        if (!empty($couponData['coupon'])) {
-            $this->couponService->applyCouponToOrder(
-                $order,
-                $couponData['coupon'],
-                $couponData['discount']
-            );
-        }
+            $order = auth()->check()
+                ? auth()->user()->orders()->create($orderData)
+                : Order::create($orderData);
 
-        if (!empty($promotionData['promotion'])) {
-            $this->promotionService->applyPromotionToOrder(
-                $order,
-                $promotionData['promotion'],
-                $promotionData['discount']
-            );
-        }
-
-        foreach ($items as $item) {
-            $orderItemData = [
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-            ];
-
-            if (!empty($item['variant_id'])) {
-                $orderItemData['variant_id'] = $item['variant_id'];
+            if (!empty($couponData['coupon'])) {
+                $this->couponService->applyCouponToOrder(
+                    $order,
+                    $couponData['coupon'],
+                    $couponData['discount']
+                );
             }
 
-            $order->items()->create($orderItemData);
+            if (!empty($promotionData['promotion'])) {
+                $this->promotionService->applyPromotionToOrder(
+                    $order,
+                    $promotionData['promotion'],
+                    $promotionData['discount']
+                );
+            }
+
+            foreach ($items as $item) {
+                $orderItemData = [
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                ];
+
+                if (!empty($item['variant_id'])) {
+                    $orderItemData['variant_id'] = $item['variant_id'];
+                }
+
+                $order->items()->create($orderItemData);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Order creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Failed to place order. Please try again.');
         }
 
         ProcessOrderNotifications::dispatch($order, $paymentScreenshotPath)
@@ -267,5 +288,39 @@ class OrderController extends Controller
         }
 
         return [];
+    }
+
+    private function validateStock(array $items): array
+    {
+        $errors = [];
+        $productIds = array_unique(array_column($items, 'product_id'));
+        $variantIds = array_values(array_unique(array_filter(array_column($items, 'variant_id'))));
+
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $variants = !empty($variantIds)
+            ? ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id')
+            : collect();
+
+        foreach ($items as $item) {
+            if (!empty($item['variant_id'])) {
+                $variant = $variants->get($item['variant_id']);
+                if (!$variant) {
+                    $errors[] = 'A product variant in your cart no longer exists. Please review your cart.';
+                } elseif ($variant->stock < $item['quantity']) {
+                    $errors[] = "Insufficient stock for a product variant. Only {$variant->stock} available.";
+                }
+            } else {
+                $product = $products->get($item['product_id']);
+                if (!$product) {
+                    $errors[] = 'A product in your cart no longer exists. Please review your cart.';
+                } elseif (!$product->isInStock()) {
+                    $errors[] = "{$product->name} is out of stock and has been removed from your cart.";
+                } elseif ($product->stock < $item['quantity']) {
+                    $errors[] = "Insufficient stock for {$product->name}. Only {$product->stock} available.";
+                }
+            }
+        }
+
+        return $errors;
     }
 }

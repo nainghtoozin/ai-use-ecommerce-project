@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, router, Head, usePage } from '@inertiajs/react';
+import { Link, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function TeamIndex({ members, invitations, roles }) {
-    const { auth } = usePage().props;
-    const isOwner = auth?.user?.is_owner;
-    const canManage = isOwner || auth?.user?.permissions?.includes('users.view');
+    const { can } = usePermission();
+    const canManage = can('users.view');
 
     const [tab, setTab] = useState('members');
     const [search, setSearch] = useState('');

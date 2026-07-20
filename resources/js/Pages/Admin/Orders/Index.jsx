@@ -4,12 +4,12 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function AdminOrdersIndex({ orders, filters = {}, showPagination = true, warning = null }) {
     const { auth, platform_setting, website_info } = usePage().props;
     const cc = getCurrencyConfig(platform_setting, website_info);
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
 
     const [filterForm, setFilterForm] = useState({
         order_status: filters.order_status || '',

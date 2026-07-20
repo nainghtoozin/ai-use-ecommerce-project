@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
@@ -101,6 +102,8 @@ class PermissionController extends Controller
         $permission->update([
             'name' => $validated['name'],
         ]);
+
+        ActivityLogger::log("Permission '{$permission->name}' updated", 'permission_updated', $permission);
 
         return redirect()->route('admin.permissions.index')
             ->with('success', 'Permission updated successfully.');

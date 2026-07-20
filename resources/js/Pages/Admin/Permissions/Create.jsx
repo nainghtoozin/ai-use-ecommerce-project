@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function PermissionsCreate() {
     const { props } = usePage();
-    const { auth } = props;
-    const permissions = auth?.user?.permissions || [];
-    if (!permissions.includes('permissions.create')) {
+    const { can } = usePermission();
+    if (!can('permissions.create')) {
         router.get(adminUrl('/admin/permissions'));
         return null;
     }

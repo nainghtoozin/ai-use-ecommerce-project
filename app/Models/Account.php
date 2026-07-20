@@ -505,13 +505,14 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
             return Permission::all();
         }
 
+        // Owner always gets all permissions
+        if ($this->isOwner()) {
+            return Permission::all();
+        }
+
         $membership = $this->getCurrentMembership();
         if (!$membership) {
             return collect();
-        }
-
-        if ($membership->is_owner) {
-            return Permission::all();
         }
 
         return $membership->role?->permissions ?? collect();

@@ -3,12 +3,10 @@ import { Link, usePage, router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
+import { usePermission } from '@/Hooks/usePermission';
 
 export default function UsersIndex({ users, filters, roles, showPagination = true, warning = null }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
-    const isSuperAdmin = auth?.user?.is_superadmin ?? false;
+    const { can, isOwner, isSuperAdmin } = usePermission();
     const [search, setSearch] = useState(filters?.search || '');
     const [roleFilter, setRoleFilter] = useState(filters?.role || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');

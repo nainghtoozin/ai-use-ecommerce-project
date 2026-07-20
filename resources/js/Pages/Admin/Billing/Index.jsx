@@ -10,6 +10,7 @@ import ActivityTimeline from '@/Components/Billing/ActivityTimeline';
 import PlanCards from '@/Components/Billing/PlanCards';
 import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
 import { adminUrl } from '@/Utils/adminUrl';
+import { usePermission } from '@/Hooks/usePermission';
 
 
 function formatBytes(v) {
@@ -29,9 +30,7 @@ const limitRows = [
 ];
 
 export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs }) {
-    const { auth } = usePage().props;
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogTarget, setDialogTarget] = useState(null);

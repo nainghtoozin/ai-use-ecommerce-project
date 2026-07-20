@@ -15,8 +15,7 @@ export default function AdminOrdersShow({ order }) {
     const [overrideNewStatus, setOverrideNewStatus] = useState('');
     const [overrideReason, setOverrideReason] = useState('');
 
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
     const canOverrideStatus = can('orders.override-status');
     const canOverridePayment = can('orders.override-payment');
 

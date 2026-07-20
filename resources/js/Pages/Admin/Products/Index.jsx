@@ -19,6 +19,7 @@ import {
     Pencil,
 } from 'lucide-react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { usePermission } from '@/Hooks/usePermission';
 
 function formatStockForProduct(product) {
     if (product.type === 'variable') {
@@ -89,8 +90,7 @@ function InlineActions({ product, onDelete, can }) {
 export default function AdminProductsIndex({ products, categories, brands = [], filters = {}, showPagination = true, warning = null }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const { url, props: { auth } } = usePage();
-    const permissions = auth?.user?.permissions || [];
-    const can = (perm) => permissions.includes(perm);
+    const { can } = usePermission();
 
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || '');

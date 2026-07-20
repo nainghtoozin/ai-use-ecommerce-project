@@ -290,7 +290,9 @@ class AdminProductController extends Controller
             $this->validateComboItems($comboItemsPayload);
         }
 
-        DB::transaction(function () use ($data, $request, $variantsPayload, $variantImages, $comboItemsPayload) {
+        $product = null;
+
+        DB::transaction(function () use ($data, $request, $variantsPayload, $variantImages, $comboItemsPayload, &$product) {
             if ($request->hasFile('photo1')) {
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
             }
@@ -352,6 +354,8 @@ class AdminProductController extends Controller
 
             
         });
+
+        ActivityLogger::log("Product '{$product->name}' created", 'product_created', $product);
 
         return admin_redirect('admin.products.index')
             ->with('success', 'Product created successfully!');
@@ -632,6 +636,8 @@ class AdminProductController extends Controller
             
         });
 
+        ActivityLogger::log("Product '{$product->name}' updated", 'product_updated', $product);
+
         return admin_redirect('admin.products.index')
             ->with('success', 'Product updated successfully.');
     }
@@ -670,7 +676,7 @@ class AdminProductController extends Controller
             $product->delete();
         });
 
-        
+        ActivityLogger::log("Product '{$product->name}' deleted", 'product_deleted', $product);
 
         return admin_redirect('admin.products.index')
             ->with('success', 'Product deleted successfully!');

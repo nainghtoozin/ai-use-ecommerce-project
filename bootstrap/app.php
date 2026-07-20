@@ -36,6 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
+            'owner' => \App\Http\Middleware\CheckOwner::class,
+            'tenant-member' => \App\Http\Middleware\CheckTenantMember::class,
             'tenant.active' => EnsureTenantIsActive::class,
             'tenant.locked' => CheckStoreLocked::class,
             'tenant.valid' => TenantIsValid::class,
@@ -62,6 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
         \App\Providers\PermissionObserverServiceProvider::class,
         \App\Providers\AccountPasswordBrokerServiceProvider::class,
+        \App\Providers\AuthServiceProvider::class,
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
