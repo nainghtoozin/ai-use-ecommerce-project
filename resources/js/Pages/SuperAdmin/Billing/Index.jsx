@@ -207,6 +207,9 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [open, handleKeyDown]);
 
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+    const fmt = (a, c) => a == null ? '—' : _formatCurrency(a, { code: c || pc.code, symbol: pc.symbol, position: pc.position, decimals: pc.decimals });
+
     if (!open || !intent) return null;
 
     return (
