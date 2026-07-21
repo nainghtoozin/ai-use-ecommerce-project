@@ -6,6 +6,7 @@ use App\Data\Currency;
 use App\Models\PaymentIntent;
 use App\Models\Plan;
 use App\Models\Tenant;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class ManualPaymentService
@@ -47,13 +48,15 @@ class ManualPaymentService
     public function approvePayment(PaymentIntent $intent): PaymentIntent
     {
         return $this->guard->executeOnce($intent, 'manual.approve_payment', function () use ($intent) {
-            $this->intents->approve($intent);
+            return DB::transaction(function () use ($intent) {
+                $this->intents->approve($intent);
 
-            $fresh = $this->intents->markAsPaid($intent->fresh());
+                $fresh = $this->intents->markAsPaid($intent->fresh());
 
-            $this->intents->complete($fresh);
+                $this->intents->complete($fresh);
 
-            return $fresh->fresh();
+                return $fresh->fresh();
+            });
         });
     }
 

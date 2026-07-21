@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\AdminPromotionReportController;
 use App\Http\Controllers\Admin\AdminTownshipController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminBillingController;
+use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
@@ -73,6 +74,11 @@ Route::prefix('store/{store_slug}/admin')
     Route::post('/billing/change-plan/preview', [AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
     Route::post('/billing/change-plan/execute', [AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
     Route::post('/billing/change-plan/cancel', [AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
+
+    // ── Invoice routes ──
+    Route::get('/billing/invoices', [InvoiceController::class, 'index'])->name('billing.invoices');
+    Route::get('/billing/invoices/{invoice}', [InvoiceController::class, 'show'])->name('billing.invoices.show');
+    Route::get('/billing/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('billing.invoices.download');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

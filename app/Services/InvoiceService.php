@@ -12,8 +12,14 @@ class InvoiceService
 {
     public function generateFromPaymentIntent(PaymentIntent $intent): Invoice
     {
-        $subscription = $intent->subscription;
+        $subscription = $intent->subscription ?? $intent->tenant?->subscription;
         $tenant = $intent->tenant;
+
+        if (!$subscription) {
+            throw new \RuntimeException(sprintf(
+                'Cannot generate invoice: no subscription found for PaymentIntent #%d.', $intent->id
+            ));
+        }
 
         return DB::transaction(function () use ($intent, $subscription, $tenant) {
             $amount = (float) $intent->amount;
@@ -23,11 +29,11 @@ class InvoiceService
             $invoice = Invoice::create([
                 'tenant_id' => $tenant->id,
                 'invoice_number' => Invoice::generateNumber(),
-                'subscription_id' => $subscription?->id,
+                'subscription_id' => $subscription->id,
                 'plan_id' => $intent->plan_id,
                 'billing_interval' => $intent->billing_cycle ?? 'monthly',
-                'billing_period_start' => $subscription?->starts_at?->toDateString() ?? now()->startOfMonth()->toDateString(),
-                'billing_period_end' => $subscription?->expires_at?->toDateString() ?? now()->endOfMonth()->toDateString(),
+                'billing_period_start' => $subscription->starts_at?->toDateString() ?? now()->startOfMonth()->toDateString(),
+                'billing_period_end' => $subscription->expires_at?->toDateString() ?? now()->endOfMonth()->toDateString(),
                 'amount' => $amount,
                 'subtotal' => $amount,
                 'tax' => $tax,
