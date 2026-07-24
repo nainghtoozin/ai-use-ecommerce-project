@@ -40,6 +40,7 @@ export default function useProductForm({ product = null, productType = 'single' 
         gallery_images: product?.gallery_images || [],
         gallery_images_url: product?.gallery_images_url || [],
         existing_combo_items: product?.combo_items || [],
+        warehouse_id: product?.warehouse_id || '',
     });
 
     const [variants, setVariants] = useState(
@@ -110,6 +111,7 @@ export default function useProductForm({ product = null, productType = 'single' 
         form.append('cost_price', formData.cost_price || '');
         form.append('stock', formData.stock);
         form.append('low_stock_alert', formData.low_stock_alert ?? 5);
+        form.append('warehouse_id', formData.warehouse_id || '');
         form.append('category_id', formData.category_id);
         form.append('brand_id', formData.brand_id || '');
         form.append('unit_id', formData.unit_id || '');

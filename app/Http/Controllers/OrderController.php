@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\CouponService;
+use App\Services\StockCalculationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\ImageService;
@@ -26,7 +27,8 @@ class OrderController extends Controller
         private readonly NotificationPreferenceService $preferenceService,
         private readonly ImageService $imageService,
         private readonly CouponService $couponService,
-        private readonly PromotionService $promotionService
+        private readonly PromotionService $promotionService,
+        private readonly StockCalculationService $stockCalculationService,
     ) {}
 
     public function index(Request $request): \Inertia\Response
@@ -306,17 +308,23 @@ class OrderController extends Controller
                 $variant = $variants->get($item['variant_id']);
                 if (!$variant) {
                     $errors[] = 'A product variant in your cart no longer exists. Please review your cart.';
-                } elseif ($variant->stock < $item['quantity']) {
-                    $errors[] = "Insufficient stock for a product variant. Only {$variant->stock} available.";
+                } else {
+                    $stock = $this->stockCalculationService->forVariant($variant);
+                    if ($stock < $item['quantity']) {
+                        $errors[] = "Insufficient stock for a product variant. Only {$stock} available.";
+                    }
                 }
             } else {
                 $product = $products->get($item['product_id']);
                 if (!$product) {
                     $errors[] = 'A product in your cart no longer exists. Please review your cart.';
-                } elseif (!$product->isInStock()) {
-                    $errors[] = "{$product->name} is out of stock and has been removed from your cart.";
-                } elseif ($product->stock < $item['quantity']) {
-                    $errors[] = "Insufficient stock for {$product->name}. Only {$product->stock} available.";
+                } else {
+                    $stock = $this->stockCalculationService->forProduct($product);
+                    if ($stock <= 0) {
+                        $errors[] = "{$product->name} is out of stock and has been removed from your cart.";
+                    } elseif ($stock < $item['quantity']) {
+                        $errors[] = "Insufficient stock for {$product->name}. Only {$stock} available.";
+                    }
                 }
             }
         }

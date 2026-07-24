@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import CollapseCard from '@/Components/CollapseCard';
 import BasicInfoSection from './sections/BasicInfoSection';
+import InventorySection from './sections/InventorySection';
 import DescriptionSection from './sections/DescriptionSection';
 import MediaSection from './sections/MediaSection';
 import SEOSection from './sections/SEOSection';
@@ -32,6 +33,7 @@ export default function ProductFormMain({
     comboItems = [],
     setComboItems,
     selectableProducts = [],
+    isEdit = false,
 }) {
     const [mediaOpen, setMediaOpen] = useState(false);
     const [descOpen, setDescOpen] = useState(false);
@@ -58,6 +60,13 @@ export default function ProductFormMain({
                 photo1File={photo1File}
                 setPhoto1File={setPhoto1File}
                 existingPhoto1Url={existingPhoto1Url}
+            />
+
+            <InventorySection
+                data={data}
+                setData={setData}
+                errors={errors}
+                isEdit={isEdit}
             />
 
             {isVariable && (

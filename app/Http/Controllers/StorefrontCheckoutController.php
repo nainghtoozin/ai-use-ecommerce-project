@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Services\CouponService;
 use App\Services\ImageService;
 use App\Services\PromotionService;
+use App\Services\StockCalculationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,8 @@ class StorefrontCheckoutController extends Controller
     public function __construct(
         private readonly ImageService $imageService,
         private readonly CouponService $couponService,
-        private readonly PromotionService $promotionService
+        private readonly PromotionService $promotionService,
+        private readonly StockCalculationService $stockCalculationService,
     ) {}
 
     public function index()
@@ -182,6 +184,11 @@ class StorefrontCheckoutController extends Controller
             }
 
             $items[] = $itemData;
+        }
+
+        $stockErrors = $this->validateStock($items);
+        if (!empty($stockErrors)) {
+            return back()->with('error', implode(' ', $stockErrors));
         }
 
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
@@ -375,5 +382,45 @@ class StorefrontCheckoutController extends Controller
         }
 
         return [];
+    }
+
+    private function validateStock(array $items): array
+    {
+        $errors = [];
+        $productIds = array_unique(array_column($items, 'product_id'));
+        $variantIds = array_values(array_unique(array_filter(array_column($items, 'variant_id'))));
+
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $variants = !empty($variantIds)
+            ? ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id')
+            : collect();
+
+        foreach ($items as $item) {
+            if (!empty($item['variant_id'])) {
+                $variant = $variants->get($item['variant_id']);
+                if (!$variant) {
+                    $errors[] = 'A product variant in your cart no longer exists. Please review your cart.';
+                } else {
+                    $stock = $this->stockCalculationService->forVariant($variant);
+                    if ($stock < $item['quantity']) {
+                        $errors[] = "Insufficient stock for a product variant. Only {$stock} available.";
+                    }
+                }
+            } else {
+                $product = $products->get($item['product_id']);
+                if (!$product) {
+                    $errors[] = 'A product in your cart no longer exists. Please review your cart.';
+                } else {
+                    $stock = $this->stockCalculationService->forProduct($product);
+                    if ($stock <= 0) {
+                        $errors[] = "{$product->name} is out of stock and has been removed from your cart.";
+                    } elseif ($stock < $item['quantity']) {
+                        $errors[] = "Insufficient stock for {$product->name}. Only {$stock} available.";
+                    }
+                }
+            }
+        }
+
+        return $errors;
     }
 }

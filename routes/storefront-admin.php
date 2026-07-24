@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\AdminOrderOverrideController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCouponController;
+use App\Http\Controllers\Admin\AdminInventoryController;
+use App\Http\Controllers\Admin\AdminWarehouseController;
 use App\Http\Controllers\Admin\AdminPromotionController;
 use App\Http\Controllers\Admin\AdminPromotionBannerController;
 use App\Http\Controllers\Admin\AdminPromotionReportController;
@@ -137,6 +139,21 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update')->whereNumber('category');
         Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy')->whereNumber('category');
         Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
+
+        // Inventory
+        Route::get('/inventory/dashboard', [AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');
+        Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/movements', [AdminInventoryController::class, 'movements'])->name('inventory.movements');
+        Route::get('/inventory/product/{product}', [AdminInventoryController::class, 'show'])->name('inventory.product.show')->whereNumber('product');
+
+        // Warehouses
+        Route::get('/warehouses', [AdminWarehouseController::class, 'index'])->name('warehouses.index');
+        Route::get('/warehouses/search', [AdminWarehouseController::class, 'search'])->name('warehouses.search');
+        Route::get('/warehouses/create', [AdminWarehouseController::class, 'create'])->name('warehouses.create');
+        Route::post('/warehouses', [AdminWarehouseController::class, 'store'])->name('warehouses.store');
+        Route::get('/warehouses/{warehouse}/edit', [AdminWarehouseController::class, 'edit'])->name('warehouses.edit')->whereNumber('warehouse');
+        Route::put('/warehouses/{warehouse}', [AdminWarehouseController::class, 'update'])->name('warehouses.update')->whereNumber('warehouse');
+        Route::delete('/warehouses/{warehouse}', [AdminWarehouseController::class, 'destroy'])->name('warehouses.destroy')->whereNumber('warehouse');
 
         // Units
         Route::get('/units', [AdminUnitController::class, 'index'])->name('units.index');

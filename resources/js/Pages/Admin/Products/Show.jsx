@@ -120,7 +120,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {can('products.update') && (
+                        {can('products.edit') && (
                             <Link
                                 href={adminUrl(`/admin/products/${product.id}/edit`)}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -337,7 +337,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                             </div>
                                             <p className="text-sm font-medium text-gray-900">No variants defined</p>
                                     <p className="text-sm text-gray-500 mt-1">This variable product has no variants yet.</p>
-                                    {can('products.update') && (
+                                    {can('products.edit') && (
                                         <Link
                                             href={adminUrl(`/admin/products/${product.id}/edit`)}
                                             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
@@ -423,7 +423,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     </div>
                                     <p className="text-sm font-medium text-gray-900">No components added</p>
                                     <p className="text-sm text-gray-500 mt-1">This combo product has no items yet.</p>
-                                    {can('products.update') && (
+                                    {can('products.edit') && (
                                         <Link
                                             href={adminUrl(`/admin/products/${product.id}/edit`)}
                                             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
@@ -732,7 +732,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         {/* Quick Actions */}
                         <div className="sticky bottom-4">
                             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-3">
-                                {can('products.update') && (
+                                {can('products.edit') && (
                                     <Link
                                         href={adminUrl(`/admin/products/${product.id}/edit`)}
                                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"

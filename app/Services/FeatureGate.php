@@ -104,6 +104,8 @@ class FeatureGate
         'gift_cards' => 'Gift Cards',
         'loyalty_points' => 'Loyalty Points Program',
         'referral_system' => 'Referral System',
+        'inventory_management' => 'Inventory Management',
+        'warehouse_management' => 'Warehouse Management',
     ];
 
     /**
@@ -145,6 +147,8 @@ class FeatureGate
         'gift_cards' => 'Business',
         'loyalty_points' => 'Business',
         'referral_system' => 'Business',
+        'inventory_management' => 'Starter',
+        'warehouse_management' => 'Starter',
     ];
 
     protected ?HasSubscription $user = null;

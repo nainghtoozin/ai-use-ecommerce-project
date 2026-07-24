@@ -13,7 +13,8 @@ function slugify(text) {
 }
 
 export default function BasicInfoSection({ data, setData, errors, photo1File, setPhoto1File, existingPhoto1Url }) {
-    const { units = [], categories = [], brands = [] } = usePage().props;
+    const { units = [], categories = [], brands = [], featureStatus = {} } = usePage().props;
+    const inventoryEnabled = featureStatus.inventory_management?.enabled !== false;
     const [status, setStatus] = useState(data.status || 'active');
     const isGeneratingSlug = useRef(true);
 
@@ -233,33 +234,35 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         {/* Divider */}
                         <div className="border-t border-gray-100" />
 
-                        {/* Inventory */}
-                        <div>
-                            <h4 className="text-sm font-semibold text-gray-900 mb-4">Inventory</h4>
-                            <div className="space-y-4 max-w-md">
-                                <FormInput
-                                    label="Quantity In Stock"
-                                    name="stock"
-                                    type="number"
-                                    value={data.stock}
-                                    onChange={(e) => setData('stock', e.target.value)}
-                                    placeholder="0"
-                                    error={errors.stock}
-                                    min="0"
-                                />
-                                <FormInput
-                                    label="Low Stock Alert Threshold"
-                                    name="low_stock_alert"
-                                    type="number"
-                                    value={data.low_stock_alert ?? 5}
-                                    onChange={(e) => setData('low_stock_alert', e.target.value)}
-                                    placeholder="5"
-                                    error={errors.low_stock_alert}
-                                    min="0"
-                                    helpText="Receive alert when stock drops below this number"
-                                />
+                        {/* Inventory — only when inventory feature is disabled (backward compat) */}
+                        {!inventoryEnabled && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-gray-900 mb-4">Inventory</h4>
+                                <div className="space-y-4 max-w-md">
+                                    <FormInput
+                                        label="Quantity In Stock"
+                                        name="stock"
+                                        type="number"
+                                        value={data.stock}
+                                        onChange={(e) => setData('stock', e.target.value)}
+                                        placeholder="0"
+                                        error={errors.stock}
+                                        min="0"
+                                    />
+                                    <FormInput
+                                        label="Low Stock Alert Threshold"
+                                        name="low_stock_alert"
+                                        type="number"
+                                        value={data.low_stock_alert ?? 5}
+                                        onChange={(e) => setData('low_stock_alert', e.target.value)}
+                                        placeholder="5"
+                                        error={errors.low_stock_alert}
+                                        min="0"
+                                        helpText="Receive alert when stock drops below this number"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </>
                 )}
 

@@ -8,6 +8,7 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Auth\IdentityResolver;
 use App\Models\ProductVariant;
+use App\Models\StockMovement;
 use App\Models\City;
 use App\Models\Township;
 use App\Models\Coupon;
@@ -28,7 +29,9 @@ class OrderService
     public function __construct(
         private readonly NotificationPreferenceService $preferenceService,
         private readonly CouponService $couponService,
-        private readonly PromotionService $promotionService
+        private readonly PromotionService $promotionService,
+        private readonly StockMovementService $stockMovementService,
+        private readonly StockCalculationService $stockCalculationService,
     ) {}
 
     public function createOrder(array $orderData, array $items, ?array $couponData = null, ?array $promotionData = null): Order
@@ -199,14 +202,14 @@ class OrderService
                     throw new \InvalidArgumentException("Invalid variant: {$variantId}");
                 }
 
-                $stock = (int) ($variant->stock ?? 0);
+                $stock = $this->stockCalculationService->forVariant($variant);
                 if ($stock < $quantity) {
                     throw new \InvalidArgumentException(
                         "Insufficient stock for variant: {$variant->label}. Available: {$stock}, Requested: {$quantity}"
                     );
                 }
             } else {
-                $stock = (int) ($product->stock ?? 0);
+                $stock = $this->stockCalculationService->forProduct($product);
                 if ($stock < $quantity) {
                     throw new \InvalidArgumentException(
                         "Insufficient stock for product: {$product->name}. Available: {$stock}, Requested: {$quantity}"
@@ -270,15 +273,23 @@ class OrderService
                 }
 
                 if ($product->isCombo()) {
-                    $this->reduceComboStock($product, $item->quantity, $item->id);
+                    $this->reduceComboStock($product, $item->quantity, $item->id, $order);
                 } elseif ($item->variant_id) {
                     $variant = $item->variant;
                     if ($variant) {
-                        $oldStock = $variant->stock;
-                        $newStock = max(0, $variant->stock - $item->quantity);
-                        $variant->update(['stock' => $newStock]);
+                        $oldStock = $this->stockCalculationService->forVariant($variant);
+                        $this->stockMovementService->record(
+                            product: $product,
+                            type: StockMovement::TYPE_SALE,
+                            quantity: -$item->quantity,
+                            variant: $variant,
+                            referenceType: 'order',
+                            referenceId: $order->id,
+                            description: "Order #{$order->id} confirmed",
+                        );
+                        $newStock = $this->stockCalculationService->forVariant($variant);
 
-                        Log::info('Variant stock reduced:', [
+                        Log::info('Variant stock reduced via movement:', [
                             'variant_id' => $variant->id,
                             'product_id' => $item->product_id,
                             'old_stock' => $oldStock,
@@ -290,11 +301,18 @@ class OrderService
                         }
                     }
                 } else {
-                    $oldStock = $product->stock;
-                    $newStock = max(0, $product->stock - $item->quantity);
-                    $product->update(['stock' => $newStock]);
+                    $oldStock = $this->stockCalculationService->forProduct($product);
+                    $this->stockMovementService->record(
+                        product: $product,
+                        type: StockMovement::TYPE_SALE,
+                        quantity: -$item->quantity,
+                        referenceType: 'order',
+                        referenceId: $order->id,
+                        description: "Order #{$order->id} confirmed",
+                    );
+                    $newStock = $this->stockCalculationService->forProduct($product);
 
-                    Log::info('Stock reduced:', [
+                    Log::info('Stock reduced via movement:', [
                         'product_id' => $product->id,
                         'old_stock' => $oldStock,
                         'new_stock' => $newStock,
@@ -308,7 +326,7 @@ class OrderService
         });
     }
 
-    private function reduceComboStock(Product $combo, int $orderQuantity, int $orderItemId): void
+    private function reduceComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order): void
     {
         $comboItems = $combo->comboItems;
 
@@ -325,11 +343,19 @@ class OrderService
 
             if ($comboItem->linked_variant_id && $comboItem->linkedVariant) {
                 $variant = $comboItem->linkedVariant;
-                $oldStock = $variant->stock;
-                $newStock = max(0, $variant->stock - $requiredQty);
-                $variant->update(['stock' => $newStock]);
+                $oldStock = $this->stockCalculationService->forVariant($variant);
+                $this->stockMovementService->record(
+                    product: $comboItem->comboProduct,
+                    type: StockMovement::TYPE_SALE,
+                    quantity: -$requiredQty,
+                    variant: $variant,
+                    referenceType: 'order',
+                    referenceId: $order->id,
+                    description: "Order #{$order->id} confirmed (combo component)",
+                );
+                $newStock = $this->stockCalculationService->forVariant($variant);
 
-                Log::info('Combo variant stock reduced:', [
+                Log::info('Combo variant stock reduced via movement:', [
                     'combo_id' => $combo->id,
                     'order_item_id' => $orderItemId,
                     'variant_id' => $variant->id,
@@ -344,11 +370,18 @@ class OrderService
                 }
             } elseif ($comboItem->comboProduct) {
                 $componentProduct = $comboItem->comboProduct;
-                $oldStock = $componentProduct->stock;
-                $newStock = max(0, $componentProduct->stock - $requiredQty);
-                $componentProduct->update(['stock' => $newStock]);
+                $oldStock = $this->stockCalculationService->forProduct($componentProduct);
+                $this->stockMovementService->record(
+                    product: $componentProduct,
+                    type: StockMovement::TYPE_SALE,
+                    quantity: -$requiredQty,
+                    referenceType: 'order',
+                    referenceId: $order->id,
+                    description: "Order #{$order->id} confirmed (combo component)",
+                );
+                $newStock = $this->stockCalculationService->forProduct($componentProduct);
 
-                Log::info('Combo component stock reduced:', [
+                Log::info('Combo component stock reduced via movement:', [
                     'combo_id' => $combo->id,
                     'order_item_id' => $orderItemId,
                     'product_id' => $componentProduct->id,
@@ -379,22 +412,37 @@ class OrderService
                 }
 
                 if ($product->isCombo()) {
-                    $this->restoreComboStock($product, $item->quantity, $item->id);
+                    $this->restoreComboStock($product, $item->quantity, $item->id, $order);
                 } elseif ($item->variant_id) {
                     $variant = $item->variant;
                     if ($variant) {
-                        $variant->increment('stock', $item->quantity);
+                        $this->stockMovementService->record(
+                            product: $product,
+                            type: StockMovement::TYPE_RETURN,
+                            quantity: $item->quantity,
+                            variant: $variant,
+                            referenceType: 'order',
+                            referenceId: $order->id,
+                            description: "Order #{$order->id} cancelled — stock restored",
+                        );
 
-                        Log::info('Variant stock restored:', [
+                        Log::info('Variant stock restored via movement:', [
                             'variant_id' => $variant->id,
                             'product_id' => $item->product_id,
                             'stock_added' => $item->quantity,
                         ]);
                     }
                 } else {
-                    $product->increment('stock', $item->quantity);
+                    $this->stockMovementService->record(
+                        product: $product,
+                        type: StockMovement::TYPE_RETURN,
+                        quantity: $item->quantity,
+                        referenceType: 'order',
+                        referenceId: $order->id,
+                        description: "Order #{$order->id} cancelled — stock restored",
+                    );
 
-                    Log::info('Stock restored:', [
+                    Log::info('Stock restored via movement:', [
                         'product_id' => $product->id,
                         'stock_added' => $item->quantity,
                     ]);
@@ -403,7 +451,7 @@ class OrderService
         });
     }
 
-    private function restoreComboStock(Product $combo, int $orderQuantity, int $orderItemId): void
+    private function restoreComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order): void
     {
         $comboItems = $combo->comboItems;
 
@@ -420,9 +468,17 @@ class OrderService
 
             if ($comboItem->linked_variant_id && $comboItem->linkedVariant) {
                 $variant = $comboItem->linkedVariant;
-                $variant->increment('stock', $restoreQty);
+                $this->stockMovementService->record(
+                    product: $comboItem->comboProduct,
+                    type: StockMovement::TYPE_RETURN,
+                    quantity: $restoreQty,
+                    variant: $variant,
+                    referenceType: 'order',
+                    referenceId: $order->id,
+                    description: "Order #{$order->id} cancelled — stock restored (combo component)",
+                );
 
-                Log::info('Combo variant stock restored:', [
+                Log::info('Combo variant stock restored via movement:', [
                     'combo_id' => $combo->id,
                     'order_item_id' => $orderItemId,
                     'variant_id' => $variant->id,
@@ -431,9 +487,16 @@ class OrderService
                 ]);
             } elseif ($comboItem->comboProduct) {
                 $componentProduct = $comboItem->comboProduct;
-                $componentProduct->increment('stock', $restoreQty);
+                $this->stockMovementService->record(
+                    product: $componentProduct,
+                    type: StockMovement::TYPE_RETURN,
+                    quantity: $restoreQty,
+                    referenceType: 'order',
+                    referenceId: $order->id,
+                    description: "Order #{$order->id} cancelled — stock restored (combo component)",
+                );
 
-                Log::info('Combo component stock restored:', [
+                Log::info('Combo component stock restored via movement:', [
                     'combo_id' => $combo->id,
                     'order_item_id' => $orderItemId,
                     'product_id' => $componentProduct->id,

@@ -94,6 +94,7 @@ export default function ProductCreate({ categories, units = [], brands = [], pro
                                 comboItems={comboItems}
                                 setComboItems={setComboItems}
                                 selectableProducts={selectableProducts}
+                                isEdit={false}
                             />
                         </div>
 

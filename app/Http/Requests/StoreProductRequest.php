@@ -29,6 +29,7 @@ class StoreProductRequest extends FormRequest
             'cost_price'      => 'nullable|numeric|min:0',
             'stock'           => 'nullable|integer|min:0',
             'low_stock_alert' => 'nullable|integer|min:0',
+            'warehouse_id'    => 'nullable|integer|exists:warehouses,id',
             'category_id'     => 'required|exists:categories,id',
             'brand_id'        => 'nullable|exists:brands,id',
             'unit_id'         => 'nullable|exists:units,id',

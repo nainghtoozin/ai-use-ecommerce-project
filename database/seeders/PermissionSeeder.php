@@ -142,6 +142,18 @@ class PermissionSeeder extends Seeder
             'billing-payment-method.create',
             'billing-payment-method.update',
             'billing-payment-method.delete',
+
+            // Inventory Management
+            'inventory.view',
+            'inventory.create',
+            'inventory.update',
+            'inventory.delete',
+
+            // Warehouse Management
+            'warehouses.view',
+            'warehouses.create',
+            'warehouses.update',
+            'warehouses.delete',
         ];
 
         foreach ($permissions as $name) {

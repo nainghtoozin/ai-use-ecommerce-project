@@ -71,6 +71,8 @@ class PlanSeeder extends Seeder
                     'payment_gateways_stripe' => ['label' => 'Stripe', 'description' => null],
                     'payment_gateways_paypal' => ['label' => 'PayPal', 'description' => null],
                     'payment_gateways_manual' => ['label' => 'Manual Transfer', 'description' => null],
+                    'inventory_management' => ['label' => 'Inventory Management', 'description' => null],
+                    'warehouse_management' => ['label' => 'Warehouse Management', 'description' => null],
                 ],
             ],
             [
@@ -133,6 +135,8 @@ class PlanSeeder extends Seeder
                     'payment_gateways_stripe' => ['label' => 'Stripe', 'description' => null],
                     'payment_gateways_paypal' => ['label' => 'PayPal', 'description' => null],
                     'payment_gateways_manual' => ['label' => 'Manual Transfer', 'description' => 'Accept bank transfer payments.'],
+                    'inventory_management' => ['label' => 'Inventory Management', 'description' => 'Track stock levels and manage product inventory.'],
+                    'warehouse_management' => ['label' => 'Warehouse Management', 'description' => 'Manage multiple storage locations for your inventory.'],
                 ],
             ],
             [
@@ -195,6 +199,8 @@ class PlanSeeder extends Seeder
                     'payment_gateways_stripe' => ['label' => 'Stripe', 'description' => 'Accept credit card payments via Stripe.'],
                     'payment_gateways_paypal' => ['label' => 'PayPal', 'description' => 'Accept PayPal payments.'],
                     'payment_gateways_manual' => ['label' => 'Manual Transfer', 'description' => 'Accept bank transfer payments.'],
+                    'inventory_management' => ['label' => 'Inventory Management', 'description' => 'Track stock levels and manage product inventory.'],
+                    'warehouse_management' => ['label' => 'Warehouse Management', 'description' => 'Manage multiple storage locations for your inventory.'],
                 ],
             ],
         ];

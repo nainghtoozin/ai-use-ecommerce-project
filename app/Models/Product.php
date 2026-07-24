@@ -224,6 +224,11 @@ class Product extends Model
         return $this->hasMany(ProductCombo::class, 'combo_product_id')->with('product')->orderBy('id');
     }
 
+    public function stockMovements()
+    {
+        return $this->hasMany(\App\Models\StockMovement::class);
+    }
+
     /* ── Price & Stock accessors (variant-aware) ── */
 
     /**

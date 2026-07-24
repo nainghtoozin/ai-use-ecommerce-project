@@ -283,6 +283,7 @@ class ProductService
             'category_id', 'brand_id', 'unit_id', 'status', 'type',
             'photo1', 'photo2', 'gallery_images', 'sku', 'barcode', 'low_stock_alert',
             'seo_title', 'seo_description', 'seo_keywords', 'seo_image',
+            'warehouse_id',
         ];
 
         // Type-specific allowed fields

@@ -213,6 +213,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(IdentityResolver::class);
         $this->app->singleton(IdentityProjection::class);
         $this->app->singleton(IdentityContext::class, fn() => IdentityContext::empty());
+
+        $this->app->singleton(\Inertia\ResponseFactory::class, function ($app) {
+            return new \App\Inertia\InertiaResponseFactory;
+        });
     }
 
     public function boot(): void

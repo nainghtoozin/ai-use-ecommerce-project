@@ -19,7 +19,7 @@ const TYPE_STYLES = {
 
 export default function ProductEdit({ product, categories, units = [], brands = [], selectableProducts = [] }) {
     const { auth } = usePage().props;
-    if (!auth?.user?.permissions?.includes('products.update')) {
+    if (!auth?.user?.permissions?.includes('products.edit')) {
         return <AdminLayout><div className="text-center py-16"><p className="text-red-600 font-semibold">Unauthorized</p></div></AdminLayout>;
     }
     const {
@@ -94,6 +94,7 @@ export default function ProductEdit({ product, categories, units = [], brands = 
                                 selectableProducts={selectableProducts}
                                 existingPhoto1Url={existingPhoto1Url}
                                 existingPhoto2Url={existingPhoto2Url}
+                                isEdit={true}
                             />
                         </div>
 

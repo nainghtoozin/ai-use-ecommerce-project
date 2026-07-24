@@ -13,7 +13,7 @@ import {
     Store, User, LogOut, Menu, X,
     ChevronLeft, ChevronRight, ChevronDown,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
-    UserCircle, UserPlus, Activity, Shield,
+    UserCircle, UserPlus, Activity, Shield, Archive,
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'admin_sidebar_section_';
@@ -64,6 +64,7 @@ export default function AdminSidebar() {
         'UserPlus': UserPlus,
         'Activity': Activity,
         'Shield': Shield,
+        'Archive': Archive,
     };
 
     const Icon = ({ name, className = '' }) => {
@@ -135,6 +136,15 @@ export default function AdminSidebar() {
                     ...(can('units.view') ? [{ label: 'Units', href: '/admin/units', icon: 'Ruler' }] : []),
                 ]
             },
+            ...(can('inventory.view') && hasFeature('inventory_management') ? [{
+                title: 'Inventory',
+                items: [
+                    { label: 'Dashboard', href: '/admin/inventory/dashboard', icon: 'LayoutDashboard' },
+                    { label: 'Products Inventory', href: '/admin/inventory', icon: 'Archive' },
+                    { label: 'Stock Movements', href: '/admin/inventory/movements', icon: 'Activity' },
+                    ...(can('warehouses.view') && hasFeature('warehouse_management') ? [{ label: 'Warehouses', href: '/admin/warehouses', icon: 'Building2' }] : []),
+                ]
+            }] : []),
             {
                 title: 'Sales',
                 items: [
@@ -198,16 +208,33 @@ export default function AdminSidebar() {
         ];
     }, [userPermissions, isSuperAdmin]);
 
-    function isActive(href) {
-        if (href === '/') return url === '/';
+    function matchPath(href) {
+        if (href === '/') return url === '/' ? 1 : 0;
         const candidates = [href, adminUrl(href)];
-        return candidates.some(candidate => {
+        for (const candidate of candidates) {
             const hrefPath = candidate.replace(/\/+$/, '');
             const urlPath = url.replace(/\/+$/, '');
-            if (urlPath === hrefPath) return true;
-            if (urlPath.startsWith(hrefPath + '/')) return true;
-            return false;
-        });
+            if (urlPath === hrefPath) return hrefPath.length;
+            if (urlPath.startsWith(hrefPath + '/')) return hrefPath.length;
+        }
+        return 0;
+    }
+
+    function findActiveItem(items) {
+        let best = null;
+        let bestLen = 0;
+        for (const item of items) {
+            const len = matchPath(item.href);
+            if (len > bestLen) {
+                bestLen = len;
+                best = item;
+            }
+        }
+        return best;
+    }
+
+    function isActive(href) {
+        return matchPath(href) > 0;
     }
 
     const [openSections, setOpenSections] = useState({});
@@ -345,10 +372,12 @@ export default function AdminSidebar() {
                                 )}
                                 <div className={`sidebar-section-content ${isOpen ? 'open' : ''}`}>
                                     <div>
-                                        <div className="space-y-0.5">
-                                            {section.items.map((item) => {
-                                                const active = isActive(item.href);
-                                                return (
+                                                <div className="space-y-0.5">
+                                            {(() => {
+                                                const activeItem = findActiveItem(section.items);
+                                                return section.items.map((item) => {
+                                                    const active = activeItem?.href === item.href;
+                                                    return (
                                                     <Link
                                                         key={item.href}
                                                         href={adminUrl(item.href)}
@@ -367,8 +396,9 @@ export default function AdminSidebar() {
                                                         {!collapsed && <span className="ml-2.5 truncate">{item.label}</span>}
                                                     </Link>
                                                 );
-                                            })}
-                                        </div>
+                                            });
+                                        })()}
+                                    </div>
                                     </div>
                                 </div>
                             </div>

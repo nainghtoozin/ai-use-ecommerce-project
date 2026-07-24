@@ -16,9 +16,11 @@ use App\Enums\ProductType;
 use App\Models\ActivityLog;
 use App\Services\ActivityLogger;
 use App\Services\ImageService;
+use App\Services\InventoryService;
 use App\Services\ProductService;
 use App\Services\SkuService;
 use App\Services\SubscriptionLimitService;
+use App\Services\WarehouseService;
 use App\Services\PerPageTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +34,8 @@ class AdminProductController extends Controller
         private readonly ImageService $imageService,
         private readonly ProductService $productService,
         private readonly SkuService $skuService,
+        private readonly InventoryService $inventoryService,
+        private readonly WarehouseService $warehouseService,
     ) {}
 
     public function index(Request $request)
@@ -206,6 +210,7 @@ class AdminProductController extends Controller
 
         $units = Unit::all();
         $brands = Brand::all();
+        $warehouses = $this->warehouseService->getActiveWarehouses();
 
         return Inertia::render('Admin/Products/Create', [
             'categories' => $categories,
@@ -213,6 +218,7 @@ class AdminProductController extends Controller
             'brands' => $brands,
             'productType' => $productType,
             'selectableProducts' => $selectableProducts,
+            'warehouses' => $warehouses,
         ]);
     }
 
@@ -352,7 +358,7 @@ class AdminProductController extends Controller
                 $this->productService->syncComboItems($product, $comboItemsPayload);
             }
 
-            
+            $this->inventoryService->handleProductCreated($product, $data);
         });
 
         ActivityLogger::log("Product '{$product->name}' created", 'product_created', $product);
@@ -363,7 +369,7 @@ class AdminProductController extends Controller
 
     public function edit(Product $product)
     {
-        if (!auth()->user()->can('products.update')) {
+        if (!auth()->user()->can('products.edit')) {
             abort(403, 'Unauthorized');
         }
 
@@ -397,6 +403,7 @@ class AdminProductController extends Controller
 
         $units = Unit::all();
         $brands = Brand::all();
+        $warehouses = $this->warehouseService->getActiveWarehouses();
 
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product->load(['category', 'unit', 'brand', 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant']),
@@ -404,6 +411,7 @@ class AdminProductController extends Controller
             'units' => $units,
             'brands' => $brands,
             'selectableProducts' => $selectableProducts,
+            'warehouses' => $warehouses,
         ]);
     }
 
@@ -447,7 +455,7 @@ class AdminProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product)
     {
-        if (!auth()->user()->can('products.update')) {
+        if (!auth()->user()->can('products.edit')) {
             abort(403, 'Unauthorized');
         }
 
@@ -738,7 +746,7 @@ class AdminProductController extends Controller
 
     public function bulkActivate(Request $request)
     {
-        if (!auth()->user()->can('products.update')) {
+        if (!auth()->user()->can('products.edit')) {
             abort(403, 'Unauthorized');
         }
 
@@ -765,7 +773,7 @@ class AdminProductController extends Controller
 
     public function bulkDeactivate(Request $request)
     {
-        if (!auth()->user()->can('products.update')) {
+        if (!auth()->user()->can('products.edit')) {
             abort(403, 'Unauthorized');
         }
 

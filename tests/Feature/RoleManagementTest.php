@@ -27,7 +27,7 @@ class RoleManagementTest extends TestCase
             'users.view', 'users.create', 'users.update', 'users.delete', 'users.suspend',
             'users.ban', 'users.activate', 'users.assign-roles', 'users.view-activity',
             'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'permissions.view',
-            'products.view', 'products.create', 'products.update', 'products.delete',
+            'products.view', 'products.create', 'products.edit', 'products.delete',
             'categories.view', 'categories.create', 'categories.update', 'categories.delete',
             'orders.view', 'orders.view-own', 'orders.create', 'orders.update-status',
             'orders.cancel-own', 'orders.cancel-any',
@@ -48,7 +48,7 @@ class RoleManagementTest extends TestCase
             'users.view', 'users.create', 'users.update', 'users.delete',
             'users.suspend', 'users.ban', 'users.activate', 'users.assign-roles', 'users.view-activity',
             'roles.view', 'permissions.view',
-            'products.view', 'products.create', 'products.update', 'products.delete',
+            'products.view', 'products.create', 'products.edit', 'products.delete',
             'categories.view', 'categories.create', 'categories.update', 'categories.delete',
             'orders.view', 'orders.update-status', 'orders.cancel-any',
             'payments.view', 'payments.verify',
@@ -88,7 +88,7 @@ class RoleManagementTest extends TestCase
     {
         $response = $this->actingAs($this->superadmin)->post('/admin/roles', [
             'name' => 'editor',
-            'permissions' => ['products.view', 'products.update', 'categories.view'],
+            'permissions' => ['products.view', 'products.edit', 'categories.view'],
         ]);
 
         $response->assertSessionHas('success');
@@ -97,7 +97,7 @@ class RoleManagementTest extends TestCase
         $this->assertDatabaseHas('roles', ['name' => 'editor', 'guard_name' => 'web']);
         $role = Role::where('name', 'editor')->first();
         $this->assertTrue($role->hasPermissionTo('products.view'));
-        $this->assertTrue($role->hasPermissionTo('products.update'));
+        $this->assertTrue($role->hasPermissionTo('products.edit'));
         $this->assertTrue($role->hasPermissionTo('categories.view'));
         $this->assertFalse($role->hasPermissionTo('users.view'));
     }

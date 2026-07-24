@@ -404,6 +404,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::delete('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'destroy'])->name('coupons.destroy');
         Route::get('/coupons/search', [\App\Http\Controllers\Admin\AdminCouponController::class, 'search'])->name('coupons.search');
 
+        // Inventory
+        Route::get('/inventory/dashboard', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');
+        Route::get('/inventory', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/movements', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'movements'])->name('inventory.movements');
+        Route::get('/inventory/product/{product}', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'show'])->name('inventory.product.show')->whereNumber('product');
+
+        // Warehouses
+        Route::get('/warehouses', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'index'])->name('warehouses.index');
+        Route::get('/warehouses/search', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'search'])->name('warehouses.search');
+        Route::get('/warehouses/create', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'create'])->name('warehouses.create');
+        Route::post('/warehouses', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'store'])->name('warehouses.store');
+        Route::get('/warehouses/{warehouse}/edit', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'edit'])->name('warehouses.edit');
+        Route::put('/warehouses/{warehouse}', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'update'])->name('warehouses.update');
+        Route::delete('/warehouses/{warehouse}', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'destroy'])->name('warehouses.destroy');
+
         // Units
         Route::get('/units', [AdminUnitController::class, 'index'])->name('units.index');
         Route::get('/units/search', [AdminUnitController::class, 'search'])->name('units.search');

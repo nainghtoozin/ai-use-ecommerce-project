@@ -17,6 +17,7 @@ import {
     AlertCircle,
     Eye,
     Pencil,
+    Archive,
 } from 'lucide-react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
@@ -64,7 +65,7 @@ function InlineActions({ product, onDelete, can }) {
             >
                 <Eye className="w-4 h-4" />
             </Link>
-            {can('products.update') && (
+            {can('products.edit') && (
                 <Link
                     href={adminUrl(`/admin/products/${product.id}/edit`)}
                     className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
@@ -248,15 +249,24 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             {productCount} product{productCount !== 1 ? 's' : ''} · {activeCount} active
                         </p>
                     </div>
-                    {can('products.create') && (
+                    <div className="flex items-center gap-2">
                         <Link
-                            href={adminUrl('/admin/products/type-select')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                            href={adminUrl('/admin/inventory')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
                         >
-                            <Plus className="w-4 h-4" />
-                            Add Product
+                            <Archive className="w-4 h-4" />
+                            Inventory
                         </Link>
-                    )}
+                        {can('products.create') && (
+                            <Link
+                                href={adminUrl('/admin/products/type-select')}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Product
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -376,7 +386,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                 {selectedIds.length} product{selectedIds.length !== 1 ? 's' : ''} selected
                             </span>
                             <div className="h-4 w-px bg-blue-200" />
-                            {can('products.update') && (
+                            {can('products.edit') && (
                                 <button
                                     onClick={() => handleBulkAction('activate')}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-md hover:bg-emerald-200 transition-colors"
@@ -385,7 +395,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                     Activate
                                 </button>
                             )}
-                            {can('products.update') && (
+                            {can('products.edit') && (
                                 <button
                                     onClick={() => handleBulkAction('deactivate')}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors"
