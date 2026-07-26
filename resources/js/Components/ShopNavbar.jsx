@@ -60,14 +60,18 @@ export default function ShopNavbar() {
     }, []);
 
     function isActive(href) {
-        if (href === '/' && url === '/') return true;
-        if (href !== '/') {
-            const hrefPath = href.replace(/\/+$/, '');
-            const urlPath = url.replace(/\/+$/, '');
-            if (urlPath === hrefPath) return true;
-            if (urlPath.startsWith(hrefPath + '/')) return true;
+        const hrefPath = href.replace(/\/+$/, '');
+        const urlPath = url.replace(/\/+$/, '');
+        if (storeSlug) {
+            const storeBase = `/store/${storeSlug}`;
+            if (hrefPath === storeBase) return urlPath === storeBase;
+            const hrefRelative = hrefPath.slice(storeBase.length);
+            const urlRelative = urlPath.slice(storeBase.length);
+            if (!hrefRelative) return urlPath === storeBase;
+            return urlRelative === hrefRelative || urlRelative.startsWith(hrefRelative + '/');
         }
-        return false;
+        if (hrefPath === '/') return urlPath === '/';
+        return urlPath === hrefPath || urlPath.startsWith(hrefPath + '/');
     }
 
     const logout = () => router.post('/logout', { context: storeSlug ? 'storefront' : '', store_slug: storeSlug });

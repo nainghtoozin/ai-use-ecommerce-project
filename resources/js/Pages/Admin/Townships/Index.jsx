@@ -3,16 +3,15 @@ import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 
-export default function TownshipsIndex({ townships, cities = [] }) {
-    const [cityFilter, setCityFilter] = useState('');
+export default function TownshipsIndex({ townships, cities = [], filters = {} }) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [cityFilter, setCityFilter] = useState(filters.city_id || '');
+    const [status, setStatus] = useState(filters.status || '');
 
-    function handleFilterChange(value) {
-        setCityFilter(value);
-        if (value) {
-            router.get(adminUrl('/admin/townships'), { city_id: value }, { preserveState: true });
-        } else {
-            router.get(adminUrl('/admin/townships'), {}, { preserveState: true });
-        }
+    function applyFilters(overrides = {}) {
+        const params = { search, city_id: cityFilter, status, ...overrides };
+        Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+        router.get(adminUrl('/admin/townships'), params, { preserveState: true });
     }
 
     function handleToggle(id) {
@@ -37,15 +36,40 @@ export default function TownshipsIndex({ townships, cities = [] }) {
                     </Link>
                 </div>
 
-                {/* City Filter */}
-                <div className="mb-6">
-                    <select value={cityFilter} onChange={(e) => handleFilterChange(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">All Cities</option>
-                        {cities.map((city) => (
-                            <option key={city.id} value={city.id}>{city.name}</option>
-                        ))}
-                    </select>
+                <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && applyFilters()}
+                            placeholder="Search townships..."
+                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <select
+                            value={cityFilter}
+                            onChange={e => { setCityFilter(e.target.value); applyFilters({ city_id: e.target.value }); }}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Cities</option>
+                            {cities.map((city) => (
+                                <option key={city.id} value={city.id}>{city.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={status}
+                            onChange={e => { setStatus(e.target.value); applyFilters({ status: e.target.value }); }}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <button onClick={() => applyFilters()} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">Search</button>
+                        {(search || cityFilter || status) && (
+                            <button onClick={() => { setSearch(''); setCityFilter(''); setStatus(''); router.get(adminUrl('/admin/townships'), {}, { preserveState: true }); }} className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm">Clear</button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -91,6 +115,7 @@ export default function TownshipsIndex({ townships, cities = [] }) {
                         <div className="flex gap-1">
                             {townships.links.map((link, i) => (
                                 <Link key={i} href={link.url || '#'}
+                                    preserveState
                                     className={`px-3 py-1 text-sm rounded-md ${link.active ? 'bg-blue-600 text-white' : link.url ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'}`}>
                                     {link.label.replace('&laquo;', '«').replace('&raquo;', '»')}
                                 </Link>

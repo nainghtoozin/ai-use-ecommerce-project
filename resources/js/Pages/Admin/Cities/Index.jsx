@@ -1,10 +1,20 @@
+import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
-export default function CitiesIndex({ cities }) {
+export default function CitiesIndex({ cities, filters = {} }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const [search, setSearch] = useState(filters.search || '');
+    const [status, setStatus] = useState(filters.status || '');
+
+    function applyFilters(overrides = {}) {
+        const params = { search, status, ...overrides };
+        Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+        router.get(adminUrl('/admin/cities'), params, { preserveState: true });
+    }
+
     function handleToggle(id) {
         router.post(adminUrl(`/admin/cities/${id}/toggle`));
     }
@@ -37,6 +47,32 @@ export default function CitiesIndex({ cities }) {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                             Add City
                         </Link>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && applyFilters()}
+                            placeholder="Search cities..."
+                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <select
+                            value={status}
+                            onChange={e => { setStatus(e.target.value); applyFilters({ status: e.target.value }); }}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <button onClick={() => applyFilters()} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">Search</button>
+                        {(search || status) && (
+                            <button onClick={() => { setSearch(''); setStatus(''); router.get(adminUrl('/admin/cities'), {}, { preserveState: true }); }} className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm">Clear</button>
+                        )}
                     </div>
                 </div>
 
@@ -83,6 +119,7 @@ export default function CitiesIndex({ cities }) {
                         <div className="flex gap-1">
                             {cities.links.map((link, i) => (
                                 <Link key={i} href={link.url || '#'}
+                                    preserveState
                                     className={`px-3 py-1 text-sm rounded-md ${link.active ? 'bg-blue-600 text-white' : link.url ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'}`}>
                                     {link.label.replace('&laquo;', '«').replace('&raquo;', '»')}
                                 </Link>

@@ -43,4 +43,9 @@ class City extends Model
                 ->get();
         });
     }
+
+    public static function allowsNullTenantFallback(): bool
+    {
+        return true;
+    }
 }

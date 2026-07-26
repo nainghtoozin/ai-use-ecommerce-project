@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
+use App\Models\Township;
 use App\Services\CouponService;
 use App\Services\ImageService;
 use App\Services\PromotionService;
@@ -118,11 +119,9 @@ class StorefrontCheckoutController extends Controller
             abort(404);
         }
 
-        $guestCheckout = true;
-
-        if (!auth()->check() && !$guestCheckout) {
+        if (!auth()->check()) {
             return redirect()->route('storefront.login', $tenant->slug)
-                ->with('error', 'Please login to continue checkout.');
+                ->with('error', 'Please sign in to place your order.');
         }
 
         $validated = $request->validate([
@@ -137,9 +136,21 @@ class StorefrontCheckoutController extends Controller
             'notes' => ['nullable', 'string'],
             'payment_method_id' => ['required', 'exists:payment_methods,id'],
             'payer_name' => ['nullable', 'string', 'max:255'],
+            'sender_account_number' => ['nullable', 'string', 'max:50'],
             'transaction_id' => ['nullable', 'string', 'max:255'],
             'payment_screenshot' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
+
+        if (!empty($validated['city_id']) && !empty($validated['township_id'])) {
+            $township = Township::find($validated['township_id']);
+            if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
+                return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
+            }
+            if (!empty($validated['postal_code']) && $township->postal_code && $validated['postal_code'] !== $township->postal_code) {
+                return back()->withErrors(['postal_code' => 'The postal code does not match the selected township.'])->withInput();
+            }
+            $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
+        }
 
         if (auth()->check()) {
             $user = auth()->user();
@@ -221,6 +232,7 @@ class StorefrontCheckoutController extends Controller
             'notes' => $validated['notes'] ?? null,
             'payment_method_id' => $validated['payment_method_id'],
             'payer_name' => $validated['payer_name'] ?? null,
+            'sender_account_number' => $validated['sender_account_number'] ?? null,
             'payment_screenshot' => $paymentScreenshotPath,
             'transaction_id' => $validated['transaction_id'] ?? null,
             'subtotal' => $subtotal,
@@ -237,6 +249,9 @@ class StorefrontCheckoutController extends Controller
         }
 
         $order = Order::create($orderData);
+
+        $date = $order->created_at->format('Ymd');
+        $order->update(['invoice_number' => 'ORD-' . $date . '-' . str_pad($order->id, 5, '0', STR_PAD_LEFT)]);
 
         if (!empty($couponData['coupon'])) {
             $this->couponService->applyCouponToOrder(

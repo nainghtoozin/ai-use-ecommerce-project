@@ -66,7 +66,10 @@ class AppServiceProvider extends ServiceProvider
             return new OrderService(
                 $app->make(NotificationPreferenceService::class),
                 $app->make(\App\Services\CouponService::class),
-                $app->make(\App\Services\PromotionService::class)
+                $app->make(\App\Services\PromotionService::class),
+                $app->make(\App\Services\StockMovementService::class),
+                $app->make(\App\Services\StockCalculationService::class),
+                $app->make(\App\Services\WarehouseService::class)
             );
         });
 

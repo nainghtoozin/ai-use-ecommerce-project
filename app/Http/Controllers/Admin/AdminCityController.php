@@ -19,15 +19,27 @@ class AdminCityController extends Controller
         private LocationService $locationService
     ) {}
 
-    public function index(): \Inertia\Response
+    public function index(Request $request): \Inertia\Response
     {
         if (!auth()->user()->can('cities.view')) {
             abort(403, 'Unauthorized');
         }
 
-        $cities = City::withCount('townships')->latest()->paginate(15);
+        $query = City::withCount('townships');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        $cities = $query->latest()->paginate(15)->withQueryString();
+
         return Inertia::render('Admin/Cities/Index', [
             'cities' => $cities,
+            'filters' => $request->only(['search', 'status']),
         ]);
     }
 

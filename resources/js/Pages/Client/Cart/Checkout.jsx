@@ -84,11 +84,13 @@ export default function Checkout({ cartItems, subtotal, paymentMethods, cities, 
         notes: '',
         payment_method_id: '',
         payer_name: '',
+        sender_account_number: '',
         transaction_id: '',
         payment_screenshot: null,
     });
 
     const [townships, setTownships] = useState([]);
+    const [townshipsLoading, setTownshipsLoading] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
     const [screenshotPreview, setScreenshotPreview] = useState(null);
     const [qrPreview, setQrPreview] = useState(null);
@@ -150,12 +152,18 @@ export default function Checkout({ cartItems, subtotal, paymentMethods, cities, 
     function fetchTownships(cityId) {
         if (!cityId) {
             setTownships([]);
-            return;
+            return Promise.resolve([]);
         }
-        axios.get(`/api/townships/${cityId}`).then((res) => {
-            setTownships(res.data?.townships || []);
+        setTownshipsLoading(true);
+        return axios.get(`/api/townships/${cityId}`).then((res) => {
+            const data = res.data?.townships || [];
+            setTownships(data);
+            return data;
         }).catch(() => {
             setTownships([]);
+            return [];
+        }).finally(() => {
+            setTownshipsLoading(false);
         });
     }
 
@@ -208,6 +216,28 @@ export default function Checkout({ cartItems, subtotal, paymentMethods, cities, 
                     <Link href="/cart" className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         View Cart
                     </Link>
+                </div>
+            </ShopLayout>
+        );
+    }
+
+    if (!auth?.user) {
+        return (
+            <ShopLayout>
+                <div className="max-w-md mx-auto px-4 py-16 text-center">
+                    <div className="bg-white rounded-xl border border-gray-200 p-8">
+                        <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to checkout</h2>
+                        <p className="text-sm text-gray-500 mb-6">Please sign in to complete your order. Your cart items will be preserved.</p>
+                        <Link href="/login" className="inline-block w-full px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                            Sign In
+                        </Link>
+                        <Link href="/cart" className="block mt-3 text-sm text-gray-500 hover:text-gray-700">
+                            &larr; Back to Cart
+                        </Link>
+                    </div>
                 </div>
             </ShopLayout>
         );
@@ -296,7 +326,7 @@ return (
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                                    <select value={form.city_id} onChange={(e) => { updateField('city_id', e.target.value); fetchTownships(e.target.value); setForm((p) => ({ ...p, township_id: '' })); }} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <select value={form.city_id} onChange={(e) => { updateField('city_id', e.target.value); fetchTownships(e.target.value); setForm((p) => ({ ...p, township_id: '', postal_code: '' })); }} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">Select City</option>
                                         {cities?.map((c) => <option key={c.id} value={c.id}>{c.name} ({formatCurrency(c.delivery_fee, cc)})</option>)}
                                     </select>
@@ -304,14 +334,14 @@ return (
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Township *</label>
-                                    <select value={form.township_id} onChange={(e) => updateField('township_id', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">Select Township</option>
+                                    <select value={form.township_id} onChange={(e) => { updateField('township_id', e.target.value); const t = townships.find(t => t.id == e.target.value); setForm((p) => ({ ...p, postal_code: t?.postal_code || '' })); }} disabled={!form.city_id} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                        <option value="">{form.city_id ? 'Select Township' : 'Select a City first'}</option>
                                         {townships.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-                                    <input type="text" value={form.postal_code} onChange={(e) => updateField('postal_code', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    <input type="text" value={form.postal_code} readOnly tabIndex={-1} className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none" placeholder="Auto-filled from township" />
                                 </div>
                             </div>
                             <div>
@@ -449,6 +479,13 @@ return (
                                                                             placeholder="Name on your bank/wallet account"
                                                                             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                                                         {formErrors.payer_name && <p className="mt-1 text-xs text-red-600">{formErrors.payer_name}</p>}
+                                                                    </div>
+                                                                    <div>
+                                                                        <label htmlFor="sender_account_number" className="block text-sm font-medium text-gray-700 mb-1">Sender Account Number <span className="text-gray-400 font-normal">(optional)</span></label>
+                                                                        <input id="sender_account_number" type="text" value={form.sender_account_number} onChange={(e) => updateField('sender_account_number', e.target.value)}
+                                                                            placeholder="WavePay / KBZPay / Bank account number"
+                                                                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                                                        {formErrors.sender_account_number && <p className="mt-1 text-xs text-red-600">{formErrors.sender_account_number}</p>}
                                                                     </div>
                                                                     <div>
                                                                         <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>

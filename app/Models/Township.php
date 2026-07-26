@@ -36,4 +36,9 @@ class Township extends Model
     {
         return static::where('city_id', $cityId)->active()->orderBy('name')->get();
     }
+
+    public static function allowsNullTenantFallback(): bool
+    {
+        return true;
+    }
 }

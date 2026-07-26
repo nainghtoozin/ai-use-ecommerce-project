@@ -8,6 +8,7 @@ use App\Models\City;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\Tenant;
+use App\Models\Township;
 use App\Services\ImageService;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
@@ -96,14 +97,75 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        $orders = $user->orders()
+        $query = $user->orders()
             ->with(['items.product', 'items.variant', 'paymentMethod'])
-            ->orderBy('created_at', 'desc')
-            ->simplePaginate(10);
+            ->withCount('items');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('id', 'like', "%{$search}%")
+                    ->orWhereHas('items.product', function ($pq) use ($search) {
+                        $pq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('order_status')) {
+            $query->where('order_status', $request->order_status);
+        }
+
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        if ($request->filled('date_range')) {
+            $now = now();
+            switch ($request->date_range) {
+                case 'today':
+                    $query->whereDate('created_at', $now->toDateString());
+                    break;
+                case '7days':
+                    $query->where('created_at', '>=', $now->copy()->subDays(7));
+                    break;
+                case '30days':
+                    $query->where('created_at', '>=', $now->copy()->subDays(30));
+                    break;
+                case 'this_month':
+                    $query->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year);
+                    break;
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'amount_high':
+                $query->orderBy('total_amount', 'desc');
+                break;
+            case 'amount_low':
+                $query->orderBy('total_amount', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+
+        $orders = $query->simplePaginate(10)->withQueryString();
 
         return Inertia::render('Storefront/Orders', [
             'tenant' => $this->tenantData($tenant),
             'orders' => $orders,
+            'filters' => $request->only(['search', 'order_status', 'payment_status', 'date_range', 'date_from', 'date_to', 'sort']),
         ]);
     }
 
@@ -141,6 +203,12 @@ class StorefrontCustomerController extends Controller
             'tenant' => $this->tenantData($tenant),
             'addresses' => $addresses,
             'cities' => $cities,
+            'customer' => [
+                'first_name' => $user->first_name ?? ($user->name ? explode(' ', $user->name)[0] : ''),
+                'last_name' => $user->last_name ?? ($user->name ? implode(' ', array_slice(explode(' ', $user->name), 1)) : ''),
+                'phone' => $user->phone ?? '',
+                'email' => $user->email ?? '',
+            ],
         ]);
     }
 
@@ -161,6 +229,12 @@ class StorefrontCustomerController extends Controller
             'is_default' => ['boolean'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $township = Township::find($validated['township_id']);
+        if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
+            return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
+        }
+        $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
 
         if (!empty($validated['is_default'])) {
             $user->addresses()->update(['is_default' => false]);
@@ -194,6 +268,12 @@ class StorefrontCustomerController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $township = Township::find($validated['township_id']);
+        if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
+            return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
+        }
+        $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
+
         if (!empty($validated['is_default'])) {
             $user->addresses()->where('id', '!=', $address->id)->update(['is_default' => false]);
         }
@@ -217,6 +297,22 @@ class StorefrontCustomerController extends Controller
 
         return redirect()->route('storefront.customer.addresses', ['store_slug' => $tenant->slug])
             ->with('success', 'Address deleted successfully.');
+    }
+
+    public function setDefaultAddress(Request $request, $storeSlug, CustomerAddress $address): RedirectResponse
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass()) {
+            abort(404);
+        }
+
+        $user->addresses()->update(['is_default' => false]);
+        $address->update(['is_default' => true]);
+
+        return redirect()->route('storefront.customer.addresses', ['store_slug' => $tenant->slug])
+            ->with('success', 'Default address updated.');
     }
 
     public function cancelOrder(Request $request, $storeSlug, Order $order): RedirectResponse
@@ -281,5 +377,27 @@ class StorefrontCustomerController extends Controller
             'store_slug' => $tenant->slug,
             'order' => $order->id,
         ])->with('success', 'Payment proof uploaded successfully.');
+    }
+
+    public function downloadInvoice(Request $request, $storeSlug, string $invoice_number)
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        $order = Order::where('invoice_number', $invoice_number)
+            ->where('user_id', $user->id)
+            ->where('user_type', $user->getMorphClass())
+            ->firstOrFail();
+
+        $order->loadMissing(['items.product', 'items.variant', 'paymentMethod', 'city', 'township']);
+
+        $html = view('invoices.customer-order', [
+            'order' => $order,
+            'tenant' => $tenant,
+        ])->render();
+
+        return response($html)
+            ->header('Content-Type', 'text/html')
+            ->header('Content-Disposition', 'inline; filename="' . $order->invoice_number . '.html"');
     }
 }

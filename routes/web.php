@@ -161,10 +161,12 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
         Route::get('/orders/{order}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showOrder'])->name('orders.show');
         Route::post('/orders/{order}/cancel', [\App\Http\Controllers\StorefrontCustomerController::class, 'cancelOrder'])->name('orders.cancel');
         Route::post('/orders/{order}/upload-payment', [\App\Http\Controllers\StorefrontCustomerController::class, 'uploadPayment'])->name('orders.upload-payment');
+        Route::get('/orders/{invoice_number}/invoice', [\App\Http\Controllers\StorefrontCustomerController::class, 'downloadInvoice'])->name('orders.invoice');
         Route::get('/addresses', [\App\Http\Controllers\StorefrontCustomerController::class, 'addresses'])->name('addresses');
         Route::post('/addresses', [\App\Http\Controllers\StorefrontCustomerController::class, 'storeAddress'])->name('addresses.store');
         Route::put('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'updateAddress'])->name('addresses.update');
         Route::delete('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'destroyAddress'])->name('addresses.destroy');
+        Route::post('/addresses/{address}/default', [\App\Http\Controllers\StorefrontCustomerController::class, 'setDefaultAddress'])->name('addresses.default');
     });
 });
 

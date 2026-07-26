@@ -34,19 +34,29 @@ class MyanmarLocationImportService
                     $stats['cities_skipped']++;
                 }
 
-                foreach ($item['townships'] as $townshipName) {
+                foreach ($item['townships'] as $townshipData) {
+                    $name = is_array($townshipData) ? $townshipData['name'] : $townshipData;
+                    $postalCode = is_array($townshipData) ? ($townshipData['postal_code'] ?? null) : null;
+
                     $exists = Township::where('city_id', $city->id)
-                        ->where('name', $townshipName)
+                        ->where('name', $name)
                         ->exists();
 
                     if (!$exists) {
                         Township::create([
                             'city_id' => $city->id,
-                            'name' => $townshipName,
+                            'name' => $name,
+                            'postal_code' => $postalCode,
                             'is_active' => true,
                         ]);
                         $stats['townships_created']++;
                     } else {
+                        if ($postalCode) {
+                            Township::where('city_id', $city->id)
+                                ->where('name', $name)
+                                ->whereNull('postal_code')
+                                ->update(['postal_code' => $postalCode]);
+                        }
                         $stats['townships_skipped']++;
                     }
                 }

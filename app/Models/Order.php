@@ -26,6 +26,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'invoice_number',
         'customer_name',
         'first_name',
         'last_name',
@@ -38,6 +39,7 @@ class Order extends Model
         'notes',
         'payment_method_id',
         'payer_name',
+        'sender_account_number',
         'payment_screenshot',
         'payment_proof',
         'transaction_id',
@@ -81,6 +83,7 @@ class Order extends Model
         'discount_display',
         'payment_screenshot_url',
         'payment_proof_url',
+        'invoice_number',
     ];
 
     public function user()
@@ -270,5 +273,14 @@ class Order extends Model
     public function getPaymentProofUrlAttribute(): ?string
     {
         return $this->payment_proof ? image_url($this->payment_proof) : null;
+    }
+
+    public function getInvoiceNumberAttribute(): string
+    {
+        if ($this->attributes['invoice_number'] ?? null) {
+            return $this->attributes['invoice_number'];
+        }
+        $date = $this->created_at ? $this->created_at->format('Ymd') : date('Ymd');
+        return 'ORD-' . $date . '-' . str_pad($this->id, 5, '0', STR_PAD_LEFT);
     }
 }

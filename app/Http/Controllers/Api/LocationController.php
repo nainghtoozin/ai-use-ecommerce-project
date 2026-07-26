@@ -31,7 +31,12 @@ class LocationController extends Controller
 
     public function getTownships(int $cityId): JsonResponse
     {
-        $townships = Township::where('city_id', $cityId)
+        $city = City::find($cityId);
+        if (!$city) {
+            return response()->json(['townships' => []]);
+        }
+
+        $townships = Township::where('city_id', $city->id)
             ->active()
             ->orderBy('name')
             ->get()

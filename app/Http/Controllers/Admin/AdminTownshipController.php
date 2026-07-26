@@ -26,16 +26,25 @@ class AdminTownshipController extends Controller
 
         $query = Township::with('city');
 
-        if ($request->has('city_id') && $request->city_id) {
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('city_id')) {
             $query->where('city_id', $request->city_id);
         }
 
-        $townships = $query->latest()->paginate(15);
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        $townships = $query->latest()->paginate(15)->withQueryString();
         $cities = City::active()->orderBy('name')->get();
 
         return Inertia::render('Admin/Townships/Index', [
             'townships' => $townships,
             'cities' => $cities,
+            'filters' => $request->only(['search', 'city_id', 'status']),
         ]);
     }
 
