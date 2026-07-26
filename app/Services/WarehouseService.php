@@ -43,7 +43,7 @@ class WarehouseService
     public function delete(Warehouse $warehouse): ?bool
     {
         if ($warehouse->is_default) {
-            throw new \RuntimeException('Cannot delete the default warehouse. Set another warehouse as default first.');
+            throw new \RuntimeException('Cannot delete the default inventory location. Set another location as default first.');
         }
 
         return $warehouse->delete();
@@ -97,10 +97,12 @@ class WarehouseService
             return $first->fresh();
         }
 
+        $tenantName = tenant()?->name ?? 'Store';
+
         return $this->create([
-            'name' => 'Main Warehouse',
-            'code' => 'MAIN',
-            'description' => 'Default warehouse created automatically.',
+            'name' => $tenantName,
+            'code' => 'PRIMARY',
+            'description' => 'Default inventory location created automatically.',
             'is_default' => true,
             'is_active' => true,
         ]);

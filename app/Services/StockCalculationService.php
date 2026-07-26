@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
 
 class StockCalculationService
@@ -98,5 +99,67 @@ class StockCalculationService
             'total' => $stock + $variantStock,
             'status' => $this->getStockStatusForProductWithVariants($product),
         ];
+    }
+
+    public function forProductInWarehouse(Product $product, int $warehouseId): float
+    {
+        return (float) StockMovement::where('product_id', $product->id)
+            ->whereNull('product_variant_id')
+            ->where('warehouse_id', $warehouseId)
+            ->sum('quantity');
+    }
+
+    public function forVariantInWarehouse(ProductVariant $variant, int $warehouseId): float
+    {
+        return (float) StockMovement::where('product_variant_id', $variant->id)
+            ->where('warehouse_id', $warehouseId)
+            ->sum('quantity');
+    }
+
+    /**
+     * Get stock breakdown by warehouse for a product.
+     *
+     * @return array<int, array{warehouse_id: int, warehouse_name: string, stock: float}>
+     */
+    public function getStockByWarehouse(Product $product): array
+    {
+        $rows = StockMovement::where('product_id', $product->id)
+            ->whereNull('product_variant_id')
+            ->whereNotNull('warehouse_id')
+            ->select('warehouse_id', DB::raw('SUM(quantity) as total'))
+            ->groupBy('warehouse_id')
+            ->having('total', '!=', 0)
+            ->with('warehouse:id,name,code')
+            ->get();
+
+        return $rows->map(fn($row) => [
+            'warehouse_id' => $row->warehouse_id,
+            'warehouse_name' => $row->warehouse?->name ?? 'Unknown',
+            'warehouse_code' => $row->warehouse?->code,
+            'stock' => (float) $row->total,
+        ])->toArray();
+    }
+
+    /**
+     * Get variant stock breakdown by warehouse.
+     *
+     * @return array<int, array{warehouse_id: int, warehouse_name: string, stock: float}>
+     */
+    public function getVariantStockByWarehouse(ProductVariant $variant): array
+    {
+        $rows = StockMovement::where('product_variant_id', $variant->id)
+            ->whereNotNull('warehouse_id')
+            ->select('warehouse_id', DB::raw('SUM(quantity) as total'))
+            ->groupBy('warehouse_id')
+            ->having('total', '!=', 0)
+            ->with('warehouse:id,name,code')
+            ->get();
+
+        return $rows->map(fn($row) => [
+            'warehouse_id' => $row->warehouse_id,
+            'warehouse_name' => $row->warehouse?->name ?? 'Unknown',
+            'warehouse_code' => $row->warehouse?->code,
+            'stock' => (float) $row->total,
+        ])->toArray();
     }
 }

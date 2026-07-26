@@ -73,7 +73,7 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
                             </Link>
                             <Link href={adminUrl('/admin/inventory/movements')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                                 <ExternalLink className="w-4 h-4" />
-                                Stock Movements
+                                Stock History
                             </Link>
                             {can('products.create') && (
                                 <Link href={adminUrl('/admin/products/create')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
@@ -159,8 +159,17 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{p.sku || '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.category || '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                    <span className="text-lg font-semibold text-gray-900">{p.stock}</span>
-                                                    <span className="text-xs text-gray-400 ml-1">{p.unit}</span>
+                                                    {p.warehouse_stock > 0 ? (
+                                                        <div>
+                                                            <div className="text-lg font-semibold text-gray-900">{p.total_stock || p.stock}<span className="text-xs text-gray-400 ml-1">{p.unit}</span></div>
+                                                            <div className="text-xs text-gray-400">Store: {p.store_stock} · WH: {p.warehouse_stock}</div>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <span className="text-lg font-semibold text-gray-900">{p.total_stock || p.stock}</span>
+                                                            <span className="text-xs text-gray-400 ml-1">{p.unit}</span>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.unit || '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

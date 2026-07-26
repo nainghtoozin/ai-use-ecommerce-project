@@ -407,8 +407,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         // Inventory
         Route::get('/inventory/dashboard', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');
         Route::get('/inventory', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/stock-history', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'stockHistory'])->name('inventory.stock-history');
         Route::get('/inventory/movements', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'movements'])->name('inventory.movements');
+        Route::get('/inventory/movements/{movement}', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'movementShow'])->name('inventory.movements.show');
         Route::get('/inventory/product/{product}', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'show'])->name('inventory.product.show')->whereNumber('product');
+
+        Route::get('/inventory/adjustments', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'index'])->name('inventory.adjustments');
+        Route::get('/inventory/adjustments/create', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'create'])->name('inventory.adjustments.create');
+        Route::post('/inventory/adjustments', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
+        Route::get('/inventory/adjustments/{movement}', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'show'])->name('inventory.adjustments.show');
+        Route::delete('/inventory/adjustments/{movement}', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'destroy'])->name('inventory.adjustments.destroy');
+        Route::post('/inventory/adjustments/preview', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'preview'])->name('inventory.adjustments.preview');
 
         // Warehouses
         Route::get('/warehouses', [\App\Http\Controllers\Admin\AdminWarehouseController::class, 'index'])->name('warehouses.index');

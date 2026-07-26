@@ -12,6 +12,20 @@ class StockMovementService
 {
     public function recordOpeningStock(Product $product, float $quantity, ?ProductVariant $variant = null, ?int $warehouseId = null): StockMovement
     {
+        $existing = StockMovement::where('product_id', $product->id)
+            ->where('type', StockMovement::TYPE_OPENING_STOCK)
+            ->when($variant, fn($q) => $q->where('product_variant_id', $variant->id))
+            ->when(!$variant, fn($q) => $q->whereNull('product_variant_id'))
+            ->exists();
+
+        if ($existing) {
+            return StockMovement::where('product_id', $product->id)
+                ->where('type', StockMovement::TYPE_OPENING_STOCK)
+                ->when($variant, fn($q) => $q->where('product_variant_id', $variant->id))
+                ->when(!$variant, fn($q) => $q->whereNull('product_variant_id'))
+                ->first();
+        }
+
         return $this->record(
             product: $product,
             type: StockMovement::TYPE_OPENING_STOCK,
@@ -32,13 +46,15 @@ class StockMovementService
         ?int $referenceId = null,
         ?string $description = null,
         ?int $warehouseId = null,
+        ?string $adjustmentNumber = null,
     ): StockMovement {
-        return DB::transaction(function () use ($product, $type, $quantity, $variant, $unitPrice, $referenceType, $referenceId, $description, $warehouseId) {
+        return DB::transaction(function () use ($product, $type, $quantity, $variant, $unitPrice, $referenceType, $referenceId, $description, $warehouseId, $adjustmentNumber) {
             $movement = StockMovement::create([
                 'product_id' => $product->id,
                 'product_variant_id' => $variant?->id,
                 'warehouse_id' => $warehouseId,
                 'type' => $type,
+                'adjustment_number' => $adjustmentNumber,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'reference_type' => $referenceType,

@@ -373,6 +373,9 @@ class ProductService
         foreach ($variants as $variantData) {
             if (isset($variantData['id']) && in_array($variantData['id'], $existingIds)) {
                 // Update existing variant
+                // Stock is managed exclusively through StockMovement records.
+                // The variant.stock column is a read-only cache synced by StockMovementService::syncProductCache().
+                unset($variantData['stock']);
                 $variant = $product->variants()->find($variantData['id']);
                 $variant->update($variantData);
                 $incomingIds[] = $variantData['id'];

@@ -141,8 +141,11 @@ export default function AdminSidebar() {
                 items: [
                     { label: 'Dashboard', href: '/admin/inventory/dashboard', icon: 'LayoutDashboard' },
                     { label: 'Products Inventory', href: '/admin/inventory', icon: 'Archive' },
+                    { label: 'Stock History', href: '/admin/inventory/stock-history', icon: 'Clock' },
                     { label: 'Stock Movements', href: '/admin/inventory/movements', icon: 'Activity' },
-                    ...(can('warehouses.view') && hasFeature('warehouse_management') ? [{ label: 'Warehouses', href: '/admin/warehouses', icon: 'Building2' }] : []),
+                    { label: 'Stock Adjustments', href: '/admin/inventory/adjustments', icon: 'Settings' },
+                    // Inventory Locations hidden until Warehouse/Purchase/POS/Transfer features ship
+                    // ...(can('warehouses.view') && hasFeature('warehouse_management') ? [{ label: 'Inventory Locations', href: '/admin/warehouses', icon: 'Building2' }] : []),
                 ]
             }] : []),
             {

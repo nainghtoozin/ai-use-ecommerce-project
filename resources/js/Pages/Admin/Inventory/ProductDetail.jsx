@@ -3,7 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import {
     ArrowLeft, ArrowUpRight, ArrowDownRight, Package,
     CheckCircle, AlertTriangle, XCircle, Edit,
-    ShoppingCart, RefreshCw, Settings, Truck,
+    ShoppingCart, RefreshCw, Settings, Truck, Building2, Eye,
 } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
 import Pagination from '@/Components/Pagination';
@@ -30,7 +30,7 @@ const typeConfig = {
     transfer: { label: 'Transfer', icon: Truck, class: 'bg-gray-50 text-gray-700 border-gray-200' },
 };
 
-export default function ProductDetail({ product = {}, movements = { data: [], meta: {} } }) {
+export default function ProductDetail({ product = {}, movements = { data: [], meta: {} }, stockByWarehouse = [] }) {
     const badge = stockBadge(product.stock_status);
     const BadgeIcon = badge.icon;
 
@@ -99,7 +99,7 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                             </div>
                         </div>
 
-                        <div className="lg:col-span-1">
+                        <div className="lg:col-span-1 space-y-6">
                             <div className="bg-white rounded-xl border border-gray-200 p-6">
                                 <h2 className="text-sm font-semibold text-gray-900 mb-4">Current Stock</h2>
                                 <div className="text-center py-4">
@@ -117,22 +117,47 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                         <span className="text-gray-500">Low Stock Alert</span>
                                         <span className="font-medium text-gray-900">{product.low_stock_alert}</span>
                                     </div>
-                                    {product.stock_status !== 'out_of_stock' && (
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-500">Stock Used</span>
-                                            <span className="font-medium text-gray-900">{Math.max(0, product.calculated_stock - product.stock)}</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
+
+                            {stockByWarehouse.length > 0 && (
+                                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                                    <h2 className="text-sm font-semibold text-gray-900 mb-4">Inventory by Location</h2>
+                                    <div className="space-y-3">
+                                        {stockByWarehouse.map((wh) => (
+                                            <div key={wh.warehouse_id} className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                    <span className="text-sm text-gray-700 truncate">{wh.warehouse_name}</span>
+                                                </div>
+                                                <span className="text-sm font-semibold text-gray-900 ml-3">{Math.round(wh.stock)}</span>
+                                            </div>
+                                        ))}
+                                        {stockByWarehouse.length > 1 && (
+                                            <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                                                <span className="text-sm font-medium text-gray-900">Total</span>
+                                                <span className="text-sm font-bold text-gray-900">{Math.round(stockByWarehouse.reduce((s, w) => s + w.stock, 0))}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl border border-gray-200">
                         <div className="px-6 py-4 border-b border-gray-100">
-                            <div className="flex items-center gap-2">
-                                <RefreshCw className="w-4 h-4 text-gray-400" />
-                                <h2 className="text-sm font-semibold text-gray-900">Movement Timeline</h2>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <RefreshCw className="w-4 h-4 text-gray-400" />
+                                    <h2 className="text-sm font-semibold text-gray-900">Stock History</h2>
+                                </div>
+                                <Link
+                                    href={adminUrl(`/admin/inventory/movements?product_id=${product.id}`)}
+                                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                                >
+                                    View Full History
+                                </Link>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
@@ -142,8 +167,8 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -151,7 +176,7 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                         <tr>
                                             <td colSpan="5" className="px-6 py-16 text-center text-gray-500">
                                                 <RefreshCw className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                                <p className="text-sm font-medium text-gray-900 mb-1">No stock movement yet.</p>
+                                                <p className="text-sm font-medium text-gray-900 mb-1">No stock movements yet.</p>
                                                 <p className="text-xs text-gray-400">Movements will appear here when stock changes occur.</p>
                                             </td>
                                         </tr>
@@ -175,14 +200,16 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {m.reference_type ? (
-                                                        <span className="text-xs font-medium text-gray-400 capitalize">
-                                                            {m.reference_type.replace('_', ' ')} #{m.reference_id}
-                                                        </span>
-                                                    ) : <span className="text-xs text-gray-300">-</span>}
+                                                    {m.warehouse?.name || '—'}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px]">
-                                                    {m.description || <span className="text-gray-300">-</span>}
+                                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                    <Link
+                                                        href={adminUrl(`/admin/inventory/movements/${m.id}`)}
+                                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors inline-flex"
+                                                        title="View"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Link>
                                                 </td>
                                             </tr>
                                         );

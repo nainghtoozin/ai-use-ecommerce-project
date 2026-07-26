@@ -522,6 +522,19 @@ class AdminProductController extends Controller
         }
 
         DB::transaction(function () use ($data, $request, $product, $variantsPayload, $variantImages, $comboItemsPayload, $effectiveType) {
+            // Save old variant stock values before sync (for stock delta calculation)
+            $oldVariantStocks = $product->variants()->pluck('stock', 'id')->toArray();
+
+            // Extract new variant stock values from payload (stock is stripped from syncVariants)
+            $newVariantStocks = [];
+            if (is_array($variantsPayload)) {
+                foreach ($variantsPayload as $v) {
+                    if (!empty($v['id'])) {
+                        $newVariantStocks[(int) $v['id']] = (int) ($v['stock'] ?? 0);
+                    }
+                }
+            }
+
             if ($request->hasFile('photo1')) {
                 $this->imageService->delete($product->photo1);
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
@@ -641,7 +654,7 @@ class AdminProductController extends Controller
                 $product->comboItems()->delete();
             }
 
-            
+            $this->inventoryService->handleProductUpdated($product, $data, $oldVariantStocks, $newVariantStocks);
         });
 
         ActivityLogger::log("Product '{$product->name}' updated", 'product_updated', $product);

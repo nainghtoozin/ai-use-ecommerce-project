@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Package, AlertTriangle, CheckCircle, XCircle, ArrowRight, Clock, Activity } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle, XCircle, ArrowRight, Clock, Activity, Building2 } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
 
 const stockStatusConfig = {
@@ -18,10 +18,19 @@ const typeLabels = {
     transfer: 'Transfer',
 };
 
-export default function InventoryDashboard({ stats = {}, recentMovements = [], recentActivity = [] }) {
+export default function InventoryDashboard({ stats = {}, recentMovements = [], recentActivity = [], warehouseSummary = [], defaultWarehouseId = null }) {
+    const storeStock = warehouseSummary
+        .filter(wh => wh.id === defaultWarehouseId)
+        .reduce((sum, wh) => sum + wh.total_stock, 0);
+    const warehouseStock = warehouseSummary
+        .filter(wh => wh.id !== defaultWarehouseId)
+        .reduce((sum, wh) => sum + wh.total_stock, 0);
+    const totalStock = storeStock + warehouseStock;
+
     const statCards = [
-        { label: 'Total Products', value: stats.total_products, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'In Stock', value: stats.in_stock, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+        { label: 'Total Stock', value: Math.round(totalStock), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Store Stock', value: Math.round(storeStock), icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+        { label: 'Warehouse Stock', value: Math.round(warehouseStock), icon: Building2, color: 'text-purple-600', bg: 'bg-purple-50' },
         { label: 'Low Stock', value: stats.low_stock, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
         { label: 'Out of Stock', value: stats.out_of_stock, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
     ];
@@ -45,12 +54,12 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
                                 Products Inventory
                             </Link>
                             <Link href={adminUrl('/admin/inventory/movements')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                                Stock Movements
+                                Stock History
                             </Link>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                         {statCards.map((card) => {
                             const Icon = card.icon;
                             return (
@@ -130,6 +139,41 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
                             </div>
                         </div>
                     </div>
+
+                    {warehouseSummary.length > 0 && (
+                        <div className="mt-6">
+                            <div className="bg-white rounded-xl border border-gray-200">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                                    <div className="flex items-center gap-2">
+                                        <Building2 className="w-4 h-4 text-gray-400" />
+                                        <h2 className="text-sm font-semibold text-gray-900">Inventory by Location</h2>
+                                    </div>
+                                </div>
+                                <div className="divide-y divide-gray-100">
+                                    {warehouseSummary.map((wh) => (
+                                        <div key={wh.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                                    <Building2 className="w-4 h-4 text-blue-600" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900">{wh.name}</p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {wh.code ? `${wh.code} · ` : ''}{wh.movement_count} movement{wh.movement_count !== 1 ? 's' : ''}
+                                                        {wh.is_default ? ' · Default' : ''}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-lg font-semibold text-gray-900">{Math.round(wh.total_stock)}</span>
+                                                <span className="text-xs text-gray-400 ml-1">units</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>

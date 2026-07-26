@@ -143,8 +143,17 @@ Route::prefix('store/{store_slug}/admin')
         // Inventory
         Route::get('/inventory/dashboard', [AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');
         Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/stock-history', [AdminInventoryController::class, 'stockHistory'])->name('inventory.stock-history');
         Route::get('/inventory/movements', [AdminInventoryController::class, 'movements'])->name('inventory.movements');
+        Route::get('/inventory/movements/{movement}', [AdminInventoryController::class, 'movementShow'])->name('inventory.movements.show');
         Route::get('/inventory/product/{product}', [AdminInventoryController::class, 'show'])->name('inventory.product.show')->whereNumber('product');
+
+        Route::get('/inventory/adjustments', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'index'])->name('inventory.adjustments');
+        Route::get('/inventory/adjustments/create', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'create'])->name('inventory.adjustments.create');
+        Route::post('/inventory/adjustments', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
+        Route::get('/inventory/adjustments/{movement}', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'show'])->name('inventory.adjustments.show');
+        Route::delete('/inventory/adjustments/{movement}', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'destroy'])->name('inventory.adjustments.destroy');
+        Route::post('/inventory/adjustments/preview', [\App\Http\Controllers\Admin\AdminStockAdjustmentController::class, 'preview'])->name('inventory.adjustments.preview');
 
         // Warehouses
         Route::get('/warehouses', [AdminWarehouseController::class, 'index'])->name('warehouses.index');

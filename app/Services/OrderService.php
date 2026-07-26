@@ -32,6 +32,7 @@ class OrderService
         private readonly PromotionService $promotionService,
         private readonly StockMovementService $stockMovementService,
         private readonly StockCalculationService $stockCalculationService,
+        private readonly WarehouseService $warehouseService,
     ) {}
 
     public function createOrder(array $orderData, array $items, ?array $couponData = null, ?array $promotionData = null): Order
@@ -258,9 +259,17 @@ class OrderService
         return 0;
     }
 
+    private function resolveWarehouseId(): ?int
+    {
+        $warehouse = $this->warehouseService->getDefaultWarehouse();
+        return $warehouse?->id;
+    }
+
     public function reduceStock(Order $order): void
     {
-        DB::transaction(function () use ($order) {
+        $warehouseId = $this->resolveWarehouseId();
+
+        DB::transaction(function () use ($order, $warehouseId) {
             $order->load('items.product.comboItems.comboProduct', 'items.product.comboItems.linkedVariant', 'items.variant.product');
 
             foreach ($order->items as $item) {
@@ -273,7 +282,7 @@ class OrderService
                 }
 
                 if ($product->isCombo()) {
-                    $this->reduceComboStock($product, $item->quantity, $item->id, $order);
+                    $this->reduceComboStock($product, $item->quantity, $item->id, $order, $warehouseId);
                 } elseif ($item->variant_id) {
                     $variant = $item->variant;
                     if ($variant) {
@@ -286,6 +295,7 @@ class OrderService
                             referenceType: 'order',
                             referenceId: $order->id,
                             description: "Order #{$order->id} confirmed",
+                            warehouseId: $warehouseId,
                         );
                         $newStock = $this->stockCalculationService->forVariant($variant);
 
@@ -309,6 +319,7 @@ class OrderService
                         referenceType: 'order',
                         referenceId: $order->id,
                         description: "Order #{$order->id} confirmed",
+                        warehouseId: $warehouseId,
                     );
                     $newStock = $this->stockCalculationService->forProduct($product);
 
@@ -326,7 +337,7 @@ class OrderService
         });
     }
 
-    private function reduceComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order): void
+    private function reduceComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order, ?int $warehouseId = null): void
     {
         $comboItems = $combo->comboItems;
 
@@ -352,6 +363,7 @@ class OrderService
                     referenceType: 'order',
                     referenceId: $order->id,
                     description: "Order #{$order->id} confirmed (combo component)",
+                    warehouseId: $warehouseId,
                 );
                 $newStock = $this->stockCalculationService->forVariant($variant);
 
@@ -378,6 +390,7 @@ class OrderService
                     referenceType: 'order',
                     referenceId: $order->id,
                     description: "Order #{$order->id} confirmed (combo component)",
+                    warehouseId: $warehouseId,
                 );
                 $newStock = $this->stockCalculationService->forProduct($componentProduct);
 
@@ -399,7 +412,9 @@ class OrderService
 
     public function restoreStock(Order $order): void
     {
-        DB::transaction(function () use ($order) {
+        $warehouseId = $this->resolveWarehouseId();
+
+        DB::transaction(function () use ($order, $warehouseId) {
             $order->load('items.product.comboItems.comboProduct', 'items.product.comboItems.linkedVariant', 'items.variant.product');
 
             foreach ($order->items as $item) {
@@ -412,7 +427,7 @@ class OrderService
                 }
 
                 if ($product->isCombo()) {
-                    $this->restoreComboStock($product, $item->quantity, $item->id, $order);
+                    $this->restoreComboStock($product, $item->quantity, $item->id, $order, $warehouseId);
                 } elseif ($item->variant_id) {
                     $variant = $item->variant;
                     if ($variant) {
@@ -424,6 +439,7 @@ class OrderService
                             referenceType: 'order',
                             referenceId: $order->id,
                             description: "Order #{$order->id} cancelled — stock restored",
+                            warehouseId: $warehouseId,
                         );
 
                         Log::info('Variant stock restored via movement:', [
@@ -440,6 +456,7 @@ class OrderService
                         referenceType: 'order',
                         referenceId: $order->id,
                         description: "Order #{$order->id} cancelled — stock restored",
+                        warehouseId: $warehouseId,
                     );
 
                     Log::info('Stock restored via movement:', [
@@ -451,7 +468,7 @@ class OrderService
         });
     }
 
-    private function restoreComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order): void
+    private function restoreComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order, ?int $warehouseId = null): void
     {
         $comboItems = $combo->comboItems;
 
@@ -476,6 +493,7 @@ class OrderService
                     referenceType: 'order',
                     referenceId: $order->id,
                     description: "Order #{$order->id} cancelled — stock restored (combo component)",
+                    warehouseId: $warehouseId,
                 );
 
                 Log::info('Combo variant stock restored via movement:', [
@@ -494,6 +512,7 @@ class OrderService
                     referenceType: 'order',
                     referenceId: $order->id,
                     description: "Order #{$order->id} cancelled — stock restored (combo component)",
+                    warehouseId: $warehouseId,
                 );
 
                 Log::info('Combo component stock restored via movement:', [

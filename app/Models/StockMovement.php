@@ -24,6 +24,7 @@ class StockMovement extends Model
         'product_variant_id',
         'warehouse_id',
         'type',
+        'adjustment_number',
         'quantity',
         'unit_price',
         'reference_type',
@@ -67,5 +68,10 @@ class StockMovement extends Model
     public function isOutbound(): bool
     {
         return $this->quantity < 0;
+    }
+
+    public function isImmutable(): bool
+    {
+        return $this->type === self::TYPE_OPENING_STOCK;
     }
 }

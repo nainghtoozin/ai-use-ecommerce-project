@@ -1,10 +1,19 @@
+import { useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import FormInput from '../FormInput';
 
 export default function InventorySection({ data, setData, errors, isEdit = false }) {
     const { featureStatus = {}, warehouses = [] } = usePage().props;
     const inventoryEnabled = featureStatus.inventory_management?.enabled !== false;
-    const warehouseEnabled = featureStatus.warehouse_management?.enabled !== false;
+
+    const defaultWarehouse = warehouses.find(w => w.is_default) || warehouses[0];
+    const hasMultipleLocations = warehouses.length > 1;
+
+    useEffect(() => {
+        if (!isEdit && !data.warehouse_id && defaultWarehouse) {
+            setData('warehouse_id', String(defaultWarehouse.id));
+        }
+    }, []);
 
     if (!inventoryEnabled) {
         return null;
@@ -28,7 +37,7 @@ export default function InventorySection({ data, setData, errors, isEdit = false
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-base font-semibold text-gray-900">Inventory</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">Stock tracking and warehouse assignment</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Stock tracking and inventory location</p>
                     </div>
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         isOutOfStock
@@ -73,10 +82,10 @@ export default function InventorySection({ data, setData, errors, isEdit = false
                     />
                 )}
 
-                {warehouseEnabled && (
+                {hasMultipleLocations ? (
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                            Default Warehouse
+                            Inventory Location
                         </label>
                         <select
                             name="warehouse_id"
@@ -84,16 +93,28 @@ export default function InventorySection({ data, setData, errors, isEdit = false
                             onChange={(e) => setData('warehouse_id', e.target.value)}
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                         >
-                            <option value="">No warehouse</option>
                             {warehouses.map((wh) => (
                                 <option key={wh.id} value={wh.id}>
-                                    {wh.name}{wh.code ? ` (${wh.code})` : ''}
+                                    {wh.name}{wh.code ? ` (${wh.code})` : ''}{wh.is_default ? ' — Primary' : ''}
                                 </option>
                             ))}
                         </select>
                         {errors.warehouse_id && <p className="mt-1 text-xs text-red-600">{errors.warehouse_id}</p>}
                         <p className="mt-1 text-xs text-gray-500">
-                            Assign stock to a specific warehouse location
+                            Select where this stock is physically located
+                        </p>
+                    </div>
+                ) : (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Inventory Location
+                        </label>
+                        <div className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                            {defaultWarehouse?.name || 'Primary Store'}
+                        </div>
+                        <input type="hidden" name="warehouse_id" value={data.warehouse_id || defaultWarehouse?.id || ''} />
+                        <p className="mt-1 text-xs text-gray-500">
+                            Opening stock will be assigned to your primary store.
                         </p>
                     </div>
                 )}
