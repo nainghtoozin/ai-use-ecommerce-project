@@ -265,6 +265,26 @@ class OrderService
         return $warehouse?->id;
     }
 
+    public function applyStockReduction(Order $order): void
+    {
+        if ($order->stock_reduced) {
+            Log::info('Stock already reduced for order, skipping.', ['order_id' => $order->id]);
+            return;
+        }
+        $this->reduceStock($order);
+        $order->update(['stock_reduced' => true]);
+    }
+
+    public function reverseStockReduction(Order $order): void
+    {
+        if (!$order->stock_reduced) {
+            Log::info('Stock not reduced for order, skipping reversal.', ['order_id' => $order->id]);
+            return;
+        }
+        $this->restoreStock($order);
+        $order->update(['stock_reduced' => false]);
+    }
+
     public function reduceStock(Order $order): void
     {
         $warehouseId = $this->resolveWarehouseId();
@@ -577,12 +597,20 @@ class OrderService
         DB::transaction(function () use ($order, $newStatus, $oldStatus) {
             $order->update(['order_status' => $newStatus]);
 
-            if ($oldStatus === 'pending' && $newStatus === 'confirmed') {
-                $this->reduceStock($order);
-            }
+            $stockAffectedStatuses = [
+                Order::ORDER_STATUS_CONFIRMED,
+                Order::ORDER_STATUS_PROCESSING,
+                Order::ORDER_STATUS_SHIPPED,
+                Order::ORDER_STATUS_DELIVERED,
+            ];
 
-            if ($oldStatus === 'confirmed' && $newStatus === 'cancelled') {
-                $this->restoreStock($order);
+            $movingToStockStatus = in_array($newStatus, $stockAffectedStatuses, true);
+            $movingToNonStockStatus = in_array($newStatus, [Order::ORDER_STATUS_PENDING, Order::ORDER_STATUS_CANCELLED], true);
+
+            if ($movingToStockStatus) {
+                $this->applyStockReduction($order);
+            } elseif ($movingToNonStockStatus) {
+                $this->reverseStockReduction($order);
             }
         });
 

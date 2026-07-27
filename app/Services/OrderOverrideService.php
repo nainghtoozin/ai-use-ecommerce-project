@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderOverrideLog;
 use App\Models\Tenant;
+use Illuminate\Support\Facades\DB;
 
 class OrderOverrideService
 {
@@ -24,13 +25,40 @@ class OrderOverrideService
         Order::PAYMENT_STATUS_REFUNDED,
     ];
 
+    private const STOCK_AFFECTED_STATUSES = [
+        Order::ORDER_STATUS_CONFIRMED,
+        Order::ORDER_STATUS_PROCESSING,
+        Order::ORDER_STATUS_SHIPPED,
+        Order::ORDER_STATUS_DELIVERED,
+    ];
+
+    private const NON_STOCK_STATUSES = [
+        Order::ORDER_STATUS_PENDING,
+        Order::ORDER_STATUS_CANCELLED,
+    ];
+
+    public function __construct(
+        private readonly OrderService $orderService
+    ) {}
+
     public function overrideOrderStatus(Order $order, string $newStatus, string $reason): void
     {
         $this->validateOrderStatus($order, $newStatus);
 
         $oldStatus = $order->order_status;
 
-        $order->update(['order_status' => $newStatus]);
+        DB::transaction(function () use ($order, $newStatus, $oldStatus) {
+            $order->update(['order_status' => $newStatus]);
+
+            $movingToStockStatus = in_array($newStatus, self::STOCK_AFFECTED_STATUSES, true);
+            $movingToNonStockStatus = in_array($newStatus, self::NON_STOCK_STATUSES, true);
+
+            if ($movingToStockStatus) {
+                $this->orderService->applyStockReduction($order);
+            } elseif ($movingToNonStockStatus) {
+                $this->orderService->reverseStockReduction($order);
+            }
+        });
 
         $this->logOverride($order, 'order_status', $oldStatus, $newStatus, $reason);
 

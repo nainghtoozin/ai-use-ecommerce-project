@@ -52,6 +52,7 @@ class Order extends Model
         'paid_amount',
         'payment_status',
         'order_status',
+        'stock_reduced',
         'payment_verified_at',
         'rejection_reason',
         'telegram_notified_at',
@@ -63,6 +64,7 @@ class Order extends Model
         'delivery_fee' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'stock_reduced' => 'boolean',
         'payment_verified_at' => 'datetime',
         'telegram_notified_at' => 'datetime',
     ];

@@ -358,9 +358,7 @@ class ClientOrderController extends Controller
         $oldStatus = $order->order_status;
         $order->update(['order_status' => 'cancelled']);
 
-        if ($oldStatus === 'confirmed' || $oldStatus === 'processing' || $oldStatus === 'shipped') {
-            $this->orderService->restoreStock($order);
-        }
+        $this->orderService->reverseStockReduction($order);
 
         ProcessOrderStatusChange::dispatch($order, 'cancelled_by_customer', oldStatus: $oldStatus);
 
