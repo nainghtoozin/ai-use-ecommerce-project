@@ -4,6 +4,7 @@ import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useState } from 'react';
 import { usePermission } from '@/Hooks/usePermission';
+import { useTranslation } from '@/Utils/useTranslation';
 
 const paymentMethodStyles = {
     kpay:      { icon: 'bi-phone',       bg: 'bg-blue-100', text: 'text-blue-600' },
@@ -43,6 +44,7 @@ export default function AdminDashboard({
     endDate,
 }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const { t } = useTranslation();
     const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
     const [customStartDate, setCustomStartDate] = useState(startDate || '');
     const [customEndDate, setCustomEndDate] = useState(endDate || '');
@@ -57,7 +59,7 @@ export default function AdminDashboard({
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
 
-        if (diffMins < 1) return 'Just now';
+        if (diffMins < 1) return t('general.just_now') || 'Just now';
         if (diffMins < 60) return `${diffMins}m ago`;
         if (diffHours < 24) return `${diffHours}h ago`;
         if (diffDays < 7) return `${diffDays}d ago`;
@@ -65,13 +67,13 @@ export default function AdminDashboard({
     };
 
     const periods = [
-        { value: 'today', label: 'Today' },
-        { value: 'last_7_days', label: 'Last 7 Days' },
-        { value: 'last_30_days', label: 'Last 30 Days' },
-        { value: 'this_month', label: 'This Month' },
-        { value: 'last_month', label: 'Last Month' },
-        { value: 'this_year', label: 'This Year' },
-        { value: 'custom', label: 'Custom' },
+        { value: 'today', label: t('dashboard.today') },
+        { value: 'last_7_days', label: t('dashboard.last_7_days') },
+        { value: 'last_30_days', label: t('dashboard.last_30_days') },
+        { value: 'this_month', label: t('dashboard.this_month') },
+        { value: 'last_month', label: t('dashboard.last_month') },
+        { value: 'this_year', label: t('dashboard.this_year') },
+        { value: 'custom', label: t('dashboard.custom') },
     ];
 
     const handlePeriodChange = (period) => {
@@ -104,46 +106,46 @@ export default function AdminDashboard({
 
     const statCards = [
         {
-            label: 'Orders',
+            label: t('dashboard.total_orders'),
             value: filteredOrdersCount || 0,
             icon: 'bi-bag-check',
             color: 'blue',
-            subtitle: 'Total orders in period',
+            subtitle: t('dashboard.total_orders_in_period'),
         },
         {
-            label: 'Pending',
+            label: t('dashboard.pending_orders'),
             value: filteredPendingOrders || 0,
             icon: 'bi-hourglass-split',
             color: 'amber',
-            subtitle: 'Awaiting confirmation',
+            subtitle: t('dashboard.awaiting_confirmation'),
         },
         {
-            label: 'Total Received Payments',
+            label: t('dashboard.total_payments'),
             value: formatMoney(totalReceivedPayments),
             icon: 'bi-cash-stack',
             color: 'emerald',
-            subtitle: 'Verified & confirmed payments',
+            subtitle: t('dashboard.verified_confirmed_payments'),
         },
         {
-            label: 'Products',
+            label: t('dashboard.total_products'),
             value: totalProducts || 0,
             icon: 'bi-box-seam',
             color: 'slate',
-            subtitle: 'In catalog',
+            subtitle: t('dashboard.in_catalog'),
         },
         {
-            label: 'Low Stock',
+            label: t('dashboard.low_stock'),
             value: lowStockCount || 0,
             icon: 'bi-exclamation-triangle',
             color: 'red',
-            subtitle: 'Less than 10 items',
+            subtitle: t('dashboard.less_than_10_items'),
         },
         {
-            label: 'Customers',
+            label: t('dashboard.customers'),
             value: filteredCustomers || 0,
             icon: 'bi-people',
             color: 'violet',
-            subtitle: 'Who placed orders',
+            subtitle: t('dashboard.who_placed_orders'),
         },
     ];
 
@@ -180,7 +182,7 @@ export default function AdminDashboard({
 
     return (
         <AdminLayout>
-            <Head title="Dashboard" />
+            <Head title={t('navigation.dashboard')} />
 
             <div className="p-6 lg:p-8 space-y-6">
                 {showBanner && (
@@ -205,14 +207,14 @@ export default function AdminDashboard({
                                 <div>
                                     <p className="text-sm font-semibold text-gray-900">
                                         {subscriptionStatus === 'suspended'
-                                            ? 'Your subscription has been suspended'
-                                            : 'Your subscription has expired'
+                                            ? t('dashboard.subscription_suspended')
+                                            : t('dashboard.subscription_expired')
                                         }
                                     </p>
                                     <p className="text-sm text-gray-600 mt-0.5">
                                         {subscriptionStatus === 'suspended'
-                                            ? 'Please contact support for assistance.'
-                                            : 'Renew your subscription to restore full access.'
+                                            ? t('dashboard.contact_support_message')
+                                            : t('dashboard.renew_subscription')
                                         }
                                     </p>
                                 </div>
@@ -221,7 +223,7 @@ export default function AdminDashboard({
                                 href={adminUrl('/admin/billing')}
                                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
                             >
-                                {subscriptionStatus === 'suspended' ? 'Contact Support' : 'Renew Now'}
+                                {subscriptionStatus === 'suspended' ? t('dashboard.contact_support') : t('dashboard.renew_now')}
                             </Link>
                         </div>
                     </div>
@@ -230,9 +232,9 @@ export default function AdminDashboard({
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.dashboard')}</h1>
                         <p className="text-sm text-gray-500 mt-1">
-                            {periods.find(p => p.value === selectedPeriod)?.label || 'Custom'} overview
+                            {periods.find(p => p.value === selectedPeriod)?.label || t('dashboard.custom')} {t('general.overview') || 'overview'}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -267,7 +269,7 @@ export default function AdminDashboard({
                                 onChange={(e) => setCustomStartDate(e.target.value)}
                                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
-                            <span className="text-gray-500 text-sm">to</span>
+                            <span className="text-gray-500 text-sm">{t('general.to') || 'to'}</span>
                             <input
                                 type="date"
                                 value={customEndDate}
@@ -278,7 +280,7 @@ export default function AdminDashboard({
                                 onClick={handleCustomDateSubmit}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                             >
-                                Apply
+                                {t('general.apply') || 'Apply'}
                             </button>
                         </div>
                     )}
@@ -286,7 +288,7 @@ export default function AdminDashboard({
                     {selectedPeriod !== 'today' && selectedPeriod !== 'custom' && (
                         <div className="mt-3 pt-3 border-t border-gray-100">
                             <span className="text-sm text-gray-500">
-                                Showing data for: <span className="font-medium text-gray-900">
+                                {t('dashboard.showing_data_for') || 'Showing data for'}: <span className="font-medium text-gray-900">
                                     {periods.find(p => p.value === selectedPeriod)?.label}
                                 </span>
                             </span>
@@ -296,7 +298,7 @@ export default function AdminDashboard({
                     {selectedPeriod === 'custom' && startDate && endDate && (
                         <div className="mt-3 pt-3 border-t border-gray-100">
                             <span className="text-sm text-gray-500">
-                                Showing data for: <span className="font-medium text-gray-900">
+                                {t('dashboard.showing_data_for') || 'Showing data for'}: <span className="font-medium text-gray-900">
                                     {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
                                 </span>
                             </span>
@@ -310,8 +312,8 @@ export default function AdminDashboard({
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 mb-4">
                             <i className="bi bi-grid-3x3-gap-fill text-2xl text-gray-300"></i>
                         </div>
-                        <h3 className="text-base font-semibold text-gray-700 mb-1">No dashboard widgets available</h3>
-                        <p className="text-sm text-gray-500">No dashboard widgets are available for your current permissions.</p>
+                        <h3 className="text-base font-semibold text-gray-700 mb-1">{t('dashboard.no_dashboard_widgets')}</h3>
+                        <p className="text-sm text-gray-500">{t('dashboard.no_dashboard_widgets_message')}</p>
                     </div>
                 )}
 
@@ -344,7 +346,7 @@ export default function AdminDashboard({
                 {canViewPayments && paymentMethodSummary?.length > 0 && (
                     <div className="bg-white rounded-xl border border-gray-200">
                         <div className="px-5 py-4 border-b border-gray-100">
-                            <h2 className="text-sm font-semibold text-gray-700">Payment Methods Breakdown</h2>
+                            <h2 className="text-sm font-semibold text-gray-700">{t('dashboard.payment_methods_breakdown')}</h2>
                         </div>
                         <div className="p-5">
                             {(() => {
@@ -395,27 +397,27 @@ export default function AdminDashboard({
                     {canViewOrders && (
                     <div className={`${ordersColSpan} bg-white rounded-xl border border-gray-200`}>
                         <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.recent_orders')}</h2>
                             <Link href={adminUrl('/admin/orders')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                View All <i className="bi bi-arrow-right ml-1"></i>
+                                {t('dashboard.view_all')} <i className="bi bi-arrow-right ml-1"></i>
                             </Link>
                         </div>
 
                         {!orders?.length ? (
                             <div className="text-center py-12">
                                 <i className="bi bi-bag text-4xl text-gray-300"></i>
-                                <p className="text-sm text-gray-500 mt-2">No orders yet</p>
+                                <p className="text-sm text-gray-500 mt-2">{t('dashboard.no_orders_yet')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
-                                            <th className="px-5 py-3 font-medium">Order</th>
-                                            <th className="px-5 py-3 font-medium">Customer</th>
-                                            <th className="px-5 py-3 font-medium">Amount</th>
-                                            <th className="px-5 py-3 font-medium">Status</th>
-                                            <th className="px-5 py-3 font-medium">Time</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.order')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.customer')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.amount')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.status')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('dashboard.time')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -463,8 +465,8 @@ export default function AdminDashboard({
                                         <i className="bi bi-exclamation-triangle text-red-600"></i>
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-semibold text-red-900">Out of Stock</h3>
-                                        <p className="text-xs text-red-600">{outOfStock.data.length} products</p>
+                                        <h3 className="text-sm font-semibold text-red-900">{t('dashboard.out_of_stock')}</h3>
+                                        <p className="text-xs text-red-600">{outOfStock.data.length} {t('navigation.products').toLowerCase()}</p>
                                     </div>
                                 </div>
                                 <div className="p-4 space-y-3">
@@ -479,13 +481,13 @@ export default function AdminDashboard({
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
-                                                <p className="text-xs text-red-600">Out of stock</p>
+                                                <p className="text-xs text-red-600">{t('inventory.out_of_stock')}</p>
                                             </div>
                                             <Link
                                                 href={adminUrl(`/admin/products/${product.id}/edit`)}
                                                 className="text-xs text-red-600 hover:text-red-700 font-medium"
                                             >
-                                                Restock
+                                                {t('dashboard.restock')}
                                             </Link>
                                         </div>
                                     ))}
@@ -500,8 +502,8 @@ export default function AdminDashboard({
                                         <i className="bi bi-exclamation-circle text-amber-600"></i>
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-semibold text-amber-900">Low Stock</h3>
-                                        <p className="text-xs text-amber-600">{lowStock.data.length} products</p>
+                                        <h3 className="text-sm font-semibold text-amber-900">{t('dashboard.low_stock')}</h3>
+                                        <p className="text-xs text-amber-600">{lowStock.data.length} {t('navigation.products').toLowerCase()}</p>
                                     </div>
                                 </div>
                                 <div className="p-4 space-y-3">
@@ -522,7 +524,7 @@ export default function AdminDashboard({
                                                 href={adminUrl(`/admin/products/${product.id}/edit`)}
                                                 className="text-xs text-amber-600 hover:text-amber-700 font-medium"
                                             >
-                                                Update
+                                                {t('dashboard.update')}
                                             </Link>
                                         </div>
                                     ))}
@@ -533,7 +535,7 @@ export default function AdminDashboard({
                         {(!outOfStock?.data?.length && !lowStock?.data?.length) && (
                             <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
                                 <i className="bi bi-check-circle text-3xl text-emerald-400"></i>
-                                <p className="text-sm text-gray-500 mt-2">All products are in stock</p>
+                                <p className="text-sm text-gray-500 mt-2">{t('dashboard.all_products_in_stock')}</p>
                             </div>
                         )}
                     </div>

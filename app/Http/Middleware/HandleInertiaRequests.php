@@ -91,6 +91,8 @@ class HandleInertiaRequests extends Middleware
         }
 
         return array_merge(parent::share($request), [
+            'locale' => app()->getLocale(),
+            'translations' => $this->getTranslations(),
             'auth' => [
                 'user' => $projection,
             ],
@@ -197,6 +199,80 @@ class HandleInertiaRequests extends Middleware
         if ($authenticatable instanceof User && method_exists($authenticatable, 'wishlistItems')) {
             return $authenticatable->wishlistItems()->pluck('product_id')->toArray();
         }
+        return [];
+    }
+
+    private function getTranslations(): array
+    {
+        try {
+            $locale = app()->getLocale();
+            $fallbackLocale = config('app.fallback_locale', 'en');
+
+            $modules = [
+                'navigation',
+                'dashboard',
+                'products',
+                'orders',
+                'inventory',
+                'general',
+                'settings',
+                'notifications',
+                'checkout',
+                'billing',
+                'reports',
+                'customers',
+            ];
+
+            $translations = [];
+
+            foreach ($modules as $module) {
+                $translations[$module] = $this->loadTranslationModule($module, $locale, $fallbackLocale);
+            }
+
+            // Load validation translations separately (nested structure)
+            $translations['validation'] = $this->loadTranslationModule('validation', $locale, $fallbackLocale);
+
+            return $translations;
+        } catch (\Throwable $e) {
+            report($e);
+            // Return empty associative array so it serializes to {} (JS object), not [] (JS array)
+            return [
+                'navigation' => [],
+                'dashboard' => [],
+                'products' => [],
+                'orders' => [],
+                'inventory' => [],
+                'general' => [],
+                'settings' => [],
+                'notifications' => [],
+                'checkout' => [],
+                'billing' => [],
+                'reports' => [],
+                'customers' => [],
+                'validation' => [],
+            ];
+        }
+    }
+
+    private function loadTranslationModule(string $module, string $locale, string $fallback): array
+    {
+        $path = lang_path("{$locale}/{$module}.php");
+
+        if (file_exists($path)) {
+            $data = require $path;
+            // Ensure we always return an associative array (serializes to {} in JS)
+            return is_array($data) ? $data : [];
+        }
+
+        // Fallback to default locale
+        if ($locale !== $fallback) {
+            $fallbackPath = lang_path("{$fallback}/{$module}.php");
+            if (file_exists($fallbackPath)) {
+                $data = require $fallbackPath;
+                return is_array($data) ? $data : [];
+            }
+        }
+
         return [];
     }
 }

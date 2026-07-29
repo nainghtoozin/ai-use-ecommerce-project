@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'customers' => 'Customers',
+    'customer_details' => 'Customer Details',
+    'name' => 'Name',
+    'email' => 'Email',
+    'phone' => 'Phone',
+    'address' => 'Address',
+    'registered_at' => 'Registered At',
+    'total_orders' => 'Total Orders',
+    'total_spent' => 'Total Spent',
+    'last_order' => 'Last Order',
+    'no_customers' => 'No customers found',
+    'view_customer' => 'View Customer',
+    'order_history' => 'Order History',
+    'customer_since' => 'Customer since :date',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
+    'search_customers' => 'Search customers...',
+    'filter_by_status' => 'Filter by status',
+    'all_customers' => 'All Customers',
+    'new_customers' => 'New Customers',
+    'returning_customers' => 'Returning Customers',
+];

@@ -104,7 +104,6 @@ export default function SettingsEdit({ settings = {} }) {
     site_tagline: settings.site_tagline || '',
     site_description: settings.site_description || '',
     site_keywords: settings.site_keywords || '',
-    default_language: settings.default_language || 'en',
     timezone: settings.timezone || 'Asia/Yangon',
     currency_code: settings.currency_code || 'MMK',
     currency_symbol: settings.currency_symbol || 'MMK',
@@ -320,12 +319,6 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('site_tagline', 'Site Tagline')}
                     {renderField('site_description', 'Site Description', 'textarea')}
                     {renderField('site_keywords', 'Site Keywords')}
-                    {renderField('default_language', 'Default Language', 'select', {
-                      options: [
-                        { value: 'en', label: 'English' },
-                        { value: 'my', label: 'Myanmar' },
-                      ]
-                    })}
                     <div className="col-span-1 md:col-span-2">
                       <TimezoneSelect
                         value={data.timezone}

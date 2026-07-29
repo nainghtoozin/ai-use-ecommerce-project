@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'customers' => 'ဖောက်သည်များ',
+    'customer_details' => 'ဖောက်သည်အသေးစိတ်',
+    'name' => 'အမည်',
+    'email' => 'အီးမေးလ်',
+    'phone' => 'ဖုန်း',
+    'address' => 'လိပ်စာ',
+    'registered_at' => 'စာရင်းသွင်းချိန်',
+    'total_orders' => 'စုစုပေါင်းအော်ဒါ',
+    'total_spent' => 'စုစုပေါင်းသုံးစွဲငွေ',
+    'last_order' => 'နောက်ဆုံးအော်ဒါ',
+    'no_customers' => 'ဖောက်သည်မတွေ့ပါ',
+    'view_customer' => 'ဖောက်သည်ကြည့်ရန်',
+    'order_history' => 'အော်ဒါမှတ်တမ်း',
+    'customer_since' => ':date မှ ဖောက်သည်',
+    'active' => 'သက်ဝင်',
+    'inactive' => 'သက်ဝင်မှုမရှိ',
+    'search_customers' => 'ဖောက်သည်များ ရှာဖွေရန်...',
+    'filter_by_status' => 'အခြေအနေဖြင့် စစ်ထုတ်ရန်',
+    'all_customers' => 'ဖောက်သည်အားလုံး',
+    'new_customers' => 'ဖောက်သည်အသစ်',
+    'returning_customers' => 'ပြန်လာသောဖောက်သည်များ',
+];

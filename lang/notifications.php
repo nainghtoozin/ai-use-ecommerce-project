@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'notifications' => 'Notifications',
+    'mark_all_read' => 'Mark All as Read',
+    'mark_as_read' => 'Mark as Read',
+    'no_notifications' => 'No notifications yet',
+    'new_order' => 'New Order Received',
+    'order_confirmed' => 'Order Confirmed',
+    'order_shipped' => 'Order Shipped',
+    'order_delivered' => 'Order Delivered',
+    'order_cancelled' => 'Order Cancelled',
+    'payment_received' => 'Payment Received',
+    'payment_verified' => 'Payment Verified',
+    'payment_rejected' => 'Payment Rejected',
+    'low_stock_alert' => 'Low Stock Alert',
+    'out_of_stock_alert' => 'Out of Stock Alert',
+    'subscription_expiring' => 'Subscription Expiring Soon',
+    'subscription_expired' => 'Subscription Expired',
+    'new_customer' => 'New Customer Registered',
+    'product_review' => 'New Product Review',
+    'unread_count' => ':count unread',
+    'view_all' => 'View All',
+    'clear_all' => 'Clear All',
+];

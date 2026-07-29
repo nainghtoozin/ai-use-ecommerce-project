@@ -87,6 +87,9 @@ Route::prefix('store/{store_slug}/admin')
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Language switcher
+    Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');
+
     // ── Operations routes (blocked when expired/suspended/locked) ──
     Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'index'])->name('dashboard');

@@ -49,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         'allow_cod',
         'profile_image',
         'notification_preferences',
+        'locale',
     ];
 
     protected $hidden = [

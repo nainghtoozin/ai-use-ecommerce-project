@@ -303,6 +303,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     Route::get('/billing/invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'show'])->name('billing.invoices.show');
     Route::get('/billing/invoices/{invoice}/download', [\App\Http\Controllers\Admin\InvoiceController::class, 'download'])->name('billing.invoices.download');
 
+    // ── Language switcher ──
+    Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');
+
     // ── Operations routes (blocked when expired/suspended/locked) ──
     Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
