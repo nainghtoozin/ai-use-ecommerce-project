@@ -576,8 +576,6 @@ class OrderService
     {
         $oldStatus = $order->order_status;
 
-        $this->validateTransition($oldStatus, $newStatus);
-
         if ($oldStatus === 'pending' && $newStatus === 'confirmed') {
             app(OrderWorkflow::class)->assertCanConfirmOrder($order);
         }
@@ -594,25 +592,7 @@ class OrderService
             app(OrderWorkflow::class)->assertCanDeliverOrder($order);
         }
 
-        DB::transaction(function () use ($order, $newStatus, $oldStatus) {
-            $order->update(['order_status' => $newStatus]);
-
-            $stockAffectedStatuses = [
-                Order::ORDER_STATUS_CONFIRMED,
-                Order::ORDER_STATUS_PROCESSING,
-                Order::ORDER_STATUS_SHIPPED,
-                Order::ORDER_STATUS_DELIVERED,
-            ];
-
-            $movingToStockStatus = in_array($newStatus, $stockAffectedStatuses, true);
-            $movingToNonStockStatus = in_array($newStatus, [Order::ORDER_STATUS_PENDING, Order::ORDER_STATUS_CANCELLED], true);
-
-            if ($movingToStockStatus) {
-                $this->applyStockReduction($order);
-            } elseif ($movingToNonStockStatus) {
-                $this->reverseStockReduction($order);
-            }
-        });
+        app(OrderStatusTransitionService::class)->transition($order, $newStatus);
 
         $order->loadMissing('user');
         if (!$order->user || $this->preferenceService->userWantsNotification($order->user, 'order_status_changed')) {
@@ -653,25 +633,5 @@ class OrderService
         }
 
         return $query->orderBy('created_at', 'desc')->paginate(15);
-    }
-
-    private function validateTransition(string $oldStatus, string $newStatus): void
-    {
-        $valid = [
-            'pending' => ['confirmed', 'cancelled'],
-            'confirmed' => ['processing', 'cancelled'],
-            'processing' => ['shipped'],
-            'shipped' => ['delivered'],
-            'delivered' => [],
-            'cancelled' => [],
-        ];
-
-        $allowed = $valid[$oldStatus] ?? [];
-
-        if (!in_array($newStatus, $allowed, true)) {
-            throw new \InvalidArgumentException(
-                "Invalid order status transition: {$oldStatus} → {$newStatus}"
-            );
-        }
     }
 }

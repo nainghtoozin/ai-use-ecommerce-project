@@ -11,6 +11,7 @@ use App\Models\OrderItem;
 use App\Services\CouponService;
 use App\Services\ImageService;
 use App\Services\OrderService;
+use App\Services\OrderStatusTransitionService;
 use App\Services\PromotionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +28,8 @@ class ClientOrderController extends Controller
         OrderService $orderService,
         ImageService $imageService,
         CouponService $couponService,
-        PromotionService $promotionService
+        PromotionService $promotionService,
+        protected OrderStatusTransitionService $transitionService,
     ) {
         $this->orderService = $orderService;
         $this->imageService = $imageService;
@@ -356,9 +358,7 @@ class ClientOrderController extends Controller
         }
 
         $oldStatus = $order->order_status;
-        $order->update(['order_status' => 'cancelled']);
-
-        $this->orderService->reverseStockReduction($order);
+        $this->transitionService->transition($order, Order::ORDER_STATUS_CANCELLED);
 
         ProcessOrderStatusChange::dispatch($order, 'cancelled_by_customer', oldStatus: $oldStatus);
 

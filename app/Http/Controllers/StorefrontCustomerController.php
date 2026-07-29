@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\Township;
 use App\Services\ImageService;
 use App\Services\OrderService;
+use App\Services\OrderStatusTransitionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +21,7 @@ class StorefrontCustomerController extends Controller
     public function __construct(
         private readonly ImageService $imageService,
         private readonly OrderService $orderService,
+        private readonly OrderStatusTransitionService $transitionService,
     ) {}
     private function ensureTenantAccess(Request $request): Tenant
     {
@@ -162,10 +164,15 @@ class StorefrontCustomerController extends Controller
 
         $orders = $query->simplePaginate(10)->withQueryString();
 
+        $filters = $request->only(['search', 'order_status', 'payment_status', 'date_range', 'date_from', 'date_to', 'sort']);
+        if (empty($filters)) {
+            $filters = new \stdClass();
+        }
+
         return Inertia::render('Storefront/Orders', [
             'tenant' => $this->tenantData($tenant),
             'orders' => $orders,
-            'filters' => $request->only(['search', 'order_status', 'payment_status', 'date_range', 'date_from', 'date_to', 'sort']),
+            'filters' => $filters,
         ]);
     }
 
@@ -329,9 +336,7 @@ class StorefrontCustomerController extends Controller
         }
 
         $oldStatus = $order->order_status;
-        $order->update(['order_status' => Order::ORDER_STATUS_CANCELLED]);
-
-        $this->orderService->reverseStockReduction($order);
+        $this->transitionService->transition($order, Order::ORDER_STATUS_CANCELLED);
 
         ProcessOrderStatusChange::dispatch($order, 'cancelled_by_customer', oldStatus: $oldStatus);
 
