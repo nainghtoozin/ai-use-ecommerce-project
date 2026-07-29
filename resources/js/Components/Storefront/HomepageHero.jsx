@@ -22,14 +22,14 @@ export default function HomepageHero({ websiteInfo }) {
                     <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
                             href="/create-store"
-                            className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-indigo-700 font-bold text-base rounded-xl hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-900/20 hover:shadow-indigo-900/30"
+                            className="inline-flex items-center gap-2 px-8 py-3.5 bg-white dark:bg-gray-900 text-indigo-700 font-bold text-base rounded-xl hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-900/20 hover:shadow-indigo-900/30"
                         >
                             <i className="bi bi-plus-circle"></i>
                             Create Your Store
                         </Link>
                         <Link
                             href="/login"
-                            className="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white font-semibold text-base rounded-xl hover:bg-white/10 transition-all"
+                            className="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white font-semibold text-base rounded-xl hover:bg-white dark:bg-gray-900/10 transition-all"
                         >
                             <i className="bi bi-box-arrow-in-right"></i>
                             Merchant Login

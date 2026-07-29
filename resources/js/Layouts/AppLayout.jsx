@@ -122,7 +122,7 @@ export default function AppLayout({ children, header = null }) {
                         <div className="lg:hidden fixed top-4 left-4 z-50">
                             <button
                                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                                className="p-2 bg-white rounded-lg shadow border border-gray-200"
+                                className="p-2 bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800"
                             >
                                 <i className={`bi ${sidebarOpen ? 'bi-x-lg' : 'bi-list'} text-xl`}></i>
                             </button>
@@ -186,7 +186,7 @@ export default function AppLayout({ children, header = null }) {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium truncate">{auth?.user?.name}</p>
-                                        <p className="text-xs text-gray-400 truncate">{auth?.user?.email}</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{auth?.user?.email}</p>
                                     </div>
                                 </div>
                                 <div className="mt-3 flex gap-2">
@@ -206,13 +206,13 @@ export default function AppLayout({ children, header = null }) {
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Top Navbar (non-admin) */}
                     {!isAdmin && (
-                        <nav className="bg-white border-b border-gray-200 sticky top-0 z-30">
+                        <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                                 <div className="flex justify-between h-16">
                                     <div className="flex items-center">
                                         <Link href="/" className="flex items-center gap-2">
                                             {logoUrl && <img src={logoUrl} alt={siteName} className="h-8 w-auto" />}
-                                            <span className="text-xl font-bold text-gray-800">{siteName}</span>
+                                            <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{siteName}</span>
                                         </Link>
                                     </div>
 
@@ -246,7 +246,7 @@ export default function AppLayout({ children, header = null }) {
                                                 <div className="relative">
                                                     <button
                                                         onClick={() => setShowNotifications(!showNotifications)}
-                                                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg relative"
+                                                        className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg relative"
                                                     >
                                                         <i className="bi bi-bell text-lg"></i>
                                                         {unreadCount > 0 && (
@@ -256,7 +256,7 @@ export default function AppLayout({ children, header = null }) {
                                                         )}
                                                     </button>
                                                     {showNotifications && (
-                                                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                                        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 z-50">
                                                             <div className="p-3 border-b flex justify-between items-center">
                                                                 <span className="font-semibold">Notifications</span>
                                                                 <button onClick={markAllAsRead} className="text-sm text-blue-600 hover:underline">
@@ -265,16 +265,16 @@ export default function AppLayout({ children, header = null }) {
                                                             </div>
                                                             <div className="max-h-64 overflow-y-auto">
                                                                 {notifications.length === 0 ? (
-                                                                    <p className="p-4 text-gray-500 text-center text-sm">No notifications</p>
+                                                                    <p className="p-4 text-gray-500 dark:text-gray-400 text-center text-sm">No notifications</p>
                                                                 ) : (
                                                                     notifications.map((n) => (
                                                                         <div
                                                                             key={n.id}
                                                                             onClick={() => markAsRead(n.id)}
-                                                                            className="p-3 border-b hover:bg-gray-50 cursor-pointer"
+                                                                            className="p-3 border-b hover:bg-gray-50 dark:bg-gray-950 cursor-pointer"
                                                                         >
                                                                             <p className="text-sm">{n.data.message || n.data.title}</p>
-                                                                            <p className="text-xs text-gray-400 mt-1">{n.created_at}</p>
+                                                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{n.created_at}</p>
                                                                         </div>
                                                                     ))
                                                                 )}
@@ -284,7 +284,7 @@ export default function AppLayout({ children, header = null }) {
                                                 </div>
 
                                                 {/* Chat */}
-                                                <Link href="/chat" className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                                                <Link href="/chat" className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg">
                                                     <i className="bi bi-chat-dots text-lg"></i>
                                                 </Link>
 
@@ -292,17 +292,17 @@ export default function AppLayout({ children, header = null }) {
                                                 <div className="relative">
                                                     <button
                                                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg"
                                                     >
                                                         <span>{auth.user.name}</span>
                                                         <i className="bi bi-chevron-down text-xs"></i>
                                                     </button>
                                                     {mobileMenuOpen && (
-                                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                                                            <Link href={adminUrl('/profile')} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 z-50">
+                                                            <Link href={adminUrl('/profile')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800">
                                                                 Profile
                                                             </Link>
-                                                            <button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                                            <button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:bg-gray-800">
                                                                 Logout
                                                             </button>
                                                         </div>
@@ -311,7 +311,7 @@ export default function AppLayout({ children, header = null }) {
                                             </>
                                         ) : (
                                             <>
-                                                <Link href="/login" className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                                                <Link href="/login" className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg">
                                                     Login
                                                 </Link>
                                                 {website_info?.allow_registration !== false && (
@@ -330,7 +330,7 @@ export default function AppLayout({ children, header = null }) {
                     {/* Page Content */}
                     <main className="flex-1">
                         {header && (
-                            <header className="bg-white shadow">
+                            <header className="bg-white dark:bg-gray-900 shadow">
                                 <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                                     {header}
                                 </div>
@@ -345,35 +345,35 @@ export default function AppLayout({ children, header = null }) {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">{siteName}</h3>
-                                    <p className="text-gray-400 text-sm">{website_info?.about_description || 'Your trusted online store'}</p>
+                                    <p className="text-gray-400 dark:text-gray-500 text-sm">{website_info?.about_description || 'Your trusted online store'}</p>
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">Quick Links</h3>
                                     <ul className="space-y-2 text-sm">
-                                        <li><a href="/client/about" className="text-gray-400 hover:text-white">About Us</a></li>
-                                        <li><a href="/client/contact" className="text-gray-400 hover:text-white">Contact</a></li>
-                                        <li><a href="/client/faq" className="text-gray-400 hover:text-white">FAQ</a></li>
-                                        <li><a href="/client/privacy" className="text-gray-400 hover:text-white">Privacy Policy</a></li>
-                                        <li><a href="/client/terms" className="text-gray-400 hover:text-white">Terms of Service</a></li>
+                                        <li><a href="/client/about" className="text-gray-400 dark:text-gray-500 hover:text-white">About Us</a></li>
+                                        <li><a href="/client/contact" className="text-gray-400 dark:text-gray-500 hover:text-white">Contact</a></li>
+                                        <li><a href="/client/faq" className="text-gray-400 dark:text-gray-500 hover:text-white">FAQ</a></li>
+                                        <li><a href="/client/privacy" className="text-gray-400 dark:text-gray-500 hover:text-white">Privacy Policy</a></li>
+                                        <li><a href="/client/terms" className="text-gray-400 dark:text-gray-500 hover:text-white">Terms of Service</a></li>
                                     </ul>
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">Contact</h3>
-                                    {website_info?.phone && <p className="text-gray-400 text-sm"><i className="bi bi-telephone"></i> {website_info.phone}</p>}
-                                    {website_info?.email && <p className="text-gray-400 text-sm"><i className="bi bi-envelope"></i> {website_info.email}</p>}
-                                    {website_info?.address && <p className="text-gray-400 text-sm"><i className="bi bi-geo-alt"></i> {website_info.address}</p>}
+                                    {website_info?.phone && <p className="text-gray-400 dark:text-gray-500 text-sm"><i className="bi bi-telephone"></i> {website_info.phone}</p>}
+                                    {website_info?.email && <p className="text-gray-400 dark:text-gray-500 text-sm"><i className="bi bi-envelope"></i> {website_info.email}</p>}
+                                    {website_info?.address && <p className="text-gray-400 dark:text-gray-500 text-sm"><i className="bi bi-geo-alt"></i> {website_info.address}</p>}
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">Follow Us</h3>
                                     <div className="flex gap-3">
-                                        {website_info?.facebook_link && <a href={website_info.facebook_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white"><i className="bi bi-facebook text-xl"></i></a>}
-                                        {website_info?.whatsapp_link && <a href={website_info.whatsapp_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white"><i className="bi bi-whatsapp text-xl"></i></a>}
-                                        {website_info?.telegram_link && <a href={website_info.telegram_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white"><i className="bi bi-telegram text-xl"></i></a>}
-                                        {website_info?.viber_link && <a href={website_info.viber_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white"><i className="bi bi-chat-square-text text-xl"></i></a>}
+                                        {website_info?.facebook_link && <a href={website_info.facebook_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 dark:text-gray-500 hover:text-white"><i className="bi bi-facebook text-xl"></i></a>}
+                                        {website_info?.whatsapp_link && <a href={website_info.whatsapp_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 dark:text-gray-500 hover:text-white"><i className="bi bi-whatsapp text-xl"></i></a>}
+                                        {website_info?.telegram_link && <a href={website_info.telegram_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 dark:text-gray-500 hover:text-white"><i className="bi bi-telegram text-xl"></i></a>}
+                                        {website_info?.viber_link && <a href={website_info.viber_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 dark:text-gray-500 hover:text-white"><i className="bi bi-chat-square-text text-xl"></i></a>}
                                     </div>
                                 </div>
                             </div>
-                            <div className="border-t border-gray-700 mt-6 pt-4 text-center text-gray-400 text-sm">
+                            <div className="border-t border-gray-700 mt-6 pt-4 text-center text-gray-400 dark:text-gray-500 text-sm">
                                 &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
                             </div>
                         </div>

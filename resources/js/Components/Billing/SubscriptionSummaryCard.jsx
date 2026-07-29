@@ -21,7 +21,7 @@ export default function SubscriptionSummaryCard({ subscription }) {
         { label: 'Plan', value: plan?.name || '—' },
         { label: 'Status', value: <StatusBadge status={subscription.status} size="sm" /> },
         { label: 'Billing', value: <span className="capitalize">{subscription.billing_interval || '—'}</span> },
-        { label: 'Price', value: price !== null ? <span>{formatMoney(price)}<span className="text-gray-400 font-normal">{interval}</span></span> : '—' },
+        { label: 'Price', value: price !== null ? <span>{formatMoney(price)}<span className="text-gray-400 dark:text-gray-500 font-normal">{interval}</span></span> : '—' },
         { label: 'Started', value: subscription.starts_at || '—' },
         { label: 'Expires', value: subscription.expires_at || '—' },
     ];
@@ -44,16 +44,16 @@ export default function SubscriptionSummaryCard({ subscription }) {
     }
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Subscription Summary</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Subscription Summary</h3>
             </div>
             <div className="p-6">
                 <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                     {summaryRows.map(({ label, value }) => (
                         <div key={label}>
-                            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</dt>
-                            <dd className="mt-1 text-sm font-semibold text-gray-900">{value}</dd>
+                            <dt className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">{label}</dt>
+                            <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{value}</dd>
                         </div>
                     ))}
                 </dl>

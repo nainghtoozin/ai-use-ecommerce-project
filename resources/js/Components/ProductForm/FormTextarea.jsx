@@ -26,7 +26,7 @@ export default function FormTextarea({
     return (
         <div>
             {label && (
-                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     {label}
                     {required && <span className="text-red-500 ml-0.5">*</span>}
                 </label>
@@ -43,7 +43,7 @@ export default function FormTextarea({
                 {...props}
             />
             {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-            {helpText && !error && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+            {helpText && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
         </div>
     );
 }

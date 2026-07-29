@@ -13,16 +13,16 @@ export default function FeatureAvailability({ featureCategories, allFeatureDefs,
     const isComingSoon = (key) => comingSoonKeys.includes(key);
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Feature Availability</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Features included in your {currentPlan?.name || 'current'} plan</p>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Feature Availability</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Features included in your {currentPlan?.name || 'current'} plan</p>
             </div>
             <div className="p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {featureCategories.map((cat) => (
                         <div key={cat.label} className="space-y-3">
-                            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{cat.label}</h4>
+                            <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{cat.label}</h4>
                             <div className="space-y-2">
                                 {cat.features?.map((feat) => {
                                     const enabled = isEnabled(feat.key);
@@ -38,18 +38,18 @@ export default function FeatureAvailability({ featureCategories, allFeatureDefs,
                                                     <Check className="w-3 h-3 text-emerald-600" />
                                                 </span>
                                             ) : (
-                                                <span className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                <span className="w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                                                     <X className="w-3 h-3 text-gray-300" />
                                                 </span>
                                             )}
-                                            <span className={`text-sm ${coming ? 'text-gray-400' : enabled ? 'text-gray-900' : 'text-gray-400'}`}>
+                                            <span className={`text-sm ${coming ? 'text-gray-400' : enabled ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>
                                                 {def?.label || feat.key}
                                             </span>
                                             {coming && (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 font-medium">Soon</span>
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-medium">Soon</span>
                                             )}
                                             {!enabled && !coming && (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 font-medium">Unavailable</span>
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-medium">Unavailable</span>
                                             )}
                                         </div>
                                     );

@@ -111,7 +111,7 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
             Subscription #{subscription.id} — {subscription.tenant?.name}
         </h2>}>
             <Head title={`Subscription #${subscription.id}`} />
@@ -155,13 +155,13 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                     )}
 
                     {/* Status + Actions */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div className="flex items-center gap-3">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColors[subscription.status] || 'bg-gray-100 text-gray-800'}`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColors[subscription.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                     {subscription.status}
                                 </span>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
                                     Plan: <strong>{subscription.plan?.name}</strong>
                                 </span>
                             </div>
@@ -219,7 +219,7 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                 )}
                                 <Link
                                     href="/superadmin/subscriptions"
-                                    className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                                 >
                                     Back
                                 </Link>
@@ -229,16 +229,16 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
 
                     {/* Change Plan Form */}
                     {showChangePlan && (
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Change Plan</h3>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Change Plan</h3>
                             <form onSubmit={handleChangePlan} className="space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">New Plan</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Plan</label>
                                         <select
                                             value={changePlanId}
                                             onChange={(e) => setChangePlanId(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             required
                                         >
                                             <option value="">Select plan...</option>
@@ -250,11 +250,11 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Cycle</label>
                                         <select
                                             value={changeBillingInterval}
                                             onChange={(e) => setChangeBillingInterval(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         >
                                             {intervals?.map((interval) => (
                                                 <option key={interval} value={interval}>
@@ -264,13 +264,13 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason (optional)</label>
                                         <input
                                             type="text"
                                             value={changeReason}
                                             onChange={(e) => setChangeReason(e.target.value)}
                                             placeholder="e.g. Merchant requested upgrade"
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         />
                                     </div>
                                 </div>
@@ -278,7 +278,7 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                     <button
                                         type="button"
                                         onClick={() => setShowChangePlan(false)}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200"
                                     >
                                         Cancel
                                     </button>
@@ -296,29 +296,29 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
 
                     {/* Renew Form */}
                     {showRenew && (
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Renew with Custom Date</h3>
-                            <p className="text-sm text-gray-500 mb-4">Or use <strong>Renew ({subscription.billing_interval || 'monthly'})</strong> to auto-calculate from billing cycle.</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Renew with Custom Date</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Or use <strong>Renew ({subscription.billing_interval || 'monthly'})</strong> to auto-calculate from billing cycle.</p>
                             <form onSubmit={handleRenew} className="space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">New Expiry Date</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Expiry Date</label>
                                         <input
                                             type="date"
                                             value={renewDate}
                                             onChange={(e) => setRenewDate(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
                                         <input
                                             type="text"
                                             value={renewNotes}
                                             onChange={(e) => setRenewNotes(e.target.value)}
                                             placeholder="e.g. Paid via bank transfer"
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         />
                                     </div>
                                 </div>
@@ -326,7 +326,7 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                     <button
                                         type="button"
                                         onClick={() => setShowRenew(false)}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200"
                                     >
                                         Cancel
                                     </button>
@@ -344,8 +344,8 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
 
                     {/* Cancel Form */}
                     {showCancel && (
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Cancel Subscription</h3>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Cancel Subscription</h3>
                             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
                                 <p className="text-sm text-yellow-700">
                                     Merchant retains access until the current expiration date. No refunds are processed.
@@ -353,20 +353,20 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                             </div>
                             <form onSubmit={handleCancel} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason (optional)</label>
                                     <input
                                         type="text"
                                         value={cancelReason}
                                         onChange={(e) => setCancelReason(e.target.value)}
                                         placeholder="e.g. Merchant closing store"
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     />
                                 </div>
                                 <div className="flex justify-end gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setShowCancel(false)}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200"
                                     >
                                         Keep Active
                                     </button>
@@ -384,8 +384,8 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
 
                     {/* Expiry Severity Gauge — shows how far into the billing cycle we are */}
                     {subscription.starts_at && subscription.expires_at && subscription.status !== 'expired' && subscription.status !== 'canceled' && (
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Billing Period Health</h3>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Billing Period Health</h3>
                             <div className="space-y-2">
                                 {(() => {
                                     const total = new Date(subscription.expires_at) - new Date(subscription.starts_at);
@@ -398,7 +398,7 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                     else if (pct > 50) barColor = 'bg-blue-500';
                                     return (
                                         <>
-                                            <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                                                 <span>{pct}% of billing period used</span>
                                                 <span>{remaining !== null ? `${remaining} day(s) remaining` : '—'}</span>
                                             </div>
@@ -413,24 +413,24 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                     )}
 
                     {/* Details */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Subscription Details</h3>
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Subscription Details</h3>
                         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <div>
-                                <dt className="text-sm text-gray-500">Tenant</dt>
-                                <dd className="text-sm font-medium text-gray-900">
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Tenant</dt>
+                                <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     <Link href={`/superadmin/tenants/${subscription.tenant_id}`} className="text-blue-600 hover:text-blue-900">
                                         {subscription.tenant?.name}
                                     </Link>
                                 </dd>
                             </div>
                             <div>
-                                <dt className="text-sm text-gray-500">Plan</dt>
-                                <dd className="text-sm font-medium text-gray-900">{subscription.plan?.name || '—'}</dd>
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Plan</dt>
+                                <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{subscription.plan?.name || '—'}</dd>
                             </div>
                             <div>
-                                <dt className="text-sm text-gray-500">Billing Cycle</dt>
-                                <dd className="text-sm font-medium text-gray-900">
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Billing Cycle</dt>
+                                <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {subscription.billing_interval === 'yearly' ? 'Yearly' : 'Monthly'}
                                     {subscription.plan?.yearly_price && subscription.plan?.monthly_price > 0 && subscription.billing_interval === 'yearly' && (
                                         <span className="text-xs text-green-600 ml-1">
@@ -440,35 +440,35 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                 </dd>
                             </div>
                             <div>
-                                <dt className="text-sm text-gray-500">Status</dt>
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Status</dt>
                                 <dd className="text-sm">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[subscription.status] || 'bg-gray-100 text-gray-800'}`}>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[subscription.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                         {subscription.status}
                                     </span>
                                 </dd>
                             </div>
                             <div>
-                                <dt className="text-sm text-gray-500">Started</dt>
-                                <dd className="text-sm font-medium text-gray-900">
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Started</dt>
+                                <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {subscription.starts_at ? new Date(subscription.starts_at).toLocaleDateString() : '—'}
                                 </dd>
                             </div>
                             <div>
-                                <dt className="text-sm text-gray-500">Expires</dt>
-                                <dd className="text-sm font-medium text-gray-900">
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Expires</dt>
+                                <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {subscription.expires_at ? new Date(subscription.expires_at).toLocaleDateString() : 'Never'}
                                 </dd>
                             </div>
                             <div>
-                                <dt className="text-sm text-gray-500">Trial Ends</dt>
-                                <dd className="text-sm font-medium text-gray-900">
+                                <dt className="text-sm text-gray-500 dark:text-gray-400">Trial Ends</dt>
+                                <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {subscription.trial_ends_at ? new Date(subscription.trial_ends_at).toLocaleDateString() : '—'}
                                 </dd>
                             </div>
                             {subscription.cancelled_at && (
                                 <div>
-                                    <dt className="text-sm text-gray-500">Canceled</dt>
-                                    <dd className="text-sm font-medium text-gray-900">
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Canceled</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                         {new Date(subscription.cancelled_at).toLocaleString()}
                                     </dd>
                                 </div>
@@ -477,19 +477,19 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
 
                         {subscription.notes && (
                             <div className="mt-4">
-                                <dt className="text-sm text-gray-500 mb-1">Notes</dt>
-                                <dd className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 whitespace-pre-wrap">{subscription.notes}</dd>
+                                <dt className="text-sm text-gray-500 dark:text-gray-400 mb-1">Notes</dt>
+                                <dd className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 rounded-lg p-3 whitespace-pre-wrap">{subscription.notes}</dd>
                             </div>
                         )}
                     </div>
 
                     {/* Usage vs Limits */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Usage vs Plan Limits</h3>
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Usage vs Plan Limits</h3>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-gray-600">Products</span>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Products</span>
                                     <span className="text-sm font-medium">
                                         {usage.products}
                                         {subscription.plan?.product_limit !== null && subscription.plan?.product_limit !== undefined
@@ -506,9 +506,9 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                     </div>
                                 )}
                             </div>
-                            <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-gray-600">Staff (Admins)</span>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Staff (Admins)</span>
                                     <span className="text-sm font-medium">
                                         {usage.staff}
                                         {subscription.plan?.staff_limit !== null && subscription.plan?.staff_limit !== undefined
@@ -529,26 +529,26 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                     </div>
 
                     {/* Users */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                             Users ({tenantUsers.length})
                         </h3>
                         {tenantUsers.length > 0 ? (
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                         {tenantUsers.map((user) => (
-                                            <tr key={user.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                            <tr key={user.id} className="hover:bg-gray-50 dark:bg-gray-950">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                         {user.role_name || user.roles?.[0]?.name || '—'}
@@ -577,44 +577,44 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-500">No users associated with this tenant.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">No users associated with this tenant.</p>
                         )}
                     </div>
 
                     {/* History */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Subscription History ({history.length})</h3>
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Subscription History ({history.length})</h3>
                         {history.length > 0 ? (
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Started</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ID</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Started</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Expired</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                         {history.map((h) => (
-                                            <tr key={h.id} className={`hover:bg-gray-50 ${h.id === subscription.id ? 'bg-blue-50' : ''}`}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <tr key={h.id} className={`hover:bg-gray-50 dark:bg-gray-950 ${h.id === subscription.id ? 'bg-blue-50' : ''}`}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {h.id === subscription.id
                                                         ? <span className="font-medium text-blue-600">#{h.id} (current)</span>
                                                         : `#${h.id}`
                                                     }
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{h.plan?.name || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{h.plan?.name || '—'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[h.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[h.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                         {h.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {h.starts_at ? new Date(h.starts_at).toLocaleDateString() : '—'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {h.expires_at ? new Date(h.expires_at).toLocaleDateString() : '—'}
                                                 </td>
                                             </tr>
@@ -623,31 +623,31 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-500">No history records.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">No history records.</p>
                         )}
                     </div>
 
                     {/* Audit Log */}
                     {auditLogs && auditLogs.length > 0 && (
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Audit Log ({auditLogs.length})</h3>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Audit Log ({auditLogs.length})</h3>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actor</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Event</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actor</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">From</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">To</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reason</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                         {auditLogs.map((log) => (
-                                            <tr key={log.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.created_at}</td>
+                                            <tr key={log.id} className="hover:bg-gray-50 dark:bg-gray-950">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{log.created_at}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                         log.event === 'trial_started' ? 'bg-blue-100 text-blue-800' :
@@ -672,15 +672,15 @@ export default function ShowSubscription({ subscription, history, auditLogs, usa
                                                          log.event}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{log.actor_type || '—'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.old_status || '—'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.new_status || '—'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">{log.actor_type || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{log.old_status || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{log.new_status || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {log.old_plan && log.new_plan
                                                         ? `${log.old_plan} → ${log.new_plan}`
                                                         : log.new_plan || '—'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">{log.reason || '—'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">{log.reason || '—'}</td>
                                             </tr>
                                         ))}
                                     </tbody>

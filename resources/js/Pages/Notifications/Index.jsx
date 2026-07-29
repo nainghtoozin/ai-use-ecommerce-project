@@ -84,8 +84,8 @@ export default function NotificationsIndex({ notifications, unread_count }) {
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Notifications</h1>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Notifications</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {effectiveUnread > 0
                                 ? `You have ${effectiveUnread} unread notification${effectiveUnread !== 1 ? 's' : ''}`
                                 : 'You\'re all caught up!'}
@@ -103,7 +103,7 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                     )}
                 </div>
 
-                <div className="flex gap-1 mb-6 p-1 bg-gray-100 rounded-xl w-fit">
+                <div className="flex gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
                     {tabs.map((tab) => (
                         <button
                             key={tab.key}
@@ -127,7 +127,7 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                     ))}
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                     {allNotifications.length === 0 ? (
                         <div className="text-center py-20 px-4">
                             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center mb-5 shadow-inner">
@@ -136,8 +136,8 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900">No notifications yet</h3>
-                            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No notifications yet</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
                                 When you place orders and receive updates, your notifications will show up here.
                             </p>
                             <Link
@@ -157,8 +157,8 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900">All caught up!</h3>
-                            <p className="text-sm text-gray-500 mt-1.5">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">All caught up!</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
                                 {filter === 'unread' ? 'No unread notifications.' : 'No notifications to show.'}
                             </p>
                         </div>
@@ -166,8 +166,8 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                         <div>
                             {grouped.map(([label, items]) => (
                                 <div key={label}>
-                                    <div className="sticky top-0 px-4 sm:px-6 py-2.5 bg-gray-50/90 backdrop-blur-sm border-b border-gray-100">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
+                                    <div className="sticky top-0 px-4 sm:px-6 py-2.5 bg-gray-50 dark:bg-gray-950/90 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</span>
                                     </div>
                                     {items.map((notification, idx) => {
                                         const read = notification.isRead;
@@ -176,7 +176,7 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                                             <div
                                                 key={notification.id}
                                                 onClick={() => !loading && markAsRead(notification.id, notification.action_url)}
-                                                className={`relative flex items-start gap-4 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5 cursor-pointer transition-all duration-150 hover:bg-gray-50/80 active:bg-gray-100 ${
+                                                className={`relative flex items-start gap-4 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5 cursor-pointer transition-all duration-150 hover:bg-gray-50 dark:bg-gray-950/80 active:bg-gray-100 ${
                                                     !read ? 'bg-white' : 'bg-white'
                                                 } ${idx < items.length - 1 ? 'border-b border-gray-100' : ''}`}
                                             >
@@ -194,15 +194,15 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                                                 <div className="flex-1 min-w-0 pt-0.5">
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={`text-sm sm:text-base leading-snug ${!read ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+                                                            <p className={`text-sm sm:text-base leading-snug ${!read ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600'}`}>
                                                                 {notification.title}
                                                             </p>
-                                                            <p className="text-xs sm:text-sm text-gray-400 mt-1 leading-relaxed line-clamp-2">
+                                                            <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1 leading-relaxed line-clamp-2">
                                                                 {notification.message}
                                                             </p>
                                                         </div>
                                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                                            <span className="text-[11px] sm:text-xs text-gray-400 whitespace-nowrap">
+                                                            <span className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                                                                 {timeAgo(notification.created_at)}
                                                             </span>
                                                             {!read && (
@@ -213,7 +213,7 @@ export default function NotificationsIndex({ notifications, unread_count }) {
                                                 </div>
 
                                                 {loading && (
-                                                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                                                    <div className="absolute inset-0 bg-white dark:bg-gray-900/60 flex items-center justify-center">
                                                         <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                                                     </div>
                                                 )}

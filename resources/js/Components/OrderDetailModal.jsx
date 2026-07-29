@@ -136,10 +136,10 @@ const paymentColorMap = {
 
 function SectionCard({ icon: Icon, title, children, className = '' }) {
     return (
-        <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`}>
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100">
-                {Icon && <Icon className="w-4 h-4 text-gray-400" />}
-                <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+        <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm ${className}`}>
+            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 dark:border-gray-800">
+                {Icon && <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</h3>
             </div>
             <div className="px-5 py-4">{children}</div>
         </div>
@@ -164,7 +164,7 @@ function ProductImage({ src, name }) {
             <img
                 src={src}
                 alt={name}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-100 dark:border-gray-800 flex-shrink-0"
                 onError={() => setError(true)}
                 loading="lazy"
             />
@@ -181,8 +181,8 @@ function ProductImage({ src, name }) {
 function InfoRow({ label, value, fullWidth }) {
     return (
         <div className={fullWidth ? 'col-span-full' : ''}>
-            <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-            <p className="text-sm font-medium text-gray-900 break-words">{value || '-'}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{label}</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 break-words">{value || '-'}</p>
         </div>
     );
 }
@@ -308,16 +308,16 @@ export default function OrderDetailModal({ orderId, onClose }) {
 
             <div
                 ref={contentRef}
-                className="relative bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] mx-3 sm:mx-6 max-w-3xl overflow-hidden flex flex-col"
+                className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-h-[90vh] mx-3 sm:mx-6 max-w-3xl overflow-hidden flex flex-col"
                 style={{ animation: 'modal-scale-in 200ms ease-out' }}
             >
-                <div className="no-print flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 flex-shrink-0">
-                    <h2 className="text-base sm:text-lg font-bold text-gray-900">Order Details</h2>
+                <div className="no-print flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">Order Details</h2>
                     <button
                         onClick={onClose}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                     >
-                        <X className="w-5 h-5 text-gray-400" />
+                        <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </button>
                 </div>
 
@@ -325,7 +325,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                     {loading && (
                         <div className="flex items-center justify-center py-20 no-print">
                             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                            <span className="ml-3 text-sm text-gray-500">Loading...</span>
+                            <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">Loading...</span>
                         </div>
                     )}
 
@@ -342,15 +342,15 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                 <p>Order #{order.id} &middot; {order.created_at?.substring(0, 10)}</p>
                             </div>
 
-                            <div className="print-card bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                            <div className="print-card bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                     <div>
-                                        <p className="text-xs text-gray-400 mb-1">Order Number</p>
-                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">#{order.id}</h2>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Order Number</p>
+                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">#{order.id}</h2>
                                     </div>
                                     <div className="flex flex-col sm:items-end gap-2">
                                         <StatusBadge status={order.order_status} />
-                                        <p className="text-xs sm:text-sm text-gray-500">{order.created_at?.substring(0, 10)}</p>
+                                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{order.created_at?.substring(0, 10)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -368,23 +368,23 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                 <SectionCard icon={CreditCard} title="Payment Summary">
                                     <div className="space-y-2.5">
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-500">Subtotal</span>
-                                            <span className="font-medium text-gray-700">{formatCurrency(order.subtotal)}</span>
+                                            <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">{formatCurrency(order.subtotal)}</span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-500">Delivery Fee</span>
-                                            <span className="font-medium text-gray-700">{formatCurrency(order.delivery_fee)}</span>
+                                            <span className="text-gray-500 dark:text-gray-400">Delivery Fee</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">{formatCurrency(order.delivery_fee)}</span>
                                         </div>
                                         {Number(order.discount_amount) > 0 && (
                                             <div className="flex items-center justify-between text-sm">
-                                                <span className="text-gray-500">Discount</span>
+                                                <span className="text-gray-500 dark:text-gray-400">Discount</span>
                                                 <span className="font-medium text-red-500">-{formatCurrency(order.discount_amount)}</span>
                                             </div>
                                         )}
-                                        <div className="border-t border-gray-200 pt-2.5 mt-2.5">
+                                        <div className="border-t border-gray-200 dark:border-gray-800 pt-2.5 mt-2.5">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-sm font-semibold text-gray-900">Grand Total</span>
-                                                <span className="text-base font-bold text-gray-900">{formatCurrency(order.total_amount)}</span>
+                                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Grand Total</span>
+                                                <span className="text-base font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -395,7 +395,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                 {isCOD ? (
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-400">Method</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">Method</span>
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-emerald-50 text-emerald-700 border-emerald-200">
                                                 Cash on Delivery
                                             </span>
@@ -420,7 +420,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                                 <InfoRow label="Transaction No" value={order.transaction_id} />
                                             )}
                                             <div>
-                                                <p className="text-xs text-gray-400 mb-0.5">Payment Status</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Payment Status</p>
                                                 <StatusBadge
                                                     status={order.payment_status}
                                                     colorMap={paymentColorMap}
@@ -430,10 +430,10 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                         </div>
                                         {screenshotUrl && (
                                             <div>
-                                                <p className="text-xs text-gray-400 mb-2">Payment Screenshot</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Payment Screenshot</p>
                                                 <button
                                                     onClick={() => setLightboxImage(screenshotUrl)}
-                                                    className="group relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition-colors"
+                                                    className="group relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 hover:border-blue-400 transition-colors"
                                                 >
                                                     <img
                                                         src={screenshotUrl}
@@ -455,11 +455,11 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                 <div className="overflow-x-auto -mx-5 sm:mx-0">
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="border-b border-gray-100">
-                                                <th className="pb-2.5 px-5 sm:pl-0 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Product</th>
-                                                <th className="pb-2.5 px-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Qty</th>
-                                                <th className="pb-2.5 px-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Price</th>
-                                                <th className="pb-2.5 pr-5 sm:pr-0 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Subtotal</th>
+                                            <tr className="border-b border-gray-100 dark:border-gray-800">
+                                                <th className="pb-2.5 px-5 sm:pl-0 text-left text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Product</th>
+                                                <th className="pb-2.5 px-3 text-right text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Qty</th>
+                                                <th className="pb-2.5 px-3 text-right text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Price</th>
+                                                <th className="pb-2.5 pr-5 sm:pr-0 text-right text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Subtotal</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
@@ -472,24 +472,24 @@ export default function OrderDetailModal({ orderId, onClose }) {
                                                                 name={item.product?.name || `Product #${item.product_id}`}
                                                             />
                                                             <div className="min-w-0">
-                                                                <p className="text-sm font-medium text-gray-900 truncate max-w-[160px] sm:max-w-[220px]">
+                                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[160px] sm:max-w-[220px]">
                                                                     {item.product?.name || `Product #${item.product_id}`}
                                                                 </p>
                                                                 {item.variant && (
-                                                                    <p className="text-xs text-gray-500 truncate max-w-[160px] sm:max-w-[220px]">
+                                                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px] sm:max-w-[220px]">
                                                                         {item.variant.label || `Variant #${item.variant_id}`}
                                                                     </p>
                                                                 )}
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="py-3 px-3 text-right text-sm text-gray-600 tabular-nums">
+                                                    <td className="py-3 px-3 text-right text-sm text-gray-600 dark:text-gray-400 tabular-nums">
                                                         {item.quantity}
                                                     </td>
-                                                    <td className="py-3 px-3 text-right text-sm text-gray-600 tabular-nums">
+                                                    <td className="py-3 px-3 text-right text-sm text-gray-600 dark:text-gray-400 tabular-nums">
                                                         {formatCurrency(item.price)}
                                                     </td>
-                                                    <td className="py-3 pr-5 sm:pr-0 text-right text-sm font-semibold text-gray-900 tabular-nums">
+                                                    <td className="py-3 pr-5 sm:pr-0 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
                                                         {formatCurrency(item.price * item.quantity)}
                                                     </td>
                                                 </tr>
@@ -500,7 +500,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                             </SectionCard>
 
                             <div className="hidden print:block print-summary">
-                                <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
+                                <div className="border-t border-gray-200 dark:border-gray-800 pt-4 mt-4 space-y-2">
                                     <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
                                     <div className="flex justify-between text-sm"><span>Delivery Fee</span><span>{formatCurrency(order.delivery_fee)}</span></div>
                                     {Number(order.discount_amount) > 0 && (
@@ -513,8 +513,8 @@ export default function OrderDetailModal({ orderId, onClose }) {
                     )}
                 </div>
 
-                <div className="no-print flex flex-col sm:flex-row items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50">
-                    <div className="text-xs text-gray-400">
+                <div className="no-print flex flex-col sm:flex-row items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
+                    <div className="text-xs text-gray-400 dark:text-gray-500">
                         {order && (
                             <span className="hidden sm:inline">Order #{order.id} &middot; {order.created_at?.substring(0, 10)}</span>
                         )}
@@ -523,7 +523,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                         <button
                             onClick={handleCopyInvoiceLink}
                             disabled={!order}
-                            className="flex-1 sm:flex-none px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 sm:flex-none px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {linkCopied ? (
                                 <><Check className="w-4 h-4 text-green-500" /> Copied</>
@@ -541,7 +541,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex-1 sm:flex-none px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex-1 sm:flex-none px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             Close
                         </button>

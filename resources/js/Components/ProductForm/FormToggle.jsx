@@ -11,12 +11,12 @@ export default function FormToggle({
             <div className="flex-1 min-w-0">
                 <label
                     htmlFor={name}
-                    className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}
+                    className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}
                 >
                     {label}
                 </label>
                 {description && (
-                    <p className={`text-xs mt-0.5 ${disabled ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className={`text-xs mt-0.5 ${disabled ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         {description}
                     </p>
                 )}

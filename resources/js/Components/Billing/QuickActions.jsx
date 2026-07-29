@@ -11,9 +11,9 @@ const actions = [
 
 export default function QuickActions({ subscription, onRenew, can }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Quick Actions</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h3>
             </div>
             <div className="p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

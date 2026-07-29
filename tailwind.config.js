@@ -10,6 +10,8 @@ export default {
         './resources/js/**/*.jsx',
     ],
 
+    darkMode: 'class',
+
     theme: {
         extend: {
             fontFamily: {
@@ -19,6 +21,26 @@ export default {
                 theme: {
                     DEFAULT: 'var(--theme-color, #3B82F6)',
                     rgb: 'var(--theme-color-rgb, 59, 130, 246)',
+                },
+                surface: {
+                    DEFAULT: 'var(--color-surface)',
+                    hover: 'var(--color-surface-hover)',
+                },
+                card: {
+                    DEFAULT: 'var(--color-card)',
+                    border: 'var(--color-card-border)',
+                },
+                primary: {
+                    DEFAULT: 'var(--color-primary)',
+                    foreground: 'var(--color-primary-foreground)',
+                },
+                muted: {
+                    DEFAULT: 'var(--color-muted)',
+                    foreground: 'var(--color-muted-foreground)',
+                },
+                accent: {
+                    DEFAULT: 'var(--color-accent)',
+                    foreground: 'var(--color-accent-foreground)',
                 },
             },
             keyframes: {

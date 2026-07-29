@@ -60,7 +60,7 @@ function InlineActions({ product, onDelete, can }) {
         <div className="flex items-center gap-1 whitespace-nowrap">
             <Link
                 href={adminUrl(`/admin/products/${product.id}`)}
-                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                 title="View"
             >
                 <Eye className="w-4 h-4" />
@@ -68,7 +68,7 @@ function InlineActions({ product, onDelete, can }) {
             {can('products.edit') && (
                 <Link
                     href={adminUrl(`/admin/products/${product.id}/edit`)}
-                    className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                    className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
                     title="Edit"
                 >
                     <Pencil className="w-4 h-4" />
@@ -78,7 +78,7 @@ function InlineActions({ product, onDelete, can }) {
                 <button
                     type="button"
                     onClick={() => onDelete(product)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                 >
                     <Trash2 className="w-4 h-4" />
@@ -244,15 +244,15 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Products</h1>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100">Products</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             {productCount} product{productCount !== 1 ? 's' : ''} · {activeCount} active
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Link
                             href={adminUrl('/admin/inventory')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
                         >
                             <Archive className="w-4 h-4" />
                             Inventory
@@ -270,17 +270,17 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                     <button
                         type="button"
                         onClick={() => setFiltersOpen(!filtersOpen)}
-                        className="w-full px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between hover:bg-gray-100/50 transition-colors"
+                        className="w-full px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 flex items-center justify-between hover:bg-gray-100/50 transition-colors"
                     >
                         <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-gray-400" />
-                            <h3 className="text-sm font-medium text-gray-700">Filters</h3>
+                            <Filter className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</h3>
                         </div>
-                        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${filtersOpen ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${filtersOpen ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
@@ -288,20 +288,20 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                         <div className="p-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                             <div className="lg:col-span-2 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by name or ID..."
-                                    className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
 
                             <select
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Categories</option>
                                 {categories?.map((cat) => (
@@ -312,7 +312,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={brandId}
                                 onChange={(e) => setBrandId(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Brands</option>
                                 {brands?.map((brand) => (
@@ -323,7 +323,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={type}
                                 onChange={(e) => setType(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Types</option>
                                 <option value="single">Single</option>
@@ -334,7 +334,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
@@ -344,7 +344,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={stock}
                                 onChange={(e) => setStock(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Stock</option>
                                 <option value="out_of_stock">Out of Stock</option>
@@ -353,7 +353,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             </select>
                         </div>
 
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
                             <div className="flex items-center gap-3">
                                 {isFiltering && (
                                     <div className="flex items-center gap-2">
@@ -367,7 +367,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                 {hasFilters && (
                                     <button
                                         onClick={resetFilters}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-md transition-colors"
                                     >
                                         Clear all filters
                                     </button>
@@ -427,7 +427,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                 <div className="flex flex-wrap justify-between items-center gap-2">
                     <div className="flex items-center gap-4">
                         <PerPageSelect />
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                             {productCount} product{productCount !== 1 ? 's' : ''}
                         </span>
                     </div>
@@ -435,29 +435,29 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                 </div>
 
                 {/* Products Table */}
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50/80">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                            <thead className="bg-gray-50 dark:bg-gray-950/80">
                                 <tr>
                                     <th className="w-10 px-4 py-3">
                                         <input
                                             type="checkbox"
                                             checked={allSelected}
                                             onChange={handleSelectAll}
-                                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                         />
                                     </th>
-                                    <th className="w-[80px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
-                                    <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="w-[100px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-white z-10">Actions</th>
+                                    <th className="w-[80px] px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Image</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Brand</th>
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Current Stock</th>
+                                    <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                                    <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="w-[100px] px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-white dark:bg-gray-900 z-10">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -465,13 +465,13 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                     <tr>
                                         <td colSpan="11" className="px-4 py-16 text-center">
                                             <div className="flex flex-col items-center">
-                                                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+                                                <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
                                                     <Package className="w-8 h-8 text-gray-300" />
                                                 </div>
-                                                <p className="text-sm font-medium text-gray-900">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {hasFilters ? 'No products match your filters' : 'No products yet'}
                                                 </p>
-                                                <p className="text-sm text-gray-500 mt-1">
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                                     {hasFilters ? 'Try adjusting your search or filter criteria.' : 'Get started by adding your first product.'}
                                                 </p>
                                                 {!hasFilters && can('products.create') && (
@@ -492,13 +492,13 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                         const stockStyle = STOCK_STYLES[inventory.status] || STOCK_STYLES.in_stock;
 
                                         return (
-                                            <tr key={product.id} className="group hover:bg-gray-50/50 transition-colors">
+                                            <tr key={product.id} className="group hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
                                                 <td className="px-4 py-3">
                                                     <input
                                                         type="checkbox"
                                                         checked={selectedIds.includes(product.id)}
                                                         onChange={() => handleSelectOne(product.id)}
-                                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                                     />
                                                 </td>
 
@@ -508,10 +508,10 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                             <img
                                                                 src={product.photo1_url}
                                                                 alt={product.name}
-                                                                className="w-11 h-11 rounded-lg object-cover border border-gray-200 group-hover:border-gray-300 transition-colors"
+                                                                className="w-11 h-11 rounded-lg object-cover border border-gray-200 dark:border-gray-800 group-hover:border-gray-300 transition-colors"
                                                             />
                                                         ) : (
-                                                            <div className="w-11 h-11 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center group-hover:bg-gray-150 transition-colors">
+                                                            <div className="w-11 h-11 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 flex items-center justify-center group-hover:bg-gray-150 transition-colors">
                                                                 <Package className="w-5 h-5 text-gray-300" />
                                                             </div>
                                                         )}
@@ -521,38 +521,38 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                 <td className="px-4 py-3">
                                                     <Link
                                                         href={adminUrl(`/admin/products/${product.id}`)}
-                                                        className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors truncate block"
+                                                        className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors truncate block"
                                                     >
                                                         {product.name}
                                                     </Link>
                                                 </td>
 
                                                 <td className="hidden md:table-cell px-4 py-3">
-                                                    <span className="inline-block max-w-[120px] truncate text-sm font-mono text-gray-500 whitespace-nowrap" title={product.sku_display || ''}>
+                                                    <span className="inline-block max-w-[120px] truncate text-sm font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap" title={product.sku_display || ''}>
                                                         {product.sku_display || '—'}
                                                     </span>
                                                 </td>
 
                                                 <td className="hidden md:table-cell px-4 py-3">
-                                                    <span className="text-sm text-gray-700">{product.category?.name ?? '-'}</span>
+                                                    <span className="text-sm text-gray-700 dark:text-gray-300">{product.category?.name ?? '-'}</span>
                                                 </td>
 
                                                 <td className="hidden md:table-cell px-4 py-3">
-                                                    <span className="text-sm text-gray-700">{product.brand?.name ?? '-'}</span>
+                                                    <span className="text-sm text-gray-700 dark:text-gray-300">{product.brand?.name ?? '-'}</span>
                                                 </td>
 
                                                 <td className="hidden md:table-cell px-4 py-3">
                                                     <div className="flex items-center gap-1.5">
                                                         {product.type === 'variable' ? (
-                                                            <span className="text-sm font-medium text-gray-900">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                                 {inventory.total} pcs
                                                             </span>
                                                         ) : product.type === 'combo' ? (
-                                                            <span className="text-sm font-medium text-gray-900">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                                 Bundle
                                                             </span>
                                                         ) : (
-                                                            <span className="text-sm font-medium text-gray-900">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                                 {inventory.total}{product.unit?.short_name ? ` ${product.unit.short_name}` : ''}
                                                             </span>
                                                         )}
@@ -565,7 +565,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-purple-600/10">🎨 Variable</span>
                                                         )}
                                                         {product.type === 'combo' && (
-                                                            <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
+                                                            <span className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                                                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700">🧩 Bundle</span>
                                                             </span>
                                                         )}
@@ -577,13 +577,13 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
 
                                                 <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap">
                                                     <div className="flex items-center gap-1">
-                                                        <DollarSign className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                                        <DollarSign className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                                                         {product.type === 'variable' && product.price_range ? (
-                                                            <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                                                                 {formatCurrency(product.price_range[0], cc)} - {formatCurrency(product.price_range[1], cc)}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                                                                 {formatCurrency(product.price, cc)}
                                                             </span>
                                                         )}
@@ -597,7 +597,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                     </span>
                                                 </td>
 
-                                                <td className="px-4 py-3 align-middle sticky right-0 bg-white z-10">
+                                                <td className="px-4 py-3 align-middle sticky right-0 bg-white dark:bg-gray-900 z-10">
                                                     <InlineActions product={product} onDelete={openDeleteModal} can={can} />
                                                 </td>
                                             </tr>
@@ -610,8 +610,8 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
 
                     {/* Pagination */}
                     {showPagination && products?.links && products.links.length > 3 && (
-                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50/50 flex items-center justify-between">
-                            <p className="text-sm text-gray-500">
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 flex items-center justify-between">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 Showing <span className="font-medium">{products.from}</span> to <span className="font-medium">{products.to}</span> of <span className="font-medium">{products.total}</span>
                             </p>
                             <div className="flex gap-1">
@@ -639,18 +639,18 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
             {/* Delete Confirmation Modal */}
             {deleteModalOpen && productToDelete && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                                 <AlertCircle className="w-5 h-5 text-red-600" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Delete Product</h3>
-                                <p className="text-sm text-gray-500">This action cannot be undone</p>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete Product</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
                             </div>
                         </div>
-                        <div className="mb-6 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                            <p className="text-sm text-gray-700">
+                        <div className="mb-6 p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
                                 Are you sure you want to delete <strong>{productToDelete.name}</strong>?
                             </p>
                             {productToDelete.has_orders ? (
@@ -659,7 +659,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                     <p className="text-xs text-red-600 mt-0.5">This product exists in customer orders and cannot be deleted. Deactivate it instead.</p>
                                 </div>
                             ) : (
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                     This will permanently remove the product, its images, variants, and combo relationships.
                                 </p>
                             )}
@@ -667,7 +667,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => { setDeleteModalOpen(false); setProductToDelete(null); }}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>

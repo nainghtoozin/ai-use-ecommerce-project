@@ -24,7 +24,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
     return (
         <AdminLayout header={
             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">Permissions</h2>
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Permissions</h2>
                 {can('permissions.create') && (
                     <button
                         onClick={() => router.get(adminUrl('/admin/permissions/create'))}
@@ -41,9 +41,9 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         {grouped.map((group) => (
-                            <div key={group.group} className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
+                            <div key={group.group} className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-700">{group.label}</span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{group.label}</span>
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         {group.count}
                                     </span>
@@ -52,7 +52,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                         ))}
                     </div>
 
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <form onSubmit={handleSearch} className="flex gap-2 mb-6">
                                 <input
@@ -60,7 +60,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search permissions..."
-                                    className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                    className="flex-1 rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                 />
                                 <button
                                     type="submit"
@@ -71,25 +71,25 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                             </form>
 
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guard</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Permission</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Group</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Guard</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created At</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                         {permissions.data.map((permission) => (
-                                            <tr key={permission.id} className="hover:bg-gray-50">
+                                            <tr key={permission.id} className="hover:bg-gray-50 dark:bg-gray-950">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
-                                                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                            <i className="bi bi-lock text-gray-500 text-sm"></i>
+                                                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                            <i className="bi bi-lock text-gray-500 dark:text-gray-400 text-sm"></i>
                                                         </div>
-                                                        <span className="ml-3 text-sm font-medium text-gray-900">{permission.name}</span>
+                                                        <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100">{permission.name}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -97,8 +97,8 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                                         {permission.group}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permission.guard_name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permission.created_at}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{permission.guard_name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{permission.created_at}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                                     {can('permissions.update') && (
                                                         <button
@@ -123,7 +123,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                         ))}
                                         {permissions.data.length === 0 && (
                                             <tr>
-                                                <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                                                <td colSpan="5" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                                     No permissions found.
                                                 </td>
                                             </tr>
@@ -139,7 +139,7 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
                                             key={i}
                                             onClick={() => router.get(link.url, {}, { preserveState: true })}
                                             disabled={!link.url}
-                                            className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
                                         />
                                     ))}

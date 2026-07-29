@@ -11,9 +11,9 @@ export default function NoPermission({ message = "You don't have permission to a
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
                         <ShieldAlert className="w-8 h-8 text-red-500" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-                    <p className="text-sm text-gray-500 max-w-md">{message}</p>
-                    <p className="text-xs text-gray-400 mt-4">Contact your store owner if you need access.</p>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Access Denied</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">{message}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">Contact your store owner if you need access.</p>
                 </div>
             </div>
         </AdminLayout>

@@ -3,7 +3,7 @@ import { InfiniteScroll } from '@inertiajs/react';
 import ProductCard from '@/Components/ProductCard';
 
 const SkeletonCard = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden animate-pulse">
         <div className="h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-200" />
         <div className="p-3">
             <div className="h-2.5 bg-gray-200 rounded w-1/3 mb-1.5" />
@@ -24,12 +24,12 @@ const SkeletonGrid = () => (
 );
 
 const EmptyState = ({ onClearFilters }) => (
-    <div className="text-center py-12 sm:py-16 bg-white rounded-xl border border-gray-200">
+    <div className="text-center py-12 sm:py-16 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
         <svg className="mx-auto w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
-        <h3 className="mt-4 text-lg font-medium text-gray-900">No products found</h3>
-        <p className="mt-2 text-gray-500 max-w-md mx-auto">
+        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No products found</h3>
+        <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-md mx-auto">
             Try adjusting your search or filter criteria to find what you are looking for.
         </p>
         {onClearFilters && (
@@ -69,7 +69,7 @@ export default function ProductGrid({
     return (
         <>
             <div className="mb-4 sm:mb-6">
-                <p className="text-sm sm:text-base text-gray-500">
+                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
                     Showing {products.data.length} of {products.total} Products
                 </p>
             </div>
@@ -80,7 +80,7 @@ export default function ProductGrid({
                 preserveUrl
                 loading={() => (
                     <div className="mt-8 flex justify-center items-center py-4">
-                        <div className="flex items-center gap-2 text-gray-500">
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                             <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -105,7 +105,7 @@ export default function ProductGrid({
 
             {!hasMore && (
                 <div className="mt-8 flex justify-center items-center py-4">
-                    <p className="text-gray-400 text-sm">You have reached the end</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-sm">You have reached the end</p>
                 </div>
             )}
         </>

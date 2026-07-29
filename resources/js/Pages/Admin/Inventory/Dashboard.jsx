@@ -43,17 +43,17 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
-                            <Package className="w-8 h-8 text-gray-500" />
+                            <Package className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                             <div>
-                                <h1 className="text-2xl font-semibold text-gray-900">Inventory Dashboard</h1>
-                                <p className="text-sm text-gray-500">Overview of your stock and inventory activity.</p>
+                                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Inventory Dashboard</h1>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Overview of your stock and inventory activity.</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Link href={adminUrl('/admin/inventory')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            <Link href={adminUrl('/admin/inventory')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
                                 Products Inventory
                             </Link>
-                            <Link href={adminUrl('/admin/inventory/movements')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            <Link href={adminUrl('/admin/inventory/movements')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
                                 Stock History
                             </Link>
                         </div>
@@ -63,25 +63,25 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
                         {statCards.map((card) => {
                             const Icon = card.icon;
                             return (
-                                <div key={card.label} className="bg-white rounded-xl border border-gray-200 p-5">
+                                <div key={card.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
                                     <div className="flex items-center justify-between mb-3">
-                                        <span className="text-sm font-medium text-gray-500">{card.label}</span>
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.label}</span>
                                         <div className={`p-2 rounded-lg ${card.bg}`}>
                                             <Icon className={`w-4 h-4 ${card.color}`} />
                                         </div>
                                     </div>
-                                    <div className="text-3xl font-bold text-gray-900">{card.value}</div>
+                                    <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{card.value}</div>
                                 </div>
                             );
                         })}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                 <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-gray-400" />
-                                    <h2 className="text-sm font-semibold text-gray-900">Recent Movements</h2>
+                                    <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Movements</h2>
                                 </div>
                                 <Link href={adminUrl('/admin/inventory/movements')} className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1">
                                     View All <ArrowRight className="w-3 h-3" />
@@ -89,13 +89,13 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
                             </div>
                             <div className="divide-y divide-gray-100">
                                 {recentMovements.length === 0 && (
-                                    <div className="px-5 py-10 text-center text-gray-400 text-sm">
+                                    <div className="px-5 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
                                         <Clock className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                                         <p>No stock movement yet.</p>
                                     </div>
                                 )}
                                 {recentMovements.slice(0, 7).map((m) => (
-                                    <div key={m.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50">
+                                    <div key={m.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:bg-gray-950">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${m.quantity > 0 ? 'bg-green-50' : 'bg-red-50'}`}>
                                                 <span className={`text-xs font-bold ${m.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -103,36 +103,36 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
                                                 </span>
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{m.product_name}</p>
-                                                <p className="text-xs text-gray-400">{typeLabels[m.type] ?? m.type}{m.product_sku ? ` · ${m.product_sku}` : ''}</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{m.product_name}</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">{typeLabels[m.type] ?? m.type}{m.product_sku ? ` · ${m.product_sku}` : ''}</p>
                                             </div>
                                         </div>
-                                        <div className="text-xs text-gray-400 flex-shrink-0 ml-3">{m.created_at}</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 ml-3">{m.created_at}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                 <div className="flex items-center gap-2">
-                                    <Activity className="w-4 h-4 text-gray-400" />
-                                    <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
+                                    <Activity className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h2>
                                 </div>
                             </div>
                             <div className="divide-y divide-gray-100">
                                 {recentActivity.length === 0 && (
-                                    <div className="px-5 py-10 text-center text-gray-400 text-sm">
+                                    <div className="px-5 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
                                         <Activity className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                                         <p>No inventory activity yet.</p>
                                     </div>
                                 )}
                                 {recentActivity.slice(0, 7).map((a) => (
-                                    <div key={a.id} className="px-5 py-3 flex items-start gap-3 hover:bg-gray-50">
+                                    <div key={a.id} className="px-5 py-3 flex items-start gap-3 hover:bg-gray-50 dark:bg-gray-950">
                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm text-gray-700 truncate">{a.description}</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">{a.created_at}</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{a.description}</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{a.created_at}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -142,31 +142,31 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
 
                     {warehouseSummary.length > 0 && (
                         <div className="mt-6">
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                     <div className="flex items-center gap-2">
-                                        <Building2 className="w-4 h-4 text-gray-400" />
-                                        <h2 className="text-sm font-semibold text-gray-900">Inventory by Location</h2>
+                                        <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Inventory by Location</h2>
                                     </div>
                                 </div>
                                 <div className="divide-y divide-gray-100">
                                     {warehouseSummary.map((wh) => (
-                                        <div key={wh.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50">
+                                        <div key={wh.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:bg-gray-950">
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                                                     <Building2 className="w-4 h-4 text-blue-600" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-medium text-gray-900">{wh.name}</p>
-                                                    <p className="text-xs text-gray-400">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{wh.name}</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">
                                                         {wh.code ? `${wh.code} · ` : ''}{wh.movement_count} movement{wh.movement_count !== 1 ? 's' : ''}
                                                         {wh.is_default ? ' · Default' : ''}
                                                     </p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-lg font-semibold text-gray-900">{Math.round(wh.total_stock)}</span>
-                                                <span className="text-xs text-gray-400 ml-1">units</span>
+                                                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{Math.round(wh.total_stock)}</span>
+                                                <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">units</span>
                                             </div>
                                         </div>
                                     ))}

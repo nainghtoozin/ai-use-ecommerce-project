@@ -95,15 +95,15 @@ export default function ProductTypeSelector({
                     <button
                         type="button"
                         onClick={onBack}
-                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 mb-4 transition-colors"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                         Back to Products
                     </button>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Choose Product Type</h1>
-                    <p className="text-gray-500">Select the type of product you want to create.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">Choose Product Type</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Select the type of product you want to create.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 mb-8">
@@ -125,8 +125,8 @@ export default function ProductTypeSelector({
                     })}
                 </div>
 
-                <div className="mt-auto flex items-center justify-between pt-6 border-t border-gray-200">
-                    <p className="text-sm text-gray-500">
+                <div className="mt-auto flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                         {selectedType
                             ? `Selected: ${types.find((t) => t.id === selectedType)?.title}`
                             : 'Select a product type to continue'
@@ -136,7 +136,7 @@ export default function ProductTypeSelector({
                         <button
                             type="button"
                             onClick={onBack}
-                            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             Cancel
                         </button>

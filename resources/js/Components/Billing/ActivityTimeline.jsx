@@ -16,22 +16,22 @@ const eventConfig = {
 export default function ActivityTimeline({ logs }) {
     if (!logs || logs.length === 0) {
         return (
-            <div className="bg-white rounded-xl border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-100">
-                    <h3 className="text-base font-semibold text-gray-900">Recent Activity</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
                 </div>
                 <div className="p-8 text-center">
                     <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">No recent activity</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No recent activity</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Recent Activity</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
             </div>
             <div className="p-6">
                 <div className="relative">
@@ -60,22 +60,22 @@ export default function ActivityTimeline({ logs }) {
                                     </div>
                                     <div className="min-w-0 flex-1 pt-1.5">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-semibold text-gray-900">{label}</span>
-                                            <span className="text-xs text-gray-400">{log.created_at}</span>
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">{log.created_at}</span>
                                         </div>
                                         {log.reason && (
-                                            <p className="text-sm text-gray-500 mt-0.5">{log.reason}</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{log.reason}</p>
                                         )}
                                         {(log.old_status || log.new_status) && (
                                             <div className="flex items-center gap-1.5 mt-1">
                                                 {log.old_status && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{log.old_status}</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">{log.old_status}</span>
                                                 )}
                                                 {log.old_status && log.new_status && (
-                                                    <ArrowRight className="w-3 h-3 text-gray-400" />
+                                                    <ArrowRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                                                 )}
                                                 {log.new_status && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{log.new_status}</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium">{log.new_status}</span>
                                                 )}
                                             </div>
                                         )}

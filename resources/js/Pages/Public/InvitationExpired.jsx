@@ -15,16 +15,16 @@ export default function InvitationExpired() {
                     </svg>
                 </div>
 
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                     Invitation Expired
                 </h2>
 
-                <p className="text-gray-600 mb-8">
+                <p className="text-gray-600 dark:text-gray-400 mb-8">
                     {message || 'This invitation is no longer valid. It may have expired or been revoked.'}
                 </p>
 
-                <div className="bg-gray-50 rounded-lg p-4 mb-8">
-                    <p className="text-sm text-gray-500">
+                <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4 mb-8">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                         If you believe this is an error, please contact the store owner to send a new invitation.
                     </p>
                 </div>

@@ -57,33 +57,33 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
     };
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Subscriptions</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Subscriptions</h2>}>
             <Head title="Subscriptions" />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Active / Trialing</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Active / Trialing</p>
                             <p className="mt-1 text-2xl font-semibold text-green-600">{stats.active}</p>
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Expiring Soon</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Expiring Soon</p>
                             <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.expiring_soon}</p>
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Past Due</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Past Due</p>
                             <p className="mt-1 text-2xl font-semibold text-orange-600">{stats.past_due}</p>
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Expired</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Expired</p>
                             <p className="mt-1 text-2xl font-semibold text-red-600">{stats.expired}</p>
                         </div>
                     </div>
 
                     {/* Search + Assign */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <form onSubmit={handleSearch} className="flex-1 flex gap-2">
                                 <input
@@ -91,7 +91,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by merchant name, slug, or email..."
-                                    className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                    className="flex-1 rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                 />
                                 <button
                                     type="submit"
@@ -110,27 +110,27 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
 
                         {/* Assign Plan Form */}
                         {showAssign && (
-                            <form onSubmit={submitAssign} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <h3 className="text-sm font-semibold text-gray-700 mb-3">Assign Subscription Plan</h3>
+                            <form onSubmit={submitAssign} className="mb-6 p-4 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Assign Subscription Plan</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Tenant ID</label>
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant ID</label>
                                         <input
                                             type="number"
                                             value={assignTenant}
                                             onChange={(e) => setAssignTenant(e.target.value)}
                                             placeholder="Enter tenant ID..."
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             required
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">Find ID on Merchant page</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Find ID on Merchant page</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Plan</label>
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Plan</label>
                                         <select
                                             value={planId}
                                             onChange={(e) => setPlanId(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             required
                                         >
                                             <option value="">Select plan...</option>
@@ -140,11 +140,11 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Billing Cycle</label>
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Billing Cycle</label>
                                         <select
                                             value={assignBillingInterval}
                                             onChange={(e) => setAssignBillingInterval(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         >
                                             <option value="monthly">Monthly</option>
                                             <option value="yearly">Yearly</option>
@@ -168,7 +168,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                             <select
                                 value={statusFilter}
                                 onChange={(e) => handleFilter(e.target.value)}
-                                className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                className="rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                             >
                                 <option value="">All Statuses</option>
                                 <option value="active">Active</option>
@@ -181,38 +181,38 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
 
                         {/* Table */}
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Billing</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Merchant</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billing</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expires</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     {subscriptions.data.map((sub) => (
-                                        <tr key={sub.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{sub.id}</td>
+                                        <tr key={sub.id} className="hover:bg-gray-50 dark:bg-gray-950">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">#{sub.id}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{sub.tenant?.name || '—'}</div>
-                                                <div className="text-xs text-gray-500">{sub.tenant?.email || ''}</div>
+                                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{sub.tenant?.name || '—'}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">{sub.tenant?.email || ''}</div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sub.plan?.name || '—'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.billing_interval === 'yearly' ? 'Yearly' : 'Monthly'}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{sub.plan?.name || '—'}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{sub.billing_interval === 'yearly' ? 'Yearly' : 'Monthly'}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[sub.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[sub.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                     {sub.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                 {sub.expires_at ? (
                                                     <div className="flex flex-col">
-                                                        <span className="text-gray-900">{new Date(sub.expires_at).toLocaleDateString()}</span>
+                                                        <span className="text-gray-900 dark:text-gray-100">{new Date(sub.expires_at).toLocaleDateString()}</span>
                                                         {(() => {
                                                             const daysRemaining = Math.ceil((new Date(sub.expires_at) - new Date()) / (1000 * 60 * 60 * 24));
                                                             if (daysRemaining < 0) {
@@ -221,12 +221,12 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                                                             if (daysRemaining <= 7) {
                                                                 return <span className="text-xs text-yellow-600 font-medium">{daysRemaining} day(s) left</span>;
                                                             }
-                                                            return <span className="text-xs text-gray-400">{daysRemaining} day(s) left</span>;
+                                                            return <span className="text-xs text-gray-400 dark:text-gray-500">{daysRemaining} day(s) left</span>;
                                                         })()}
                                                     </div>
-                                                ) : <span className="text-gray-500">—</span>}
+                                                ) : <span className="text-gray-500 dark:text-gray-400">—</span>}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                 {new Date(sub.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -241,7 +241,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                                     ))}
                                     {subscriptions.data.length === 0 && (
                                         <tr>
-                                            <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                                            <td colSpan="8" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                                 No subscriptions found.
                                             </td>
                                         </tr>
@@ -258,7 +258,7 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
                                         key={i}
                                         onClick={() => router.get(link.url, {}, { preserveState: true })}
                                         disabled={!link.url}
-                                        className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                     />
                                 ))}

@@ -8,18 +8,18 @@ export default function AdminFooter() {
     const year = new Date().getFullYear();
 
     return (
-        <footer className="bg-white border-t border-gray-200 py-4 px-4 lg:px-6">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500">
+        <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4 px-4 lg:px-6">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <div className="flex items-center gap-3">
                     <span>&copy; {year} {brandName}. All rights reserved.</span>
                     {supportEmail && (
                         <>
                             <span className="text-gray-300">|</span>
-                            <a href={`mailto:${supportEmail}`} className="hover:text-gray-700 transition-colors">{supportEmail}</a>
+                            <a href={`mailto:${supportEmail}`} className="hover:text-gray-700 dark:text-gray-300 transition-colors">{supportEmail}</a>
                         </>
                     )}
                 </div>
-                <span className="text-gray-400">Admin Dashboard</span>
+                <span className="text-gray-400 dark:text-gray-500">Admin Dashboard</span>
             </div>
         </footer>
     );

@@ -264,7 +264,7 @@ export default function TelegramIntegration({ integration }) {
             failed: 'Failed',
         };
         return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[s] || 'bg-gray-100 text-gray-800'}`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[s] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                 {s === 'pending_verification' && (
                     <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-yellow-600" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -301,8 +301,8 @@ export default function TelegramIntegration({ integration }) {
             <Head title="Telegram Integration" />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Telegram Integration</h1>
-                    <p className="text-sm text-gray-500 mt-1">Connect your Telegram bot to receive order notifications and status updates automatically.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Telegram Integration</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Connect your Telegram bot to receive order notifications and status updates automatically.</p>
                 </div>
 
                 {error && (
@@ -327,29 +327,29 @@ export default function TelegramIntegration({ integration }) {
                     <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center gap-3 mb-3">
                             <StatusBadge status="verified" />
-                            <span className="text-sm font-medium text-gray-900">Telegram connected successfully</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Telegram connected successfully</span>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                                <span className="text-gray-500">Chat:</span>
-                                <p className="font-medium text-gray-900 flex items-center gap-1.5 mt-0.5">
+                                <span className="text-gray-500 dark:text-gray-400">Chat:</span>
+                                <p className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-1.5 mt-0.5">
                                     <ChatTypeIcon type={integrationData.chat_type} />
                                     {integrationData.group_title || integrationData.chat_username || integrationData.chat_type_label || 'Private Chat'}
                                 </p>
                             </div>
                             {integrationData.chat_username && (
                                 <div>
-                                    <span className="text-gray-500">Username:</span>
-                                    <p className="font-medium text-gray-900 mt-0.5">@{integrationData.chat_username}</p>
+                                    <span className="text-gray-500 dark:text-gray-400">Username:</span>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">@{integrationData.chat_username}</p>
                                 </div>
                             )}
                             <div>
-                                <span className="text-gray-500">Type:</span>
-                                <p className="font-medium text-gray-900 mt-0.5">{integrationData.chat_type_label}</p>
+                                <span className="text-gray-500 dark:text-gray-400">Type:</span>
+                                <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData.chat_type_label}</p>
                             </div>
                             <div>
-                                <span className="text-gray-500">Bot:</span>
-                                <p className="font-medium text-gray-900 mt-0.5">{integrationData.bot_username ? `@${integrationData.bot_username}` : integrationData.bot_name || 'Connected'}</p>
+                                <span className="text-gray-500 dark:text-gray-400">Bot:</span>
+                                <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData.bot_username ? `@${integrationData.bot_username}` : integrationData.bot_name || 'Connected'}</p>
                             </div>
                         </div>
                     </div>
@@ -359,12 +359,12 @@ export default function TelegramIntegration({ integration }) {
                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div className="flex items-center gap-3 mb-3">
                             <StatusBadge status={integrationData.verification_status} />
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {isPending ? 'Waiting for Telegram verification...' : 'Telegram connection issue'}
                             </span>
                         </div>
                         {isPending && (
-                            <div className="text-sm text-gray-600 space-y-2">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                                 <p>Your bot is connected. To complete verification:</p>
                                 <OnboardingSteps username={integrationData.bot_username} />
                             </div>
@@ -373,10 +373,10 @@ export default function TelegramIntegration({ integration }) {
                 )}
 
                 {hasIntegration && (
-                    <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="mb-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900">Personal Chat</h2>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPersonalConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Chat</h2>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPersonalConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                 {isPersonalConnected ? 'Connected' : 'Not Connected'}
                             </span>
                         </div>
@@ -384,23 +384,23 @@ export default function TelegramIntegration({ integration }) {
                             <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <span className="text-gray-500">Chat ID</span>
-                                        <p className="font-medium text-gray-900 mt-0.5 font-mono">{integrationData.personal_chat_id}</p>
+                                        <span className="text-gray-500 dark:text-gray-400">Chat ID</span>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5 font-mono">{integrationData.personal_chat_id}</p>
                                     </div>
                                     {integrationData.personal_chat_username && (
                                         <div>
-                                            <span className="text-gray-500">Username</span>
-                                            <p className="font-medium text-gray-900 mt-0.5">@{integrationData.personal_chat_username}</p>
+                                            <span className="text-gray-500 dark:text-gray-400">Username</span>
+                                            <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">@{integrationData.personal_chat_username}</p>
                                         </div>
                                     )}
                                     <div>
-                                        <span className="text-gray-500">Connected At</span>
-                                        <p className="font-medium text-gray-900 mt-0.5">
+                                        <span className="text-gray-500 dark:text-gray-400">Connected At</span>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">
                                             {integrationData.personal_verified_at ? new Date(integrationData.personal_verified_at).toLocaleString() : '—'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="pt-3 border-t border-gray-100">
+                                <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
                                     <button
                                         type="button"
                                         onClick={handleReconnectPersonal}
@@ -413,7 +413,7 @@ export default function TelegramIntegration({ integration }) {
                             </div>
                         ) : (
                             <div>
-                                <p className="text-sm text-gray-500 mb-3">Send /start to your bot from Telegram to connect your personal chat.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Send /start to your bot from Telegram to connect your personal chat.</p>
                                 {integrationData?.bot_username && (
                                     <a
                                         href={`https://t.me/${integrationData.bot_username.replace('@', '')}`}
@@ -433,9 +433,9 @@ export default function TelegramIntegration({ integration }) {
                 )}
 
                 {hasIntegration && (
-                    <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="mb-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900">Telegram Group</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Telegram Group</h2>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 isGroupConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                             }`}>
@@ -446,27 +446,27 @@ export default function TelegramIntegration({ integration }) {
                             <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <span className="text-gray-500">Group Name</span>
-                                        <p className="font-medium text-gray-900 mt-0.5">{integrationData.group_chat_title || '—'}</p>
+                                        <span className="text-gray-500 dark:text-gray-400">Group Name</span>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData.group_chat_title || '—'}</p>
                                     </div>
                                     {integrationData.group_chat_username && (
                                         <div>
-                                            <span className="text-gray-500">Username</span>
-                                            <p className="font-medium text-gray-900 mt-0.5">@{integrationData.group_chat_username}</p>
+                                            <span className="text-gray-500 dark:text-gray-400">Username</span>
+                                            <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">@{integrationData.group_chat_username}</p>
                                         </div>
                                     )}
                                     <div>
-                                        <span className="text-gray-500">Group ID</span>
-                                        <p className="font-medium text-gray-900 mt-0.5 font-mono">{integrationData.group_chat_id}</p>
+                                        <span className="text-gray-500 dark:text-gray-400">Group ID</span>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5 font-mono">{integrationData.group_chat_id}</p>
                                     </div>
                                     <div>
-                                        <span className="text-gray-500">Connected At</span>
-                                        <p className="font-medium text-gray-900 mt-0.5">
+                                        <span className="text-gray-500 dark:text-gray-400">Connected At</span>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">
                                             {integrationData.group_verified_at ? new Date(integrationData.group_verified_at).toLocaleString() : '—'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="pt-3 border-t border-gray-100 flex items-center gap-4">
+                                <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-4">
                                     <button
                                         type="button"
                                         onClick={handleDisconnectGroup}
@@ -487,7 +487,7 @@ export default function TelegramIntegration({ integration }) {
                             </div>
                         ) : (
                             <div>
-                                <p className="text-sm text-gray-500 mb-3">Add your bot to a Telegram group and send /start or any message to connect.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Add your bot to a Telegram group and send /start or any message to connect.</p>
                                 {integrationData?.bot_username && (
                                     <a
                                         href={`https://t.me/${integrationData.bot_username.replace('@', '')}?startgroup=connect`}
@@ -506,15 +506,15 @@ export default function TelegramIntegration({ integration }) {
                     </div>
                 )}
 
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                     {!hasIntegration || (!isVerified && !isPending) ? (
                         <form onSubmit={handleConnect}>
                             <div className="space-y-5">
-                                <h2 className="text-lg font-semibold text-gray-900">Connect Your Telegram Bot</h2>
-                                <p className="text-sm text-gray-500">Enter your bot token from <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">@BotFather</a> to get started.</p>
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Connect Your Telegram Bot</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Enter your bot token from <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">@BotFather</a> to get started.</p>
 
                                 <div>
-                                    <label htmlFor="bot_token" className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label htmlFor="bot_token" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Bot Token <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
@@ -523,14 +523,14 @@ export default function TelegramIntegration({ integration }) {
                                             type={showToken ? 'text' : 'password'}
                                             value={botToken}
                                             onChange={(e) => { setBotToken(e.target.value); setError(null); }}
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
                                             required
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowToken(!showToken)}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
                                             tabIndex={-1}
                                         >
                                             {showToken ? (
@@ -548,29 +548,29 @@ export default function TelegramIntegration({ integration }) {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="bot_name" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Bot Name <span className="text-gray-400">(optional)</span>
+                                    <label htmlFor="bot_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Bot Name <span className="text-gray-400 dark:text-gray-500">(optional)</span>
                                     </label>
                                     <input
                                         id="bot_name"
                                         type="text"
                                         value={botName}
                                         onChange={(e) => setBotName(e.target.value)}
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="My Shop Bot"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="bot_username" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Bot Username <span className="text-gray-400">(optional)</span>
+                                    <label htmlFor="bot_username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Bot Username <span className="text-gray-400 dark:text-gray-500">(optional)</span>
                                     </label>
                                     <input
                                         id="bot_username"
                                         type="text"
                                         value={botUsername}
                                         onChange={(e) => setBotUsername(e.target.value)}
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="@myShopBot"
                                     />
                                 </div>
@@ -602,7 +602,7 @@ export default function TelegramIntegration({ integration }) {
                     ) : (
                         <div className="space-y-5">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-gray-900">Telegram Bot</h2>
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Telegram Bot</h2>
                                 <button
                                     type="button"
                                     onClick={handleDisconnect}
@@ -613,22 +613,22 @@ export default function TelegramIntegration({ integration }) {
                             </div>
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <span className="text-gray-500">Bot Name</span>
-                                    <p className="font-medium text-gray-900 mt-0.5">{integrationData?.bot_name || botName || '—'}</p>
+                                    <span className="text-gray-500 dark:text-gray-400">Bot Name</span>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData?.bot_name || botName || '—'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Bot Username</span>
-                                    <p className="font-medium text-gray-900 mt-0.5">{integrationData?.bot_username ? `@${integrationData.bot_username}` : botUsername || '—'}</p>
+                                    <span className="text-gray-500 dark:text-gray-400">Bot Username</span>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData?.bot_username ? `@${integrationData.bot_username}` : botUsername || '—'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Status</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Status</span>
                                     <div className="mt-0.5">
                                         <StatusBadge status={integrationData?.verification_status || 'pending_verification'} />
                                     </div>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Parse Mode</span>
-                                    <p className="font-medium text-gray-900 mt-0.5">HTML</p>
+                                    <span className="text-gray-500 dark:text-gray-400">Parse Mode</span>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">HTML</p>
                                 </div>
                             </div>
                         </div>
@@ -636,17 +636,17 @@ export default function TelegramIntegration({ integration }) {
                 </div>
 
                 {isPending && (
-                    <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Complete Verification</h2>
+                    <div className="mt-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Complete Verification</h2>
                         <OnboardingSteps username={integrationData?.bot_username || botUsername} />
                     </div>
                 )}
 
                 {isVerified && (
                     <>
-                        <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="mt-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Notifications</h2>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -654,10 +654,10 @@ export default function TelegramIntegration({ integration }) {
                                         onChange={handleToggleEnabled}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-700 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
                                 </label>
                             </div>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 When enabled, you will receive order notifications, payment updates, and status changes in your connected Telegram chat.
                             </p>
                         </div>
@@ -670,9 +670,9 @@ export default function TelegramIntegration({ integration }) {
 
                         <SystemNotifications integrationData={integrationData} />
 
-                        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-2">Test Connection</h2>
-                            <p className="text-sm text-gray-500 mb-4">
+                        <div className="mt-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Test Connection</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                                 Send a test message to verify your Telegram bot is working.
                             </p>
                             <button
@@ -745,7 +745,7 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
     function getRouteIcon(catKey) {
         const dest = getEffective(catKey);
         if (dest === 'disabled') {
-            return <span className="text-gray-400 text-xs">Disabled</span>;
+            return <span className="text-gray-400 dark:text-gray-500 text-xs">Disabled</span>;
         }
         const routes = [];
         let hasWarning = false;
@@ -778,7 +778,7 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
             if (dest === 'personal' || dest === 'both') return <span className="text-xs text-red-500">Personal unavailable</span>;
             if (dest === 'group') return <span className="text-xs text-red-500">Group unavailable</span>;
         }
-        return <span className="text-xs text-gray-400">No route</span>;
+        return <span className="text-xs text-gray-400 dark:text-gray-500">No route</span>;
     }
 
     function getRouteWarning(catKey) {
@@ -845,9 +845,9 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
     }
 
     return (
-        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Destination Routing</h2>
-            <p className="text-sm text-gray-500 mb-5">
+        <div className="mt-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Notification Destination Routing</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
                 Choose where each notification category is sent. Categories inherit from the default unless overridden.
             </p>
 
@@ -870,11 +870,11 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
             )}
 
             <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Default Destination</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default Destination</label>
                 <select
                     value={defaultDest}
                     onChange={(e) => setDefaultDest(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     {destinations.map((d) => (
                         <option key={d} value={d} disabled={d === 'group' && !isGroupConnected}>
@@ -882,7 +882,7 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
                         </option>
                     ))}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">Used for all categories unless overridden below.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Used for all categories unless overridden below.</p>
             </div>
 
             <div className="space-y-3">
@@ -891,10 +891,10 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
                     const warning = getRouteWarning(cat.key);
                     const isOverridden = overrides[cat.key] !== undefined;
                     return (
-                        <div key={cat.key} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div key={cat.key} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">{cat.label}</p>
-                                <p className="text-xs text-gray-500 truncate">{cat.desc}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{cat.label}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{cat.desc}</p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                                 <select
@@ -910,7 +910,7 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
                                             return next;
                                         });
                                     }}
-                                    className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="rounded-lg border border-gray-300 dark:border-gray-700 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Inherit ({defaultDest})</option>
                                     {destinations.map((d) => (
@@ -935,8 +935,8 @@ function DestinationSelector({ integrationData, isPersonalConnected, isGroupConn
                 })}
             </div>
 
-            <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
-                <div className="text-xs text-gray-400">
+            <div className="mt-5 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
+                <div className="text-xs text-gray-400 dark:text-gray-500">
                     <span className="inline-flex items-center gap-1.5">
                         <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
                         Personal
@@ -1039,9 +1039,9 @@ function SystemNotifications({ integrationData }) {
     }
 
     return (
-        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Templates</h2>
-            <p className="text-sm text-gray-500 mb-5">
+        <div className="mt-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Notification Templates</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
                 Preview each notification template before sending. All previews use the same message builders as production.
             </p>
 
@@ -1052,20 +1052,20 @@ function SystemNotifications({ integrationData }) {
             )}
 
             {previewData && (
-                <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Preview</span>
-                        <span className="text-xs text-gray-400">
-                            Routes to: <span className="font-medium text-gray-600">{previewData.destination}</span>
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Preview</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                            Routes to: <span className="font-medium text-gray-600 dark:text-gray-400">{previewData.destination}</span>
                         </span>
                     </div>
-                    <pre className="text-sm text-gray-800 whitespace-pre-wrap font-sans bg-white p-3 rounded border border-gray-100">
+                    <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-sans bg-white dark:bg-gray-900 p-3 rounded border border-gray-100 dark:border-gray-800">
                         {previewData.rendered}
                     </pre>
                     <button
                         type="button"
                         onClick={() => { setPreviewData(null); setPreviewError(null); }}
-                        className="mt-2 text-xs text-gray-500 hover:text-gray-700 underline"
+                        className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-300 underline"
                     >
                         Close preview
                     </button>
@@ -1075,11 +1075,11 @@ function SystemNotifications({ integrationData }) {
             <div className="space-y-4">
                 {notificationTypes.map((group) => (
                     <div key={group.group}>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">{group.group}</h3>
+                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{group.group}</h3>
                         <div className="space-y-1">
                             {group.types.map((nt) => (
-                                <div key={nt.type} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-50">
-                                    <span className="text-sm text-gray-600">{nt.label}</span>
+                                <div key={nt.type} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-50 dark:bg-gray-950">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">{nt.label}</span>
                                     <button
                                         type="button"
                                         onClick={() => handlePreview(nt.type)}
@@ -1106,7 +1106,7 @@ function OnboardingSteps({ username }) {
             <div className="flex items-start gap-3">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-600 text-sm font-bold shrink-0">1</div>
                 <div>
-                    <p className="text-sm font-medium text-gray-900">Open your bot</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Open your bot</p>
                     {username ? (
                         <a
                             href={botLink}
@@ -1117,7 +1117,7 @@ function OnboardingSteps({ username }) {
                             t.me/{username.replace('@', '')}
                         </a>
                     ) : (
-                        <p className="text-sm text-gray-500">Find your bot on Telegram</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Find your bot on Telegram</p>
                     )}
                 </div>
             </div>
@@ -1125,14 +1125,14 @@ function OnboardingSteps({ username }) {
             <div className="flex items-start gap-3">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-600 text-sm font-bold shrink-0">2</div>
                 <div>
-                    <p className="text-sm font-medium text-gray-900">Send /start</p>
-                    <p className="text-sm text-gray-500">Open the bot and type /start in the chat to register your private chat.</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Send /start</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Open the bot and type /start in the chat to register your private chat.</p>
                 </div>
             </div>
 
-            <div className="border-t border-gray-100 pt-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">For group notifications:</p>
-                <p className="text-sm text-gray-500">Use the Telegram Group card below to add your bot to a group and connect.</p>
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">For group notifications:</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Use the Telegram Group card below to add your bot to a group and connect.</p>
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">

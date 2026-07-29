@@ -17,16 +17,16 @@ export default function StoreRegistrationSuccess() {
                         </svg>
                     </div>
 
-                    <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
                         Store Created!
                     </h1>
 
-                    <p className="mt-4 text-lg text-gray-600">
-                        Your store <span className="font-semibold text-gray-900">{storeSlug}</span> has been created!
+                    <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+                        Your store <span className="font-semibold text-gray-900 dark:text-gray-100">{storeSlug}</span> has been created!
                     </p>
 
-                    <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                        <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                             Your Store URL
                         </p>
                         {storeUrl ? (
@@ -39,7 +39,7 @@ export default function StoreRegistrationSuccess() {
                                 {storeUrl}
                             </a>
                         ) : (
-                            <p className="text-lg text-gray-400">—</p>
+                            <p className="text-lg text-gray-400 dark:text-gray-500">—</p>
                         )}
                     </div>
 
@@ -74,15 +74,15 @@ export default function StoreRegistrationSuccess() {
                         )}
                         <Link
                             href="/"
-                            className="inline-flex items-center justify-center px-8 py-3 rounded-xl text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all"
+                            className="inline-flex items-center justify-center px-8 py-3 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 transition-all"
                         >
                             Back to Home
                         </Link>
                     </div>
                 </div>
 
-                <footer className="border-t border-gray-200 bg-white mt-auto">
-                    <div className="max-w-lg mx-auto px-4 py-6 text-center text-sm text-gray-400">
+                <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 mt-auto">
+                    <div className="max-w-lg mx-auto px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">
                         &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
                     </div>
                 </footer>

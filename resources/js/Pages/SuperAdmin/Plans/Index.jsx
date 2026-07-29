@@ -51,12 +51,12 @@ export default function PlansIndex({ plans, filters }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Subscription Plans</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Subscription Plans</h2>}>
             <Head title="Subscription Plans" />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                                 <form onSubmit={handleSearch} className="flex-1 flex gap-2">
@@ -65,7 +65,7 @@ export default function PlansIndex({ plans, filters }) {
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search plans by name or slug..."
-                                        className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="flex-1 rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     />
                                     <button
                                         type="submit"
@@ -86,7 +86,7 @@ export default function PlansIndex({ plans, filters }) {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => handleFilter(e.target.value)}
-                                    className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                    className="rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="active">Active</option>
@@ -96,45 +96,45 @@ export default function PlansIndex({ plans, filters }) {
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Yearly</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Storage</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Monthly</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Yearly</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Products</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Staff</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Storage</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                         {plans.data.map((plan) => (
-                                            <tr key={plan.id} className="hover:bg-gray-50">
+                                            <tr key={plan.id} className="hover:bg-gray-50 dark:bg-gray-950">
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{plan.name}</div>
-                                                    <div className="text-sm text-gray-500">{plan.slug}</div>
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{plan.name}</div>
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400">{plan.slug}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium">
                                                     {formatPrice(plan.monthly_price)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium">
                                                     {formatPrice(plan.yearly_price)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
                                                     {formatLimit(plan.product_limit)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
                                                     {formatLimit(plan.staff_limit)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
                                                     {plan.storage_limit !== null && plan.storage_limit !== undefined
                                                         ? plan.storage_limit + ' MB'
                                                         : 'Unlimited'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[plan.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[plan.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                         {plan.status}
                                                     </span>
                                                 </td>
@@ -154,7 +154,7 @@ export default function PlansIndex({ plans, filters }) {
                                         ))}
                                         {plans.data.length === 0 && (
                                             <tr>
-                                                <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                                                <td colSpan="8" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                                     No plans found.
                                                 </td>
                                             </tr>
@@ -170,7 +170,7 @@ export default function PlansIndex({ plans, filters }) {
                                             key={i}
                                             onClick={() => router.get(link.url, {}, { preserveState: true })}
                                             disabled={!link.url}
-                                            className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
                                         />
                                     ))}

@@ -41,16 +41,16 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
             <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3 mb-6">
-                        <Link href={adminUrl('/admin/inventory')} className="text-gray-400 hover:text-gray-600">
+                        <Link href={adminUrl('/admin/inventory')} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-2xl font-semibold text-gray-900 truncate">{product.name}</h1>
-                            <p className="text-sm text-gray-500">Inventory details and movement history.</p>
+                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 truncate">{product.name}</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Inventory details and movement history.</p>
                         </div>
                         <Link
                             href={adminUrl(`/admin/products/${product.id}/edit`)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50"
                         >
                             <Edit className="w-4 h-4" />
                             Edit Product
@@ -59,8 +59,8 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                         <div className="lg:col-span-2">
-                            <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                <h2 className="text-sm font-semibold text-gray-900 mb-4">Basic Information</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+                                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Basic Information</h2>
                                 <div className="grid grid-cols-2 gap-y-4 gap-x-8">
                                     {[
                                         ['SKU', product.sku || '-'],
@@ -71,25 +71,25 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                         ['Status', product.status],
                                     ].map(([label, value]) => (
                                         <div key={label}>
-                                            <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                                            <div className="text-sm font-medium text-gray-900 capitalize">{value}</div>
+                                            <div className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{label}</div>
+                                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{value}</div>
                                         </div>
                                     ))}
                                 </div>
 
                                 {product.variants?.length > 0 && (
-                                    <div className="mt-6 pt-6 border-t border-gray-100">
-                                        <h3 className="text-sm font-semibold text-gray-900 mb-3">Variants ({product.variant_count})</h3>
+                                    <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Variants ({product.variant_count})</h3>
                                         <div className="space-y-2">
                                             {product.variants.map((v) => (
-                                                <div key={v.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5">
+                                                <div key={v.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-950 rounded-lg px-4 py-2.5">
                                                     <div>
-                                                        <span className="text-sm font-medium text-gray-900">{v.sku || `Variant #${v.id}`}</span>
-                                                        {v.attributes && <span className="text-xs text-gray-400 ml-2">{JSON.stringify(v.attributes)}</span>}
+                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.sku || `Variant #${v.id}`}</span>
+                                                        {v.attributes && <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{JSON.stringify(v.attributes)}</span>}
                                                     </div>
                                                     <div className="text-right">
-                                                        <span className="text-sm font-semibold text-gray-900">{v.stock}</span>
-                                                        <span className="text-xs text-gray-400 ml-1">{product.unit}</span>
+                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{v.stock}</span>
+                                                        <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">{product.unit}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -100,11 +100,11 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                         </div>
 
                         <div className="lg:col-span-1 space-y-6">
-                            <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                <h2 className="text-sm font-semibold text-gray-900 mb-4">Current Stock</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+                                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Current Stock</h2>
                                 <div className="text-center py-4">
-                                    <div className="text-5xl font-bold text-gray-900">{product.stock}</div>
-                                    <div className="text-sm text-gray-400 mt-1">{product.unit}</div>
+                                    <div className="text-5xl font-bold text-gray-900 dark:text-gray-100">{product.stock}</div>
+                                    <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">{product.unit}</div>
                                     <div className="mt-4">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${badge.class}`}>
                                             <BadgeIcon className="w-4 h-4" />
@@ -112,31 +112,31 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                         </span>
                                     </div>
                                 </div>
-                                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2 text-sm">
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-500">Low Stock Alert</span>
-                                        <span className="font-medium text-gray-900">{product.low_stock_alert}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Low Stock Alert</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{product.low_stock_alert}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {stockByWarehouse.length > 0 && (
-                                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                    <h2 className="text-sm font-semibold text-gray-900 mb-4">Inventory by Location</h2>
+                                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+                                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Inventory by Location</h2>
                                     <div className="space-y-3">
                                         {stockByWarehouse.map((wh) => (
                                             <div key={wh.warehouse_id} className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                                    <span className="text-sm text-gray-700 truncate">{wh.warehouse_name}</span>
+                                                    <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                                                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{wh.warehouse_name}</span>
                                                 </div>
-                                                <span className="text-sm font-semibold text-gray-900 ml-3">{Math.round(wh.stock)}</span>
+                                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-3">{Math.round(wh.stock)}</span>
                                             </div>
                                         ))}
                                         {stockByWarehouse.length > 1 && (
-                                            <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                                                <span className="text-sm font-medium text-gray-900">Total</span>
-                                                <span className="text-sm font-bold text-gray-900">{Math.round(stockByWarehouse.reduce((s, w) => s + w.stock, 0))}</span>
+                                            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Total</span>
+                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{Math.round(stockByWarehouse.reduce((s, w) => s + w.stock, 0))}</span>
                                             </div>
                                         )}
                                     </div>
@@ -145,12 +145,12 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-6 py-4 border-b border-gray-100">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <RefreshCw className="w-4 h-4 text-gray-400" />
-                                    <h2 className="text-sm font-semibold text-gray-900">Stock History</h2>
+                                    <RefreshCw className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Stock History</h2>
                                 </div>
                                 <Link
                                     href={adminUrl(`/admin/inventory/movements?product_id=${product.id}`)}
@@ -161,23 +161,23 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                             </div>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Location</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                                     {movements.data?.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-16 text-center text-gray-500">
+                                            <td colSpan="5" className="px-6 py-16 text-center text-gray-500 dark:text-gray-400">
                                                 <RefreshCw className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                                <p className="text-sm font-medium text-gray-900 mb-1">No stock movements yet.</p>
-                                                <p className="text-xs text-gray-400">Movements will appear here when stock changes occur.</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No stock movements yet.</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">Movements will appear here when stock changes occur.</p>
                                             </td>
                                         </tr>
                                     )}
@@ -185,8 +185,8 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                         const config = typeConfig[m.type] ?? { label: m.type, icon: Package, class: 'bg-gray-50 text-gray-700 border-gray-200' };
                                         const TypeIcon = config.icon;
                                         return (
-                                            <tr key={m.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(m.created_at).toLocaleString()}</td>
+                                            <tr key={m.id} className="hover:bg-gray-50 dark:bg-gray-950">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(m.created_at).toLocaleString()}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.class}`}>
                                                         <TypeIcon className="w-3 h-3" />
@@ -199,13 +199,13 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                                                         {m.quantity > 0 ? '+' : ''}{m.quantity}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {m.warehouse?.name || '—'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <Link
                                                         href={adminUrl(`/admin/inventory/movements/${m.id}`)}
-                                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors inline-flex"
+                                                        className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors inline-flex"
                                                         title="View"
                                                     >
                                                         <Eye className="w-4 h-4" />

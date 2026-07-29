@@ -32,12 +32,12 @@ export default function InventorySection({ data, setData, errors, isEdit = false
     const isOutOfStock = stockValue === 0;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-base font-semibold text-gray-900">Inventory</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">Stock tracking and inventory location</p>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Inventory</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Stock tracking and inventory location</p>
                     </div>
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         isOutOfStock
@@ -57,14 +57,14 @@ export default function InventorySection({ data, setData, errors, isEdit = false
             <div className="px-6 py-6 space-y-4">
                 {isEdit ? (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                             Current Stock
                         </label>
                         <div className="flex items-center gap-3">
-                            <span className="text-2xl font-semibold text-gray-900">{stockValue}</span>
-                            <span className="text-sm text-gray-500">units</span>
+                            <span className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stockValue}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">units</span>
                         </div>
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Manage stock through Stock Movements to maintain a complete audit trail.
                         </p>
                     </div>
@@ -84,14 +84,14 @@ export default function InventorySection({ data, setData, errors, isEdit = false
 
                 {hasMultipleLocations ? (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                             Inventory Location
                         </label>
                         <select
                             name="warehouse_id"
                             value={data.warehouse_id || ''}
                             onChange={(e) => setData('warehouse_id', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                         >
                             {warehouses.map((wh) => (
                                 <option key={wh.id} value={wh.id}>
@@ -100,20 +100,20 @@ export default function InventorySection({ data, setData, errors, isEdit = false
                             ))}
                         </select>
                         {errors.warehouse_id && <p className="mt-1 text-xs text-red-600">{errors.warehouse_id}</p>}
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Select where this stock is physically located
                         </p>
                     </div>
                 ) : (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                             Inventory Location
                         </label>
-                        <div className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                        <div className="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                             {defaultWarehouse?.name || 'Primary Store'}
                         </div>
                         <input type="hidden" name="warehouse_id" value={data.warehouse_id || defaultWarehouse?.id || ''} />
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Opening stock will be assigned to your primary store.
                         </p>
                     </div>

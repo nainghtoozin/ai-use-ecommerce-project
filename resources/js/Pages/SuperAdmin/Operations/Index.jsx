@@ -49,15 +49,15 @@ function formatDateTime(dateStr) {
 
 function StatCard({ icon: Icon, label, value, color, subtitle }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl ${color.bg} flex items-center justify-center flex-shrink-0`}>
                     <Icon className={`w-6 h-6 ${color.text}`} />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-xl font-bold text-gray-900 truncate">{value}</p>
-                    <p className="text-sm text-gray-500 truncate">{label}</p>
-                    {subtitle && <p className="text-xs text-gray-400 truncate">{subtitle}</p>}
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">{value}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{label}</p>
+                    {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{subtitle}</p>}
                 </div>
             </div>
         </div>
@@ -67,17 +67,17 @@ function StatCard({ icon: Icon, label, value, color, subtitle }) {
 function GatewayCard({ gateway }) {
     const isAvailable = gateway.integrated && gateway.is_offline;
     return (
-        <div className={`bg-white rounded-xl border p-5 ${isAvailable ? 'border-emerald-200' : 'border-gray-200 opacity-70'}`}>
+        <div className={`bg-white dark:bg-gray-900 rounded-xl border p-5 ${isAvailable ? 'border-emerald-200' : 'border-gray-200 dark:border-gray-800 opacity-70'}`}>
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${isAvailable ? 'bg-emerald-100' : 'bg-gray-100'} flex items-center justify-center`}>
+                    <div className={`w-10 h-10 rounded-xl ${isAvailable ? 'bg-emerald-100' : 'bg-gray-100 dark:bg-gray-800'} flex items-center justify-center`}>
                         {isAvailable
                             ? <Wifi className="w-5 h-5 text-emerald-600" />
-                            : <WifiOff className="w-5 h-5 text-gray-400" />}
+                            : <WifiOff className="w-5 h-5 text-gray-400 dark:text-gray-500" />}
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-gray-900">{gateway.label}</p>
-                        <p className="text-xs text-gray-400 capitalize">{gateway.value}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{gateway.label}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 capitalize">{gateway.value}</p>
                     </div>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -87,7 +87,7 @@ function GatewayCard({ gateway }) {
                 </span>
             </div>
             {!isAvailable && (
-                <p className="text-xs text-gray-400">Integration not yet available.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Integration not yet available.</p>
             )}
         </div>
     );
@@ -120,49 +120,49 @@ function WebhookDetailDrawer({ webhook, open, onClose }) {
     return (
         <div className="fixed inset-0 z-50 flex">
             <div className="fixed inset-0 bg-black/30" onClick={onClose} aria-hidden="true" />
-            <div className="relative ml-auto w-full max-w-xl bg-white shadow-2xl overflow-y-auto" role="dialog" aria-modal="true" aria-label="Webhook details">
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+            <div className="relative ml-auto w-full max-w-xl bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto" role="dialog" aria-modal="true" aria-label="Webhook details">
+                <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                             <Zap className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                            <h2 className="text-base font-semibold text-gray-900">Webhook Event</h2>
-                            <p className="text-xs text-gray-500 font-mono">{webhook.gateway_event_id || webhook.id}</p>
+                            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Webhook Event</h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{webhook.gateway_event_id || webhook.id}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Close">
-                        <X className="w-5 h-5 text-gray-500" />
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors" aria-label="Close">
+                        <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     </button>
                 </div>
 
                 <div className="p-6 space-y-6">
                     <div className="flex items-center justify-between">
                         <StatusBadge status={webhook.status} />
-                        <span className="text-xs text-gray-400">{formatDateTime(webhook.created_at)}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(webhook.created_at)}</span>
                     </div>
 
-                    <div className="bg-gray-50 rounded-xl p-5 space-y-3">
-                        <h3 className="text-sm font-semibold text-gray-900">Request Info</h3>
+                    <div className="bg-gray-50 dark:bg-gray-950 rounded-xl p-5 space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Request Info</h3>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Gateway</span>
-                            <span className="font-semibold text-gray-900 capitalize">{webhook.gateway}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Gateway</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{webhook.gateway}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Event Type</span>
-                            <span className="font-mono text-xs text-gray-900">{webhook.event_type || '—'}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Event Type</span>
+                            <span className="font-mono text-xs text-gray-900 dark:text-gray-100">{webhook.event_type || '—'}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Gateway Event ID</span>
-                            <span className="font-mono text-xs text-gray-600">{webhook.gateway_event_id || '—'}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Gateway Event ID</span>
+                            <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{webhook.gateway_event_id || '—'}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Gateway Reference</span>
-                            <span className="font-mono text-xs text-gray-600">{webhook.gateway_reference || '—'}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Gateway Reference</span>
+                            <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{webhook.gateway_reference || '—'}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Payload Size</span>
-                            <span className="text-gray-900">{webhook.payload_size ? `${(webhook.payload_size / 1024).toFixed(1)} KB` : '—'}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Payload Size</span>
+                            <span className="text-gray-900 dark:text-gray-100">{webhook.payload_size ? `${(webhook.payload_size / 1024).toFixed(1)} KB` : '—'}</span>
                         </div>
                     </div>
 
@@ -178,9 +178,9 @@ function WebhookDetailDrawer({ webhook, open, onClose }) {
                         </div>
                     )}
 
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-5 py-3 border-b border-gray-100">
-                            <h3 className="text-sm font-semibold text-gray-900">Timeline</h3>
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Timeline</h3>
                         </div>
                         <div className="p-5">
                             <div className="space-y-0">
@@ -195,8 +195,8 @@ function WebhookDetailDrawer({ webhook, open, onClose }) {
                                                 <Icon className="w-4 h-4" />
                                             </div>
                                             <div className="pt-1">
-                                                <p className="text-sm font-medium text-gray-900">{step.event}</p>
-                                                <p className="text-xs text-gray-400">{formatDateTime(step.time)}</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{step.event}</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(step.time)}</p>
                                                 {step.reason && <p className="text-xs text-red-500 mt-0.5">{step.reason}</p>}
                                             </div>
                                         </div>
@@ -207,12 +207,12 @@ function WebhookDetailDrawer({ webhook, open, onClose }) {
                     </div>
 
                     {webhook.request_headers_raw && (
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-5 py-3 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Headers</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Headers</h3>
                             </div>
                             <div className="p-5">
-                                <pre className="text-xs text-gray-600 bg-gray-50 rounded-lg p-4 overflow-x-auto max-h-48 leading-relaxed font-mono">
+                                <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 rounded-lg p-4 overflow-x-auto max-h-48 leading-relaxed font-mono">
                                     {webhook.request_headers_raw}
                                 </pre>
                             </div>
@@ -220,12 +220,12 @@ function WebhookDetailDrawer({ webhook, open, onClose }) {
                     )}
 
                     {webhook.request_payload_raw && (
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-5 py-3 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Payload Preview</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payload Preview</h3>
                             </div>
                             <div className="p-5">
-                                <pre className="text-xs text-gray-600 bg-gray-50 rounded-lg p-4 overflow-x-auto max-h-72 leading-relaxed font-mono">
+                                <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 rounded-lg p-4 overflow-x-auto max-h-72 leading-relaxed font-mono">
                                     {webhook.request_payload_raw}
                                 </pre>
                             </div>
@@ -233,7 +233,7 @@ function WebhookDetailDrawer({ webhook, open, onClose }) {
                     )}
 
                     <div className="flex justify-center pt-2">
-                        <button onClick={onClose} className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                        <button onClick={onClose} className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                             Close
                         </button>
                     </div>
@@ -247,17 +247,17 @@ function Pagination({ links }) {
     if (!links || links.length <= 3) return null;
     return (
         <div className="flex items-center justify-between pt-6">
-            <p className="text-sm text-gray-500">Page {links.find(l => l.active)?.label || '—'}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Page {links.find(l => l.active)?.label || '—'}</p>
             <div className="flex gap-1">
                 {links.map((link, i) => {
                     if (!link.url) return (
-                        <span key={i} className="px-3 py-1.5 text-sm text-gray-400 rounded-md cursor-not-allowed">
+                        <span key={i} className="px-3 py-1.5 text-sm text-gray-400 dark:text-gray-500 rounded-md cursor-not-allowed">
                             {link.label.replace('&laquo;', '«').replace('&raquo;', '»').replace('Previous', '←').replace('Next', '→')}
                         </span>
                     );
                     return (
                         <button key={i} onClick={() => router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${link.active ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${link.active ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800'}`}
                             dangerouslySetInnerHTML={{ __html: link.label }}
                         />
                     );
@@ -307,14 +307,14 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
             <div className="p-6 lg:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Operations Console</h1>
-                        <p className="text-sm text-gray-500 mt-1">Platform webhook monitor and operations dashboard</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Operations Console</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Platform webhook monitor and operations dashboard</p>
                     </div>
                     <div className="flex gap-2">
-                        <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+                        <button className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
                             <Download className="w-4 h-4" /> Export CSV
                         </button>
-                        <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+                        <button className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
                             <Download className="w-4 h-4" /> Export JSON
                         </button>
                     </div>
@@ -335,14 +335,14 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center gap-3">
                                 <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
                                     <div className="relative flex-1">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                         <input type="text" value={searchValue} onChange={(e) => setSearchValue(e.target.value)}
                                             placeholder="Search by event ID, reference, or type..."
-                                            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                             aria-label="Search webhooks" />
                                     </div>
                                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">Search</button>
@@ -355,49 +355,49 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
                                     {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-blue-500" />}
                                 </button>
                                 {hasActiveFilters && (
-                                    <button onClick={clearFilters} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                                    <button onClick={clearFilters} className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                         <X className="w-3.5 h-3.5" /> Clear
                                     </button>
                                 )}
                             </div>
 
                             {showFilters && (
-                                <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+                                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Gateway</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Gateway</label>
                                             <select value={gatewayFilter} onChange={(e) => setGatewayFilter(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-900"
                                                 aria-label="Filter by gateway">
                                                 <option value="">All Gateways</option>
                                                 {gateways?.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
                                             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-900"
                                                 aria-label="Filter by status">
                                                 {webhookStatusOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Event Type</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Event Type</label>
                                             <input type="text" value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)}
                                                 placeholder="e.g. payment_intent.succeeded"
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 aria-label="Filter by event type" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Date From</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date From</label>
                                             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 aria-label="Date from" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Date To</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date To</label>
                                             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 aria-label="Date to" />
                                         </div>
                                         <div className="flex items-end">
@@ -409,36 +409,36 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
 
                             {items.length > 0 ? (
                                 <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
+                                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                        <thead className="bg-gray-50 dark:bg-gray-950">
                                             <tr>
-                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gateway</th>
-                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Event</th>
-                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reference</th>
-                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Received</th>
-                                                <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gateway</th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Event</th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Received</th>
+                                                <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {items.map((wh) => (
-                                                <tr key={wh.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <tr key={wh.id} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
                                                     <td className="px-5 py-4 whitespace-nowrap">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
-                                                                <Globe className="w-3.5 h-3.5 text-gray-500" />
+                                                            <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                                <Globe className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
                                                             </div>
-                                                            <span className="text-sm font-medium text-gray-900 capitalize">{wh.gateway}</span>
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{wh.gateway}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap">
-                                                        <span className="text-sm font-mono text-gray-600">{wh.event_type || '—'}</span>
+                                                        <span className="text-sm font-mono text-gray-600 dark:text-gray-400">{wh.event_type || '—'}</span>
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap">
-                                                        <span className="text-xs font-mono text-gray-500">{wh.gateway_event_id || wh.gateway_reference || '—'}</span>
+                                                        <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{wh.gateway_event_id || wh.gateway_reference || '—'}</span>
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap"><StatusBadge status={wh.status} /></td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(wh.created_at)}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{formatDateTime(wh.created_at)}</td>
                                                     <td className="px-5 py-4 whitespace-nowrap text-right">
                                                         <button onClick={() => setSelectedWebhook(wh)}
                                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -453,17 +453,17 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
                                 </div>
                             ) : (
                                 <div className="p-12 text-center">
-                                    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                                        <Zap className="w-8 h-8 text-gray-400" />
+                                    <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                                        <Zap className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                                     </div>
-                                    <h3 className="text-base font-semibold text-gray-900 mb-2">No Webhook Events</h3>
-                                    <p className="text-sm text-gray-500 max-w-md mx-auto">
+                                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">No Webhook Events</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                                         {hasActiveFilters
                                             ? 'No webhook events match your current filters.'
                                             : 'No webhook events have been received yet. They will appear once payment gateways send callbacks.'}
                                     </p>
                                     {hasActiveFilters && (
-                                        <button onClick={clearFilters} className="mt-6 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                                        <button onClick={clearFilters} className="mt-6 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                                             Clear Filters
                                         </button>
                                     )}
@@ -471,7 +471,7 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
                             )}
 
                             {items.length > 0 && (
-                                <div className="px-5 py-4 border-t border-gray-100">
+                                <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800">
                                     <Pagination links={webhooks?.links || []} />
                                 </div>
                             )}
@@ -479,10 +479,10 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
                     </div>
 
                     <div className="space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-5 py-4 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                    <Globe className="w-4 h-4 text-gray-400" /> Gateway Registry
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    <Globe className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Gateway Registry
                                 </h3>
                             </div>
                             <div className="p-5 space-y-3">
@@ -512,7 +512,7 @@ export default function SuperAdminOperationsConsole({ webhooks, filters, stats, 
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-blue-700">Retry Mechanism</span>
-                                    <span className="text-gray-500">Not configured</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Not configured</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-blue-700">Signature Verification</span>

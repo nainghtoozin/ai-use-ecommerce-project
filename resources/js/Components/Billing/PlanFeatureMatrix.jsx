@@ -55,18 +55,18 @@ export default function PlanFeatureMatrix({ plans, featureCategories, allFeature
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Plan Comparison</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Plan Comparison</h3>
             </div>
 
             <div className="overflow-x-auto">
                 <table className="w-full text-sm" role="table" aria-label="Plan feature comparison">
                     <thead>
-                        <tr className="border-b border-gray-100">
-                            <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-48" scope="col">Feature</th>
+                        <tr className="border-b border-gray-100 dark:border-gray-800">
+                            <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-48" scope="col">Feature</th>
                             {plans.map(p => (
-                                <th key={p.slug} className={`px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider ${p.is_current ? 'text-blue-600' : 'text-gray-500'}`} scope="col">
+                                <th key={p.slug} className={`px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider ${p.is_current ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`} scope="col">
                                     <div>{p.name}</div>
                                     {p.is_current && <div className="text-[10px] text-blue-500 font-normal normal-case mt-0.5">Current</div>}
                                 </th>
@@ -74,19 +74,19 @@ export default function PlanFeatureMatrix({ plans, featureCategories, allFeature
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className="border-b border-gray-100 bg-gray-50/50">
+                        <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
                             <td colSpan={plans.length + 1} className="px-6 py-2">
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Limits</span>
+                                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Limits</span>
                             </td>
                         </tr>
                         {limitRows.map(({ key, label, format }) => (
-                            <tr key={key} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                <td className="px-6 py-3 text-gray-700 font-medium">{label}</td>
+                            <tr key={key} className="border-b border-gray-50 hover:bg-gray-50 dark:bg-gray-950/50">
+                                <td className="px-6 py-3 text-gray-700 dark:text-gray-300 font-medium">{label}</td>
                                 {plans.map(p => {
                                     const val = p.limits?.[key];
                                     const unlimited = val === null;
                                     return (
-                                        <td key={p.slug} className="px-4 py-3 text-center text-gray-600">
+                                        <td key={p.slug} className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">
                                             {format(val, unlimited)}
                                         </td>
                                     );
@@ -96,22 +96,22 @@ export default function PlanFeatureMatrix({ plans, featureCategories, allFeature
 
                         {featureCategories.map(cat => (
                             <tbody key={cat.label}>
-                                <tr className="border-b border-gray-100 bg-gray-50/50">
+                                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
                                     <td colSpan={plans.length + 1} className="px-6 py-2">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{cat.label}</span>
+                                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{cat.label}</span>
                                     </td>
                                 </tr>
                                 {cat.features?.map(feat => {
                                     const comingSoon = isComingSoon(feat.key);
                                     return (
-                                        <tr key={feat.key} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                        <tr key={feat.key} className="border-b border-gray-50 hover:bg-gray-50 dark:bg-gray-950/50">
                                             <td className="px-6 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`text-gray-700 ${comingSoon ? 'text-gray-400' : ''}`}>
+                                                    <span className={`text-gray-700 dark:text-gray-300 ${comingSoon ? 'text-gray-400' : ''}`}>
                                                         {feat.label}
                                                     </span>
                                                     {comingSoon && (
-                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 font-medium">
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-medium">
                                                             Soon
                                                         </span>
                                                     )}

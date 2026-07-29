@@ -124,15 +124,15 @@ export default function MediaDropzone({
                     <Upload className="w-5 h-5" />
                 </div>
 
-                <p className="text-sm text-gray-700 mb-1">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
                     <span className="font-medium text-blue-600">Click to upload</span>
                     {' '}or drag and drop
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                     JPG, PNG, WEBP or GIF (max {maxSizeMB}MB)
                 </p>
                 {remaining < maxFiles && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                         {remaining} slot{remaining !== 1 ? 's' : ''} remaining
                     </p>
                 )}

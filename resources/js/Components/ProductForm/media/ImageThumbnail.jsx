@@ -47,7 +47,7 @@ export default function ImageThumbnail({
                     className="w-full h-full object-cover"
                 />
             ) : (
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     <Image className="w-8 h-8 text-gray-300" />
                 </div>
             )}
@@ -70,7 +70,7 @@ export default function ImageThumbnail({
                                 e.stopPropagation();
                                 onRemove(index);
                             }}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 transition-colors shadow-sm"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-gray-900/90 hover:bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors shadow-sm"
                             title="Remove image"
                         >
                             <X className="w-4 h-4" />
@@ -86,7 +86,7 @@ export default function ImageThumbnail({
                                     e.stopPropagation();
                                     onSetFeatured(index);
                                 }}
-                                className="w-7 h-7 flex items-center justify-center rounded-md bg-white/90 hover:bg-white text-gray-500 hover:text-amber-500 transition-colors shadow-sm"
+                                className="w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-gray-900/90 hover:bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:text-amber-500 transition-colors shadow-sm"
                                 title="Set as featured"
                             >
                                 <StarOff className="w-3.5 h-3.5" />
@@ -109,7 +109,7 @@ export default function ImageThumbnail({
             {/* Drag handle (always visible on hover) */}
             {isHovered && (
                 <div className="absolute top-1.5 right-1.5 cursor-grab active:cursor-grabbing">
-                    <div className="w-6 h-6 flex items-center justify-center rounded-md bg-white/90 text-gray-400 shadow-sm">
+                    <div className="w-6 h-6 flex items-center justify-center rounded-md bg-white dark:bg-gray-900/90 text-gray-400 dark:text-gray-500 shadow-sm">
                         <GripVertical className="w-3.5 h-3.5" />
                     </div>
                 </div>

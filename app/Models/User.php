@@ -50,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         'profile_image',
         'notification_preferences',
         'locale',
+        'theme',
     ];
 
     protected $hidden = [

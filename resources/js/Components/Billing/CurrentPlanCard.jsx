@@ -35,12 +35,12 @@ export default function CurrentPlanCard({ subscription, usage }) {
     ];
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="p-6">
                 <div className="flex items-start justify-between mb-5">
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <h2 className="text-xl font-bold text-gray-900">{plan?.name || 'No Plan'}</h2>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{plan?.name || 'No Plan'}</h2>
                             {subscription && (
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${cfg.classes}`}>
                                     {cfg.label}
@@ -48,14 +48,14 @@ export default function CurrentPlanCard({ subscription, usage }) {
                             )}
                         </div>
                         {plan?.description && (
-                            <p className="text-sm text-gray-500">{plan.description}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{plan.description}</p>
                         )}
                     </div>
                     <div className="text-right">
                         {price !== null && (
-                            <div className="text-2xl font-bold text-gray-900">
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                                 {formatMoney(price)}
-                                <span className="text-sm font-normal text-gray-400">{interval}</span>
+                                <span className="text-sm font-normal text-gray-400 dark:text-gray-500">{interval}</span>
                             </div>
                         )}
                     </div>
@@ -107,23 +107,23 @@ export default function CurrentPlanCard({ subscription, usage }) {
             </div>
 
             {subscription && (
-                <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                     <div>
-                        <span className="text-gray-400">Billing</span>
-                        <p className="font-medium text-gray-700 capitalize">{subscription.billing_interval || '—'}</p>
+                        <span className="text-gray-400 dark:text-gray-500">Billing</span>
+                        <p className="font-medium text-gray-700 dark:text-gray-300 capitalize">{subscription.billing_interval || '—'}</p>
                     </div>
                     <div>
-                        <span className="text-gray-400">Start</span>
-                        <p className="font-medium text-gray-700">{subscription.starts_at || '—'}</p>
+                        <span className="text-gray-400 dark:text-gray-500">Start</span>
+                        <p className="font-medium text-gray-700 dark:text-gray-300">{subscription.starts_at || '—'}</p>
                     </div>
                     <div>
-                        <span className="text-gray-400">Expires</span>
-                        <p className="font-medium text-gray-700">{subscription.expires_at || '—'}</p>
+                        <span className="text-gray-400 dark:text-gray-500">Expires</span>
+                        <p className="font-medium text-gray-700 dark:text-gray-300">{subscription.expires_at || '—'}</p>
                     </div>
                     {subscription?.trial_ends_at && (
                         <div>
-                            <span className="text-gray-400">Trial Ends</span>
-                            <p className="font-medium text-gray-700">{subscription.trial_ends_at}</p>
+                            <span className="text-gray-400 dark:text-gray-500">Trial Ends</span>
+                            <p className="font-medium text-gray-700 dark:text-gray-300">{subscription.trial_ends_at}</p>
                         </div>
                     )}
                 </div>

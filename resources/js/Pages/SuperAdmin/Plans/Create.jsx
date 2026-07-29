@@ -7,7 +7,7 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
     const id = `field_${field}`;
     return (
         <div>
-            <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {label} {required && '*'}
             </label>
             {type === 'textarea' ? (
@@ -15,7 +15,7 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
                     id={id}
                     value={form[field]}
                     onChange={(e) => handleChange(field, e.target.value)}
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                     rows={3}
                 />
             ) : (
@@ -24,12 +24,12 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
                     type={type}
                     value={form[field]}
                     onChange={(e) => handleChange(field, type === 'checkbox' ? e.target.checked : e.target.value)}
-                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm ${type === 'checkbox' ? 'w-4 h-4' : ''}`}
+                    className={`w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm ${type === 'checkbox' ? 'w-4 h-4' : ''}`}
                     placeholder={placeholder}
                     required={required}
                 />
             )}
-            {helpText && <p className="text-xs text-gray-400 mt-1">{helpText}</p>}
+            {helpText && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{helpText}</p>}
             {errors[field] && <p className="text-xs text-red-600 mt-1">{errors[field]}</p>}
         </div>
     );
@@ -150,15 +150,15 @@ export default function CreatePlan({ allFeatures = [] }) {
     ];
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Create Subscription Plan</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Create Subscription Plan</h2>}>
             <Head title="Create Plan" />
 
             <div className="py-6">
                 <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Plan Details</h3>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Plan Details</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <Input field="name" label="Plan Name" required placeholder="Starter" form={form} errors={errors} handleChange={handleChange} />
@@ -170,8 +170,8 @@ export default function CreatePlan({ allFeatures = [] }) {
                                 </div>
                             </div>
 
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing</h3>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Pricing</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <Input field="monthly_price" label={`Monthly Price (${pc.symbol})`} type="number" placeholder="29" helpText="Set to 0 for free plan. Leave empty if not available." form={form} errors={errors} handleChange={handleChange} />
@@ -199,8 +199,8 @@ export default function CreatePlan({ allFeatures = [] }) {
                                 )}
                             </div>
 
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Limits</h3>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Limits</h3>
 
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <Input field="product_limit" label="Product Limit" type="number" placeholder="e.g. 100" helpText="Leave empty for unlimited." form={form} errors={errors} handleChange={handleChange} />
@@ -227,13 +227,13 @@ export default function CreatePlan({ allFeatures = [] }) {
                             </div>
                             </div>
 
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Features</h3>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Features</h3>
 
                                 <div className="space-y-6">
                                     {featureCategories.map(cat => (
                                         <div key={cat.label}>
-                                            <h4 className="text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wider">{cat.label}</h4>
+                                            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider">{cat.label}</h4>
                                             <div className="space-y-2">
                                                 {cat.keys.map(key => {
                                                     const feature = allFeatures.find(f => f.key === key);
@@ -244,10 +244,10 @@ export default function CreatePlan({ allFeatures = [] }) {
                                                                 type="checkbox"
                                                                 checked={features[key] || false}
                                                                 onChange={(e) => handleFeatureToggle(key, e.target.checked)}
-                                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                                                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 w-4 h-4"
                                                             />
                                                             <div>
-                                                                <span className="text-sm font-medium text-gray-700">{feature.label}</span>
+                                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{feature.label}</span>
                                                             </div>
                                                         </label>
                                                     );
@@ -259,7 +259,7 @@ export default function CreatePlan({ allFeatures = [] }) {
                             </div>
 
                             <div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Status</h3>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Status</h3>
                                 <div className="flex gap-4">
                                     {['active', 'inactive', 'deprecated'].map((s) => (
                                         <label key={s} className="flex items-center gap-2">
@@ -269,21 +269,21 @@ export default function CreatePlan({ allFeatures = [] }) {
                                                 value={s}
                                                 checked={form.status === s}
                                                 onChange={(e) => handleChange('status', e.target.value)}
-                                                className="border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                className="border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                             />
-                                            <span className="text-sm text-gray-700 capitalize">{s}</span>
+                                            <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{s}</span>
                                         </label>
                                     ))}
                                 </div>
-                                <p className="text-xs text-gray-400 mt-2">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                                     Active: available for new subscriptions. Inactive: hidden from signup, existing subscribers keep it. Deprecated: existing subscribers keep it, shows upgrade prompt.
                                 </p>
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                                 <Link
                                     href="/superadmin/plans"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
                                 </Link>

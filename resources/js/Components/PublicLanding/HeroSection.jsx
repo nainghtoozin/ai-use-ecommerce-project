@@ -17,14 +17,14 @@ export default function HeroSection() {
                         <span>Launch your online store in minutes</span>
                     </div>
 
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-tight">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-gray-100 leading-tight">
                         Your E-Commerce Platform
                         <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                             Built for Myanmar Merchants
                         </span>
                     </h1>
 
-                    <p className="mt-6 text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+                    <p className="mt-6 text-lg sm:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
                         {siteName} gives you everything you need to launch and grow your online store.
                         No technical skills required. No credit card needed to start.
                     </p>
@@ -39,14 +39,14 @@ export default function HeroSection() {
                         </Link>
                         <Link
                             href="/#pricing"
-                            className="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-gray-200 text-gray-700 font-semibold text-base rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+                            className="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-base rounded-xl hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
                         >
                             <Play className="w-4 h-4" />
                             View Pricing
                         </Link>
                     </div>
 
-                    <div className="mt-12 flex flex-wrap items-center justify-center gap-8 sm:gap-12 text-sm text-gray-400">
+                    <div className="mt-12 flex flex-wrap items-center justify-center gap-8 sm:gap-12 text-sm text-gray-400 dark:text-gray-500">
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                             <span>Free trial available</span>

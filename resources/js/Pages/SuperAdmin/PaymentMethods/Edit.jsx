@@ -7,7 +7,7 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
     const value = form[field];
     return (
         <div>
-            <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {label} {required && '*'}
             </label>
             {type === 'textarea' ? (
@@ -15,7 +15,7 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
                     id={id}
                     value={value ?? ''}
                     onChange={(e) => handleChange(field, e.target.value)}
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                     rows={4}
                 />
             ) : type === 'file' ? (
@@ -24,7 +24,7 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
                     type="file"
                     accept="image/jpg,image/jpeg,image/png,image/webp"
                     onChange={(e) => handleChange(field, e.target.files[0])}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
             ) : (
                 <input
@@ -32,12 +32,12 @@ function Input({ field, label, type = 'text', placeholder = '', required = false
                     type={type}
                     value={value ?? ''}
                     onChange={(e) => handleChange(field, type === 'checkbox' ? e.target.checked : e.target.value)}
-                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm ${type === 'checkbox' ? 'w-4 h-4' : ''}`}
+                    className={`w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm ${type === 'checkbox' ? 'w-4 h-4' : ''}`}
                     placeholder={placeholder}
                     required={required}
                 />
             )}
-            {helpText && <p className="text-xs text-gray-400 mt-1">{helpText}</p>}
+            {helpText && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{helpText}</p>}
             {errors[field] && <p className="text-xs text-red-600 mt-1">{errors[field]}</p>}
         </div>
     );
@@ -115,15 +115,15 @@ export default function EditPaymentMethod({ paymentMethod }) {
     const existingQr = paymentMethod.qr_image_url && !qrPreview ? paymentMethod.qr_image_url : null;
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Edit Payment Method</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Edit Payment Method</h2>}>
             <Head title={`Edit ${paymentMethod.name}`} />
 
             <div className="py-6">
                 <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Basic Information</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <Input field="name" label="Name" required placeholder="e.g. KBZ Bank Transfer" form={form} errors={errors} handleChange={handleChange} />
@@ -132,12 +132,12 @@ export default function EditPaymentMethod({ paymentMethod }) {
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                                     <Input field="slug" label="Slug" placeholder="kbz-bank-transfer" helpText="URL-safe identifier" form={form} errors={errors} handleChange={handleChange} />
                                     <div>
-                                        <label htmlFor="field_type" className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                                        <label htmlFor="field_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
                                         <select
                                             id="field_type"
                                             value={form.type}
                                             onChange={(e) => handleChange('type', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         >
                                             <option value="bank_transfer">Bank Transfer</option>
                                             <option value="cod">Cash on Delivery</option>
@@ -152,8 +152,8 @@ export default function EditPaymentMethod({ paymentMethod }) {
                             </div>
 
                             {isBankTransfer && (
-                                <div className="border-b border-gray-200 pb-6">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Account Details</h3>
+                                <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Bank Account Details</h3>
 
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <Input field="bank_name" label="Bank Name" placeholder="e.g. KBZ Bank" form={form} errors={errors} handleChange={handleChange} />
@@ -170,8 +170,8 @@ export default function EditPaymentMethod({ paymentMethod }) {
                                         <Input field="qr_image" label="QR Code Image" type="file" helpText="Upload a new QR code to replace the current one" form={form} errors={errors} handleChange={handleChange} />
                                         {(qrPreview || existingQr) && (
                                             <div className="mt-3">
-                                                <p className="text-xs text-gray-500 mb-1">{qrPreview ? 'Preview:' : 'Current QR:'}</p>
-                                                <img src={qrPreview || existingQr} alt="QR Code" className="w-24 h-24 rounded-lg border border-gray-200 object-cover" />
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{qrPreview ? 'Preview:' : 'Current QR:'}</p>
+                                                <img src={qrPreview || existingQr} alt="QR Code" className="w-24 h-24 rounded-lg border border-gray-200 dark:border-gray-800 object-cover" />
                                             </div>
                                         )}
                                     </div>
@@ -179,8 +179,8 @@ export default function EditPaymentMethod({ paymentMethod }) {
                             )}
 
                             {!isBankTransfer && (
-                                <div className="border-b border-gray-200 pb-6">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Type</h3>
+                                <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Payment Type</h3>
                                     <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
                                         <p className="text-sm text-blue-700">
                                             Cash on Delivery requires no bank account details. Customers pay when their order is delivered.
@@ -190,25 +190,25 @@ export default function EditPaymentMethod({ paymentMethod }) {
                             )}
 
                             <div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Status</h3>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Status</h3>
                                 <label className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
                                         checked={form.is_active}
                                         onChange={(e) => handleChange('is_active', e.target.checked)}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                                        className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 w-4 h-4"
                                     />
-                                    <span className="text-sm font-medium text-gray-700">Active</span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-1">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                                     Inactive methods are hidden from merchant checkout pages.
                                 </p>
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                                 <Link
                                     href="/superadmin/payment-methods"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
                                 </Link>

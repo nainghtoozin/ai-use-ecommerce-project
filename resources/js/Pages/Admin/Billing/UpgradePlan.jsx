@@ -105,7 +105,7 @@ function PlanCard({ plan, isRecommended, onUpgradeClick, allFeatureDefs, feature
         : 'border-gray-200 hover:border-gray-300';
 
     return (
-        <div className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all duration-200 bg-white ${borderClass} hover:shadow-lg`} role="region" aria-label={`${plan.name} plan`}>
+        <div className={`relative rounded-2xl border-2 p-6 flex flex-col transition-all duration-200 bg-white dark:bg-gray-900 ${borderClass} hover:shadow-lg`} role="region" aria-label={`${plan.name} plan`}>
             {badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${badge.classes}`}>{badge.label}</span>
@@ -114,16 +114,16 @@ function PlanCard({ plan, isRecommended, onUpgradeClick, allFeatureDefs, feature
 
             <div className="mb-5 mt-1">
                 <div className="flex items-center gap-2 mb-1">
-                    <h3 className={`text-xl font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900'}`}>{plan.name}</h3>
+                    <h3 className={`text-xl font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900 dark:text-gray-100'}`}>{plan.name}</h3>
                     {meta.badge === 'best_value' && !isCurrent && <Sparkles className="w-4 h-4 text-purple-400" />}
                 </div>
-                <p className="text-sm text-gray-500">{meta.audience}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{meta.audience}</p>
                 <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-gray-900">
+                    <span className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">
                         {price === 0 ? 'Free' : price !== null ? formatCurrency(price, pc) : '—'}
                     </span>
                     {price !== null && price > 0 && (
-                        <span className="text-sm text-gray-400">/month</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/month</span>
                     )}
                 </div>
                 {!isCurrent && hasSavings && (
@@ -205,40 +205,40 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
             <div className="p-6 lg:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Plan Selection & Upgrade</h1>
-                        <p className="text-sm text-gray-500 mt-1">Compare plans and choose the right one for your business</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Plan Selection & Upgrade</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Compare plans and choose the right one for your business</p>
                     </div>
                 </div>
 
                 {subscription && (
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-6 py-4 border-b border-gray-100">
-                            <h3 className="text-base font-semibold text-gray-900">Current Subscription</h3>
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Current Subscription</h3>
                         </div>
                         <div className="p-6">
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-400 uppercase tracking-wider">Plan</span>
-                                    <span className="text-sm font-semibold text-gray-900">{subscription.plan?.name || 'N/A'}</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Plan</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{subscription.plan?.name || 'N/A'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-400 uppercase tracking-wider">Status</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Status</span>
                                     <StatusBadge status={subscription.status} size="sm" />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-400 uppercase tracking-wider">Billing</span>
-                                    <span className="text-sm font-semibold text-gray-900 capitalize">{subscription.billing_interval || '—'}</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Billing</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{subscription.billing_interval || '—'}</span>
                                 </div>
                                 {subscription.on_trial && subscription.trial_ends_at && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Trial Ends</span>
+                                        <span className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Trial Ends</span>
                                         <span className="text-sm font-semibold text-blue-600">{subscription.trial_ends_at}</span>
                                     </div>
                                 )}
                                 {subscription.expires_at && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Expires</span>
-                                        <span className="text-sm font-semibold text-gray-900">{subscription.expires_at}</span>
+                                        <span className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Expires</span>
+                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{subscription.expires_at}</span>
                                     </div>
                                 )}
                             </div>
@@ -259,7 +259,7 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                                 </p>
                                 <button
                                     onClick={() => router.post(adminUrl('/admin/billing/change-plan/cancel'))}
-                                    className="mt-2 px-3 py-1 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                                    className="mt-2 px-3 py-1 text-xs font-medium text-red-600 bg-white dark:bg-gray-900 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                                 >
                                     Cancel Scheduled Change
                                 </button>
@@ -285,10 +285,10 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                 <UpgradeRecommendations usage={usage} plans={plans} />
 
                 {!plans || plans.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                         <ShieldCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <h3 className="text-base font-semibold text-gray-900 mb-1">No Plans Available</h3>
-                        <p className="text-sm text-gray-500 max-w-md mx-auto">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">No Plans Available</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                             There are no active plans available at the moment. Please contact support for assistance.
                         </p>
                     </div>
@@ -310,8 +310,8 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                 {plans && plans.length > 1 && featureCategories && (
                     <div>
                         <div className="flex items-center gap-2 mb-4">
-                            <h2 className="text-base font-semibold text-gray-900">Full Plan Comparison</h2>
-                            <span className="text-xs text-gray-400">See every feature across all plans</span>
+                            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Full Plan Comparison</h2>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">See every feature across all plans</span>
                         </div>
                         <PlanFeatureMatrix
                             plans={plans}

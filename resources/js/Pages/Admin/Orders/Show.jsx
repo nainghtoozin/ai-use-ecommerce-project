@@ -172,7 +172,7 @@ export default function AdminOrdersShow({ order }) {
                         <span className="font-medium">Payment Verified</span>
                     </div>
                     {order.payment_verified_at && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Verified At: {new Date(order.payment_verified_at).toLocaleString()}
                         </p>
                     )}
@@ -190,7 +190,7 @@ export default function AdminOrdersShow({ order }) {
                         <span className="font-medium">Payment Failed</span>
                     </div>
                     {order.rejection_reason && (
-                        <p className="text-sm text-gray-600">Reason: {order.rejection_reason}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Reason: {order.rejection_reason}</p>
                     )}
                 </div>
             );
@@ -248,90 +248,90 @@ export default function AdminOrdersShow({ order }) {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href={adminUrl('/admin/orders')} className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-2">
+                    <Link href={adminUrl('/admin/orders')} className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-100 mb-2">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         Back to Orders
                     </Link>
-                    <h1 className="text-2xl font-bold text-gray-900">Order #{order.id}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Order #{order.id}</h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Column */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Customer Information */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Customer Information</h2>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm text-gray-500">Name</p>
-                                    <p className="font-medium text-gray-900">{order.first_name} {order.last_name}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.first_name} {order.last_name}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Phone</p>
-                                    <p className="font-medium text-gray-900">{order.phone}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.phone}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Email</p>
-                                    <p className="font-medium text-gray-900">{order.email || 'N/A'}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.email || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">User Account</p>
-                                    <p className="font-medium text-gray-900">{order.user?.name || 'Guest'}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">User Account</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.user?.name || 'Guest'}</p>
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <p className="text-sm text-gray-500">Delivery Address</p>
-                                <p className="font-medium text-gray-900">{order.address}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Delivery Address</p>
+                                <p className="font-medium text-gray-900 dark:text-gray-100">{order.address}</p>
                                 {(cityName || townshipName) && (
-                                    <p className="text-sm text-gray-600">{cityName}{townshipName ? `, ${townshipName}` : ''}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{cityName}{townshipName ? `, ${townshipName}` : ''}</p>
                                 )}
                                 {order.postal_code && (
-                                    <p className="text-sm text-gray-600">Postal Code: {order.postal_code}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Postal Code: {order.postal_code}</p>
                                 )}
                             </div>
                             {order.notes && (
                                 <div className="mt-4">
-                                    <p className="text-sm text-gray-500">Notes</p>
-                                    <p className="font-medium text-gray-900">{order.notes}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Notes</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.notes}</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Order Items */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Order Items</h2>
                             <div className="overflow-x-auto">
                                 <table className="min-w-full">
                                     <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th className="text-left py-3 text-sm font-medium text-gray-500">Product</th>
-                                            <th className="text-right py-3 text-sm font-medium text-gray-500">Price</th>
-                                            <th className="text-right py-3 text-sm font-medium text-gray-500">Qty</th>
-                                            <th className="text-right py-3 text-sm font-medium text-gray-500">Subtotal</th>
+                                        <tr className="border-b border-gray-200 dark:border-gray-800">
+                                            <th className="text-left py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Product</th>
+                                            <th className="text-right py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Price</th>
+                                            <th className="text-right py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Qty</th>
+                                            <th className="text-right py-3 text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {order.items?.length ? order.items.map((item) => (
-                                            <tr key={item.id} className="border-b border-gray-100">
+                                            <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800">
                                                 <td className="py-3">
-                                                    <p className="font-medium text-gray-900 text-sm">{item.product?.name || `Product #${item.product_id}`}</p>
-                                                    {item.product && <p className="text-xs text-gray-500">SKU: {item.product.id}</p>}
+                                                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{item.product?.name || `Product #${item.product_id}`}</p>
+                                                    {item.product && <p className="text-xs text-gray-500 dark:text-gray-400">SKU: {item.product.id}</p>}
                                                 </td>
                                                 <td className="py-3 text-sm text-right">{formatCurrency(item.price, cc)}</td>
                                                 <td className="py-3 text-sm text-right">{item.quantity}</td>
                                                 <td className="py-3 text-sm text-right font-medium">{formatCurrency(item.price * item.quantity, cc)}</td>
                                             </tr>
                                         )) : (
-                                            <tr><td colSpan="4" className="py-4 text-center text-gray-500 text-sm">No items found</td></tr>
+                                            <tr><td colSpan="4" className="py-4 text-center text-gray-500 dark:text-gray-400 text-sm">No items found</td></tr>
                                         )}
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colSpan="3" className="text-right py-2 text-sm text-gray-600">Subtotal:</td>
+                                            <td colSpan="3" className="text-right py-2 text-sm text-gray-600 dark:text-gray-400">Subtotal:</td>
                                             <td className="text-right py-2 text-sm font-medium">{formatCurrency(order.items_total, cc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan="3" className="text-right py-2 text-sm text-gray-600">Delivery Fee:</td>
+                                            <td colSpan="3" className="text-right py-2 text-sm text-gray-600 dark:text-gray-400">Delivery Fee:</td>
                                             <td className="text-right py-2 text-sm font-medium">{formatCurrency(order.delivery_fee || 0, cc)}</td>
                                         </tr>
                                         <tr className="font-bold">
@@ -347,8 +347,8 @@ export default function AdminOrdersShow({ order }) {
                     {/* Sidebar */}
                     <div className="space-y-6">
                         {/* Order Status with Progress Timeline */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Progress</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Order Progress</h2>
 
                             <div className="space-y-3">
                                 {workflowSteps.map((step, index) => {
@@ -384,41 +384,41 @@ export default function AdminOrdersShow({ order }) {
                                 })}
                             </div>
 
-                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Order Status:</span>
-                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${orderStatusColors[order.order_status] || 'bg-gray-100 text-gray-800'}`}>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Order Status:</span>
+                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${orderStatusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                         {order.order_status}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Payment Status:</span>
-                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 text-gray-800'}`}>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Payment Status:</span>
+                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                         {order.payment_status}
                                     </span>
                                 </div>
                                 <div className="pt-2 border-t">
-                                    <span className="text-sm text-gray-500">Order Date:</span>
-                                    <p className="font-medium text-gray-900">{new Date(order.created_at).toLocaleString()}</p>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">Order Date:</span>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{new Date(order.created_at).toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Payment Section */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Payment</h2>
                             <div className="space-y-3">
                                 <div>
-                                    <p className="text-sm text-gray-500">Payment Method:</p>
-                                    <p className="font-medium text-gray-900">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Payment Method:</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</p>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Total Payable:</span>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Total Payable:</span>
                                     <span className="font-bold text-lg">{formatCurrency(order.total_payable || order.total_amount, cc)}</span>
                                 </div>
                                 {order.paid_amount && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">Paid Amount:</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">Paid Amount:</span>
                                         <span className={`font-medium ${order.is_payment_amount_correct ? 'text-green-600' : 'text-red-600'}`}>
                                             {formatCurrency(order.paid_amount, cc)}
                                             {!order.is_payment_amount_correct && <span className="text-xs text-red-500 ml-1">(Short payment)</span>}
@@ -427,19 +427,19 @@ export default function AdminOrdersShow({ order }) {
                                 )}
                                 {order.payer_name && (
                                     <div>
-                                        <p className="text-sm text-gray-500">Sender Name:</p>
-                                        <p className="font-medium text-gray-900">{order.payer_name}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Sender Name:</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">{order.payer_name}</p>
                                     </div>
                                 )}
                                 {order.transaction_id && (
                                     <div>
-                                        <p className="text-sm text-gray-500">Transaction ID:</p>
-                                        <p className="font-medium text-gray-900 break-all">{order.transaction_id}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Transaction ID:</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 break-all">{order.transaction_id}</p>
                                     </div>
                                 )}
                                 {order.payment_screenshot && (
                                     <div>
-                                        <p className="text-sm text-gray-500 mb-2">Payment Screenshot:</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Payment Screenshot:</p>
                                         <button onClick={() => setImagePreview(order.payment_screenshot_url)} className="block">
                                             <img src={order.payment_screenshot_url} alt="Payment Screenshot"
                                                 className="max-w-full h-auto rounded-md border mb-1 cursor-pointer hover:opacity-90 transition-opacity"
@@ -453,7 +453,7 @@ export default function AdminOrdersShow({ order }) {
                                 )}
                                 {order.payment_proof && (
                                     <div>
-                                        <p className="text-sm text-gray-500 mb-2">Payment Proof (Legacy):</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Payment Proof (Legacy):</p>
                                         <a href={order.payment_proof_url} target="_blank" rel="noopener noreferrer">
                                             <img src={order.payment_proof_url} alt="Payment Proof" className="max-w-full h-auto rounded-md border mb-1" style={{ maxHeight: 200 }} />
                                         </a>
@@ -472,15 +472,15 @@ export default function AdminOrdersShow({ order }) {
                         {(() => {
                             const button = renderNextActionButton();
                             return button ? (
-                                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Next Action</h2>
+                                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Next Action</h2>
                                     {button}
                                 </div>
                             ) : null;
                         })()}
 
                         {/* Danger Zone */}
-                        <div className="bg-white rounded-lg border border-red-200 p-6">
+                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-red-200 p-6">
                             <h2 className="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
                             <div className="space-y-3">
                                 {can('orders.update-status') && order.can_cancel && (
@@ -496,16 +496,16 @@ export default function AdminOrdersShow({ order }) {
                                     </button>
                                 )}
                                 {!order.can_cancel && order.order_status !== 'cancelled' && (
-                                    <p className="text-sm text-gray-500">No destructive actions available.</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">No destructive actions available.</p>
                                 )}
                             </div>
                         </div>
 
                         {/* Super Admin Override */}
                         {(canOverrideStatus || canOverridePayment) && (
-                            <div className="bg-white rounded-lg border border-orange-200 p-6">
+                            <div className="bg-white dark:bg-gray-900 rounded-lg border border-orange-200 p-6">
                                 <h2 className="text-lg font-semibold text-orange-700 mb-4">Super Admin Override</h2>
-                                <p className="text-sm text-gray-500 mb-4">Force override order or payment status. All changes are logged.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Force override order or payment status. All changes are logged.</p>
                                 <div className="space-y-3">
                                     {canOverrideStatus && (
                                         <button onClick={() => openOverrideModal('order_status')}
@@ -531,8 +531,8 @@ export default function AdminOrdersShow({ order }) {
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setImagePreview(null)}>
                     <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => setImagePreview(null)}
-                            className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-lg hover:bg-gray-100 z-10">
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            className="absolute -top-3 -right-3 bg-white dark:bg-gray-900 rounded-full p-1 shadow-lg hover:bg-gray-100 z-10">
+                            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
@@ -545,15 +545,15 @@ export default function AdminOrdersShow({ order }) {
             {/* Reject Payment Modal */}
             {rejectModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-96">
                         <h3 className="text-lg font-semibold mb-4">Reject Payment</h3>
-                        <p className="text-sm text-gray-600 mb-4">Provide a reason for rejecting this payment (optional):</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Provide a reason for rejecting this payment (optional):</p>
                         <textarea
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
                             rows={3}
                             placeholder="e.g. Screenshot is unclear, incorrect amount, etc."
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
                         />
                         <div className="flex justify-end gap-3">
                             <button onClick={() => { setRejectModalOpen(false); setRejectionReason(''); }}
@@ -572,7 +572,7 @@ export default function AdminOrdersShow({ order }) {
             {/* Override Confirmation Modal */}
             {overrideModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-96">
                         <h3 className="text-lg font-semibold mb-4">
                             Override {overrideModal === 'order_status' ? 'Order Status' : 'Payment Status'}
                         </h3>
@@ -582,11 +582,11 @@ export default function AdminOrdersShow({ order }) {
                             </p>
                         </div>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Status</label>
                             <select
                                 value={overrideNewStatus}
                                 onChange={(e) => setOverrideNewStatus(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
                             >
                                 <option value="">Select status...</option>
                                 {(overrideModal === 'order_status' ? orderStatusOptions : paymentStatusOptions)
@@ -598,13 +598,13 @@ export default function AdminOrdersShow({ order }) {
                             </select>
                         </div>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Reason <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason <span className="text-red-500">*</span></label>
                             <textarea
                                 value={overrideReason}
                                 onChange={(e) => setOverrideReason(e.target.value)}
                                 rows={3}
                                 placeholder="Explain why this override is necessary..."
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
                             />
                         </div>
                         <div className="flex justify-end gap-3">

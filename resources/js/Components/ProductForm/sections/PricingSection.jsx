@@ -2,8 +2,8 @@ import FormInput from '../FormInput';
 
 export default function PricingSection({ data, setData, errors }) {
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-3">
                     <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -11,8 +11,8 @@ export default function PricingSection({ data, setData, errors }) {
                         </svg>
                     </div>
                     <div>
-                        <h3 className="text-base font-semibold text-gray-900">Pricing</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">Set your product pricing</p>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Pricing</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Set your product pricing</p>
                     </div>
                 </div>
             </div>

@@ -60,18 +60,18 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
-                            <Package className="w-8 h-8 text-gray-500" />
+                            <Package className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                             <div>
-                                <h1 className="text-2xl font-semibold text-gray-900">Products Inventory</h1>
-                                <p className="text-sm text-gray-500">Stock levels and inventory status across all products.</p>
+                                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Products Inventory</h1>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Stock levels and inventory status across all products.</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Link href={adminUrl('/admin/inventory/dashboard')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            <Link href={adminUrl('/admin/inventory/dashboard')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
                                 <LayoutDashboard className="w-4 h-4" />
                                 Dashboard
                             </Link>
-                            <Link href={adminUrl('/admin/inventory/movements')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            <Link href={adminUrl('/admin/inventory/movements')} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
                                 <ExternalLink className="w-4 h-4" />
                                 Stock History
                             </Link>
@@ -91,24 +91,24 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
                         </div>
                     )}
 
-                    <div className="bg-white rounded-lg border border-gray-200">
-                        <div className="p-4 border-b border-gray-200">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                             <div className="flex flex-wrap gap-3">
                                 <div className="relative flex-1 min-w-[200px]">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                     <input
                                         type="text"
                                         placeholder="Search by name or SKU..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && applyFilter('search', search)}
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
                                 <select
                                     value={stockFilter}
                                     onChange={(e) => applyFilter('stock_status', e.target.value)}
-                                    className="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    className="border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Stock</option>
                                     <option value="in_stock">In Stock</option>
@@ -119,70 +119,70 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('stock')}>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('stock')}>
                                             <span className="inline-flex items-center gap-1">Stock <SortIcon field="stock" /></span>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('updated_at')}>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort('updated_at')}>
                                             <span className="inline-flex items-center gap-1">Last Updated <SortIcon field="updated_at" /></span>
                                         </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                                     {products.data?.length === 0 && (
                                         <tr>
-                                            <td colSpan="8" className="px-6 py-16 text-center text-gray-500">
+                                            <td colSpan="8" className="px-6 py-16 text-center text-gray-500 dark:text-gray-400">
                                                 <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                                <p className="text-sm font-medium text-gray-900 mb-1">No inventory data available.</p>
-                                                <p className="text-xs text-gray-400">Products will appear here once you add them to your catalog.</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No inventory data available.</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">Products will appear here once you add them to your catalog.</p>
                                             </td>
                                         </tr>
                                     )}
                                     {products.data?.map((p) => {
                                         const badge = stockBadge(p.stock_status);
                                         return (
-                                            <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.get(adminUrl(`/admin/inventory/product/${p.id}`))}>
+                                            <tr key={p.id} className="hover:bg-gray-50 dark:bg-gray-950 cursor-pointer" onClick={() => router.get(adminUrl(`/admin/inventory/product/${p.id}`))}>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{p.name}</div>
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.name}</div>
                                                     {p.variant_count > 0 && (
-                                                        <div className="text-xs text-gray-400">{p.variant_count} variant{p.variant_count !== 1 ? 's' : ''}</div>
+                                                        <div className="text-xs text-gray-400 dark:text-gray-500">{p.variant_count} variant{p.variant_count !== 1 ? 's' : ''}</div>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{p.sku || '-'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.category || '-'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">{p.sku || '-'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{p.category || '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     {p.warehouse_stock > 0 ? (
                                                         <div>
-                                                            <div className="text-lg font-semibold text-gray-900">{p.total_stock || p.stock}<span className="text-xs text-gray-400 ml-1">{p.unit}</span></div>
-                                                            <div className="text-xs text-gray-400">Store: {p.store_stock} · WH: {p.warehouse_stock}</div>
+                                                            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{p.total_stock || p.stock}<span className="text-xs text-gray-400 ml-1">{p.unit}</span></div>
+                                                            <div className="text-xs text-gray-400 dark:text-gray-500">Store: {p.store_stock} · WH: {p.warehouse_stock}</div>
                                                         </div>
                                                     ) : (
                                                         <div>
-                                                            <span className="text-lg font-semibold text-gray-900">{p.total_stock || p.stock}</span>
-                                                            <span className="text-xs text-gray-400 ml-1">{p.unit}</span>
+                                                            <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{p.total_stock || p.stock}</span>
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">{p.unit}</span>
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.unit || '-'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{p.unit || '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.class}`}>
                                                         {badge.label}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '-'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                                                         <Link
                                                             href={adminUrl(`/admin/inventory/product/${p.id}`)}
-                                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                                                             title="View Inventory"
                                                         >
                                                             <Eye className="w-4 h-4" />
@@ -190,7 +190,7 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
                                                         {can('products.edit') && (
                                                             <Link
                                                                 href={adminUrl(`/admin/products/${p.id}/edit`)}
-                                                                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                                                                className="p-1.5 text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-md transition-colors"
                                                                 title="Edit Product"
                                                             >
                                                                 <Edit className="w-4 h-4" />

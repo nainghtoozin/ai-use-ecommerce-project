@@ -8,8 +8,8 @@ import { ArrowLeft, ArrowRight, Check, AlertTriangle, Calendar, CreditCard, Zap 
 function InfoRow({ label, value }) {
     return (
         <div className="flex items-center justify-between py-2.5">
-            <span className="text-sm text-gray-500">{label}</span>
-            <span className="text-sm font-semibold text-gray-900">{value || '—'}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{value || '—'}</span>
         </div>
     );
 }
@@ -46,13 +46,13 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => router.get(adminUrl('/admin/billing/upgrade'))}
-                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-500" />
+                        <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{isUpgrade ? 'Upgrade' : 'Downgrade'} Plan</h1>
-                        <p className="text-sm text-gray-500 mt-1">Review the changes before confirming</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{isUpgrade ? 'Upgrade' : 'Downgrade'} Plan</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review the changes before confirming</p>
                     </div>
                 </div>
 
@@ -73,21 +73,21 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                     </div>
                 )}
 
-                <div className="bg-white rounded-xl border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-base font-semibold text-gray-900">Plan Comparison</h2>
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Plan Comparison</h2>
                     </div>
                     <div className="p-6">
                         <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1 bg-gray-50 rounded-xl p-5 border border-gray-200">
-                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Current</p>
-                                <p className="text-lg font-bold text-gray-900">{currentPlan?.name || '—'}</p>
-                                <p className="text-sm text-gray-500 mt-1">
+                            <div className="flex-1 bg-gray-50 dark:bg-gray-950 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Current</p>
+                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{currentPlan?.name || '—'}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                     {formatCurrency(currentPrice, pc)}/{billingInterval === 'yearly' ? 'year' : 'mo'}
                                 </p>
                             </div>
                             <div className="flex-shrink-0">
-                                <ArrowRight className="w-6 h-6 text-gray-400" />
+                                <ArrowRight className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                             </div>
                             <div className="flex-1 bg-blue-50 rounded-xl p-5 border border-blue-200">
                                 <p className="text-xs text-blue-400 uppercase tracking-wider mb-1">Target</p>
@@ -100,10 +100,10 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-gray-400" /> Billing Summary
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Billing Summary
                         </h2>
                     </div>
                     <div className="px-6 py-4 divide-y divide-gray-50">
@@ -111,7 +111,7 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                             <select
                                 value={billingInterval}
                                 onChange={(e) => setBillingInterval(e.target.value)}
-                                className="text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                className="text-sm font-semibold text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-lg px-2 py-1 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             >
                                 <option value="monthly">Monthly</option>
                                 <option value="yearly">Yearly</option>
@@ -148,7 +148,7 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
                     <div className="flex items-start gap-3 mb-4">
                         <div className={`p-1.5 rounded-lg flex-shrink-0 ${isUpgrade ? 'bg-emerald-100' : 'bg-amber-100'}`}>
                             {isUpgrade
@@ -157,23 +157,23 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                             }
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                 {isUpgrade ? 'What happens next?' : 'Before you downgrade:'}
                             </p>
                             <ul className="mt-2 space-y-1.5">
                                 {isUpgrade ? (
                                     <>
                                         {proration?.total_due > 0 && (
-                                            <li className="text-sm text-gray-600 flex items-start gap-2">
+                                            <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                                 <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                                                 You will be charged {formatCurrency(proration.total_due, pc)} for the remaining days
                                             </li>
                                         )}
-                                        <li className="text-sm text-gray-600 flex items-start gap-2">
+                                        <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                             <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                                             Your plan will change immediately to {targetPlan?.name}
                                         </li>
-                                        <li className="text-sm text-gray-600 flex items-start gap-2">
+                                        <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                             <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                                             All features and limits will be updated right away
                                         </li>
@@ -181,21 +181,21 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                                 ) : (
                                     <>
                                         {hasFutureExpiry ? (
-                                            <li className="text-sm text-gray-600 flex items-start gap-2">
+                                            <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                                 <Check className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                                                 The change will take effect on {subscription?.expires_at || 'the end of the billing period'}
                                             </li>
                                         ) : (
-                                            <li className="text-sm text-gray-600 flex items-start gap-2">
+                                            <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                                 <Check className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                                                 Your plan will change immediately
                                             </li>
                                         )}
-                                        <li className="text-sm text-gray-600 flex items-start gap-2">
+                                        <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                             <Check className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                                             Some features may become unavailable after the change
                                         </li>
-                                        <li className="text-sm text-gray-600 flex items-start gap-2">
+                                        <li className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
                                             <Check className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                                             You can cancel the change anytime before it takes effect
                                         </li>
@@ -209,7 +209,7 @@ export default function AdminBillingPlanChange({ currentPlan, targetPlan, subscr
                 <div className="flex gap-3">
                     <button
                         onClick={() => router.get(adminUrl('/admin/billing/upgrade'))}
-                        className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                         Cancel
                     </button>

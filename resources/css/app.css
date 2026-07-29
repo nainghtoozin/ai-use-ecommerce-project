@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Semantic Color System ─── */
+:root {
+    --color-surface: #ffffff;
+    --color-surface-hover: #f9fafb;
+    --color-card: #ffffff;
+    --color-card-border: #e5e7eb;
+    --color-primary: var(--theme-color, #3B82F6);
+    --color-primary-foreground: #ffffff;
+    --color-muted: #f3f4f6;
+    --color-muted-foreground: #6b7280;
+    --color-accent: #f3f4f6;
+    --color-accent-foreground: #111827;
+}
+
+.dark {
+    --color-surface: #0d1117;
+    --color-surface-hover: #161b22;
+    --color-card: #161b22;
+    --color-card-border: #30363d;
+    --color-primary: var(--theme-color, #3B82F6);
+    --color-primary-foreground: #ffffff;
+    --color-muted: #21262d;
+    --color-muted-foreground: #8b949e;
+    --color-accent: #21262d;
+    --color-accent-foreground: #e6edf3;
+}
+
+/* ─── Theme Component Classes ─── */
 @layer components {
     .btn-theme {
         background-color: var(--theme-color);
@@ -52,6 +80,27 @@
     .shadow-theme {
         --tw-shadow-color: rgba(var(--theme-color-rgb, 59, 130, 246), 0.2);
     }
+
+    /* Semantic surface class */
+    .bg-surface {
+        background-color: var(--color-surface);
+    }
+
+    .bg-surface-hover {
+        background-color: var(--color-surface-hover);
+    }
+
+    .bg-card {
+        background-color: var(--color-card);
+    }
+
+    .border-card {
+        border-color: var(--color-card-border);
+    }
+
+    .text-muted-foreground {
+        color: var(--color-muted-foreground);
+    }
 }
 
 @keyframes fade-in {
@@ -70,4 +119,13 @@
 
 .animate-slide-up {
     animation: slide-up 0.3s ease-out;
+}
+
+/* ─── Dark mode transitions ─── */
+html.transitioning,
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+    transition-delay: 0s !important;
 }

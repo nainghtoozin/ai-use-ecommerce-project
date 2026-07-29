@@ -47,22 +47,22 @@ export default function RolesEdit({ role, permission_groups }) {
     const allSelected = allPermissionNames.length > 0 && data.permissions.length === allPermissionNames.length;
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Edit Role: {role.name}</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Edit Role: {role.name}</h2>}>
             <Head title={`Edit Role: ${role.name}`} />
 
             <div className="py-6">
                 <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Name</label>
                                     <input
                                         type="text"
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                         placeholder="e.g. editor, moderator"
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
                                     {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
@@ -70,13 +70,13 @@ export default function RolesEdit({ role, permission_groups }) {
 
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
-                                        <label className="block text-sm font-medium text-gray-700">Permissions</label>
-                                        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Permissions</label>
+                                        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                                             <input
                                                 type="checkbox"
                                                 checked={allSelected}
                                                 onChange={toggleSelectAll}
-                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                             />
                                             Select All
                                         </label>
@@ -90,28 +90,28 @@ export default function RolesEdit({ role, permission_groups }) {
                                             const groupSomeSelected = groupPermissionNames.some((p) => data.permissions.includes(p));
 
                                             return (
-                                                <div key={group.group} className="border border-gray-200 rounded-lg overflow-hidden">
-                                                    <div className="bg-gray-50 px-4 py-3 flex items-center justify-between">
-                                                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                                <div key={group.group} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                                                    <div className="bg-gray-50 dark:bg-gray-950 px-4 py-3 flex items-center justify-between">
+                                                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
                                                             <input
                                                                 type="checkbox"
                                                                 checked={groupAllSelected}
                                                                 ref={(el) => { if (el) el.indeterminate = groupSomeSelected && !groupAllSelected; }}
                                                                 onChange={() => toggleGroup(group.group, groupPermissionNames)}
-                                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                                             />
                                                             {group.label}
-                                                            <span className="text-xs text-gray-400">({group.items.length})</span>
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500">({group.items.length})</span>
                                                         </label>
                                                     </div>
                                                     <div className="px-4 py-3 grid grid-cols-2 md:grid-cols-3 gap-2">
                                                         {group.items.map((permission) => (
-                                                            <label key={permission.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                                                            <label key={permission.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 dark:text-gray-100">
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={data.permissions.includes(permission.name)}
                                                                     onChange={() => togglePermission(permission.name)}
-                                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                                    className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                                                 />
                                                                 {permission.name.split('.').pop()}
                                                             </label>
@@ -124,7 +124,7 @@ export default function RolesEdit({ role, permission_groups }) {
                                 </div>
 
                                 <div className="flex items-center justify-end gap-4">
-                                    <Link href={adminUrl('/admin/roles')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    <Link href={adminUrl('/admin/roles')} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
                                         Cancel
                                     </Link>
                                     <button

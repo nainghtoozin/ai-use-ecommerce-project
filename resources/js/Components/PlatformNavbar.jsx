@@ -45,7 +45,7 @@ export default function PlatformNavbar() {
     ];
 
     return (
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
                 <div className="flex items-center justify-between h-14 lg:h-16 gap-2 lg:gap-4">
                     <Link href="/" className="flex items-center gap-2 flex-shrink-0">
@@ -56,7 +56,7 @@ export default function PlatformNavbar() {
                                 <i className="bi bi-shop text-white text-base lg:text-lg"></i>
                             </div>
                         )}
-                        <span className="text-lg lg:text-xl font-bold text-gray-900 hidden lg:block">{siteName}</span>
+                        <span className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 hidden lg:block">{siteName}</span>
                     </Link>
 
                     <div className="hidden md:flex items-center gap-1">
@@ -83,7 +83,7 @@ export default function PlatformNavbar() {
                                 <NotificationBell />
                                 <Link
                                     href="/chat"
-                                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block"
+                                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors hidden sm:block"
                                     title="Messages"
                                 >
                                     <i className="bi bi-chat-dots text-xl"></i>
@@ -91,34 +91,34 @@ export default function PlatformNavbar() {
                                 <div ref={userMenuRef} className="relative">
                                     <button
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                        className="flex items-center gap-2 px-1.5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                        className="flex items-center gap-2 px-1.5 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                                     >
                                         <div className="w-7 lg:w-8 h-7 lg:h-8 text-white rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                             {auth.user.name?.charAt(0).toUpperCase()}
                                         </div>
                                         <span className="hidden lg:inline max-w-[80px] truncate">{auth.user.name}</span>
-                                        <i className="bi bi-chevron-down text-xs text-gray-400 hidden lg:block"></i>
+                                        <i className="bi bi-chevron-down text-xs text-gray-400 dark:text-gray-500 hidden lg:block"></i>
                                     </button>
                                     {userMenuOpen && (
                                         <>
                                             <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)}></div>
-                                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
-                                                <div className="px-4 py-3 border-b border-gray-100">
-                                                    <p className="text-sm font-semibold text-gray-900 truncate">{auth.user.name}</p>
-                                                    <p className="text-xs text-gray-500 truncate">{auth.user.email}</p>
+                                            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-50 overflow-hidden">
+                                                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{auth.user.name}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{auth.user.email}</p>
                                                 </div>
                                                 <div className="py-1">
-                                                    <Link href="/customer/account" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                                        <i className="bi bi-person text-gray-400"></i>
+                                                    <Link href="/customer/account" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
+                                                        <i className="bi bi-person text-gray-400 dark:text-gray-500"></i>
                                                         My Profile
                                                     </Link>
-                                                    <Link href="/customer/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                                        <i className="bi bi-receipt text-gray-400"></i>
+                                                    <Link href="/customer/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
+                                                        <i className="bi bi-receipt text-gray-400 dark:text-gray-500"></i>
                                                         My Orders
                                                     </Link>
-                                                    <div className="border-t border-gray-100 mt-1 pt-1">
+                                                    <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
                                                         <button onClick={logout} className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                                                            <i className="bi bi-box-arrow-right text-gray-400"></i>
+                                                            <i className="bi bi-box-arrow-right text-gray-400 dark:text-gray-500"></i>
                                                             Logout
                                                         </button>
                                                     </div>
@@ -130,10 +130,10 @@ export default function PlatformNavbar() {
                             </>
                         ) : (
                             <div className="hidden sm:flex items-center gap-2">
-                                <Link href="/create-store" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                                <Link href="/create-store" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
                                     Create Store
                                 </Link>
-                                <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                                <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
                                     Merchant Login
                                 </Link>
                                 <Link href="/client/contact" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
@@ -147,7 +147,7 @@ export default function PlatformNavbar() {
 
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                         >
                             <i className={`bi ${mobileMenuOpen ? 'bi-x-lg' : 'bi-list'} text-xl`}></i>
                         </button>
@@ -156,7 +156,7 @@ export default function PlatformNavbar() {
             </div>
 
             {mobileMenuOpen && (
-                <div className="md:hidden border-t border-gray-200 bg-white shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+                <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto">
                     <div className="px-4 py-3 space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                             {navLinks.map((item) => (
@@ -178,8 +178,8 @@ export default function PlatformNavbar() {
                         </div>
 
                         {!auth?.user && (
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
-                                <Link href="/login" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                                <Link href="/login" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:bg-gray-950">
                                     Merchant Login
                                 </Link>
                                 <Link href="/create-store" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"

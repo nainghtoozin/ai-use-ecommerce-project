@@ -426,7 +426,7 @@ export default function AdminSidebar() {
                         {!collapsed && (
                             <div className="ml-2.5 flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{auth?.user?.name}</p>
-                                <p className="text-xs text-gray-400 truncate">{auth?.user?.email}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{auth?.user?.email}</p>
                             </div>
                         )}
                     </div>
@@ -435,7 +435,7 @@ export default function AdminSidebar() {
                         <div className="mt-2.5 flex gap-1.5">
                             <Link
                                 href={adminUrl('/profile')}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-white/[0.06] hover:bg-white/[0.1] rounded-md text-slate-300 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-white dark:bg-gray-900/[0.06] hover:bg-white dark:bg-gray-900/[0.1] rounded-md text-slate-300 transition-colors"
                             >
                                 <User className="w-3 h-3" />{t('general.profile')}
                             </Link>

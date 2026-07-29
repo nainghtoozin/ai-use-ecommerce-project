@@ -109,7 +109,7 @@ export default function CreateStore() {
                     <div className="flex items-center justify-between mb-10">
                         <Link href="/" className="flex items-center gap-3">
                             {logo && <img src={logo} alt={siteName} className="h-9 w-auto" />}
-                            <span className="text-xl font-bold text-gray-900">{siteName}</span>
+                            <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{siteName}</span>
                         </Link>
                         <Link href="/login" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
                             Sign In →
@@ -117,10 +117,10 @@ export default function CreateStore() {
                     </div>
 
                     <div className="text-center mb-10">
-                        <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+                        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl">
                             Launch Your Online Store
                         </h1>
-                        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+                        <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                             Everything you need to start selling online. No credit card required.
                         </p>
                     </div>
@@ -128,15 +128,15 @@ export default function CreateStore() {
                     <form onSubmit={handleSubmit}>
                         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                             <div className="lg:col-span-3 space-y-8">
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-                                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
                                         <span className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm flex items-center justify-center font-bold">1</span>
                                         Store Information
                                     </h2>
 
                                     <div className="space-y-5">
                                         <div>
-                                            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Store Name <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -145,13 +145,13 @@ export default function CreateStore() {
                                                 value={data.name}
                                                 onChange={handleNameChange}
                                                 placeholder="My Awesome Store"
-                                                className={`w-full rounded-lg border ${allErrors.name && touched.name ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                                className={`w-full rounded-lg border ${allErrors.name && touched.name ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                                             />
                                             {allErrors.name && touched.name && <p className="text-red-500 text-xs mt-1">{allErrors.name}</p>}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="slug" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="slug" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Store Slug <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -160,16 +160,16 @@ export default function CreateStore() {
                                                 value={data.slug}
                                                 onChange={(e) => setField('slug', e.target.value)}
                                                 placeholder="my-awesome-store"
-                                                className={`w-full rounded-lg border ${allErrors.slug && touched.slug ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono`}
+                                                className={`w-full rounded-lg border ${allErrors.slug && touched.slug ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono`}
                                             />
                                             {allErrors.slug && touched.slug && <p className="text-red-500 text-xs mt-1">{allErrors.slug}</p>}
-                                            <p className="text-gray-400 text-xs mt-1">
+                                            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
                                                 {storeUrl}
                                             </p>
                                         </div>
 
                                         <div>
-                                            <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="description" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Store Description
                                             </label>
                                             <textarea
@@ -178,21 +178,21 @@ export default function CreateStore() {
                                                 value={data.description}
                                                 onChange={(e) => setField('description', e.target.value)}
                                                 placeholder="Tell customers what your store is about..."
-                                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-                                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
                                         <span className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm flex items-center justify-center font-bold">2</span>
                                         Domain
                                     </h2>
 
                                     <div>
-                                        <label htmlFor="domain" className="block text-sm font-semibold text-gray-700 mb-1">
-                                            Custom Domain <span className="text-gray-400 font-normal">(optional)</span>
+                                        <label htmlFor="domain" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                            Custom Domain <span className="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>
                                         </label>
                                         <input
                                             id="domain"
@@ -200,24 +200,24 @@ export default function CreateStore() {
                                             value={data.domain}
                                             onChange={(e) => setField('domain', e.target.value)}
                                             placeholder="mystore.com"
-                                            className={`w-full rounded-lg border ${allErrors.domain ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                            className={`w-full rounded-lg border ${allErrors.domain ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                                         />
                                         {allErrors.domain && <p className="text-red-500 text-xs mt-1">{allErrors.domain}</p>}
-                                        <p className="text-gray-400 text-xs mt-1">
+                                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
                                             Leave empty to use your subdomain on {new URL(appUrl).hostname}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-                                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
                                         <span className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm flex items-center justify-center font-bold">3</span>
                                         Owner Account
                                     </h2>
 
                                     <div className="space-y-5">
                                         <div>
-                                            <label htmlFor="owner_name" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="owner_name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Owner Name <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -226,13 +226,13 @@ export default function CreateStore() {
                                                 value={data.owner_name}
                                                 onChange={(e) => setField('owner_name', e.target.value)}
                                                 placeholder="John Doe"
-                                                className={`w-full rounded-lg border ${allErrors.owner_name && touched.owner_name ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                                className={`w-full rounded-lg border ${allErrors.owner_name && touched.owner_name ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                                             />
                                             {allErrors.owner_name && touched.owner_name && <p className="text-red-500 text-xs mt-1">{allErrors.owner_name}</p>}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="owner_email" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="owner_email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Owner Email <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -241,13 +241,13 @@ export default function CreateStore() {
                                                 value={data.owner_email}
                                                 onChange={(e) => setField('owner_email', e.target.value)}
                                                 placeholder="john@example.com"
-                                                className={`w-full rounded-lg border ${allErrors.owner_email && touched.owner_email ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                                className={`w-full rounded-lg border ${allErrors.owner_email && touched.owner_email ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                                             />
                                             {allErrors.owner_email && touched.owner_email && <p className="text-red-500 text-xs mt-1">{allErrors.owner_email}</p>}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Password <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -256,13 +256,13 @@ export default function CreateStore() {
                                                 value={data.password}
                                                 onChange={(e) => setField('password', e.target.value)}
                                                 placeholder="Min. 8 characters"
-                                                className={`w-full rounded-lg border ${allErrors.password && touched.password ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                                className={`w-full rounded-lg border ${allErrors.password && touched.password ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                                             />
                                             {allErrors.password && touched.password && <p className="text-red-500 text-xs mt-1">{allErrors.password}</p>}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="password_confirmation" className="block text-sm font-semibold text-gray-700 mb-1">
+                                            <label htmlFor="password_confirmation" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                                 Confirm Password <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -271,7 +271,7 @@ export default function CreateStore() {
                                                 value={data.password_confirmation}
                                                 onChange={(e) => setField('password_confirmation', e.target.value)}
                                                 placeholder="Repeat password"
-                                                className={`w-full rounded-lg border ${allErrors.password_confirmation && touched.password_confirmation ? 'border-red-300 ring-red-500' : 'border-gray-300'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                                className={`w-full rounded-lg border ${allErrors.password_confirmation && touched.password_confirmation ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                                             />
                                             {allErrors.password_confirmation && touched.password_confirmation && <p className="text-red-500 text-xs mt-1">{allErrors.password_confirmation}</p>}
                                         </div>
@@ -289,7 +289,7 @@ export default function CreateStore() {
                                     >
                                         {processing ? 'Creating Store...' : 'Create Your Store'}
                                     </button>
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
                                         By clicking you agree to our Terms of Service.
                                     </p>
                                 </div>
@@ -297,57 +297,57 @@ export default function CreateStore() {
 
                             <div className="lg:col-span-2">
                                 <div className="sticky top-8 space-y-6">
-                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
+                                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-4">
                                             Preview
                                         </h3>
 
-                                        <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 space-y-4">
+                                        <div className="bg-gray-50 dark:bg-gray-950 rounded-xl p-5 border border-gray-100 dark:border-gray-800 space-y-4">
                                             <div>
-                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Store URL</p>
+                                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Store URL</p>
                                                 <p className="text-sm font-mono text-indigo-600 break-all mt-1">
                                                     {storeUrl}
                                                 </p>
                                             </div>
 
-                                            <div className="border-t border-gray-200 pt-4">
-                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Store Name</p>
-                                                <p className="text-lg font-bold text-gray-900 mt-1">
+                                            <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Store Name</p>
+                                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
                                                     {data.name || 'Your Store Name'}
                                                 </p>
                                             </div>
 
-                                            <div className="border-t border-gray-200 pt-4">
-                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Slug</p>
-                                                <p className="text-sm font-mono text-gray-700 mt-1">
+                                            <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Slug</p>
+                                                <p className="text-sm font-mono text-gray-700 dark:text-gray-300 mt-1">
                                                     {data.slug || '{slug}'}
                                                 </p>
                                             </div>
 
                                             {data.description && (
-                                                <div className="border-t border-gray-200 pt-4">
-                                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</p>
-                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-3">
+                                                <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                                                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</p>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-3">
                                                         {data.description}
                                                     </p>
                                                 </div>
                                             )}
 
                                             {data.domain && (
-                                                <div className="border-t border-gray-200 pt-4">
-                                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Custom Domain</p>
-                                                    <p className="text-sm font-mono text-gray-700 mt-1">
+                                                <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                                                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Custom Domain</p>
+                                                    <p className="text-sm font-mono text-gray-700 dark:text-gray-300 mt-1">
                                                         {data.domain}
                                                     </p>
                                                 </div>
                                             )}
 
-                                            <div className="border-t border-gray-200 pt-4">
-                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</p>
-                                                <p className="text-sm text-gray-700 mt-1">
+                                            <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner</p>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                                                     {data.owner_name || '—'}
                                                 </p>
-                                                <p className="text-sm text-gray-500">
+                                                <p className="text-sm text-gray-500 dark:text-gray-400">
                                                     {data.owner_email || '—'}
                                                 </p>
                                             </div>
@@ -370,12 +370,12 @@ export default function CreateStore() {
                     </form>
                 </div>
 
-                <footer className="border-t border-gray-200 bg-white mt-8">
-                    <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between text-sm text-gray-400">
+                <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 mt-8">
+                    <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between text-sm text-gray-400 dark:text-gray-500">
                         <span>&copy; {new Date().getFullYear()} {siteName}. All rights reserved.</span>
                         <div className="flex gap-4">
-                            <Link href="/client/privacy" className="hover:text-gray-600">Privacy</Link>
-                            <Link href="/client/terms" className="hover:text-gray-600">Terms</Link>
+                            <Link href="/client/privacy" className="hover:text-gray-600 dark:text-gray-400">Privacy</Link>
+                            <Link href="/client/terms" className="hover:text-gray-600 dark:text-gray-400">Terms</Link>
                         </div>
                     </div>
                 </footer>

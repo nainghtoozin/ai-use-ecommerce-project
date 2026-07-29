@@ -12,10 +12,10 @@ export default function EmptyStoreState({ storeName }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
                     Welcome to {name}
                 </h1>
-                <p className="mt-3 text-sm sm:text-base text-gray-500 leading-relaxed">
+                <p className="mt-3 text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
                     This store is preparing products. Please check back soon!
                 </p>
             </div>

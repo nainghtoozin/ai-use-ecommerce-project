@@ -71,7 +71,7 @@ export default function TimezoneSelect({ value, onChange, error }) {
 
   return (
     <div ref={containerRef} className="relative col-span-1">
-      <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timezone</label>
       <input
         ref={inputRef}
         type="text"
@@ -80,12 +80,12 @@ export default function TimezoneSelect({ value, onChange, error }) {
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder="Search timezone..."
-        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
+        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
       />
       {open && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <ul className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {filtered.length === 0 ? (
-            <li className="px-4 py-2 text-sm text-gray-400">No matching timezones</li>
+            <li className="px-4 py-2 text-sm text-gray-400 dark:text-gray-500">No matching timezones</li>
           ) : (
             filtered.map((tz, i) => (
               <li

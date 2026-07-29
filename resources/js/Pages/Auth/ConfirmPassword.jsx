@@ -20,13 +20,13 @@ export default function ConfirmPassword() {
         <PlatformGuestLayout>
             <Head title="Confirm Password" />
 
-            <p className="text-sm text-gray-600 mb-6">This is a secure area. Please confirm your password before continuing.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">This is a secure area. Please confirm your password before continuing.</p>
 
             <form onSubmit={submit}>
                 <div>
-                    <label htmlFor="password" className="block font-medium text-sm text-gray-700">Password</label>
+                    <label htmlFor="password" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Password</label>
                     <input id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required autoComplete="current-password" />
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required autoComplete="current-password" />
                     {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 </div>
 

@@ -10,31 +10,31 @@ export default function AdminBillingSubscription({ subscription }) {
             <div className="p-6 lg:p-8 space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Subscription</h1>
-                        <p className="text-sm text-gray-500 mt-1">View and manage your subscription details</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Subscription</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">View and manage your subscription details</p>
                     </div>
                 </div>
 
                 {!subscription && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                         <div className="text-4xl text-gray-300 mb-3">
                             <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                         </div>
-                        <p className="text-gray-500">No subscription found for your store.</p>
-                        <p className="text-sm text-gray-400 mt-1">Please contact your account manager.</p>
+                        <p className="text-gray-500 dark:text-gray-400">No subscription found for your store.</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Please contact your account manager.</p>
                     </div>
                 )}
 
                 {subscription && (
                     <>
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h3 className="text-base font-semibold text-gray-900">Subscription Details</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Subscription Details</h3>
                             </div>
                             <div className="p-6">
                                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500">Status</dt>
+                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
                                         <dd className={`mt-1 text-sm font-semibold ${
                                             subscription.status === 'active' ? 'text-green-600' :
                                             subscription.status === 'trialing' ? 'text-blue-600' :
@@ -44,24 +44,24 @@ export default function AdminBillingSubscription({ subscription }) {
                                         }`}>{subscription.status}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500">Plan</dt>
-                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.plan?.name || 'N/A'}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Plan</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{subscription.plan?.name || 'N/A'}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500">Billing Interval</dt>
-                                        <dd className="mt-1 text-sm font-semibold text-gray-900 capitalize">{subscription.billing_interval || 'N/A'}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Billing Interval</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{subscription.billing_interval || 'N/A'}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500">Price</dt>
-                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.price || 'N/A'}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Price</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{subscription.price || 'N/A'}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500">Started At</dt>
-                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.starts_at || 'N/A'}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Started At</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{subscription.starts_at || 'N/A'}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500">Expires At</dt>
-                                        <dd className="mt-1 text-sm font-semibold text-gray-900">{subscription.expires_at || 'N/A'}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Expires At</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{subscription.expires_at || 'N/A'}</dd>
                                     </div>
                                     {subscription.pending_plan && (
                                         <>
@@ -77,10 +77,10 @@ export default function AdminBillingSubscription({ subscription }) {
                                     )}
                                 </dl>
                                 {subscription.pending_plan && (
-                                    <div className="mt-4 pt-4 border-t border-gray-100">
+                                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                                         <button
                                             onClick={() => router.post(adminUrl('/admin/billing/change-plan/cancel'))}
-                                            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                                            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-white dark:bg-gray-900 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                                         >
                                             Cancel Scheduled Change
                                         </button>
@@ -91,12 +91,12 @@ export default function AdminBillingSubscription({ subscription }) {
                     </>
                 )}
 
-                <div className="bg-white rounded-xl border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                        <h3 className="text-base font-semibold text-gray-900">Coming Next</h3>
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Coming Next</h3>
                     </div>
                     <div className="p-6">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                             Detailed subscription management — including auto-renewal toggles, payment method assignment, and invoice history — will be available in a future update.
                         </p>
                     </div>

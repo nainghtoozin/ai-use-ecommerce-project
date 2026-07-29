@@ -66,9 +66,9 @@ export default function VariantTable({ options, variants, setVariants, errors = 
     const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0);
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-gray-100">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
@@ -77,15 +77,15 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                             </svg>
                         </div>
                         <div>
-                            <h3 className="text-base font-semibold text-gray-900">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                                 Variants
                                 {variants.length > 0 && (
-                                    <span className="ml-1.5 text-xs font-normal text-gray-400">
+                                    <span className="ml-1.5 text-xs font-normal text-gray-400 dark:text-gray-500">
                                         ({variants.length})
                                     </span>
                                 )}
                             </h3>
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 Total stock: {totalStock} units
                             </p>
                         </div>
@@ -116,30 +116,30 @@ export default function VariantTable({ options, variants, setVariants, errors = 
 
             {variants.length === 0 ? (
                 <div className="px-5 py-12 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                                 d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                         </svg>
                     </div>
-                    <p className="text-sm text-gray-600 font-medium">No variants yet</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">No variants yet</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                         Add variant options above, then generate combinations
                     </p>
                 </div>
             ) : (
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                        <thead className="bg-gray-50 dark:bg-gray-950">
                             <tr>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Variant</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-14">Image</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-32">
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Variant</th>
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-14">Image</th>
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
                                     <div className="flex items-center gap-1">
                                         SKU
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-28">
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
                                     <div className="flex items-center gap-1">
                                         Price
                                         <button
@@ -148,19 +148,19 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 const val = prompt('Set price for all variants:');
                                                 if (val !== null) handleBulkFill('price', val);
                                             }}
-                                            className="text-gray-400 hover:text-violet-500"
+                                            className="text-gray-400 dark:text-gray-500 hover:text-violet-500"
                                             title="Bulk fill"
                                         >
                                             <Plus className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-28">
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
                                     <div className="flex items-center gap-1">
                                         Compare Price
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-24">
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                                     <div className="flex items-center gap-1">
                                         Stock
                                         <button
@@ -169,14 +169,14 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 const val = prompt('Set stock for all variants:');
                                                 if (val !== null) handleBulkFill('stock', val);
                                             }}
-                                            className="text-gray-400 hover:text-violet-500"
+                                            className="text-gray-400 dark:text-gray-500 hover:text-violet-500"
                                             title="Bulk fill"
                                         >
                                             <Plus className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-16">Actions</th>
+                                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -190,13 +190,13 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                         : 'text-green-600 bg-green-50';
 
                                 return (
-                                    <tr key={variant.id} className={`hover:bg-gray-50/50 ${isExpanded ? 'bg-violet-50/30' : ''}`}>
+                                    <tr key={variant.id} className={`hover:bg-gray-50 dark:bg-gray-950/50 ${isExpanded ? 'bg-violet-50/30' : ''}`}>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => setExpandedId(isExpanded ? null : variant.id)}
-                                                    className="text-gray-400 hover:text-gray-600"
+                                                    className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                                                 >
                                                     {isExpanded ? (
                                                         <ChevronUp className="w-4 h-4" />
@@ -208,7 +208,7 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                     {variant.options.map((opt, i) => (
                                                         <span
                                                             key={i}
-                                                            className="inline-flex px-1.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700"
+                                                            className="inline-flex px-1.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                                                         >
                                                             {opt}
                                                         </span>
@@ -259,8 +259,8 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                             className="w-full h-full object-cover rounded-md"
                                                         />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center bg-gray-50 hover:bg-violet-50 transition-colors rounded-md">
-                                                            <Camera className="w-4 h-4 text-gray-400" />
+                                                        <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-950 hover:bg-violet-50 transition-colors rounded-md">
+                                                            <Camera className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                                                         </div>
                                                     )}
                                                 </label>
@@ -290,7 +290,7 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 value={variant.sku || ''}
                                                 onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
                                                 placeholder="Auto-generated"
-                                                className="w-full rounded border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                                                className="w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
                                             />
                                         </td>
                                         <td className="px-3 py-3">
@@ -301,7 +301,7 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 placeholder="0.00"
                                                 step="0.01"
                                                 min="0"
-                                                className="w-full rounded border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                                                className="w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
                                             />
                                         </td>
                                         <td className="px-3 py-3">
@@ -312,7 +312,7 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 placeholder="0.00"
                                                 step="0.01"
                                                 min="0"
-                                                className="w-full rounded border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                                                className="w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
                                             />
                                         </td>
                                         <td className="px-3 py-3">
@@ -322,14 +322,14 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
                                                 placeholder="0"
                                                 min="0"
-                                                className={`w-full rounded border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 ${stockColor}`}
+                                                className={`w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 ${stockColor}`}
                                             />
                                         </td>
                                         <td className="px-3 py-3 text-right">
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveVariant(index)}
-                                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                                className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors p-1"
                                                 title="Remove variant"
                                             >
                                                 <Trash2 className="w-4 h-4" />

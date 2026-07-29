@@ -53,20 +53,20 @@ export default function PlanCards({ plans, onUpgrade }) {
 
                         <div className="mb-5">
                             <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{plan.name}</h3>
                                 {plan.slug === 'business' && (
                                     <Sparkles className="w-4 h-4 text-amber-400" aria-label="Best value" />
                                 )}
                             </div>
                             {plan.description && (
-                                <p className="text-sm text-gray-500">{plan.description}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{plan.description}</p>
                             )}
                             <div className="mt-3 flex items-baseline gap-1">
-                                <span className="text-3xl font-bold text-gray-900">
+                                <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                                     {price === 0 ? 'Free' : price !== null ? formatCurrency(price, pc) : '—'}
                                 </span>
                                 {!isFree && price !== null && (
-                                    <span className="text-sm text-gray-400">/month</span>
+                                    <span className="text-sm text-gray-400 dark:text-gray-500">/month</span>
                                 )}
                             </div>
                             {hasSavings && (

@@ -16,15 +16,15 @@ export default function Suspended() {
     return (
         <>
             <Head title="Store Suspended" />
-            <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-50">
+            <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-50 dark:bg-gray-950">
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         {logoUrl && <img src={logoUrl} alt={siteName} className="h-10 w-auto" />}
-                        <span className="text-2xl font-bold text-gray-900">{siteName}</span>
+                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{siteName}</span>
                     </div>
                 </div>
 
-                <div className="w-full sm:max-w-lg px-6 py-8 bg-white shadow-lg rounded-xl border border-gray-100">
+                <div className="w-full sm:max-w-lg px-6 py-8 bg-white dark:bg-gray-900 shadow-lg rounded-xl border border-gray-100 dark:border-gray-800">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,18 +32,18 @@ export default function Suspended() {
                             </svg>
                         </div>
 
-                        <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
                             Store Suspended
                         </h1>
 
-                        <p className="text-gray-600 mb-4 leading-relaxed">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
                             Your store has been suspended because your <strong>{planName}</strong> plan
                             subscription expired and the grace period has passed.
                             All admin features are temporarily restricted.
                         </p>
 
-                        <div className="bg-red-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 space-y-2">
-                            <p className="font-medium text-gray-800">What this means:</p>
+                        <div className="bg-red-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <p className="font-medium text-gray-800 dark:text-gray-200">What this means:</p>
                             <ul className="list-disc list-inside space-y-1">
                                 <li>Your storefront is not accessible to customers</li>
                                 <li>Order processing and product management are disabled</li>
@@ -53,9 +53,9 @@ export default function Suspended() {
                             </ul>
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600">
-                            <p className="font-medium text-gray-800 mb-1">Contact Support</p>
-                            <p className="text-gray-500">
+                        <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 dark:text-gray-400">
+                            <p className="font-medium text-gray-800 dark:text-gray-200 mb-1">Contact Support</p>
+                            <p className="text-gray-500 dark:text-gray-400">
                                 If you believe this is an error, please contact us at{' '}
                                 <a href={`mailto:${supportEmail}`} className="text-blue-600 hover:underline">
                                     {supportEmail}
@@ -63,11 +63,11 @@ export default function Suspended() {
                             </p>
                         </div>
 
-                        <div className="mt-6 pt-6 border-t border-gray-100">
+                        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="text-sm text-gray-500 hover:text-gray-700 underline"
+                                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 underline"
                             >
                                 Sign out
                             </button>

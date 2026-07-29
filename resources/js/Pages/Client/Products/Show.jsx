@@ -184,14 +184,14 @@ export default function ProductShow({ product, promotion, detail }) {
             </Head>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <nav className="flex text-xs sm:text-sm text-gray-400 items-center gap-1 overflow-hidden">
-                    <Link href="/" className="hover:text-gray-600 flex-shrink-0">Home</Link>
+                <nav className="flex text-xs sm:text-sm text-gray-400 dark:text-gray-500 items-center gap-1 overflow-hidden">
+                    <Link href="/" className="hover:text-gray-600 dark:text-gray-400 flex-shrink-0">Home</Link>
                     <span className="mx-1 text-gray-300">/</span>
-                    <Link href={`/?category=${product.category_id}`} className="hover:text-gray-600 flex-shrink-0 truncate">
+                    <Link href={`/?category=${product.category_id}`} className="hover:text-gray-600 dark:text-gray-400 flex-shrink-0 truncate">
                         {product.category?.name || 'Products'}
                     </Link>
                     <span className="mx-1 text-gray-300">/</span>
-                    <span className="text-gray-700 font-medium truncate text-xs sm:text-sm">{product.name}</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium truncate text-xs sm:text-sm">{product.name}</span>
                 </nav>
             </div>
 
@@ -200,7 +200,7 @@ export default function ProductShow({ product, promotion, detail }) {
                     {/* Left: Product Gallery */}
                     {images.length > 0 && (
                         <div className="space-y-3 w-full">
-                            <div className="relative bg-gray-50 rounded-xl overflow-hidden border border-gray-100 min-h-[200px] max-h-[280px] md:aspect-square md:max-h-[450px]">
+                            <div className="relative bg-gray-50 dark:bg-gray-950 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 min-h-[200px] max-h-[280px] md:aspect-square md:max-h-[450px]">
                                 <img
                                     src={assetUrl(images[activeImage])}
                                     alt={product.name}
@@ -248,31 +248,31 @@ export default function ProductShow({ product, promotion, detail }) {
                     <div className={images.length > 0 ? 'flex flex-col gap-0' : 'md:col-span-2 flex flex-col gap-0'}>
 
                         {/* Product Information Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
-                            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-2">
+                            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
                                 {product.name}
                             </h1>
 
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-medium rounded-full">
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[11px] font-medium rounded-full">
                                     {product.category?.name || 'Uncategorized'}
                                 </span>
                                 <span>{product.brand?.name || 'Generic Brand'}</span>
                             </div>
 
-                            <div className="flex items-center justify-between text-xs text-gray-500">
+                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                 <span>
-                                    Type: <span className={`font-semibold ${isCombo ? 'text-purple-600' : isVariable ? 'text-blue-600' : 'text-gray-700'}`}>{productType}</span>
+                                    Type: <span className={`font-semibold ${isCombo ? 'text-purple-600' : isVariable ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'}`}>{productType}</span>
                                 </span>
                                 {!isVariable && (
                                     <span>
-                                        SKU: <span className="font-medium text-gray-700">{displaySku || 'SKU not available'}</span>
+                                        SKU: <span className="font-medium text-gray-700 dark:text-gray-300">{displaySku || 'SKU not available'}</span>
                                     </span>
                                 )}
                             </div>
 
                             {/* Price + Stock row */}
-                            <div className="pt-2 border-t border-gray-100">
+                            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         {isVariable ? (
@@ -280,18 +280,18 @@ export default function ProductShow({ product, promotion, detail }) {
                                                 <span className="text-xl sm:text-2xl text-gray-300 font-medium">Select options</span>
                                             ) : (
                                                 <div className="flex items-baseline gap-2">
-                                                    <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                                                    <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
 {formatCurrency(displayPrice, cc)}
                                                     </span>
                                                 </div>
                                             )
                                         ) : (
                                             <div className="flex items-baseline gap-2 flex-wrap">
-                                                <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                                                    {safeNum(displayPrice).toLocaleString()} <span className="text-base sm:text-lg font-medium text-gray-500">MMK</span>
+                                                <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+                                                    {safeNum(displayPrice).toLocaleString()} <span className="text-base sm:text-lg font-medium text-gray-500 dark:text-gray-400">MMK</span>
                                                 </span>
                                                 {originalPrice > 0 && (
-                                                    <span className="text-base sm:text-lg text-gray-400 line-through">
+                                                    <span className="text-base sm:text-lg text-gray-400 dark:text-gray-500 line-through">
                                                         {formatCurrency(originalPrice, cc)}
                                                     </span>
                                                 )}
@@ -300,7 +300,7 @@ export default function ProductShow({ product, promotion, detail }) {
                                     </div>
                                     <div className="flex-shrink-0">
                                         {isVariable && !selectedVariant && optionKeys.length > 0 ? (
-                                            <span className="text-xs text-gray-400">Select options to see availability</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">Select options to see availability</span>
                                         ) : (
                                             <StockStatusBadge status={stockStatus} label={stockLabel} />
                                         )}
@@ -316,14 +316,14 @@ export default function ProductShow({ product, promotion, detail }) {
                                 )}
                             </div>
 
-                            <p className="text-xs text-gray-500 pt-1 border-t border-gray-100">
-                                Unit: <span className="font-medium text-gray-700">{unitName}</span>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-800">
+                                Unit: <span className="font-medium text-gray-700 dark:text-gray-300">{unitName}</span>
                             </p>
                         </div>
 
                         {/* Short Description */}
                         <div className="mt-4">
-                            <p className="text-sm text-gray-500 leading-relaxed line-clamp-3">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3">
                                 {product.short_description || 'No short description available for this product.'}
                             </p>
                         </div>
@@ -331,12 +331,12 @@ export default function ProductShow({ product, promotion, detail }) {
                         {/* Variable: Available Options */}
                         {isVariable && optionKeys.length > 0 && (
                             <div className="mt-3 space-y-2">
-                                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available Options</h3>
+                                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Available Options</h3>
                                 {optionKeys.map((key) => {
                                     const displayName = optionNames[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                                     return (
                                         <div key={key}>
-                                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{displayName}</label>
+                                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{displayName}</label>
                                             <div className="flex flex-wrap gap-2 mt-1.5">
                                                 {(optionValues[key] || []).map((value) => {
                                                     const isSelected = selectedOptions[key] === value;
@@ -362,9 +362,9 @@ export default function ProductShow({ product, promotion, detail }) {
                                     );
                                 })}
                                 {selectedVariant && (
-                                    <div className="text-xs text-gray-500 space-y-0.5 pt-1">
-                                        <p>Selected: <span className="font-medium text-gray-700">{selectedVariant.label}</span></p>
-                                        <p>SKU: <span className="font-medium text-gray-700">{selectedVariant.sku || 'SKU not available'}</span></p>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5 pt-1">
+                                        <p>Selected: <span className="font-medium text-gray-700 dark:text-gray-300">{selectedVariant.label}</span></p>
+                                        <p>SKU: <span className="font-medium text-gray-700 dark:text-gray-300">{selectedVariant.sku || 'SKU not available'}</span></p>
                                     </div>
                                 )}
                             </div>
@@ -373,18 +373,18 @@ export default function ProductShow({ product, promotion, detail }) {
                         {/* Combo: Bundle Includes */}
                         {isCombo && detail?.combo_summary?.items?.length > 0 && (
                             <div className="mt-3 space-y-2">
-                                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Bundle Includes</h3>
+                                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Bundle Includes</h3>
                                 <div className="space-y-1.5">
                                     {detail.combo_summary.items.map((item, idx) => (
                                         <div key={idx} className="flex items-center gap-3 text-sm">
-                                            <span className="flex-shrink-0 w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                            <span className="flex-shrink-0 w-6 h-6 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-400">
                                                 {idx + 1}
                                             </span>
-                                            <span className="text-gray-700 truncate">
+                                            <span className="text-gray-700 dark:text-gray-300 truncate">
                                                 {item.product_name}
-                                                {item.variant_label ? <span className="text-gray-400"> ({item.variant_label})</span> : ''}
+                                                {item.variant_label ? <span className="text-gray-400 dark:text-gray-500"> ({item.variant_label})</span> : ''}
                                             </span>
-                                            <span className="flex-shrink-0 text-gray-400 ml-auto">×{item.quantity}</span>
+                                            <span className="flex-shrink-0 text-gray-400 dark:text-gray-500 ml-auto">×{item.quantity}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -392,31 +392,31 @@ export default function ProductShow({ product, promotion, detail }) {
                         )}
 
                         {/* Add to Cart Section */}
-                        <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                             {availableStock > 0 ? (
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <label className="text-sm font-medium text-gray-700">Qty</label>
-                                        <div className="flex items-center border border-gray-300 rounded-lg">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Qty</label>
+                                        <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
                                             <button
                                                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                                 disabled={quantity <= 1}
-                                                className="px-3 py-1.5 text-gray-500 hover:bg-gray-100 rounded-l-lg disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                                                className="px-3 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-30 disabled:cursor-not-allowed text-sm"
                                             >
                                                 &minus;
                                             </button>
-                                            <span className="px-3 py-1.5 text-gray-900 font-medium min-w-[2.5rem] text-center text-sm">
+                                            <span className="px-3 py-1.5 text-gray-900 dark:text-gray-100 font-medium min-w-[2.5rem] text-center text-sm">
                                                 {quantity}
                                             </span>
                                             <button
                                                 onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
                                                 disabled={quantity >= availableStock}
-                                                className="px-3 py-1.5 text-gray-500 hover:bg-gray-100 rounded-r-lg disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                                                className="px-3 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-r-lg disabled:opacity-30 disabled:cursor-not-allowed text-sm"
                                             >
                                                 +
                                             </button>
                                         </div>
-                                        <span className="text-xs text-gray-400">{availableStock} available</span>
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">{availableStock} available</span>
                                     </div>
 
                                     <button
@@ -451,7 +451,7 @@ export default function ProductShow({ product, promotion, detail }) {
                             ) : (
                                 <button
                                     disabled
-                                    className="w-full py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full py-3 rounded-xl font-semibold text-sm bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
@@ -463,8 +463,8 @@ export default function ProductShow({ product, promotion, detail }) {
 
                         {/* Description Section */}
                         <div className="mt-4">
-                            <h2 className="text-base font-bold text-gray-900 mb-2">Product Description</h2>
-                            <div className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+                            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">Product Description</h2>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">
                                 {truncatedDescription}
                             </div>
                             {isLongDescription && (
@@ -475,28 +475,28 @@ export default function ProductShow({ product, promotion, detail }) {
                         </div>
 
                         {/* Product Specifications Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4">
-                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Product Specifications</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mt-4">
+                            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Product Specifications</h3>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Category</span>
-                                    <span className="font-medium text-gray-800">{product.category?.name || 'Uncategorized'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Category</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{product.category?.name || 'Uncategorized'}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">SKU</span>
-                                    <span className="font-medium text-gray-800">{displaySku || 'SKU not available'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">SKU</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{displaySku || 'SKU not available'}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Brand</span>
-                                    <span className="font-medium text-gray-800">{product.brand?.name || 'Generic Brand'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Brand</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{product.brand?.name || 'Generic Brand'}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Unit</span>
-                                    <span className="font-medium text-gray-800">{unitName}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Unit</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{unitName}</span>
                                 </div>
                                 <div className="flex justify-between col-span-2">
-                                    <span className="text-gray-500">Type</span>
-                                    <span className="font-medium text-gray-800">{productType}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Type</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{productType}</span>
                                 </div>
                             </div>
                         </div>
@@ -506,7 +506,7 @@ export default function ProductShow({ product, promotion, detail }) {
                 {/* Combo View Detail (full section) */}
                 {isCombo && detail?.combo_summary && (
                     <div className="mt-10 space-y-6">
-                        <h2 className="text-lg font-bold text-gray-900">Bundle Details</h2>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Bundle Details</h2>
                         <ComboViewDetail product={{
                             ...product,
                             combo_items: detail.combo_summary.items || [],
@@ -520,16 +520,16 @@ export default function ProductShow({ product, promotion, detail }) {
             {/* Description Modal */}
             {showDescriptionModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDescriptionModal(false)}>
-                    <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-bold text-gray-900">Product Description</h3>
-                            <button onClick={() => setShowDescriptionModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-                                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Product Description</h3>
+                            <button onClick={() => setShowDescriptionModal(false)} className="p-1.5 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
+                                <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <div className="px-6 py-4 overflow-y-auto max-h-[80vh] text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                        <div className="px-6 py-4 overflow-y-auto max-h-[80vh] text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
                             {product.description}
                         </div>
                     </div>
@@ -538,40 +538,40 @@ export default function ProductShow({ product, promotion, detail }) {
 
             {/* Sticky Mobile Add to Cart Bar */}
             {showStickyBar && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-4 py-3 md:hidden">
+                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 py-3 md:hidden">
                     <div className="flex items-center gap-3">
                         <div className="flex-shrink-0">
                             {isVariable && displayPrice ? (
-                                <span className="text-lg font-extrabold text-gray-900">
+                                <span className="text-lg font-extrabold text-gray-900 dark:text-gray-100">
                                     {formatCurrency(displayPrice, cc)}
                                 </span>
                             ) : !isVariable ? (
-                                <span className="text-lg font-extrabold text-gray-900">
+                                <span className="text-lg font-extrabold text-gray-900 dark:text-gray-100">
                                     {formatCurrency(displayPrice, cc)}
                                 </span>
                             ) : (
-                                <span className="text-sm text-gray-400">Select options</span>
+                                <span className="text-sm text-gray-400 dark:text-gray-500">Select options</span>
                             )}
                             {availableStock > 0 && (
-                                <p className="text-[10px] text-gray-400">{availableStock} available</p>
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500">{availableStock} available</p>
                             )}
                         </div>
                         <div className="flex-1 flex items-center gap-2">
-                            <div className="flex items-center border border-gray-300 rounded-lg">
+                            <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
                                 <button
                                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                     disabled={quantity <= 1}
-                                    className="px-2.5 py-1.5 text-gray-500 text-sm disabled:opacity-30"
+                                    className="px-2.5 py-1.5 text-gray-500 dark:text-gray-400 text-sm disabled:opacity-30"
                                 >
                                     &minus;
                                 </button>
-                                <span className="px-2.5 py-1.5 text-gray-900 font-medium text-sm min-w-[2rem] text-center">
+                                <span className="px-2.5 py-1.5 text-gray-900 dark:text-gray-100 font-medium text-sm min-w-[2rem] text-center">
                                     {quantity}
                                 </span>
                                 <button
                                     onClick={() => setQuantity(Math.min(availableStock || 1, quantity + 1))}
                                     disabled={quantity >= (availableStock || 1)}
-                                    className="px-2.5 py-1.5 text-gray-500 text-sm disabled:opacity-30"
+                                    className="px-2.5 py-1.5 text-gray-500 dark:text-gray-400 text-sm disabled:opacity-30"
                                 >
                                     +
                                 </button>

@@ -30,7 +30,7 @@ export default function PermissionsEdit({ permission }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Edit Permission</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Edit Permission</h2>}>
             <Head title="Edit Permission" />
 
             <div className="py-6">
@@ -41,20 +41,20 @@ export default function PermissionsEdit({ permission }) {
                         </div>
                     )}
 
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Permission Name</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Permission Name</label>
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder="e.g., reports.view"
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     />
                                     {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-                                    <p className="text-xs text-gray-500 mt-1">Use dot notation: <code>entity.action</code> (e.g., <code>reports.view</code>, <code>settings.edit</code>)</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Use dot notation: <code>entity.action</code> (e.g., <code>reports.view</code>, <code>settings.edit</code>)</p>
                                 </div>
 
                                 <div className="flex items-center gap-3 pt-4 border-t">
@@ -68,7 +68,7 @@ export default function PermissionsEdit({ permission }) {
                                     <button
                                         type="button"
                                         onClick={() => router.get(adminUrl('/admin/permissions'))}
-                                        className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
                                     >
                                         Cancel
                                     </button>

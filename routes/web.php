@@ -306,6 +306,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     // ── Language switcher ──
     Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');
 
+    // ── Theme switcher ──
+    Route::post('/theme/switch', [\App\Http\Controllers\ThemeController::class, 'switch'])->name('theme.switch');
+
     // ── Operations routes (blocked when expired/suspended/locked) ──
     Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');

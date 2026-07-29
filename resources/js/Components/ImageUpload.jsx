@@ -77,15 +77,15 @@ export default function ImageUpload({
     return (
         <div>
             {label && (
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {label}
-                    {maxSize && <span className="text-gray-400 font-normal ml-1">(max {maxSize}MB)</span>}
+                    {maxSize && <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">(max {maxSize}MB)</span>}
                 </label>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Preview */}
-                <div className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-50 group">
+                <div className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 group">
                     {previewUrl ? (
                         <>
                             <img
@@ -96,13 +96,13 @@ export default function ImageUpload({
                             <button
                                 type="button"
                                 onClick={handleRemove}
-                                className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-600 hover:text-red-600 rounded-full w-8 h-8 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                                className="absolute top-2 right-2 bg-white dark:bg-gray-900/90 hover:bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:text-red-600 rounded-full w-8 h-8 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all"
                             >
                                 <X className="w-4 h-4" />
                             </button>
                         </>
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
                             <Image className="w-12 h-12 mb-2" />
                             <span className="text-sm">No image</span>
                         </div>
@@ -135,16 +135,16 @@ export default function ImageUpload({
                             ${error ? 'border-red-300 bg-red-50' : ''}
                         `}
                     >
-                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-colors ${isDragging ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                            <Upload className={`w-6 h-6 ${isDragging ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-colors ${isDragging ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                            <Upload className={`w-6 h-6 ${isDragging ? 'text-blue-600' : 'text-gray-400 dark:text-gray-500'}`} />
                         </div>
-                        <p className="text-sm text-gray-700 font-medium">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                             <span className="text-blue-600 hover:text-blue-500">
                                 Click to upload
                             </span>
                             {' '}or drag and drop
                         </p>
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                             PNG, JPG, WEBP up to {maxSize}MB
                         </p>
                     </div>

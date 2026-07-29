@@ -10,24 +10,24 @@ export default function UpgradeModal({ isOpen, onClose, featureName = '', upgrad
                 onClick={onClose}
             />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-slide-up">
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors z-10"
+                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors z-10"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
-                <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+                <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <Sparkles className="w-5 h-5 text-white" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900">Upgrade Your Plan</h2>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Upgrade Your Plan</h2>
                     </div>
                     {featureName && (
-                        <p className="text-sm text-gray-500 ml-13 pl-13">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 ml-13 pl-13">
                             <Lock className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
                             <strong>{featureName}</strong>{' '}
                             {upgradeHint
@@ -68,20 +68,20 @@ export default function UpgradeModal({ isOpen, onClose, featureName = '', upgrad
                                     )}
                                     {isCurrent && !isTarget && (
                                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                            <span className="px-3 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">
+                                            <span className="px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 rounded-full">
                                                 Current
                                             </span>
                                         </div>
                                     )}
 
                                     <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{plan.name}</h3>
                                         <div className="flex items-baseline gap-1 mt-1">
-                                            <span className="text-3xl font-bold text-gray-900">
+                                            <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                                                 {plan.monthly_price === 0 ? 'Free' : plan.monthly_price != null ? `$${plan.monthly_price}` : '—'}
                                             </span>
                                             {plan.monthly_price > 0 && (
-                                                <span className="text-sm text-gray-500">/month</span>
+                                                <span className="text-sm text-gray-500 dark:text-gray-400">/month</span>
                                             )}
                                         </div>
                                     </div>
@@ -93,7 +93,7 @@ export default function UpgradeModal({ isOpen, onClose, featureName = '', upgrad
                                             return (
                                                 <li key={i} className="flex items-start gap-2 text-sm">
                                                     <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                                    <span className="text-gray-600">{label}</span>
+                                                    <span className="text-gray-600 dark:text-gray-400">{label}</span>
                                                 </li>
                                             );
                                         })}
@@ -119,7 +119,7 @@ export default function UpgradeModal({ isOpen, onClose, featureName = '', upgrad
                         })}
                     </div>
 
-                    <p className="text-center text-xs text-gray-400 mt-6">
+                    <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6">
                         All plans include a 14-day free trial. No credit card required.
                     </p>
                 </div>

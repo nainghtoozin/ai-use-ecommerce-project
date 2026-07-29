@@ -13,7 +13,7 @@ function SkeletonRow() {
                     <div className="w-9 h-9 rounded-full bg-gray-200" />
                     <div className="space-y-1.5">
                         <div className="h-3.5 w-24 bg-gray-200 rounded" />
-                        <div className="h-2.5 w-32 bg-gray-100 rounded" />
+                        <div className="h-2.5 w-32 bg-gray-100 dark:bg-gray-800 rounded" />
                     </div>
                 </div>
             </td>
@@ -37,11 +37,11 @@ function LoadingSkeleton({ rows = 5 }) {
 function EmptyState({ message = 'No members found', sub = 'Invite team members to get started.' }) {
     return (
         <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 mb-4">
                 <i className="bi bi-people text-3xl text-gray-300"></i>
             </div>
-            <p className="text-sm font-medium text-gray-600">{message}</p>
-            <p className="text-xs text-gray-400 mt-1">{sub}</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{message}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>
         </div>
     );
 }
@@ -54,7 +54,7 @@ function StatusBadge({ status }) {
         pending:   'bg-blue-50 text-blue-700 ring-blue-600/20',
     };
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[status] || 'bg-gray-50 text-gray-600 ring-gray-500/20'}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[status] || 'bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 ring-gray-500/20'}`}>
             {status?.charAt(0).toUpperCase() + status?.slice(1)}
         </span>
     );
@@ -70,7 +70,7 @@ function RoleBadge({ role, isOwner }) {
         customer: 'bg-gray-50 text-gray-600 ring-gray-500/20',
     };
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[role] || 'bg-gray-50 text-gray-600 ring-gray-500/20'}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[role] || 'bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 ring-gray-500/20'}`}>
             {role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'}
         </span>
     );
@@ -85,28 +85,28 @@ function ActionDropdown({ member, canManage, onSuspend, onRestore, onRemove, onO
         <div className="relative">
             <button
                 onClick={() => setOpen(!open)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors"
             >
                 <i className="bi bi-three-dots-vertical text-sm"></i>
             </button>
             {open && (
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-                    <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-20">
+                    <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 py-1.5 z-20">
                         <button
                             onClick={() => { setOpen(false); onOpenDrawer(member.id); }}
-                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors w-full"
                         >
-                            <i className="bi bi-eye text-gray-400"></i> View Details
+                            <i className="bi bi-eye text-gray-400 dark:text-gray-500"></i> View Details
                         </button>
                         <Link
                             href={adminUrl(`/admin/team/${member.id}/edit`)}
-                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors"
                             onClick={() => setOpen(false)}
                         >
-                            <i className="bi bi-pencil text-gray-400"></i> Edit Role
+                            <i className="bi bi-pencil text-gray-400 dark:text-gray-500"></i> Edit Role
                         </Link>
-                        <div className="my-1 border-t border-gray-100" />
+                        <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
                         {member.status === 'active' ? (
                             <button
                                 onClick={() => { setOpen(false); onSuspend(member); }}
@@ -122,7 +122,7 @@ function ActionDropdown({ member, canManage, onSuspend, onRestore, onRemove, onO
                                 <i className="bi bi-play-circle"></i> Restore
                             </button>
                         )}
-                        <div className="my-1 border-t border-gray-100" />
+                        <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
                         <button
                             onClick={() => { setOpen(false); onRemove(member); }}
                             className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full transition-colors"
@@ -202,15 +202,15 @@ export default function TeamMembers({ members, filters, roles }) {
     const isEmpty = !loading && data.length === 0;
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Team Members</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Team Members</h2>}>
             <Head title="Team Members" />
 
             <div className="p-6 lg:p-8 space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Members</h1>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Members</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {members?.total ? `${members.total} member${members.total !== 1 ? 's' : ''} total` : 'Manage your team members'}
                         </p>
                     </div>
@@ -226,24 +226,24 @@ export default function TeamMembers({ members, filters, roles }) {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <div className="p-4 border-b border-gray-100">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
                             <div className="flex-1 relative">
-                                <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm"></i>
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by name or email..."
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                 />
                             </div>
                             <div className="flex gap-2">
                                 <select
                                     value={roleFilter}
                                     onChange={(e) => handleFilter('role', e.target.value)}
-                                    className="px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                                    className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900 min-w-[120px]"
                                 >
                                     <option value="">All Roles</option>
                                     {roles?.map(r => (
@@ -254,7 +254,7 @@ export default function TeamMembers({ members, filters, roles }) {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => handleFilter('status', e.target.value)}
-                                    className="px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                                    className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900 min-w-[120px]"
                                 >
                                     <option value="">All Status</option>
                                     <option value="active">Active</option>
@@ -277,7 +277,7 @@ export default function TeamMembers({ members, filters, roles }) {
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="text-left text-xs text-gray-500 uppercase tracking-wider bg-gray-50/80">
+                                        <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-950/80">
                                             <th className="px-5 py-3 font-semibold">Member</th>
                                             <th className="px-5 py-3 font-semibold">Role</th>
                                             <th className="px-5 py-3 font-semibold">Status</th>
@@ -294,7 +294,7 @@ export default function TeamMembers({ members, filters, roles }) {
                         {showSkeleton && (
                             <div className="md:hidden space-y-3 p-4">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+                                    <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
                                 ))}
                             </div>
                         )}
@@ -307,7 +307,7 @@ export default function TeamMembers({ members, filters, roles }) {
                                 <div className="hidden md:block overflow-x-auto">
                                     <table className="w-full">
                                         <thead>
-                                            <tr className="text-left text-xs text-gray-500 uppercase tracking-wider bg-gray-50/80">
+                                            <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-950/80">
                                                 <th className="px-5 py-3 font-semibold">Member</th>
                                                 <th className="px-5 py-3 font-semibold">Role</th>
                                                 <th className="px-5 py-3 font-semibold">Status</th>
@@ -318,7 +318,7 @@ export default function TeamMembers({ members, filters, roles }) {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {data.map((member) => (
-                                                <tr key={member.id} className="hover:bg-gray-50/60 transition-colors group">
+                                                <tr key={member.id} className="hover:bg-gray-50 dark:bg-gray-950/60 transition-colors group">
                                                     <td className="px-5 py-3.5">
                                                         <div className="flex items-center gap-3">
                                                             {member.avatar ? (
@@ -329,35 +329,35 @@ export default function TeamMembers({ members, filters, roles }) {
                                                                 </div>
                                                             )}
                                                             <div className="min-w-0">
-                                                                <p className="text-sm font-medium text-gray-900 truncate">{member.name}</p>
-                                                                <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{member.name}</p>
+                                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{member.email}</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-5 py-3.5"><RoleBadge role={member.role} isOwner={member.is_owner} /></td>
                                                     <td className="px-5 py-3.5"><StatusBadge status={member.status} /></td>
-                                                    <td className="px-5 py-3.5 text-sm text-gray-500 whitespace-nowrap">{member.joined_at || '—'}</td>
-                                                    <td className="px-5 py-3.5 text-sm text-gray-500 whitespace-nowrap">{member.last_login_at || '—'}</td>
+                                                    <td className="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{member.joined_at || '—'}</td>
+                                                    <td className="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{member.last_login_at || '—'}</td>
                                                     <td className="px-5 py-3.5 text-right">
                                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={() => openDrawer(member.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View">
+                                                            <button onClick={() => openDrawer(member.id)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View">
                                                                 <i className="bi bi-eye text-sm"></i>
                                                             </button>
                                                             {canManage && !member.is_owner && (
                                                                 <>
-                                                                    <Link href={adminUrl(`/admin/team/${member.id}/edit`)} className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Edit">
+                                                                    <Link href={adminUrl(`/admin/team/${member.id}/edit`)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Edit">
                                                                         <i className="bi bi-pencil text-sm"></i>
                                                                     </Link>
                                                                     {member.status === 'active' ? (
-                                                                        <button onClick={() => handleSuspend(member)} className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="Suspend">
+                                                                        <button onClick={() => handleSuspend(member)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="Suspend">
                                                                             <i className="bi bi-pause-circle text-sm"></i>
                                                                         </button>
                                                                     ) : (
-                                                                        <button onClick={() => handleRestore(member)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="Restore">
+                                                                        <button onClick={() => handleRestore(member)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="Restore">
                                                                             <i className="bi bi-play-circle text-sm"></i>
                                                                         </button>
                                                                     )}
-                                                                    <button onClick={() => handleRemove(member)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Remove">
+                                                                    <button onClick={() => handleRemove(member)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Remove">
                                                                         <i className="bi bi-trash text-sm"></i>
                                                                     </button>
                                                                 </>
@@ -373,7 +373,7 @@ export default function TeamMembers({ members, filters, roles }) {
                                 {/* Mobile Cards */}
                                 <div className="md:hidden divide-y divide-gray-100">
                                     {data.map((member) => (
-                                        <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                        <div key={member.id} className="p-4 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                             <div className="flex items-start justify-between gap-3">
                                                 <button onClick={() => openDrawer(member.id)} className="flex items-center gap-3 min-w-0 text-left">
                                                     {member.avatar ? (
@@ -384,8 +384,8 @@ export default function TeamMembers({ members, filters, roles }) {
                                                         </div>
                                                     )}
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-medium text-gray-900 truncate">{member.name}</p>
-                                                        <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{member.name}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{member.email}</p>
                                                         <div className="flex items-center gap-2 mt-1.5">
                                                             <RoleBadge role={member.role} isOwner={member.is_owner} />
                                                             <StatusBadge status={member.status} />
@@ -401,7 +401,7 @@ export default function TeamMembers({ members, filters, roles }) {
                                                     onOpenDrawer={openDrawer}
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400">
+                                            <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
                                                 <span>Joined {member.joined_at || '—'}</span>
                                                 <span>Login {member.last_login_at || '—'}</span>
                                             </div>
@@ -414,7 +414,7 @@ export default function TeamMembers({ members, filters, roles }) {
 
                     {/* Pagination */}
                     {members?.links && members.links.length > 3 && (
-                        <div className="px-5 py-4 border-t border-gray-100 flex flex-wrap items-center gap-1.5">
+                        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-1.5">
                             {members.links.map((link, i) => (
                                 <button
                                     key={i}
@@ -429,7 +429,7 @@ export default function TeamMembers({ members, filters, roles }) {
                                 />
                             ))}
                             {members.total > 0 && (
-                                <span className="ml-auto text-xs text-gray-400">
+                                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
                                     Showing {members.from}–{members.to} of {members.total}
                                 </span>
                             )}

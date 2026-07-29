@@ -34,7 +34,7 @@ export default function PromotionBanner({ banners }) {
                                         {banner.description}
                                     </p>
                                 )}
-                                <span className="mt-4 sm:mt-5 inline-flex items-center gap-1.5 px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full hover:bg-white/30 transition-colors">
+                                <span className="mt-4 sm:mt-5 inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-900/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full hover:bg-white dark:bg-gray-900/30 transition-colors">
                                     Shop Now
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -61,16 +61,16 @@ export default function PromotionBanner({ banners }) {
                                 <button
                                     key={idx}
                                     onClick={() => setCurrent(idx)}
-                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === current ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/70'}`}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === current ? 'bg-white dark:bg-gray-900 w-6' : 'bg-white dark:bg-gray-900/50 hover:bg-white dark:bg-gray-900/70'}`}
                                 />
                             ))}
                         </div>
                         <button onClick={() => setCurrent(prev => (prev - 1 + banners.length) % banners.length)}
-                            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors">
+                            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-gray-900/20 backdrop-blur-sm hover:bg-white dark:bg-gray-900/30 rounded-full flex items-center justify-center text-white transition-colors">
                             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
                         <button onClick={() => setCurrent(prev => (prev + 1) % banners.length)}
-                            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors">
+                            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-gray-900/20 backdrop-blur-sm hover:bg-white dark:bg-gray-900/30 rounded-full flex items-center justify-center text-white transition-colors">
                             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
                     </>

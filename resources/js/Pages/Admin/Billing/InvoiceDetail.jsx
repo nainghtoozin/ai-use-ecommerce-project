@@ -8,8 +8,8 @@ import { ArrowLeft, Download, CheckCircle, XCircle, FileText, CreditCard, Calend
 function DetailRow({ label, value }) {
     return (
         <div className="flex items-center justify-between py-2.5">
-            <span className="text-sm text-gray-500">{label}</span>
-            <span className="text-sm font-semibold text-gray-900">{value || '—'}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{value || '—'}</span>
         </div>
     );
 }
@@ -38,17 +38,17 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.get(adminUrl('/admin/billing/invoices'))}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                             aria-label="Back to invoices"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-500" />
+                            <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </button>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-bold text-gray-900">{invoice?.invoice_number}</h1>
+                                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{invoice?.invoice_number}</h1>
                                 <InvoiceBadge status={invoice?.status} />
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">Invoice details and download</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Invoice details and download</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -64,16 +64,16 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-gray-400" /> Invoice Summary
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Invoice Summary
                                 </h2>
                             </div>
                             <div className="px-6 py-4 space-y-2 divide-y divide-gray-50">
                                 <DetailRow label="Invoice Number" value={invoice?.invoice_number} />
                                 <div className="flex items-center justify-between py-2.5">
-                                    <span className="text-sm text-gray-500">Status</span>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
                                     <InvoiceBadge status={invoice?.status} />
                                 </div>
                                 <DetailRow label="Plan" value={invoice?.plan?.name} />
@@ -92,48 +92,48 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                                    <CreditCard className="w-4 h-4 text-gray-400" /> Line Items
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    <CreditCard className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Line Items
                                 </h2>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit Price</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty</th>
+                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Price</th>
+                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {lineItems.length > 0 ? lineItems.map((item, i) => (
                                             <tr key={i}>
-                                                <td className="px-6 py-3 text-sm text-gray-900">{item.description}</td>
-                                                <td className="px-6 py-3 text-sm text-gray-900 text-right">{item.quantity}</td>
-                                                <td className="px-6 py-3 text-sm text-gray-900 text-right">{formatCurrency(item.unit_price, pc)}</td>
-                                                <td className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(item.amount, pc)}</td>
+                                                <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{item.description}</td>
+                                                <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{item.quantity}</td>
+                                                <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{formatCurrency(item.unit_price, pc)}</td>
+                                                <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">{formatCurrency(item.amount, pc)}</td>
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={4} className="px-6 py-4 text-sm text-gray-400 text-center">No line items</td>
+                                                <td colSpan={4} className="px-6 py-4 text-sm text-gray-400 dark:text-gray-500 text-center">No line items</td>
                                             </tr>
                                         )}
                                     </tbody>
-                                    <tfoot className="bg-gray-50">
+                                    <tfoot className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <td colSpan={3} className="px-6 py-3 text-sm text-right text-gray-500">Subtotal</td>
-                                            <td className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(invoice?.subtotal, pc)}</td>
+                                            <td colSpan={3} className="px-6 py-3 text-sm text-right text-gray-500 dark:text-gray-400">Subtotal</td>
+                                            <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">{formatCurrency(invoice?.subtotal, pc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan={3} className="px-6 py-3 text-sm text-right text-gray-500">Tax</td>
-                                            <td className="px-6 py-3 text-sm text-gray-900 text-right">{formatCurrency(invoice?.tax, pc)}</td>
+                                            <td colSpan={3} className="px-6 py-3 text-sm text-right text-gray-500 dark:text-gray-400">Tax</td>
+                                            <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{formatCurrency(invoice?.tax, pc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan={3} className="px-6 py-3 text-sm text-right font-semibold text-gray-900">Total</td>
-                                            <td className="px-6 py-3 text-sm font-bold text-gray-900 text-right">{formatCurrency(invoice?.total, pc)}</td>
+                                            <td colSpan={3} className="px-6 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">Total</td>
+                                            <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">{formatCurrency(invoice?.total, pc)}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -143,19 +143,19 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
 
                     <div className="space-y-6">
                         {invoice?.notes && (
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="px-6 py-4 border-b border-gray-100">
-                                    <h3 className="text-sm font-semibold text-gray-900">Notes</h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notes</h3>
                                 </div>
                                 <div className="px-6 py-4">
-                                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{invoice.notes}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{invoice.notes}</p>
                                 </div>
                             </div>
                         )}
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Actions</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</h3>
                             </div>
                             <div className="px-6 py-4 space-y-3">
                                 <a
@@ -167,7 +167,7 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                 </a>
                                 <button
                                     onClick={() => router.get(adminUrl('/admin/billing/invoices'))}
-                                    className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                                    className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <ArrowLeft className="w-4 h-4" />
                                     Back to Invoices
@@ -175,10 +175,10 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                    <Building className="w-4 h-4 text-gray-400" /> Timeline
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    <Building className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Timeline
                                 </h3>
                             </div>
                             <div className="px-6 py-4 space-y-4">
@@ -188,8 +188,8 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                             <Calendar className="w-4 h-4 text-blue-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900">Issued</p>
-                                            <p className="text-xs text-gray-400">{formatDateTime(invoice.issued_at)}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Issued</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(invoice.issued_at)}</p>
                                         </div>
                                     </div>
                                 )}
@@ -199,8 +199,8 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                             <CheckCircle className="w-4 h-4 text-emerald-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900">Paid</p>
-                                            <p className="text-xs text-gray-400">{formatDateTime(invoice.paid_at)}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Paid</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(invoice.paid_at)}</p>
                                         </div>
                                     </div>
                                 )}
@@ -210,8 +210,8 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                             <CheckCircle className="w-4 h-4 text-emerald-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900">Paid</p>
-                                            <p className="text-xs text-gray-400">Payment completed</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Paid</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">Payment completed</p>
                                         </div>
                                     </div>
                                 )}
@@ -221,8 +221,8 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                             <XCircle className="w-4 h-4 text-red-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900">Cancelled</p>
-                                            <p className="text-xs text-gray-400">Invoice cancelled</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Cancelled</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">Invoice cancelled</p>
                                         </div>
                                     </div>
                                 )}

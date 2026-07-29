@@ -55,12 +55,12 @@ export default function ProductEdit({ product, categories, units = [], brands = 
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-semibold text-gray-800">Edit Product</h2>
+                            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Edit Product</h2>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${TYPE_STYLES[product.type] || TYPE_STYLES.single}`}>
                                 {TYPE_LABELS[product.type] || 'Single Product'}
                             </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-0.5">Update product details</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Update product details</p>
                     </div>
                 </div>
             }

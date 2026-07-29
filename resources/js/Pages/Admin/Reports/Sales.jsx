@@ -44,15 +44,15 @@ const colorMap = {
 function Card({ icon: Icon, label, value, color, sublabel }) {
     const c = colorMap[color] || colorMap.slate;
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5">
             <div className="flex flex-col gap-1.5 lg:gap-2">
                 <div className={`p-2 rounded-lg w-fit ${c.bg}`}>
                     <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${c.text}`} />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</p>
-                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 break-words mt-0.5 tabular-nums">{value}</p>
-                    {sublabel && <p className="text-xs text-gray-400 mt-0.5 tabular-nums">{sublabel}</p>}
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 dark:text-gray-100 break-words mt-0.5 tabular-nums">{value}</p>
+                    {sublabel && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 tabular-nums">{sublabel}</p>}
                 </div>
             </div>
         </div>
@@ -61,24 +61,24 @@ function Card({ icon: Icon, label, value, color, sublabel }) {
 
 const TableRow = memo(function TableRow({ order, onView }) {
     return (
-        <tr className="hover:bg-gray-50 transition-colors">
+        <tr className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
             <td className="px-3 sm:px-5 py-3 sm:py-3.5">
-                <span className="text-xs sm:text-sm font-medium text-gray-900">
+                <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                     #{order.id}
                 </span>
             </td>
             <td className="px-3 sm:px-5 py-3 sm:py-3.5">
-                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-[180px]">
+                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[100px] sm:max-w-[180px]">
                     {order.first_name
                         ? `${order.first_name} ${order.last_name}`
                         : order.user?.name || '-'}
                 </p>
-                {order.phone && <p className="text-xs text-gray-400 hidden sm:block">{order.phone}</p>}
+                {order.phone && <p className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">{order.phone}</p>}
             </td>
-            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-600 text-right tabular-nums">
+            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-right tabular-nums">
                 {order.items_count || 0}
             </td>
-            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-900 text-right tabular-nums">
+            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 text-right tabular-nums">
                 {formatCurrency(order.gross_total)}
             </td>
             <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-right tabular-nums">
@@ -88,15 +88,15 @@ const TableRow = memo(function TableRow({ order, onView }) {
                     <span className="text-gray-300">&mdash;</span>
                 )}
             </td>
-            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold text-gray-900 text-right tabular-nums">
+            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 text-right tabular-nums">
                 {formatCurrency(order.total_amount)}
             </td>
             <td className="px-3 sm:px-5 py-3 sm:py-3.5">
-                <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 text-gray-800'}`}>
+                <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                     {statusLabels[order.order_status] || order.order_status}
                 </span>
             </td>
-            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-500 tabular-nums whitespace-nowrap">
+            <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
                 {order.created_at?.substring(0, 10) || '-'}
             </td>
             <td className="px-3 sm:px-5 py-3 sm:py-3.5">
@@ -142,37 +142,37 @@ function FilterBar({ filters, baseUrl }) {
     const hasActiveFilters = Object.values(form).some(v => v);
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 space-y-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5 space-y-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
                 <Filter className="w-4 h-4" />
                 Filters
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Date From</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date From</label>
                     <input
                         type="date"
                         value={form.date_from}
                         onChange={e => setForm(p => ({ ...p, date_from: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Date To</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date To</label>
                     <input
                         type="date"
                         value={form.date_to}
                         onChange={e => setForm(p => ({ ...p, date_to: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Order Status</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Order Status</label>
                     <select
                         value={form.order_status}
                         onChange={e => setForm(p => ({ ...p, order_status: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">All Statuses</option>
                         {Object.entries(statusLabels).map(([val, label]) => (
@@ -181,11 +181,11 @@ function FilterBar({ filters, baseUrl }) {
                     </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Search By</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search By</label>
                     <select
                         value={form.search_by}
                         onChange={e => setForm(p => ({ ...p, search_by: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">All Fields</option>
                         <option value="order_id">Order ID</option>
@@ -193,13 +193,13 @@ function FilterBar({ filters, baseUrl }) {
                     </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Search</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search</label>
                     <input
                         type="text"
                         value={form.search}
                         onChange={e => setForm(p => ({ ...p, search: e.target.value }))}
                         placeholder="Search..."
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
             </div>
@@ -207,7 +207,7 @@ function FilterBar({ filters, baseUrl }) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
                 {hasActiveFilters && (
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs text-gray-400">Active:</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Active:</span>
                         {form.date_from && <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium">From: {form.date_from}</span>}
                         {form.date_to && <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium">To: {form.date_to}</span>}
                         {form.order_status && <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium">{statusLabels[form.order_status]}</span>}
@@ -218,7 +218,7 @@ function FilterBar({ filters, baseUrl }) {
                     <button
                         type="button"
                         onClick={handleReset}
-                        className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors text-center"
+                        className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-colors text-center"
                     >
                         Reset
                     </button>
@@ -247,19 +247,19 @@ function PerPageSelector({ baseUrl }) {
 
     return (
         <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Rows:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Rows:</span>
             <div className="relative">
                 <select
                     value={current}
                     onChange={handleChange}
-                    className="border border-gray-300 rounded-lg py-1.5 pl-3 pr-8 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none"
+                    className="border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 pl-3 pr-8 text-sm bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none"
                 >
                     {PER_PAGE_OPTIONS.map(n => (
                         <option key={n} value={n}>{n}</option>
                     ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
@@ -289,19 +289,19 @@ function Pagination({ meta, baseUrl }) {
     if (end < last) { if (end < last - 1) pages.push('...'); pages.push(last); }
 
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-200 px-4 sm:px-5 py-4">
-            <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-200 dark:border-gray-800 px-4 sm:px-5 py-4">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Showing {meta.from} to {meta.to} of {meta.total.toLocaleString()} results
             </p>
             <div className="flex items-center justify-center gap-1">
                 {current > 1 && (
-                    <Link preserveScroll href={pageUrl(current - 1)} className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <Link preserveScroll href={pageUrl(current - 1)} className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
                         &laquo;
                     </Link>
                 )}
                 {pages.map((p, i) =>
                     p === '...' ? (
-                        <span key={`e${i}`} className="px-1.5 sm:px-2 py-1.5 text-xs sm:text-sm text-gray-400">...</span>
+                        <span key={`e${i}`} className="px-1.5 sm:px-2 py-1.5 text-xs sm:text-sm text-gray-400 dark:text-gray-500">...</span>
                     ) : (
                         <Link
                             key={p}
@@ -318,7 +318,7 @@ function Pagination({ meta, baseUrl }) {
                     )
                 )}
                 {current < last && (
-                    <Link preserveScroll href={pageUrl(current + 1)} className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <Link preserveScroll href={pageUrl(current + 1)} className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
                         &raquo;
                     </Link>
                 )}
@@ -348,8 +348,8 @@ export default function SalesReport({ orders, summary, filters }) {
 
             <div className="max-w-[1600px] mx-auto px-4 sm:px-5 lg:px-6 py-6 lg:py-8 space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Sales Report</h1>
-                    <p className="text-sm text-gray-500 mt-1">Real-time sales performance and order summary</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Sales Report</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Real-time sales performance and order summary</p>
                 </div>
 
                 <FilterBar filters={filters || {}} baseUrl={baseUrl} />
@@ -360,11 +360,11 @@ export default function SalesReport({ orders, summary, filters }) {
                     ))}
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                         <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-gray-500" />
-                            <h2 className="text-sm font-semibold text-gray-700">Sales Orders</h2>
+                            <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Sales Orders</h2>
                         </div>
                         <PerPageSelector baseUrl={baseUrl} />
                     </div>
@@ -372,7 +372,7 @@ export default function SalesReport({ orders, summary, filters }) {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-gray-50 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <tr className="bg-gray-50 dark:bg-gray-950 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3">Order ID</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3">Customer</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">Items</th>
@@ -387,7 +387,7 @@ export default function SalesReport({ orders, summary, filters }) {
                             <tbody className="divide-y divide-gray-100">
                                 {!orders?.data?.length ? (
                                     <tr>
-                                        <td colSpan="9" className="px-5 py-16 text-center text-gray-400">
+                                        <td colSpan="9" className="px-5 py-16 text-center text-gray-400 dark:text-gray-500">
                                             <FileText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                                             No orders found matching your filters.
                                         </td>

@@ -44,8 +44,8 @@ export default function PlanFeatureList({ plan, allFeatureDefs = [], featureCate
                 <div className="space-y-1.5">
                     {limitRows.map(r => (
                         <div key={r.key} className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500">{r.label}</span>
-                            <span className="font-medium text-gray-900">
+                            <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
                                 {r.fmt ? r.fmt(r.val) : formatLimit(r.val)}
                             </span>
                         </div>
@@ -57,7 +57,7 @@ export default function PlanFeatureList({ plan, allFeatureDefs = [], featureCate
                 {visibleFeatures.map(f => (
                     <li key={f.key} className="flex items-start gap-2 text-sm">
                         <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-600">{f.label}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{f.label}</span>
                     </li>
                 ))}
             </ul>
@@ -74,26 +74,26 @@ export default function PlanFeatureList({ plan, allFeatureDefs = [], featureCate
 
             {extraCount <= 0 && enabledKeys.length <= 4 && (
                 <div className="space-y-1.5 pt-1">
-                    <p className="text-xs font-medium text-gray-400">Perfect for getting started</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">
+                    <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Perfect for getting started</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
                         Try the platform risk-free. Upgrade anytime as your business grows.
                     </p>
                 </div>
             )}
 
             {showAll && featureCategories.length > 0 && (
-                <div className="pt-3 border-t border-gray-100 space-y-3">
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3">
                     {featureCategories.map(cat => {
                         const catFeatures = cat.features.filter(f => enabledKeys.includes(f.key));
                         if (catFeatures.length === 0) return null;
                         return (
                             <div key={cat.label}>
-                                <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{cat.label}</h4>
+                                <h4 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">{cat.label}</h4>
                                 <ul className="space-y-1">
                                     {catFeatures.map(f => (
                                         <li key={f.key} className="flex items-start gap-2 text-xs">
                                             <Check className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-gray-600">{f.label}</span>
+                                            <span className="text-gray-600 dark:text-gray-400">{f.label}</span>
                                         </li>
                                     ))}
                                 </ul>

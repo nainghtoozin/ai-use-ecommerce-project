@@ -25,8 +25,8 @@ export default function UnitsIndex({ units, query = '' }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Units</h1>
-                        <p className="text-sm text-gray-500 mt-1">Manage product measurement units</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Units</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage product measurement units</p>
                     </div>
                     {can('units.create') && (
                         <Link href={adminUrl('/admin/units/create')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
@@ -37,33 +37,33 @@ export default function UnitsIndex({ units, query = '' }) {
                 </div>
 
                 <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search units..." className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <button type="submit" className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search units..." className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <button type="submit" className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </button>
                 </form>
 
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                        <thead className="bg-gray-50 dark:bg-gray-950">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Short Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Short Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                             {!units?.data?.length ? (
-                                <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">No units found.</td></tr>
+                                <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">No units found.</td></tr>
                             ) : units.data.map((unit, index) => (
-                                <tr key={unit.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
-                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{unit.name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{unit.short_name}</td>
+                                <tr key={unit.id} className="hover:bg-gray-50 dark:bg-gray-950">
+                                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
+                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{unit.name}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{unit.short_name}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${unit.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${unit.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
                                             {unit.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
@@ -85,11 +85,11 @@ export default function UnitsIndex({ units, query = '' }) {
 
                 {units?.links && units.links.length > 3 && (
                     <div className="mt-4 flex items-center justify-between">
-                        <p className="text-sm text-gray-500">Showing {units.from} to {units.to} of {units.total} results</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Showing {units.from} to {units.to} of {units.total} results</p>
                         <div className="flex gap-1">
                             {units.links.map((link, i) => (
                                 <Link key={i} href={link.url || '#'}
-                                    className={`px-3 py-1 text-sm rounded-md ${link.active ? 'bg-blue-600 text-white' : link.url ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'}`}>
+                                    className={`px-3 py-1 text-sm rounded-md ${link.active ? 'bg-blue-600 text-white' : link.url ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800' : 'text-gray-400 cursor-not-allowed'}`}>
                                     {link.label.replace('&laquo;', '«').replace('&raquo;', '»')}
                                 </Link>
                             ))}

@@ -26,15 +26,15 @@ export default function Expired() {
     return (
         <>
             <Head title="Subscription Expired" />
-            <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-50">
+            <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-50 dark:bg-gray-950">
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         {logoUrl && <img src={logoUrl} alt={siteName} className="h-10 w-auto" />}
-                        <span className="text-2xl font-bold text-gray-900">{siteName}</span>
+                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{siteName}</span>
                     </div>
                 </div>
 
-                <div className="w-full sm:max-w-lg px-6 py-8 bg-white shadow-lg rounded-xl border border-gray-100">
+                <div className="w-full sm:max-w-lg px-6 py-8 bg-white dark:bg-gray-900 shadow-lg rounded-xl border border-gray-100 dark:border-gray-800">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,19 +42,19 @@ export default function Expired() {
                             </svg>
                         </div>
 
-                        <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
                             Store Safely Locked
                         </h1>
 
-                        <p className="text-gray-600 mb-4 leading-relaxed">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
                             Your <strong>{planName}</strong> plan subscription has expired
                             {daysSince > 0 ? ` (${daysSince} day${daysSince !== 1 ? 's' : ''} ago)` : ''}.
                             Your store data is safely preserved and no information has been lost.
                             Renew your subscription to restore full access.
                         </p>
 
-                        <div className="bg-amber-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 space-y-2">
-                            <p className="font-medium text-gray-800">What this means:</p>
+                        <div className="bg-amber-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                            <p className="font-medium text-gray-800 dark:text-gray-200">What this means:</p>
                             <ul className="list-disc list-inside space-y-1">
                                 <li>All your products, orders, and data are securely stored</li>
                                 <li>Your storefront is temporarily unavailable to customers</li>
@@ -74,17 +74,17 @@ export default function Expired() {
 
                             <a
                                 href={billingUrl}
-                                className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                                className="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 transition-colors"
                             >
                                 Upgrade Plan
                             </a>
                         </div>
 
-                        <div className="mt-8 pt-6 border-t border-gray-100">
+                        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="text-sm text-gray-500 hover:text-gray-700 underline"
+                                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 underline"
                             >
                                 Sign out
                             </button>

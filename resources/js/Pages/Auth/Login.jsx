@@ -29,7 +29,7 @@ export default function Login({ status }) {
 
             <form onSubmit={submit}>
                 <div>
-                    <label htmlFor="email" className="block font-medium text-sm text-gray-700">
+                    <label htmlFor="email" className="block font-medium text-sm text-gray-700 dark:text-gray-300">
                         Email
                     </label>
                     <input
@@ -37,7 +37,7 @@ export default function Login({ status }) {
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="username"
                         onChange={(e) => setData('email', e.target.value)}
                     />
@@ -45,7 +45,7 @@ export default function Login({ status }) {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="password" className="block font-medium text-sm text-gray-700">
+                    <label htmlFor="password" className="block font-medium text-sm text-gray-700 dark:text-gray-300">
                         Password
                     </label>
                     <input
@@ -53,7 +53,7 @@ export default function Login({ status }) {
                         type="password"
                         name="password"
                         value={data.password}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="current-password"
                         onChange={(e) => setData('password', e.target.value)}
                     />
@@ -67,16 +67,16 @@ export default function Login({ status }) {
                             name="remember"
                             checked={data.remember}
                             onChange={(e) => setData('remember', e.target.checked)}
-                            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                            className="rounded border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500"
                         />
-                        <span className="ms-2 text-sm text-gray-600">Remember me</span>
+                        <span className="ms-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
                     </label>
                 </div>
 
                 <div className="flex items-center justify-between mt-4">
                     <Link
                         href="/forgot-password"
-                        className="underline text-sm text-gray-600 hover:text-gray-900"
+                        className="underline text-sm text-gray-600 hover:text-gray-900 dark:text-gray-100"
                     >
                         Forgot your password?
                     </Link>
@@ -91,14 +91,14 @@ export default function Login({ status }) {
                 </div>
 
                 {usePage().props.website_info?.allow_registration !== false ? (
-                    <div className="mt-4 text-center text-sm text-gray-600">
+                    <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                         Don't have an account?{' '}
                         <Link href="/register" className="text-blue-600 hover:underline">
                             Register
                         </Link>
                     </div>
                 ) : (
-                    <div className="mt-4 text-center text-sm text-gray-400">
+                    <div className="mt-4 text-center text-sm text-gray-400 dark:text-gray-500">
                         Registration is currently disabled.
                     </div>
                 )}

@@ -33,7 +33,7 @@ export default function FormInput({
     return (
         <div>
             {label && (
-                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     {label}
                     {required && <span className="text-red-500 ml-0.5">*</span>}
                 </label>
@@ -41,7 +41,7 @@ export default function FormInput({
             <div className="relative">
                 {prefix && (
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <span className="text-gray-500 text-sm">{prefix}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">{prefix}</span>
                     </div>
                 )}
                 <input
@@ -60,12 +60,12 @@ export default function FormInput({
                 />
                 {suffix && (
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                        <span className="text-gray-500 text-sm">{suffix}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">{suffix}</span>
                     </div>
                 )}
             </div>
             {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-            {helpText && !error && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+            {helpText && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
         </div>
     );
 }

@@ -101,7 +101,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
     const renderStockBadge = (compact = false) => {
         if (isVariable && !selectedVariant && optionKeys.length > 0) {
             return (
-                <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[11px] font-medium">
+                <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full text-[11px] font-medium">
                     Select options
                 </span>
             );
@@ -133,19 +133,19 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
     const renderQuantityAndCart = (sticky = false) => (
         <div className={`flex items-center gap-2 ${sticky ? '' : ''}`}>
             {availableStock > 0 && (
-                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shrink-0">
+                <div className="flex items-center border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden shrink-0">
                     <button
                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                        className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors active:bg-gray-100"
+                        className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:bg-gray-950 hover:text-gray-700 dark:text-gray-300 transition-colors active:bg-gray-100"
                     >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
                     </button>
-                    <span className="w-10 h-9 flex items-center justify-center text-sm font-semibold text-gray-900 border-x border-gray-200 bg-white">
+                    <span className="w-10 h-9 flex items-center justify-center text-sm font-semibold text-gray-900 dark:text-gray-100 border-x border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
                         {quantity}
                     </span>
                     <button
                         onClick={() => setQuantity(q => Math.min(availableStock, q + 1))}
-                        className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors active:bg-gray-100"
+                        className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:bg-gray-950 hover:text-gray-700 dark:text-gray-300 transition-colors active:bg-gray-100"
                     >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                     </button>
@@ -201,7 +201,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
             </Head>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 pb-24 lg:pb-6">
-                <nav className="flex flex-wrap items-center text-xs text-gray-400 mb-3 sm:mb-4 gap-1">
+                <nav className="flex flex-wrap items-center text-xs text-gray-400 dark:text-gray-500 mb-3 sm:mb-4 gap-1">
                     <Link href={`/store/${tenant.slug}`} className="hover:text-indigo-600 font-medium transition-colors">{tenant.name}</Link>
                     <svg className="w-3 h-3 mx-0.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     {product.category && (
@@ -210,13 +210,13 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                             <svg className="w-3 h-3 mx-0.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </>
                     )}
-                    <span className="text-gray-600 truncate max-w-[180px]">{product.name}</span>
+                    <span className="text-gray-600 dark:text-gray-400 truncate max-w-[180px]">{product.name}</span>
                 </nav>
 
                 <div className="grid grid-cols-1 lg:grid-cols-[42%_58%] gap-4 lg:gap-6">
                     {/* Image Section */}
                     <div>
-                        <div className="group relative bg-gray-50 rounded-xl overflow-hidden aspect-[4/5] max-h-[520px]">
+                        <div className="group relative bg-gray-50 dark:bg-gray-950 rounded-xl overflow-hidden aspect-[4/5] max-h-[520px]">
                             {mainImage ? (
                                 <img
                                     src={assetUrl(mainImage)}
@@ -229,7 +229,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                         <svg className="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <p className="mt-2 text-xs text-gray-400">No Image</p>
+                                        <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">No Image</p>
                                     </div>
                                 </div>
                             )}
@@ -273,13 +273,13 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                     {/* Product Info Section */}
                     <div className="flex flex-col min-w-0">
                         {/* Product Info Card */}
-                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-4">
-                            <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 leading-snug">
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-3 sm:p-4">
+                            <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 leading-snug">
                                 {product.name}
                             </h1>
 
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] text-gray-500">
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded font-medium">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                                <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded font-medium">
                                     {product.category?.name || 'Uncategorized'}
                                 </span>
                                 <span className="text-gray-300">&middot;</span>
@@ -289,7 +289,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                 {!isVariable && product.sku && (
                                     <>
                                         <span className="text-gray-300">&middot;</span>
-                                        <span>SKU: <span className="font-medium text-gray-700">{product.sku}</span></span>
+                                        <span>SKU: <span className="font-medium text-gray-700 dark:text-gray-300">{product.sku}</span></span>
                                     </>
                                 )}
                                 {product.unit?.name && (
@@ -300,18 +300,18 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                 )}
                             </div>
 
-                            <div className="flex items-center justify-between gap-3 mt-2.5 pt-2.5 border-t border-gray-100">
+                            <div className="flex items-center justify-between gap-3 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800">
                                 <div>
                                     {isVariable && !allOptionsSelected ? (
                                         <span className="text-base text-gray-300 font-medium">Select options</span>
                                     ) : (
                                         <div className="flex items-baseline gap-2 flex-wrap">
-                                            <span className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                                            <span className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-gray-100">
                                                 {formatCurrency(currentPrice, cc)}
                                             </span>
                                             {originalPrice > 0 && originalPrice > currentPrice && (
                                                 <>
-                                                    <span className="text-sm text-gray-400 line-through">
+                                                    <span className="text-sm text-gray-400 dark:text-gray-500 line-through">
                                                         {formatCurrency(originalPrice, cc)}
                                                     </span>
                                                     <span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[11px] font-bold">
@@ -328,7 +328,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
 
                         {/* Short Description */}
                         {(product.short_description || !product.description) && (
-                            <p className="text-xs text-gray-500 leading-relaxed mt-2 line-clamp-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-2 line-clamp-2">
                                 {product.short_description || 'No short description available.'}
                             </p>
                         )}
@@ -338,7 +338,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                             <div className="mt-3 space-y-2.5">
                                 {optionKeys.map((key, keyIdx) => (
                                     <div key={key}>
-                                        <label className="text-xs font-semibold text-gray-700 capitalize block mb-1.5">
+                                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 capitalize block mb-1.5">
                                             {optionNames[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                                         </label>
                                         <div className="flex flex-wrap gap-1.5">
@@ -372,17 +372,17 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                 ))}
                                 {selectedVariant && (
                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                                        <span className="text-gray-600">
-                                            Selected: <span className="font-semibold text-gray-900">{selectedVariant.label}</span>
+                                        <span className="text-gray-600 dark:text-gray-400">
+                                            Selected: <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedVariant.label}</span>
                                         </span>
                                         {selectedVariant.sku && (
-                                            <span className="text-gray-400">
+                                            <span className="text-gray-400 dark:text-gray-500">
                                                 SKU: <span className="font-mono">{selectedVariant.sku}</span>
                                             </span>
                                         )}
                                         {selectedVariant.price > 0 && (
-                                            <span className="text-gray-600">
-                                                Price: <span className="font-semibold text-gray-900">{formatCurrency(selectedVariant.price, cc)}</span>
+                                            <span className="text-gray-600 dark:text-gray-400">
+                                                Price: <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(selectedVariant.price, cc)}</span>
                                             </span>
                                         )}
                                     </div>
@@ -393,22 +393,22 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                         {/* Combo Items */}
                         {isCombo && detail?.combo_summary && (
                             <div className="mt-3 space-y-2">
-                                <h3 className="text-xs font-semibold text-gray-700">What's Included</h3>
+                                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">What's Included</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                                     {(detail.combo_summary.items || []).map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-100">
+                                        <div key={idx} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-950 rounded-lg p-2 border border-gray-100 dark:border-gray-800">
                                             <div className="w-8 h-8 rounded bg-gray-200 overflow-hidden shrink-0">
                                                 {item.image ? (
                                                     <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[11px] font-medium text-gray-900 truncate">{item.name}</p>
-                                                <p className="text-[11px] text-gray-500">x{item.quantity || 1}</p>
+                                                <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
+                                                <p className="text-[11px] text-gray-500 dark:text-gray-400">x{item.quantity || 1}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -417,14 +417,14 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                         )}
 
                         {/* Purchase Section */}
-                        <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                             {renderQuantityAndCart()}
                         </div>
 
                         {/* Description */}
                         <div className="mt-3">
-                            <h2 className="text-sm font-bold text-gray-900 mb-1">Product Description</h2>
-                            <div className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">
+                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Product Description</h2>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">
                                 {truncatedDescription}
                             </div>
                             {isLongDescription && (
@@ -437,7 +437,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                         {/* Bundle Details (below purchase for combo) */}
                         {isCombo && detail?.combo_summary && (
                             <div className="mt-6 lg:mt-8">
-                                <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3">Bundle Details</h2>
+                                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Bundle Details</h2>
                                 <ComboViewDetail product={{
                                     ...product,
                                     combo_items: detail.combo_summary.items || [],
@@ -453,16 +453,16 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
             {/* Description Modal */}
             {showDescriptionModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDescriptionModal(false)}>
-                    <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
-                            <h3 className="text-sm font-bold text-gray-900">Product Description</h3>
-                            <button onClick={() => setShowDescriptionModal(false)} className="p-1 hover:bg-gray-100 rounded-md transition-colors">
-                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-800">
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Product Description</h3>
+                            <button onClick={() => setShowDescriptionModal(false)} className="p-1 hover:bg-gray-100 dark:bg-gray-800 rounded-md transition-colors">
+                                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <div className="px-5 py-4 overflow-y-auto max-h-[75vh] text-xs text-gray-600 leading-relaxed whitespace-pre-line">
+                        <div className="px-5 py-4 overflow-y-auto max-h-[75vh] text-xs text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
                             {product.description}
                         </div>
                     </div>
@@ -470,10 +470,10 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
             )}
 
             {/* Mobile Sticky Bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-sm border-t border-gray-200 px-4 py-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+            <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800 px-4 py-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 shrink-0">
-                        <div className="text-base font-bold text-gray-900">
+                        <div className="text-base font-bold text-gray-900 dark:text-gray-100">
                             {currentPrice ? formatCurrency(currentPrice, cc) : '\u2014'}
                         </div>
                         <div className="mt-0.5">

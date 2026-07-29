@@ -25,7 +25,7 @@ function CopyButton({ text }) {
     };
     return (
         <button onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
             aria-label={`Copy ${text}`}
         >
             {copied ? <CheckCheck className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -76,42 +76,42 @@ function PaymentMethodCard({ method, selectedId, onSelect, intentRef }) {
                         <Building2 className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-gray-900">{method.bank_name || method.name}</p>
-                        <p className="text-xs text-gray-500">{method.name}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{method.bank_name || method.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{method.name}</p>
                     </div>
                 </div>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-blue-500' : 'border-gray-300'}`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-blue-500' : 'border-gray-300 dark:border-gray-700'}`}>
                     {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                 </div>
             </div>
 
             <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Account Name</span>
+                    <span className="text-gray-500 dark:text-gray-400">Account Name</span>
                     <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{method.account_name}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{method.account_name}</span>
                         {method.account_name && <CopyButton text={method.account_name} />}
                     </div>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Account Number</span>
+                    <span className="text-gray-500 dark:text-gray-400">Account Number</span>
                     <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900 font-mono">{method.account_number}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100 font-mono">{method.account_number}</span>
                         {method.account_number && <CopyButton text={method.account_number} />}
                     </div>
                 </div>
             </div>
 
             {method.qr_image_url && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                     <img src={method.qr_image_url} alt={`${method.name} QR code`} className="w-24 h-24 mx-auto rounded-lg object-contain" />
                 </div>
             )}
 
-            <div className="mt-3 pt-3 border-t border-gray-100">
-                <p className="text-xs text-gray-400 mb-1.5">Reference to include:</p>
-                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="text-xs font-mono font-semibold text-gray-900">{intentRef || '—'}</span>
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">Reference to include:</p>
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-950 rounded-lg px-3 py-2">
+                    <span className="text-xs font-mono font-semibold text-gray-900 dark:text-gray-100">{intentRef || '—'}</span>
                     {intentRef && <CopyButton text={intentRef} />}
                 </div>
             </div>
@@ -166,15 +166,15 @@ function UploadArea({ file, onFileSelect, onFileRemove, error }) {
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
-                    <p className="text-xs text-gray-500 mt-2">{file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
                 </div>
             ) : (
                 <div>
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                        <FileImage className="w-6 h-6 text-gray-400" />
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
+                        <FileImage className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                     </div>
-                    <p className="text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-400 mt-1">PNG, JPG or GIF — Max 5MB</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Click to upload or drag and drop</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG or GIF — Max 5MB</p>
                 </div>
             )}
         </div>
@@ -261,10 +261,10 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
             <AdminLayout>
                 <Head title="Payment" />
                 <div className="p-6 lg:p-8 space-y-6 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                         <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <h2 className="text-lg font-semibold text-gray-900 mb-1">Payment Intent Not Found</h2>
-                        <p className="text-sm text-gray-500 mb-4">The payment you're looking for could not be found. Please start a new checkout.</p>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Intent Not Found</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">The payment you're looking for could not be found. Please start a new checkout.</p>
                         <button
                             onClick={() => router.get(adminUrl('/admin/billing/upgrade'))}
                             className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -282,12 +282,12 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
             <AdminLayout>
                 <Head title="Payment" />
                 <div className="p-6 lg:p-8 space-y-6 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
                             <Check className="w-8 h-8 text-green-600" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Payment {intent.status === 'completed' ? 'Completed' : intent.status === 'approved' ? 'Approved' : intent.status === 'paid' ? 'Paid' : intent.status}</h2>
-                        <p className="text-sm text-gray-500 mb-2">Reference: <span className="font-mono font-semibold">{intent.reference_number}</span></p>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Payment {intent.status === 'completed' ? 'Completed' : intent.status === 'approved' ? 'Approved' : intent.status === 'paid' ? 'Paid' : intent.status}</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Reference: <span className="font-mono font-semibold">{intent.reference_number}</span></p>
                         <StatusBadge status={intent.status} />
                         <div className="mt-6">
                             <button
@@ -308,17 +308,17 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
             <AdminLayout>
                 <Head title="Payment" />
                 <div className="p-6 lg:p-8 space-y-6 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-xl border border-red-200 p-8 text-center">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-red-200 p-8 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
                             <X className="w-8 h-8 text-red-600" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Payment Rejected</h2>
-                        <p className="text-sm text-gray-500 mb-4">Your payment has been reviewed and was not approved. Please contact support for more information.</p>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Payment Rejected</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your payment has been reviewed and was not approved. Please contact support for more information.</p>
                         <StatusBadge status={intent.status} />
                         <div className="mt-6 flex gap-3 justify-center">
                             <button
                                 onClick={() => router.get(adminUrl('/admin/billing'))}
-                                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                                className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
                             >
                                 Back to Billing
                             </button>
@@ -340,23 +340,23 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
             <AdminLayout>
                 <Head title="Payment Submitted" />
                 <div className="p-6 lg:p-8 space-y-6 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-4">
                             <Clock className="w-8 h-8 text-purple-600" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Payment Submitted Successfully</h2>
-                        <p className="text-sm text-gray-500 mb-4">Your payment evidence has been received and is now awaiting review.</p>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Payment Submitted Successfully</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your payment evidence has been received and is now awaiting review.</p>
                         <div className="flex items-center justify-center gap-2 mb-6">
-                            <span className="text-sm text-gray-400">Reference:</span>
-                            <span className="text-sm font-mono font-semibold text-gray-900">{intent.reference_number}</span>
+                            <span className="text-sm text-gray-400 dark:text-gray-500">Reference:</span>
+                            <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">{intent.reference_number}</span>
                             <CopyButton text={intent.reference_number} />
                         </div>
                         <StatusBadge status="waiting_review" />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-6 py-4 border-b border-gray-100">
-                            <h3 className="text-base font-semibold text-gray-900">What Happens Next?</h3>
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">What Happens Next?</h3>
                         </div>
                         <div className="p-6">
                             <div className="space-y-0">
@@ -374,8 +374,8 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                 <Icon className={`w-4 h-4 ${step.color}`} />
                                             </div>
                                             <div className="pt-1.5">
-                                                <p className="text-sm font-semibold text-gray-900">{step.label}</p>
-                                                <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
+                                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{step.label}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{step.desc}</p>
                                             </div>
                                         </div>
                                     );
@@ -405,7 +405,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                         </button>
                         <button
                             onClick={() => router.get(adminUrl('/admin/billing/payment-history'))}
-                            className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                            className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                         >
                             View Payment History
                         </button>
@@ -425,18 +425,18 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-gray-900">Manual Payment</h1>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Manual Payment</h1>
                             <StatusBadge status={intent?.status || 'draft'} />
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">Transfer the exact amount and upload your payment evidence</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Transfer the exact amount and upload your payment evidence</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">Select Payment Method</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Select Payment Method</h2>
                             </div>
                             <div className="p-6">
                                 {paymentMethods && paymentMethods.length > 0 ? (
@@ -454,16 +454,16 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                 ) : (
                                     <div className="text-center py-6">
                                         <Banknote className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                        <p className="text-sm text-gray-500">No payment methods are currently available.</p>
-                                        <p className="text-xs text-gray-400 mt-1">Please contact support for assistance.</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">No payment methods are currently available.</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Please contact support for assistance.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">Payment Instructions</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Instructions</h2>
                             </div>
                             <div className="p-6">
                                 <ol className="space-y-3">
@@ -478,8 +478,8 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                         <li key={step.num} className="flex items-start gap-3">
                                             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{step.num}</span>
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900">{step.label}</p>
-                                                <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
+                                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{step.label}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{step.desc}</p>
                                             </div>
                                         </li>
                                     ))}
@@ -489,14 +489,14 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
                         {canSubmit && (
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                <div className="bg-white rounded-xl border border-gray-200">
-                                    <div className="px-6 py-4 border-b border-gray-100">
-                                        <h2 className="text-base font-semibold text-gray-900">Payment Information</h2>
+                                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Information</h2>
                                     </div>
                                     <div className="p-6 space-y-5">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label htmlFor="sender-name" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="sender-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Account Holder Name <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
@@ -505,12 +505,12 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                     value={senderName}
                                                     onChange={(e) => setSenderName(e.target.value)}
                                                     placeholder="e.g. John Doe"
-                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                     maxLength={255}
                                                 />
                                             </div>
                                             <div>
-                                                <label htmlFor="sender-account" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="sender-account" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Sender Account / Phone <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
@@ -519,14 +519,14 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                     value={senderAccount}
                                                     onChange={(e) => setSenderAccount(e.target.value)}
                                                     placeholder="e.g. 09123456789"
-                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                     maxLength={255}
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label htmlFor="transaction-ref" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="transaction-ref" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Transaction Reference / Transaction ID <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -535,25 +535,25 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                 value={transactionReference}
                                                 onChange={(e) => setTransactionReference(e.target.value)}
                                                 placeholder="e.g. TRX20260704123456"
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 maxLength={255}
                                             />
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Transfer Amount <span className="text-red-500">*</span>
                                                 </label>
-                                                <div className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-semibold flex items-center gap-1">
+                                                <div className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-gray-100 font-semibold flex items-center gap-1">
                                                     <span>{pc.symbol}</span>
                                                     <span>{Number(transferredAmount).toLocaleString()}</span>
-                                                    {pc.code !== 'USD' && <span className="text-gray-400 font-normal ml-1">{pc.code}</span>}
+                                                    {pc.code !== 'USD' && <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">{pc.code}</span>}
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-1">This amount is fixed based on your selected plan.</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">This amount is fixed based on your selected plan.</p>
                                             </div>
                                             <div>
-                                                <label htmlFor="transfer-date" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="transfer-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Transfer Date <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
@@ -562,7 +562,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                     value={transferDate}
                                                     onChange={(e) => setTransferDate(e.target.value)}
                                                     max={new Date().toISOString().split('T')[0]}
-                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 />
                                             </div>
                                         </div>
@@ -580,7 +580,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                         )}
 
                                         <div>
-                                            <label htmlFor="payment-note" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="payment-note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Remark (optional)
                                             </label>
                                             <textarea
@@ -589,9 +589,9 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                 onChange={(e) => setNote(e.target.value.slice(0, 500))}
                                                 rows={2}
                                                 placeholder="Any additional information..."
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-shadow"
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-shadow"
                                             />
-                                            <p className="text-xs text-gray-400 mt-1 text-right">{note.length}/500</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{note.length}/500</p>
                                         </div>
                                     </div>
                                 </div>
@@ -623,7 +623,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                     <button
                                         type="button"
                                         onClick={() => router.get(adminUrl('/admin/billing/checkout'), {}, { preserveState: false })}
-                                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                                     >
                                         <ArrowLeft className="w-4 h-4" />
                                         Back to Checkout
@@ -634,27 +634,27 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                     </div>
 
                     <div className="space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h3 className="text-base font-semibold text-gray-900">Payment Summary</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Summary</h3>
                             </div>
                             <div className="p-5 space-y-3">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-500">Plan</span>
-                                    <span className="font-semibold text-gray-900">{selectedPlan?.name || '—'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Plan</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedPlan?.name || '—'}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-500">Billing</span>
-                                    <span className="font-semibold text-gray-900 capitalize">{intent?.billing_cycle || 'monthly'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Billing</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{intent?.billing_cycle || 'monthly'}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-500">Currency</span>
-                                    <span className="font-semibold text-gray-900">{intent?.currency || pc.code}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Currency</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{intent?.currency || pc.code}</span>
                                 </div>
-                                <div className="border-t border-gray-100 pt-3">
+                                <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-semibold text-gray-900">Total Amount</span>
-                                        <span className="text-lg font-bold text-gray-900">
+                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total Amount</span>
+                                        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                             {intent?.amount !== null && intent?.amount !== undefined
                                                 ? formatCurrency(intent.amount, pc)
                                                 : selectedPlan?.monthly_price !== null
@@ -663,18 +663,18 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                         </span>
                                     </div>
                                 </div>
-                                <div className="border-t border-gray-100 pt-3">
-                                    <div className="text-xs text-gray-400 mb-1">Reference Number</div>
+                                <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                                    <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Reference Number</div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-mono font-semibold text-gray-900 break-all mr-2">{intent?.reference_number}</span>
+                                        <span className="text-xs font-mono font-semibold text-gray-900 dark:text-gray-100 break-all mr-2">{intent?.reference_number}</span>
                                         {intent?.reference_number && <CopyButton text={intent.reference_number} />}
                                     </div>
                                 </div>
                                 {currentPlan && selectedPlan && (
-                                    <div className="border-t border-gray-100 pt-3">
-                                        <div className="text-xs text-gray-400 mb-1">Plan Change</div>
+                                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Plan Change</div>
                                         <div className="flex items-center gap-2 text-sm">
-                                            <span className="font-medium text-gray-700">{currentPlan.name}</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">{currentPlan.name}</span>
                                             <span className="text-gray-300">→</span>
                                             <span className="font-medium text-blue-600">{selectedPlan.name}</span>
                                         </div>
@@ -711,8 +711,8 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                         </div>
 
                         {canSubmit && (
-                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-center">
-                                <p className="text-xs text-gray-500">Need help?</p>
+                            <div className="bg-gray-50 dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Need help?</p>
                                 <button
                                     onClick={() => window.location.href = '#'}
                                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors mt-0.5"

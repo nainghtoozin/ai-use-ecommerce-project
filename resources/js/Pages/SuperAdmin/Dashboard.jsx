@@ -13,15 +13,15 @@ function StatCard({ label, value, icon, color, subtitle }) {
     };
     const c = colors[color] || colors.slate;
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center gap-4">
                 <div className={`p-3 rounded-lg shrink-0 ${c.bg}`}>
                     <i className={`bi ${icon} text-xl ${c.icon}`}></i>
                 </div>
                 <div className="min-w-0">
-                    <p className="text-2xl font-bold text-gray-900">{value}</p>
-                    <p className="text-sm text-gray-500 mt-0.5">{label}</p>
-                    {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
+                    {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>}
                 </div>
             </div>
         </div>
@@ -51,8 +51,8 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
             <div className="p-6 lg:p-8 space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Platform Overview</h1>
-                        <p className="text-sm text-gray-500 mt-1">SaaS management dashboard</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Platform Overview</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">SaaS management dashboard</p>
                     </div>
                 </div>
 
@@ -70,9 +70,9 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                            <h2 className="text-sm font-semibold text-gray-700">Recent Merchants</h2>
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Merchants</h2>
                             <Link href="/superadmin/tenants" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                                 View All <i className="bi bi-arrow-right ml-1"></i>
                             </Link>
@@ -80,7 +80,7 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
+                                    <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         <th className="px-5 py-3 font-medium">Store</th>
                                         <th className="px-5 py-3 font-medium">Plan</th>
                                         <th className="px-5 py-3 font-medium">Status</th>
@@ -90,32 +90,32 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {recentTenants.map((t) => (
-                                        <tr key={t.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/superadmin/tenants/${t.id}`}>
+                                        <tr key={t.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors cursor-pointer" onClick={() => window.location.href = `/superadmin/tenants/${t.id}`}>
                                             <td className="px-5 py-3">
                                                 <div>
-                                                    <p className="text-sm font-medium text-gray-900">{t.name}</p>
-                                                    <p className="text-xs text-gray-500">{t.slug}</p>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.name}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t.slug}</p>
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3">
-                                                <span className="text-sm text-gray-600">{t.plan_name || '—'}</span>
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">{t.plan_name || '—'}</span>
                                             </td>
                                             <td className="px-5 py-3">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[t.status] || 'bg-gray-100 text-gray-700'}`}>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[t.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
                                                     {t.status}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-3">
-                                                <span className="text-sm text-gray-600">{t.users_count}</span>
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">{t.users_count}</span>
                                             </td>
                                             <td className="px-5 py-3">
-                                                <span className="text-sm text-gray-500">{t.created_at}</span>
+                                                <span className="text-sm text-gray-500 dark:text-gray-400">{t.created_at}</span>
                                             </td>
                                         </tr>
                                     ))}
                                     {recentTenants.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" className="px-5 py-8 text-center text-sm text-gray-500">No merchants yet</td>
+                                            <td colSpan="5" className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No merchants yet</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -123,9 +123,9 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-5 py-4 border-b border-gray-100">
-                            <h2 className="text-sm font-semibold text-gray-700">Subscriptions by Plan</h2>
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Subscriptions by Plan</h2>
                         </div>
                         <div className="p-5 space-y-4">
                             {subscriptionsByPlan.map((plan) => {
@@ -135,10 +135,10 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
                                 return (
                                     <div key={plan.name} className="space-y-1.5">
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="font-medium text-gray-900">{plan.name}</span>
-                                            <span className="text-gray-500">{plan.count} ({pct}%)</span>
+                                            <span className="font-medium text-gray-900 dark:text-gray-100">{plan.name}</span>
+                                            <span className="text-gray-500 dark:text-gray-400">{plan.count} ({pct}%)</span>
                                         </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-2">
+                                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
                                             <div
                                                 className="h-2 rounded-full transition-all duration-500"
                                                 style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: '#3B82F6' }}
@@ -148,7 +148,7 @@ export default function SuperAdminDashboard({ tenantStats, totalSubscriptions, m
                                 );
                             })}
                             {subscriptionsByPlan.length === 0 && (
-                                <p className="text-sm text-gray-500 text-center py-4">No active subscriptions</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No active subscriptions</p>
                             )}
                         </div>
                     </div>

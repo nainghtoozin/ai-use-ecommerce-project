@@ -53,17 +53,17 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
             <Head title="Orders" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">Orders</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Orders</h1>
 
                 {/* Filters */}
-                <form onSubmit={handleFilter} className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+                <form onSubmit={handleFilter} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order Status</label>
                             <select
                                 value={filterForm.order_status}
                                 onChange={(e) => setFilterForm((p) => ({ ...p, order_status: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All</option>
                                 <option value="pending">Pending</option>
@@ -75,11 +75,11 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Status</label>
                             <select
                                 value={filterForm.payment_status}
                                 onChange={(e) => setFilterForm((p) => ({ ...p, payment_status: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All</option>
                                 <option value="unpaid">Unpaid</option>
@@ -90,13 +90,13 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
                             <input
                                 type="text"
                                 value={filterForm.search}
                                 onChange={(e) => setFilterForm((p) => ({ ...p, search: e.target.value }))}
                                 placeholder="Name, phone, order ID..."
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
@@ -104,7 +104,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                         <button
                             type="button"
                             onClick={() => { setFilterForm({ order_status: '', payment_status: '', search: '' }); router.get(adminUrl('/admin/orders')); }}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+                            className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200 text-sm"
                         >
                             Clear
                         </button>
@@ -117,7 +117,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                 {/* Active Filters */}
                 {(filterForm.order_status || filterForm.payment_status || filterForm.search) && (
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="text-sm text-gray-500">Active filters:</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Active filters:</span>
                         {filterForm.order_status && (
                             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">{filterForm.order_status}</span>
                         )}
@@ -125,7 +125,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">{filterForm.payment_status}</span>
                         )}
                         {filterForm.search && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">"{filterForm.search}"</span>
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">"{filterForm.search}"</span>
                         )}
                     </div>
                 )}
@@ -139,54 +139,54 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                 </div>
 
                 {/* Orders Table */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                            <thead className="bg-gray-50 dark:bg-gray-950">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Order</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Order Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Payment</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Items</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                                 {!orders?.data?.length ? (
                                     <tr>
-                                        <td colSpan="7" className="px-4 py-12 text-center text-gray-500">No orders found.</td>
+                                        <td colSpan="7" className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">No orders found.</td>
                                     </tr>
                                 ) : (
                                     orders.data.map((order) => (
-                                        <tr key={order.id} className="hover:bg-gray-50">
+                                        <tr key={order.id} className="hover:bg-gray-50 dark:bg-gray-950">
                                             <td className="px-4 py-4">
                                                 <Link href={adminUrl(`/admin/orders/${order.id}`)} className="text-sm font-medium text-blue-600 hover:underline">
                                                     #{order.id}
                                                 </Link>
-                                                <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(order.created_at).toLocaleDateString()}</p>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <p className="text-sm font-medium text-gray-900 truncate max-w-[150px]">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[150px]">
                                                     {order.user?.name || `${order.first_name} ${order.last_name}`}
                                                 </p>
-                                                <p className="text-xs text-gray-500">{order.phone}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{order.phone}</p>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${orderStatusColors[order.order_status] || 'bg-gray-100 text-gray-800'}`}>
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${orderStatusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                     {order.order_status}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 text-gray-800'}`}>
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                     {order.payment_status}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-4 text-sm text-gray-600">
+                                            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
                                                 {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} items
                                             </td>
-                                            <td className="px-4 py-4 text-sm font-medium text-gray-900 text-right">
+                                            <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
                                                 {formatCurrency(order.total_amount, cc)}
                                             </td>
                                             <td className="px-4 py-4 text-right text-sm">
@@ -208,8 +208,8 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
 
                     {/* Pagination */}
                     {showPagination && orders?.links && orders.links.length > 3 && (
-                        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                            <p className="text-sm text-gray-500">
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 Showing {orders.from} to {orders.to} of {orders.total} results
                             </p>
                             <div className="flex gap-1">

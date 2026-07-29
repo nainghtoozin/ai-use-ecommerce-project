@@ -205,13 +205,13 @@ export default function AdminDashboard({
                                     } text-xl`}></i>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-900">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                         {subscriptionStatus === 'suspended'
                                             ? t('dashboard.subscription_suspended')
                                             : t('dashboard.subscription_expired')
                                         }
                                     </p>
-                                    <p className="text-sm text-gray-600 mt-0.5">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                                         {subscriptionStatus === 'suspended'
                                             ? t('dashboard.contact_support_message')
                                             : t('dashboard.renew_subscription')
@@ -232,19 +232,19 @@ export default function AdminDashboard({
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.dashboard')}</h1>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('navigation.dashboard')}</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {periods.find(p => p.value === selectedPeriod)?.label || t('dashboard.custom')} {t('general.overview') || 'overview'}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <i className="bi bi-calendar3"></i>
                         <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
                 </div>
 
                 {/* Period Filter */}
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                         {periods.map((period) => (
                             <button
@@ -262,19 +262,19 @@ export default function AdminDashboard({
                     </div>
 
                     {showCustomDate && (
-                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                             <input
                                 type="date"
                                 value={customStartDate}
                                 onChange={(e) => setCustomStartDate(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
-                            <span className="text-gray-500 text-sm">{t('general.to') || 'to'}</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm">{t('general.to') || 'to'}</span>
                             <input
                                 type="date"
                                 value={customEndDate}
                                 onChange={(e) => setCustomEndDate(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <button
                                 onClick={handleCustomDateSubmit}
@@ -286,9 +286,9 @@ export default function AdminDashboard({
                     )}
 
                     {selectedPeriod !== 'today' && selectedPeriod !== 'custom' && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                            <span className="text-sm text-gray-500">
-                                {t('dashboard.showing_data_for') || 'Showing data for'}: <span className="font-medium text-gray-900">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {t('dashboard.showing_data_for') || 'Showing data for'}: <span className="font-medium text-gray-900 dark:text-gray-100">
                                     {periods.find(p => p.value === selectedPeriod)?.label}
                                 </span>
                             </span>
@@ -296,9 +296,9 @@ export default function AdminDashboard({
                     )}
 
                     {selectedPeriod === 'custom' && startDate && endDate && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                            <span className="text-sm text-gray-500">
-                                {t('dashboard.showing_data_for') || 'Showing data for'}: <span className="font-medium text-gray-900">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {t('dashboard.showing_data_for') || 'Showing data for'}: <span className="font-medium text-gray-900 dark:text-gray-100">
                                     {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
                                 </span>
                             </span>
@@ -308,12 +308,12 @@ export default function AdminDashboard({
 
                 {/* Empty State */}
                 {!hasAnyWidgets && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 mb-4">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 mb-4">
                             <i className="bi bi-grid-3x3-gap-fill text-2xl text-gray-300"></i>
                         </div>
-                        <h3 className="text-base font-semibold text-gray-700 mb-1">{t('dashboard.no_dashboard_widgets')}</h3>
-                        <p className="text-sm text-gray-500">{t('dashboard.no_dashboard_widgets_message')}</p>
+                        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('dashboard.no_dashboard_widgets')}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.no_dashboard_widgets_message')}</p>
                     </div>
                 )}
 
@@ -325,15 +325,15 @@ export default function AdminDashboard({
                             return (
                                 <div
                                     key={idx}
-                                    className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
+                                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
                                 >
                                     <div className="flex items-center gap-3 lg:gap-4">
                                         <div className={`p-2 lg:p-2.5 rounded-lg shrink-0 ${colors.bg}`}>
                                             <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-lg sm:text-xl font-bold text-gray-900 break-words">{stat.value}</p>
-                                            <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                                            <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 break-words">{stat.value}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{stat.label}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -344,9 +344,9 @@ export default function AdminDashboard({
 
                 {/* Payment Methods Breakdown */}
                 {canViewPayments && paymentMethodSummary?.length > 0 && (
-                    <div className="bg-white rounded-xl border border-gray-200">
-                        <div className="px-5 py-4 border-b border-gray-100">
-                            <h2 className="text-sm font-semibold text-gray-700">{t('dashboard.payment_methods_breakdown')}</h2>
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.payment_methods_breakdown')}</h2>
                         </div>
                         <div className="p-5">
                             {(() => {
@@ -364,14 +364,14 @@ export default function AdminDashboard({
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between gap-2">
-                                                            <span className="text-sm font-medium text-gray-900 truncate">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                                                 {pm.name}
                                                             </span>
-                                                            <span className="text-sm font-semibold text-gray-900 tabular-nums shrink-0">
+                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
                                                                 {formatCurrency(total, cc)}
                                                             </span>
                                                         </div>
-                                                        <div className="mt-1.5 w-full bg-gray-100 rounded-full h-2">
+                                                        <div className="mt-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
                                                             <div
                                                                 className="h-2 rounded-full transition-all duration-500"
                                                                 style={{
@@ -395,9 +395,9 @@ export default function AdminDashboard({
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Recent Orders */}
                     {canViewOrders && (
-                    <div className={`${ordersColSpan} bg-white rounded-xl border border-gray-200`}>
-                        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.recent_orders')}</h2>
+                    <div className={`${ordersColSpan} bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800`}>
+                        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('dashboard.recent_orders')}</h2>
                             <Link href={adminUrl('/admin/orders')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                                 {t('dashboard.view_all')} <i className="bi bi-arrow-right ml-1"></i>
                             </Link>
@@ -406,13 +406,13 @@ export default function AdminDashboard({
                         {!orders?.length ? (
                             <div className="text-center py-12">
                                 <i className="bi bi-bag text-4xl text-gray-300"></i>
-                                <p className="text-sm text-gray-500 mt-2">{t('dashboard.no_orders_yet')}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.no_orders_yet')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
+                                        <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                             <th className="px-5 py-3 font-medium">{t('orders.order')}</th>
                                             <th className="px-5 py-3 font-medium">{t('orders.customer')}</th>
                                             <th className="px-5 py-3 font-medium">{t('orders.amount')}</th>
@@ -424,27 +424,27 @@ export default function AdminDashboard({
                                         {orders.slice(0, 8).map((order) => (
                                             <tr
                                                 key={order.id}
-                                                className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                                className="hover:bg-gray-50 dark:bg-gray-950 transition-colors cursor-pointer"
                                                 onClick={() => router.visit(adminUrl(`/admin/orders/${order.id}`))}
                                             >
                                                 <td className="px-5 py-4">
-                                                    <span className="text-sm font-medium text-gray-900">#{order.id}</span>
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">#{order.id}</span>
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className="text-sm text-gray-600">
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">
                                                         {order.user?.name || order.customer_name || (order.first_name ? `${order.first_name} ${order.last_name}` : 'N/A')}
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className="text-sm font-semibold text-gray-900">{formatMoney(order.total_amount)}</span>
+                                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatMoney(order.total_amount)}</span>
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 text-gray-700'}`}>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
                                                         {order.order_status}
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className="text-sm text-gray-500">{timeAgo(order.created_at)}</span>
+                                                    <span className="text-sm text-gray-500 dark:text-gray-400">{timeAgo(order.created_at)}</span>
                                                 </td>
                                             </tr>
                                         ))}
@@ -459,7 +459,7 @@ export default function AdminDashboard({
                     {canViewProducts && (
                     <div className="space-y-6">
                         {outOfStock?.data?.length > 0 && (
-                            <div className="bg-white rounded-xl border border-red-200">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-red-200">
                                 <div className="flex items-center gap-3 p-4 border-b border-red-100">
                                     <div className="p-2 bg-red-100 rounded-lg">
                                         <i className="bi bi-exclamation-triangle text-red-600"></i>
@@ -475,12 +475,12 @@ export default function AdminDashboard({
                                             {product.photo1_url ? (
                                                 <img src={product.photo1_url} alt={product.name} className="w-8 h-8 object-cover rounded-lg" />
                                             ) : (
-                                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">
+                                                <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
                                                     <i className="bi bi-box"></i>
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
                                                 <p className="text-xs text-red-600">{t('inventory.out_of_stock')}</p>
                                             </div>
                                             <Link
@@ -496,7 +496,7 @@ export default function AdminDashboard({
                         )}
 
                         {lowStock?.data?.length > 0 && (
-                            <div className="bg-white rounded-xl border border-amber-200">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-amber-200">
                                 <div className="flex items-center gap-3 p-4 border-b border-amber-100">
                                     <div className="p-2 bg-amber-100 rounded-lg">
                                         <i className="bi bi-exclamation-circle text-amber-600"></i>
@@ -512,12 +512,12 @@ export default function AdminDashboard({
                                             {product.photo1_url ? (
                                                 <img src={product.photo1_url} alt={product.name} className="w-8 h-8 object-cover rounded-lg" />
                                             ) : (
-                                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">
+                                                <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
                                                     <i className="bi bi-box"></i>
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
                                                 <p className="text-xs text-amber-600">Only {product.stock} left</p>
                                             </div>
                                             <Link
@@ -533,9 +533,9 @@ export default function AdminDashboard({
                         )}
 
                         {(!outOfStock?.data?.length && !lowStock?.data?.length) && (
-                            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
                                 <i className="bi bi-check-circle text-3xl text-emerald-400"></i>
-                                <p className="text-sm text-gray-500 mt-2">{t('dashboard.all_products_in_stock')}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.all_products_in_stock')}</p>
                             </div>
                         )}
                     </div>

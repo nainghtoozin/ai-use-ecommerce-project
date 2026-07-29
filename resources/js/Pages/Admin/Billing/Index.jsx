@@ -73,10 +73,10 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-gray-900">Billing & Subscription</h1>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Billing & Subscription</h1>
                             {subscription && <StatusBadge status={subscription.status} />}
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">Manage your subscription plan, limits, and billing information</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your subscription plan, limits, and billing information</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {currentPlan && currentPlan.slug !== 'free' && (
@@ -139,7 +139,7 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                             </div>
                             <button
                                 onClick={() => router.post(adminUrl('/admin/billing/change-plan/cancel'))}
-                                className="ml-auto px-3 py-1.5 bg-white text-red-600 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-50 transition-colors flex-shrink-0"
+                                className="ml-auto px-3 py-1.5 bg-white dark:bg-gray-900 text-red-600 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-50 transition-colors flex-shrink-0"
                             >
                                 Cancel
                             </button>
@@ -195,9 +195,9 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                 {subscription && !['expired', 'past_due', 'canceled', 'suspended'].includes(subscription.status) && (
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-base font-semibold text-gray-900">Usage & Limits</h2>
+                            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Usage & Limits</h2>
                             {currentPlan && (
-                                <span className="text-xs text-gray-400">{currentPlan.name} plan</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500">{currentPlan.name} plan</span>
                             )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

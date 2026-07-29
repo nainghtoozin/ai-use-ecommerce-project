@@ -92,6 +92,7 @@ class HandleInertiaRequests extends Middleware
 
         return array_merge(parent::share($request), [
             'locale' => app()->getLocale(),
+            'theme' => $this->resolveTheme($request),
             'translations' => $this->getTranslations(),
             'auth' => [
                 'user' => $projection,
@@ -274,5 +275,29 @@ class HandleInertiaRequests extends Middleware
         }
 
         return [];
+    }
+
+    private function resolveTheme(Request $request): string
+    {
+        $supportedThemes = ['light', 'dark', 'system'];
+
+        // 1. Check session (set by POST theme switch)
+        $sessionTheme = session('theme');
+        if ($sessionTheme && in_array($sessionTheme, $supportedThemes)) {
+            return $sessionTheme;
+        }
+
+        // 2. Check authenticated user preference
+        $user = $request->user();
+        if ($user) {
+            $userTheme = $user->getAttribute('theme');
+            if ($userTheme && in_array($userTheme, $supportedThemes)) {
+                session(['theme' => $userTheme]);
+                return $userTheme;
+            }
+        }
+
+        // 3. Fallback
+        return 'system';
     }
 }

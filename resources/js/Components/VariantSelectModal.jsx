@@ -58,16 +58,16 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+                className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900 truncate pr-2">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-2">
                         {product.name}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 text-xl leading-none p-1"
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none p-1"
                     >
                         &times;
                     </button>
@@ -75,14 +75,14 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
 
                 <div className="p-4 space-y-4">
                     {variants.length === 0 ? (
-                        <p className="text-sm text-gray-500 text-center py-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                             No variants available for this product.
                         </p>
                     ) : (
                         <>
                             {optionKeys.length > 0 && (
                                 <div>
-                                    <p className="text-sm font-medium text-gray-700 mb-2">
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Options
                                     </p>
                                     <div className="space-y-2">
@@ -111,17 +111,17 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                         className="accent-blue-600"
                                                     />
                                                     <div className="flex-1 min-w-0">
-                                                        <span className="text-sm font-medium text-gray-900 block truncate">
+                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 block truncate">
                                                             {label}
                                                         </span>
                                                         {v.sku && (
-                                                            <span className="text-xs text-gray-400">
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500">
                                                                 SKU: {v.sku}
                                                             </span>
                                                         )}
                                                     </div>
                                                     <div className="text-right flex-shrink-0">
-                                                        <span className="text-sm font-semibold text-gray-900 block">
+                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 block">
                                                             {v.price != null ? formatCurrency(v.price, cc) : '—'}
                                                         </span>
                                                         <span className={`text-[10px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
@@ -138,16 +138,16 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                     )}
 
                     {selectedVariant ? (
-                        <div className="border-t border-gray-200 pt-4 space-y-4">
+                        <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs text-gray-500">Price</p>
-                                    <p className="text-xl font-bold text-gray-900">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Price</p>
+                                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                                         {formatCurrency(displayPrice, cc)}
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xs text-gray-500">Stock</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Stock</p>
                                     <p className={`text-sm font-medium ${selectedStatus.color}`}>
                                         {selectedStatus.label}
                                     </p>
@@ -155,7 +155,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                             </div>
 
                             <div>
-                                <label className="text-sm font-medium text-gray-700 block mb-1">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
                                     Quantity
                                 </label>
                                 <div className="flex items-center gap-3">
@@ -163,18 +163,18 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                         type="button"
                                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
                                         disabled={quantity <= 1}
-                                        className="w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
                                     >
                                         &minus;
                                     </button>
-                                    <span className="w-12 text-center text-lg font-semibold text-gray-900">
+                                    <span className="w-12 text-center text-lg font-semibold text-gray-900 dark:text-gray-100">
                                         {quantity}
                                     </span>
                                     <button
                                         type="button"
                                         onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
                                         disabled={quantity >= maxQuantity}
-                                        className="w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
                                     >
                                         +
                                     </button>

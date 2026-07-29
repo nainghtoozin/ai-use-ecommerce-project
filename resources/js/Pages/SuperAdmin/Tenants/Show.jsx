@@ -11,53 +11,53 @@ export default function ShowTenant({ tenant, users, stats }) {
     };
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Merchant: {tenant.name}</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Merchant: {tenant.name}</h2>}>
             <Head title={`Merchant - ${tenant.name}`} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Status</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
                             <p className="mt-1">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[tenant.status] || 'bg-gray-100 text-gray-800'}`}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[tenant.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                     {tenant.status}
                                 </span>
                             </p>
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Products</p>
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.products}</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Products</p>
+                            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.products}</p>
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Orders</p>
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.orders}</p>
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Orders</p>
+                            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.orders}</p>
                         </div>
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <p className="text-sm text-gray-500">Revenue</p>
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">
+                        <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Revenue</p>
+                            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
                                 {formatCurrency(stats.revenue, pc)}
                             </p>
                         </div>
                     </div>
 
                     {/* Tenant Details */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Store Details</h3>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Store Details</h3>
                             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
-                                    <dt className="text-sm text-gray-500">Store Name</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{tenant.name}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Store Name</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{tenant.name}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Slug</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{tenant.slug}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Slug</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{tenant.slug}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Store URL</dt>
-                                    <dd className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Store URL</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                                         <span>{tenant.store_url || '—'}</span>
                                         {tenant.store_url && (
                                             <button
@@ -77,20 +77,20 @@ export default function ShowTenant({ tenant, users, stats }) {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Domain</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{tenant.domain || '—'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Domain</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{tenant.domain || '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Email</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{tenant.email || '—'}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Email</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{tenant.email || '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Created</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{new Date(tenant.created_at).toLocaleString()}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Created</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(tenant.created_at).toLocaleString()}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-gray-500">Updated</dt>
-                                    <dd className="text-sm font-medium text-gray-900">{new Date(tenant.updated_at).toLocaleString()}</dd>
+                                    <dt className="text-sm text-gray-500 dark:text-gray-400">Updated</dt>
+                                    <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(tenant.updated_at).toLocaleString()}</dd>
                                 </div>
                             </dl>
                             <div className="mt-4 flex gap-2">
@@ -102,7 +102,7 @@ export default function ShowTenant({ tenant, users, stats }) {
                                 </Link>
                                 <Link
                                     href="/superadmin/tenants"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                                 >
                                     Back to List
                                 </Link>
@@ -111,29 +111,29 @@ export default function ShowTenant({ tenant, users, stats }) {
                     </div>
 
                     {/* Users */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                                 Users ({tenant.users_count ?? 0})
                             </h3>
                             {users.length > 0 ? (
                                 <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
+                                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                        <thead className="bg-gray-50 dark:bg-gray-950">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Joined</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                             {users.map((user) => (
-                                                <tr key={user.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                                <tr key={user.id} className="hover:bg-gray-50 dark:bg-gray-950">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                             {user.role_name || user.roles?.[0]?.name || '—'}
@@ -144,7 +144,7 @@ export default function ShowTenant({ tenant, users, stats }) {
                                                             {user.status}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(user.created_at).toLocaleDateString()}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                         <button
                                                             onClick={() => {
@@ -168,7 +168,7 @@ export default function ShowTenant({ tenant, users, stats }) {
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-sm text-gray-500">No users associated with this tenant.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">No users associated with this tenant.</p>
                             )}
                         </div>
                     </div>

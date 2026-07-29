@@ -26,7 +26,7 @@ export default function FormSelect({
     return (
         <div>
             {label && (
-                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     {label}
                     {required && <span className="text-red-500 ml-0.5">*</span>}
                 </label>
@@ -49,13 +49,13 @@ export default function FormSelect({
                     ))}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
             </div>
             {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-            {helpText && !error && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+            {helpText && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
         </div>
     );
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ session('theme', 'system') === 'dark' ? 'dark' : '' }}">
 
 <head>
     <meta charset="utf-8">
@@ -33,6 +33,20 @@
             --theme-color-rgb: {{ $themeColorRgb }};
         }
     </style>
+
+    <!-- Theme initialization script (prevents flash of wrong theme) -->
+    <script>
+        (function() {
+            var theme = '{{ session("theme", "system") }}';
+            var resolved = theme;
+            if (theme === 'system') {
+                resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            if (resolved === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 
     <!-- Bootstrap CSS (legacy support) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">

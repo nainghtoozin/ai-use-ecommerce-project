@@ -77,14 +77,14 @@ const colorMap = {
 const Card = memo(function Card({ icon: Icon, label, value, color }) {
     const c = colorMap[color] || colorMap.slate;
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5">
             <div className="flex flex-col gap-1.5 lg:gap-2">
                 <div className={`p-2 rounded-lg w-fit ${c.bg}`}>
                     <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${c.text}`} />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</p>
-                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 break-words mt-0.5 tabular-nums">{value}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 dark:text-gray-100 break-words mt-0.5 tabular-nums">{value}</p>
                 </div>
             </div>
         </div>
@@ -163,52 +163,52 @@ function VerifyModal({ order, onClose, onVerify, onReject, processing }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-2">
                         <Shield className="w-5 h-5 text-blue-600" />
-                        <h2 className="text-lg font-semibold text-gray-900">Payment Verification</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Payment Verification</h2>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                        <X className="w-5 h-5 text-gray-400" />
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </button>
                 </div>
 
                 <div className="p-6 space-y-5">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Order</p>
-                            <p className="text-sm font-semibold text-gray-900 mt-0.5">#{order.id}</p>
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">#{order.id}</p>
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</p>
-                            <p className="text-sm font-mono text-gray-900 mt-0.5 break-all">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Transaction ID</p>
+                            <p className="text-sm font-mono text-gray-900 dark:text-gray-100 mt-0.5 break-all">
                                 {order.transaction_id || <span className="text-gray-300">&mdash;</span>}
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Payer Name</p>
-                            <p className="text-sm font-medium text-gray-900 mt-0.5">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payer Name</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-0.5">
                                 {order.payer_name || <span className="text-gray-300">&mdash;</span>}
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</p>
-                            <p className="text-sm font-medium text-gray-900 mt-0.5">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-0.5">
                                 {order.first_name ? `${order.first_name} ${order.last_name}` : '—'}
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</p>
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment Method</p>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <MethodIcon name={methodName} />
-                                <span className="text-sm text-gray-700">{methodName || '—'}</span>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{methodName || '—'}</span>
                             </div>
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Paid</p>
-                            <p className="text-sm font-bold text-gray-900 mt-0.5">{formatCurrency(order.paid_amount || order.total_amount)}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount Paid</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-0.5">{formatCurrency(order.paid_amount || order.total_amount)}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
                                 Expected: {formatCurrency(order.total_amount)}
                             </p>
                         </div>
@@ -216,7 +216,7 @@ function VerifyModal({ order, onClose, onVerify, onReject, processing }) {
 
                     {(hasScreenshot) && (
                         <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Payment Screenshot</p>
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Payment Screenshot</p>
                             <ScreenshotPreview
                                 url={screenshotUrl}
                                 fallbackText="Screenshot available"
@@ -246,7 +246,7 @@ function VerifyModal({ order, onClose, onVerify, onReject, processing }) {
                         <button
                             onClick={onClose}
                             disabled={processing}
-                            className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium transition-colors"
+                            className="px-4 py-2.5 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:bg-gray-950 text-sm font-medium transition-colors"
                         >
                             Cancel
                         </button>
@@ -262,14 +262,14 @@ function RejectModal({ order, onClose, onConfirm, reason, setReason, processing 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-2">
                         <ShieldX className="w-5 h-5 text-red-600" />
-                        <h2 className="text-lg font-semibold text-gray-900">Reject Payment</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Reject Payment</h2>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                        <X className="w-5 h-5 text-gray-400" />
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </button>
                 </div>
 
@@ -283,8 +283,8 @@ function RejectModal({ order, onClose, onConfirm, reason, setReason, processing 
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                            Rejection Reason <span className="text-gray-400">(optional)</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Rejection Reason <span className="text-gray-400 dark:text-gray-500">(optional)</span>
                         </label>
                         <textarea
                             value={reason}
@@ -292,9 +292,9 @@ function RejectModal({ order, onClose, onConfirm, reason, setReason, processing 
                             placeholder="e.g. Transaction ID mismatch, unclear screenshot, insufficient amount..."
                             rows={4}
                             maxLength={1000}
-                            className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                            className="w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                         />
-                        <p className="text-xs text-gray-400 mt-1 text-right">{reason.length}/1000</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{reason.length}/1000</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -311,7 +311,7 @@ function RejectModal({ order, onClose, onConfirm, reason, setReason, processing 
                         <button
                             onClick={onClose}
                             disabled={processing}
-                            className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium transition-colors"
+                            className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:bg-gray-950 text-sm font-medium transition-colors"
                         >
                             Cancel
                         </button>
@@ -327,7 +327,7 @@ function ScreenshotPreview({ url, fallbackText }) {
 
     if (!url || url.includes('placeholder')) {
         return (
-            <div className="border border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-400 text-sm">
+            <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 text-center text-gray-400 dark:text-gray-500 text-sm">
                 <Image className="w-8 h-8 mx-auto mb-1 opacity-50" />
                 {fallbackText || 'No screenshot uploaded'}
             </div>
@@ -337,7 +337,7 @@ function ScreenshotPreview({ url, fallbackText }) {
     return (
         <>
             <div
-                className="relative w-40 h-40 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity group"
+                className="relative w-40 h-40 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 cursor-pointer hover:opacity-90 transition-opacity group"
                 onClick={() => setLightboxOpen(true)}
             >
                 <img src={url} alt="Payment screenshot" className="w-full h-full object-cover" />
@@ -352,7 +352,7 @@ function ScreenshotPreview({ url, fallbackText }) {
                     onClick={() => setLightboxOpen(false)}
                 >
                     <button
-                        className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                        className="absolute top-4 right-4 p-2 bg-white dark:bg-gray-900/10 hover:bg-white dark:bg-gray-900/20 rounded-full transition-colors"
                         onClick={() => setLightboxOpen(false)}
                     >
                         <X className="w-6 h-6 text-white" />
@@ -460,33 +460,33 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
 
             <div className="max-w-[1600px] mx-auto px-4 sm:px-5 lg:px-6 py-6 lg:py-8 space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Payment Report</h1>
-                    <p className="text-sm text-gray-500 mt-1">Transaction tracking and payment verification overview</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Payment Report</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Transaction tracking and payment verification overview</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5 space-y-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
                         <Filter className="w-4 h-4" />
                         Filters
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Date From</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date From</label>
                             <input type="date" value={form.date_from}
                                 onChange={e => setForm(p => ({ ...p, date_from: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Date To</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date To</label>
                             <input type="date" value={form.date_to}
                                 onChange={e => setForm(p => ({ ...p, date_to: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Payment Method</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Payment Method</label>
                             <select value={form.payment_method_id}
                                 onChange={e => setForm(p => ({ ...p, payment_method_id: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Methods</option>
                                 {(paymentMethods || []).map(pm => (
                                     <option key={pm.id} value={pm.id}>
@@ -496,10 +496,10 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Payment Status</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Payment Status</label>
                             <select value={form.payment_status}
                                 onChange={e => setForm(p => ({ ...p, payment_status: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All</option>
                                 <option value="paid">Paid</option>
                                 <option value="pending">Pending</option>
@@ -508,10 +508,10 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Verification Status</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Verification Status</label>
                             <select value={form.verification_status}
                                 onChange={e => setForm(p => ({ ...p, verification_status: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All</option>
                                 <option value="unchecked">Unchecked</option>
                                 <option value="verified">Verified</option>
@@ -519,29 +519,29 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Search By</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search By</label>
                             <select value={form.search_by}
                                 onChange={e => setForm(p => ({ ...p, search_by: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Fields</option>
                                 <option value="order_id">Order ID</option>
                                 <option value="transaction_id">Transaction ID</option>
                             </select>
                         </div>
                         <div className="lg:col-span-2">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Search</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search</label>
                             <div className="flex gap-2">
                                 <input type="text" value={form.search}
                                     onChange={e => setForm(p => ({ ...p, search: e.target.value }))}
                                     placeholder="Order ID or Transaction ID..."
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                                 <button type="submit"
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors flex items-center gap-1.5 shrink-0">
                                     <Search className="w-3.5 h-3.5" />
                                     <span className="hidden sm:inline">Search</span>
                                 </button>
                                 <button type="button" onClick={handleReset}
-                                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors shrink-0">
+                                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-colors shrink-0">
                                     Reset
                                 </button>
                             </div>
@@ -558,22 +558,22 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                     <Card icon={Banknote}       label="COD"                 value={formatCurrency(summary?.cod_amount) + ' / ' + Number(summary?.cod_count || 0).toLocaleString() + ' orders'} color="slate" />
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                         <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-gray-500" />
-                            <h2 className="text-sm font-semibold text-gray-700">Payment Transactions</h2>
+                            <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Payment Transactions</h2>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Rows:</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Rows:</span>
                             <div className="relative">
                                 <select value={perPage} onChange={e => handlePerPage(e.target.value)}
-                                    className="border border-gray-300 rounded-lg py-1.5 pl-3 pr-8 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none">
+                                    className="border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 pl-3 pr-8 text-sm bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none">
                                     {PER_PAGE_OPTIONS.map(n => (
                                         <option key={n} value={n}>{n}</option>
                                     ))}
                                 </select>
-                                <ChevronDown className="absolute inset-y-0 right-0 top-1/2 -translate-y-1/2 mr-2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                                <ChevronDown className="absolute inset-y-0 right-0 top-1/2 -translate-y-1/2 mr-2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                             </div>
                         </div>
                     </div>
@@ -581,7 +581,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-gray-50 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <tr className="bg-gray-50 dark:bg-gray-950 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3">Transaction ID</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3">Order</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3">Customer</th>
@@ -597,7 +597,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                             <tbody className="divide-y divide-gray-100">
                                 {!orders?.data?.length ? (
                                     <tr>
-                                        <td colSpan="10" className="px-5 py-16 text-center text-gray-400">
+                                        <td colSpan="10" className="px-5 py-16 text-center text-gray-400 dark:text-gray-500">
                                             <FileText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                                             No payment transactions found matching your filters.
                                         </td>
@@ -612,9 +612,9 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                         const isRejected = order.payment_status === 'rejected';
                                         const hasScreenshot = order.payment_screenshot || order.payment_proof;
                                         return (
-                                            <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                            <tr key={order.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
-                                                    <span className="text-xs sm:text-sm font-mono text-gray-500">
+                                                    <span className="text-xs sm:text-sm font-mono text-gray-500 dark:text-gray-400">
                                                         {order.transaction_id
                                                             ? (order.transaction_id.length > 16
                                                                 ? order.transaction_id.substring(0, 16) + '...'
@@ -624,32 +624,32 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                                     </span>
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
-                                                    <span className="text-xs sm:text-sm font-mono font-medium text-gray-900">
+                                                    <span className="text-xs sm:text-sm font-mono font-medium text-gray-900 dark:text-gray-100">
                                                         #{order.id}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
-                                                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[140px]">
+                                                    <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[140px]">
                                                         {order.first_name
                                                             ? `${order.first_name} ${order.last_name}`
                                                             : '—'}
                                                     </p>
                                                     {order.payer_name && (
-                                                        <p className="text-xs text-gray-400 truncate max-w-[140px]">{order.payer_name}</p>
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[140px]">{order.payer_name}</p>
                                                     )}
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
                                                     <div className="flex items-center gap-2">
                                                         <MethodIcon name={methodName} />
-                                                        <span className="text-xs sm:text-sm text-gray-700 truncate max-w-[80px]">
+                                                        <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 truncate max-w-[80px]">
                                                             {methodName || '—'}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-900 text-right tabular-nums font-medium">
+                                                <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 text-right tabular-nums font-medium">
                                                     {order.paid_amount ? formatCurrency(order.paid_amount) : formatCurrency(order.total_amount)}
                                                 </td>
-                                                <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-600 text-right tabular-nums">
+                                                <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-right tabular-nums">
                                                     {formatCurrency(order.total_amount)}
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
@@ -658,7 +658,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
                                                     <Badge config={verificationStatusConfig} value={verStatus} />
                                                 </td>
-                                                <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-500 tabular-nums whitespace-nowrap">
+                                                <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
                                                     {(order.payment_verified_at || order.created_at)?.substring(0, 10) || '—'}
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
@@ -705,8 +705,8 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                     </div>
 
                     {orders?.last_page > 1 && (
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-200 px-4 sm:px-5 py-4">
-                            <p className="text-xs sm:text-sm text-gray-500">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-200 dark:border-gray-800 px-4 sm:px-5 py-4">
+                            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                 Showing {orders.from} to {orders.to} of {orders.total.toLocaleString()} results
                             </p>
                             <div className="flex items-center gap-1">
@@ -729,11 +729,11 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                         <>
                                             {current > 1 && (
                                                 <Link preserveScroll href={pageHref(current - 1)}
-                                                    className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">&laquo;</Link>
+                                                    className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">&laquo;</Link>
                                             )}
                                             {pages.map((p, i) =>
                                                 p === '...' ? (
-                                                    <span key={`e${i}`} className="px-1.5 py-1.5 text-xs text-gray-400">...</span>
+                                                    <span key={`e${i}`} className="px-1.5 py-1.5 text-xs text-gray-400 dark:text-gray-500">...</span>
                                                 ) : (
                                                     <Link key={p} preserveScroll href={pageHref(p)}
                                                         className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${p === current
@@ -744,7 +744,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                             )}
                                             {current < last && (
                                                 <Link preserveScroll href={pageHref(current + 1)}
-                                                    className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">&raquo;</Link>
+                                                    className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">&raquo;</Link>
                                             )}
                                         </>
                                     );

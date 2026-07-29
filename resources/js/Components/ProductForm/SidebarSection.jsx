@@ -50,12 +50,12 @@ export default function SidebarSection({
 
     return (
         <div className="space-y-4 sticky top-4">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-                    <h3 className="text-sm font-semibold text-gray-900">Product Summary</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Product Summary</h3>
                 </div>
                 <div className="p-4 space-y-3">
-                    <div className="w-full h-32 rounded-lg bg-gray-100 overflow-hidden mb-3 flex items-center justify-center">
+                    <div className="w-full h-32 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden mb-3 flex items-center justify-center">
                         {photoPreview ? (
                             <img
                                 src={photoPreview}
@@ -68,42 +68,42 @@ export default function SidebarSection({
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Name</p>
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Name</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                             {data.name || (
-                                <span className="text-gray-400 italic">Not set</span>
+                                <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                             )}
                         </p>
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Type</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Type</p>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${TYPE_STYLES[data.product_type] || TYPE_STYLES.single}`}>
                             {TYPE_LABELS[data.product_type] || 'Single Product'}
                         </span>
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Category</p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Category</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
                             {category?.name || (
-                                <span className="text-gray-400 italic">Not set</span>
+                                <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                             )}
                         </p>
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Brand</p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Brand</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
                             {brand?.name || (
-                                <span className="text-gray-400 italic">No brand</span>
+                                <span className="text-gray-400 dark:text-gray-500 italic">No brand</span>
                             )}
                         </p>
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">{data.product_type === 'combo' ? 'Bundle Price' : 'Stock'}</p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{data.product_type === 'combo' ? 'Bundle Price' : 'Stock'}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {data.product_type === 'variable'
                                 ? `${variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0)} pcs`
                                 : data.product_type === 'combo'
@@ -113,8 +113,8 @@ export default function SidebarSection({
                         </p>
                         {data.product_type === 'variable' && variants.length > 0 && (
                             <>
-                                <p className="text-xs text-gray-400 mt-0.5">Variants: {variants.length}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Variants: {variants.length}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                                     Price Range: {hasPriceRange
                                         ? `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
                                         : formatPrice(minPrice || data.price || 0)
@@ -125,26 +125,26 @@ export default function SidebarSection({
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Unit</p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Unit</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
                             {unit ? `${unit.name} (${unit.short_name})` : (
-                                <span className="text-gray-400 italic">Not set</span>
+                                <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                             )}
                         </p>
                     </div>
 
                     <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Short Description</p>
-                        <p className="text-sm text-gray-700 line-clamp-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Short Description</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
                             {data.short_description || (
-                                <span className="text-gray-400 italic">Not set</span>
+                                <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                             )}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-3">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-4 space-y-3">
                 <button
                     type="submit"
                     disabled={processing}
@@ -175,7 +175,7 @@ export default function SidebarSection({
                         method="delete"
                         as="button"
                         type="button"
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
                     >
                         <Trash2 className="w-4 h-4" />
                         Delete Product
@@ -185,7 +185,7 @@ export default function SidebarSection({
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                 >
                     Cancel
                 </button>

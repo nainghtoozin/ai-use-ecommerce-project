@@ -24,7 +24,7 @@ export default function ProductTypeSelect({
         <AdminLayout
             header={
                 <div>
-                    <h2 className="text-xl font-semibold text-gray-800">Add New Product</h2>
+                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Add New Product</h2>
                 </div>
             }
         >

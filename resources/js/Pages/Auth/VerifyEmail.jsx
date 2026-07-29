@@ -14,7 +14,7 @@ export default function VerifyEmail() {
         <PlatformGuestLayout>
             <Head title="Verify Email" />
 
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn't receive the email, we'll gladly send you another.
             </p>
 
@@ -24,7 +24,7 @@ export default function VerifyEmail() {
 
             <form onSubmit={submit}>
                 <div className="flex items-center justify-between">
-                    <Link href="/logout" method="post" as="button" className="underline text-sm text-gray-600 hover:text-gray-900">
+                    <Link href="/logout" method="post" as="button" className="underline text-sm text-gray-600 hover:text-gray-900 dark:text-gray-100">
                         Log Out
                     </Link>
                     <button type="submit" disabled={processing}

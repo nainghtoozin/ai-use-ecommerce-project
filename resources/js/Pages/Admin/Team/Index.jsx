@@ -63,7 +63,7 @@ export default function TeamIndex({ members, invitations, roles }) {
             pending: 'bg-blue-50 text-blue-700 ring-blue-600/20',
         };
         return (
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${colors[status] || 'bg-gray-50 text-gray-700 ring-gray-600/20'}`}>
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${colors[status] || 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 ring-gray-600/20'}`}>
                 {status}
             </span>
         );
@@ -79,7 +79,7 @@ export default function TeamIndex({ members, invitations, roles }) {
             customer: 'bg-gray-50 text-gray-700 ring-gray-600/20',
         };
         return (
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${colors[role] || 'bg-gray-50 text-gray-700 ring-gray-600/20'}`}>
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${colors[role] || 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 ring-gray-600/20'}`}>
                 {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Unknown'}
             </span>
         );
@@ -132,15 +132,15 @@ export default function TeamIndex({ members, invitations, roles }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Team Management</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Team Management</h2>}>
             <Head title="Team Management" />
 
             <div className="p-6 lg:p-8 space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Team</h1>
-                        <p className="text-sm text-gray-500 mt-1">Manage your store team members and invitations</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Team</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your store team members and invitations</p>
                     </div>
                     {canManage && (
                         <button
@@ -155,55 +155,55 @@ export default function TeamIndex({ members, invitations, roles }) {
 
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
                             <div className="p-2.5 rounded-lg bg-blue-50">
                                 <i className="bi bi-people text-lg text-blue-600"></i>
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                                <p className="text-xs text-gray-500">Members</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Members</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
                             <div className="p-2.5 rounded-lg bg-amber-50">
                                 <i className="bi bi-clock text-lg text-amber-600"></i>
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-                                <p className="text-xs text-gray-500">Pending Invitations</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.pending}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Pending Invitations</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
                             <div className="p-2.5 rounded-lg bg-purple-50">
                                 <i className="bi bi-shield-check text-lg text-purple-600"></i>
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900">{stats.admins}</p>
-                                <p className="text-xs text-gray-500">Admins</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.admins}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Admins</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
                             <div className="p-2.5 rounded-lg bg-emerald-50">
                                 <i className="bi bi-person text-lg text-emerald-600"></i>
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900">{stats.customers}</p>
-                                <p className="text-xs text-gray-500">Customers</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.customers}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Customers</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Tabs + Search + Filters */}
-                <div className="bg-white rounded-xl border border-gray-200">
-                    <div className="border-b border-gray-200">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                    <div className="border-b border-gray-200 dark:border-gray-800">
                         <div className="flex">
                             <button
                                 onClick={() => setTab('members')}
@@ -228,22 +228,22 @@ export default function TeamIndex({ members, invitations, roles }) {
                         </div>
                     </div>
 
-                    <div className="p-4 border-b border-gray-100">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <div className="flex-1 relative">
-                                <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm"></i>
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by name or email..."
-                                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <select
                                 value={roleFilter}
                                 onChange={(e) => setRoleFilter(e.target.value)}
-                                className="px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="">All Roles</option>
                                 {roles?.map(r => (
@@ -255,7 +255,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Status</option>
                                     <option value="active">Active</option>
@@ -271,7 +271,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                             {filteredMembers.length === 0 ? (
                                 <div className="text-center py-16">
                                     <i className="bi bi-people text-5xl text-gray-300"></i>
-                                    <p className="text-sm text-gray-500 mt-3">No members found</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">No members found</p>
                                 </div>
                             ) : (
                                 <>
@@ -279,7 +279,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                     <div className="hidden md:block overflow-x-auto">
                                         <table className="w-full">
                                             <thead>
-                                                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider bg-gray-50">
+                                                <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-950">
                                                     <th className="px-5 py-3 font-medium">Member</th>
                                                     <th className="px-5 py-3 font-medium">Role</th>
                                                     <th className="px-5 py-3 font-medium">Status</th>
@@ -289,7 +289,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {filteredMembers.map((member) => (
-                                                    <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                                                    <tr key={member.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <td className="px-5 py-4">
                                                             <div className="flex items-center gap-3">
                                                                 {member.avatar ? (
@@ -300,14 +300,14 @@ export default function TeamIndex({ members, invitations, roles }) {
                                                                     </div>
                                                                 )}
                                                                 <div>
-                                                                    <p className="text-sm font-medium text-gray-900">{member.name}</p>
-                                                                    <p className="text-xs text-gray-500">{member.email}</p>
+                                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
+                                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{member.email}</p>
                                                                 </div>
                                                             </div>
                                                         </td>
                                                         <td className="px-5 py-4">{roleBadge(member.role, member.is_owner)}</td>
                                                         <td className="px-5 py-4">{statusBadge(member.status)}</td>
-                                                        <td className="px-5 py-4 text-sm text-gray-500">{member.joined_at || '—'}</td>
+                                                        <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">{member.joined_at || '—'}</td>
                                                         <td className="px-5 py-4 text-right">
                                                             {canManage && !member.is_owner && (
                                                                 <div className="flex items-center justify-end gap-2">
@@ -335,7 +335,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                     {/* Mobile Cards */}
                                     <div className="md:hidden divide-y divide-gray-100">
                                         {filteredMembers.map((member) => (
-                                            <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                            <div key={member.id} className="p-4 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-center gap-3 min-w-0">
                                                         {member.avatar ? (
@@ -346,8 +346,8 @@ export default function TeamIndex({ members, invitations, roles }) {
                                                             </div>
                                                         )}
                                                         <div className="min-w-0">
-                                                            <p className="text-sm font-medium text-gray-900 truncate">{member.name}</p>
-                                                            <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{member.name}</p>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{member.email}</p>
                                                             <div className="flex items-center gap-2 mt-1.5">
                                                                 {roleBadge(member.role, member.is_owner)}
                                                                 {statusBadge(member.status)}
@@ -371,7 +371,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <p className="text-[11px] text-gray-400 mt-2">Joined {member.joined_at || '—'}</p>
+                                                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2">Joined {member.joined_at || '—'}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -386,7 +386,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                             {filteredInvitations.length === 0 ? (
                                 <div className="text-center py-16">
                                     <i className="bi bi-envelope text-5xl text-gray-300"></i>
-                                    <p className="text-sm text-gray-500 mt-3">No pending invitations</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">No pending invitations</p>
                                 </div>
                             ) : (
                                 <>
@@ -394,7 +394,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                     <div className="hidden md:block overflow-x-auto">
                                         <table className="w-full">
                                             <thead>
-                                                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider bg-gray-50">
+                                                <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-950">
                                                     <th className="px-5 py-3 font-medium">Email</th>
                                                     <th className="px-5 py-3 font-medium">Role</th>
                                                     <th className="px-5 py-3 font-medium">Invited</th>
@@ -404,21 +404,21 @@ export default function TeamIndex({ members, invitations, roles }) {
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {filteredInvitations.map((invitation) => (
-                                                    <tr key={invitation.id} className="hover:bg-gray-50 transition-colors">
+                                                    <tr key={invitation.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <td className="px-5 py-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                                                                    <i className="bi bi-envelope text-gray-400"></i>
+                                                                <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                                    <i className="bi bi-envelope text-gray-400 dark:text-gray-500"></i>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-sm font-medium text-gray-900">{invitation.email}</p>
+                                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{invitation.email}</p>
                                                                     {invitation.is_expired && <p className="text-xs text-red-500">Expired</p>}
                                                                 </div>
                                                             </div>
                                                         </td>
                                                         <td className="px-5 py-4">{roleBadge(invitation.role, false)}</td>
-                                                        <td className="px-5 py-4 text-sm text-gray-500">{invitation.invited_at || '—'}</td>
-                                                        <td className="px-5 py-4 text-sm text-gray-500">{invitation.expires_at || '—'}</td>
+                                                        <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">{invitation.invited_at || '—'}</td>
+                                                        <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">{invitation.expires_at || '—'}</td>
                                                         <td className="px-5 py-4 text-right">
                                                             {canManage && (
                                                                 <button onClick={() => handleRevokeInvitation(invitation)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors" title="Revoke">
@@ -435,14 +435,14 @@ export default function TeamIndex({ members, invitations, roles }) {
                                     {/* Mobile Cards */}
                                     <div className="md:hidden divide-y divide-gray-100">
                                         {filteredInvitations.map((invitation) => (
-                                            <div key={invitation.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                            <div key={invitation.id} className="p-4 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-center gap-3 min-w-0">
-                                                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                                            <i className="bi bi-envelope text-gray-400"></i>
+                                                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                                            <i className="bi bi-envelope text-gray-400 dark:text-gray-500"></i>
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="text-sm font-medium text-gray-900 truncate">{invitation.email}</p>
+                                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{invitation.email}</p>
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 {roleBadge(invitation.role, false)}
                                                                 {invitation.is_expired && <span className="text-[11px] text-red-500">Expired</span>}
@@ -455,7 +455,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                                         </button>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400">
+                                                <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
                                                     <span>Sent {invitation.invited_at || '—'}</span>
                                                     <span>Expires {invitation.expires_at || '—'}</span>
                                                 </div>
@@ -473,22 +473,22 @@ export default function TeamIndex({ members, invitations, roles }) {
             {showInviteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeInviteModal} />
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                    <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
                         {/* Header */}
-                        <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+                        <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                                         <i className="bi bi-person-plus text-blue-600 text-lg"></i>
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-semibold text-gray-900">Invite Team Member</h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">They'll receive an email with a join link</p>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Invite Team Member</h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">They'll receive an email with a join link</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={closeInviteModal}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                                    className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                                 >
                                     <i className="bi bi-x-lg"></i>
                                 </button>
@@ -498,11 +498,11 @@ export default function TeamIndex({ members, invitations, roles }) {
                         <form onSubmit={handleInvite} className="p-6 space-y-4">
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                                     Email Address <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <i className="bi bi-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                    <i className="bi bi-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm"></i>
                                     <input
                                         ref={emailInputRef}
                                         type="email"
@@ -528,11 +528,11 @@ export default function TeamIndex({ members, invitations, roles }) {
 
                             {/* Role */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                                     Role <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <i className="bi bi-shield absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                    <i className="bi bi-shield absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm"></i>
                                     <select
                                         value={inviteData.role_id}
                                         onChange={(e) => {
@@ -540,7 +540,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                             if (inviteErrors.role_id) setInviteErrors({ ...inviteErrors, role_id: null });
                                         }}
                                         required
-                                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white transition-colors ${
+                                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white dark:bg-gray-900 transition-colors ${
                                             inviteErrors.role_id ? 'border-red-300 bg-red-50' : 'border-gray-300'
                                         }`}
                                     >
@@ -549,7 +549,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </select>
-                                    <i className="bi bi-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                                    <i className="bi bi-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none"></i>
                                 </div>
                                 {inviteErrors.role_id && (
                                     <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
@@ -561,15 +561,15 @@ export default function TeamIndex({ members, invitations, roles }) {
 
                             {/* Message (optional) */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Personal Message <span className="text-gray-400 font-normal">(optional)</span>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Personal Message <span className="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>
                                 </label>
                                 <textarea
                                     value={inviteData.message}
                                     onChange={(e) => setInviteData({ ...inviteData, message: e.target.value })}
                                     placeholder="Add a note to the invitation email..."
                                     rows={3}
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors"
                                 />
                             </div>
 
@@ -596,7 +596,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                 <button
                                     type="button"
                                     onClick={closeInviteModal}
-                                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-50 dark:bg-gray-950 transition-colors"
                                 >
                                     Cancel
                                 </button>

@@ -27,31 +27,31 @@ export default function AcceptInvitation() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                     You're Invited!
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {invitation.inviter} has invited you to join{' '}
-                    <span className="font-medium text-gray-700">{invitation.store_name}</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{invitation.store_name}</span>
                 </p>
             </div>
 
             {/* Invitation Details */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4 mb-6">
                 <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Store</span>
-                        <span className="text-sm font-medium text-gray-900">{invitation.store_name}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Store</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{invitation.store_name}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Role</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Role</span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                             {invitation.role_label}
                         </span>
                     </div>
                     <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Email</span>
-                        <span className="text-sm font-medium text-gray-900">{invitation.email}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{invitation.email}</span>
                     </div>
                 </div>
             </div>
@@ -75,7 +75,7 @@ export default function AcceptInvitation() {
                     </div>
 
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Email
                         </label>
                         <input
@@ -83,12 +83,12 @@ export default function AcceptInvitation() {
                             type="email"
                             value={invitation.email}
                             readOnly
-                            className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-sm text-gray-500 cursor-not-allowed"
+                            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 shadow-sm text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed"
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Password
                         </label>
                         <div className="relative">
@@ -97,7 +97,7 @@ export default function AcceptInvitation() {
                                 type={showPassword ? 'text' : 'password'}
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-10"
+                                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-10"
                                 placeholder="Enter your current password"
                                 required
                                 autoFocus
@@ -108,11 +108,11 @@ export default function AcceptInvitation() {
                                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                             >
                                 {showPassword ? (
-                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                     </svg>
                                 ) : (
-                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
@@ -134,7 +134,7 @@ export default function AcceptInvitation() {
                 /* CASE 1: New Account — Name + Password */
                 <form onSubmit={submit} className="space-y-4">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Full Name
                         </label>
                         <input
@@ -142,7 +142,7 @@ export default function AcceptInvitation() {
                             type="text"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             placeholder="Enter your full name"
                             required
                             autoFocus
@@ -151,7 +151,7 @@ export default function AcceptInvitation() {
                     </div>
 
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Create Password
                         </label>
                         <div className="relative">
@@ -160,7 +160,7 @@ export default function AcceptInvitation() {
                                 type={showPassword ? 'text' : 'password'}
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-10"
+                                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-10"
                                 placeholder="Create a password"
                                 required
                             />
@@ -170,11 +170,11 @@ export default function AcceptInvitation() {
                                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                             >
                                 {showPassword ? (
-                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                     </svg>
                                 ) : (
-                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
@@ -185,7 +185,7 @@ export default function AcceptInvitation() {
                     </div>
 
                     <div>
-                        <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Confirm Password
                         </label>
                         <input
@@ -193,7 +193,7 @@ export default function AcceptInvitation() {
                             type={showPassword ? 'text' : 'password'}
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             placeholder="Confirm your password"
                             required
                         />
@@ -209,7 +209,7 @@ export default function AcceptInvitation() {
                 </form>
             )}
 
-            <p className="mt-6 text-center text-xs text-gray-500">
+            <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
                 By joining, you agree to the store's terms of service.
             </p>
         </GuestLayout>

@@ -33,7 +33,7 @@ export default function StorefrontHero({ store, websiteInfo }) {
                     <div className="mt-3 flex flex-wrap gap-2">
                         <a
                             href={`/store/${store.slug}#products-section`}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-indigo-700 font-semibold text-xs sm:text-sm rounded-lg hover:bg-indigo-50 transition-all shadow-md"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-gray-900 text-indigo-700 font-semibold text-xs sm:text-sm rounded-lg hover:bg-indigo-50 transition-all shadow-md"
                         >
                             Shop Now
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@ export default function StorefrontHero({ store, websiteInfo }) {
                         </a>
                         <a
                             href={`/store/${store.slug}#`}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-white/30 text-white font-semibold text-xs sm:text-sm rounded-lg hover:bg-white/10 transition-all"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-white/30 text-white font-semibold text-xs sm:text-sm rounded-lg hover:bg-white dark:bg-gray-900/10 transition-all"
                         >
                             Browse Categories
                         </a>
@@ -68,7 +68,7 @@ export default function StorefrontHero({ store, websiteInfo }) {
                                     <button
                                         key={idx}
                                         onClick={(e) => { e.preventDefault(); setCurrent(idx); }}
-                                        className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === current ? 'bg-white w-4' : 'bg-white/60 hover:bg-white/80'}`}
+                                        className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === current ? 'bg-white dark:bg-gray-900 w-4' : 'bg-white dark:bg-gray-900/60 hover:bg-white dark:bg-gray-900/80'}`}
                                         aria-label={`Banner ${idx + 1}`}
                                     />
                                 ))}

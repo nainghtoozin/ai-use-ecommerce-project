@@ -46,12 +46,12 @@ export default function TenantsIndex({ tenants, filters }) {
     };
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Merchant Management</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Merchant Management</h2>}>
             <Head title="Merchant Management" />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                                 <form onSubmit={handleSearch} className="flex-1 flex gap-2">
@@ -60,7 +60,7 @@ export default function TenantsIndex({ tenants, filters }) {
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search merchants by name, slug, or domain..."
-                                        className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="flex-1 rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     />
                                     <button
                                         type="submit"
@@ -81,7 +81,7 @@ export default function TenantsIndex({ tenants, filters }) {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => handleFilter(e.target.value)}
-                                    className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                    className="rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="active">Active</option>
@@ -91,35 +91,35 @@ export default function TenantsIndex({ tenants, filters }) {
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug / Domain</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Admins</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Merchant</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Slug / Domain</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Admins</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                         {tenants.data.map((tenant) => (
-                                            <tr key={tenant.id} className="hover:bg-gray-50">
+                                            <tr key={tenant.id} className="hover:bg-gray-50 dark:bg-gray-950">
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
-                                                    <div className="text-sm text-gray-500">{tenant.email || '—'}</div>
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{tenant.name}</div>
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400">{tenant.email || '—'}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     <div>{tenant.slug}</div>
-                                                    {tenant.domain && <div className="text-xs text-gray-400">{tenant.domain}</div>}
+                                                    {tenant.domain && <div className="text-xs text-gray-400 dark:text-gray-500">{tenant.domain}</div>}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[tenant.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[tenant.status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                         {tenant.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{tenant.users_count ?? 0}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(tenant.created_at).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">{tenant.users_count ?? 0}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(tenant.created_at).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Link href={`/superadmin/tenants/${tenant.id}`} className="text-blue-600 hover:text-blue-900">
@@ -142,7 +142,7 @@ export default function TenantsIndex({ tenants, filters }) {
                                         ))}
                                         {tenants.data.length === 0 && (
                                             <tr>
-                                                <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                                <td colSpan="6" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                                     No merchants found.
                                                 </td>
                                             </tr>
@@ -158,7 +158,7 @@ export default function TenantsIndex({ tenants, filters }) {
                                             key={i}
                                             onClick={() => router.get(link.url, {}, { preserveState: true })}
                                             disabled={!link.url}
-                                            className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            className={`px-3 py-1 mx-0.5 text-sm rounded ${link.active ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
                                         />
                                     ))}

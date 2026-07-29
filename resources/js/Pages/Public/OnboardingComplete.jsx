@@ -15,42 +15,42 @@ export default function OnboardingComplete() {
                         </svg>
                     </div>
 
-                    <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
                         Your Store is Live!
                     </h1>
 
-                    <p className="mt-3 text-lg text-gray-600">
-                        <span className="font-semibold text-gray-900">{storeName}</span> has been activated successfully.
+                    <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{storeName}</span> has been activated successfully.
                     </p>
 
-                    <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-left space-y-4">
+                    <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 text-left space-y-4">
                         <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Store Name</p>
-                            <p className="mt-1 text-sm text-gray-900 font-medium">{storeName}</p>
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Store Name</p>
+                            <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 font-medium">{storeName}</p>
                         </div>
 
-                        <div className="border-t border-gray-100 pt-4">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Store URL</p>
+                        <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Store URL</p>
                             <a href={storeUrl} target="_blank" rel="noopener noreferrer"
                                 className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 underline break-all font-mono">
                                 {storeUrl}
                             </a>
                         </div>
 
-                        <div className="border-t border-gray-100 pt-4">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin Login</p>
+                        <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Admin Login</p>
                             <a href={adminLoginUrl} className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 underline break-all font-mono">
                                 {adminLoginUrl}
                             </a>
                         </div>
 
-                        <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
+                        <div className="border-t border-gray-100 dark:border-gray-800 pt-4 flex justify-between items-center">
                             <div>
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Plan</p>
-                                <p className="mt-1 text-sm text-gray-900 font-medium">{subscriptionPlan}</p>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</p>
+                                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 font-medium">{subscriptionPlan}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</p>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</p>
                                 <span className="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     {status}
                                 </span>

@@ -23,8 +23,8 @@ function Section({ title, icon, children }) {
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-2">
-                <i className={`bi ${icon} text-gray-400 text-sm`}></i>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{title}</h3>
+                <i className={`bi ${icon} text-gray-400 dark:text-gray-500 text-sm`}></i>
+                <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{title}</h3>
             </div>
             {children}
         </div>
@@ -33,15 +33,15 @@ function Section({ title, icon, children }) {
 
 function InfoRow({ label, value, icon }) {
     return (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
             {icon && (
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-white border border-gray-200">
-                    <i className={`bi ${icon} text-gray-500 text-sm`}></i>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                    <i className={`bi ${icon} text-gray-500 dark:text-gray-400 text-sm`}></i>
                 </div>
             )}
             <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-gray-400 uppercase tracking-wider">{label}</p>
-                <p className="text-sm font-medium text-gray-900 truncate">{value || '—'}</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">{label}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{value || '—'}</p>
             </div>
         </div>
     );
@@ -49,7 +49,7 @@ function InfoRow({ label, value, icon }) {
 
 function PermissionChip({ name }) {
     return (
-        <span className="inline-flex items-center px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 text-[11px] font-medium text-gray-600">
+        <span className="inline-flex items-center px-2 py-1 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-medium text-gray-600 dark:text-gray-400">
             {name}
         </span>
     );
@@ -58,12 +58,12 @@ function PermissionChip({ name }) {
 function ActivityItem({ log }) {
     return (
         <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <i className="bi bi-clock text-gray-400 text-xs"></i>
+            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i className="bi bi-clock text-gray-400 dark:text-gray-500 text-xs"></i>
             </div>
             <div className="min-w-0 flex-1">
-                <p className="text-sm text-gray-700">{log.description}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{log.created_at}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{log.description}</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{log.created_at}</p>
             </div>
         </div>
     );
@@ -114,14 +114,14 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                 onClick={onClose}
             />
 
-            <div className={`fixed z-50 bg-white shadow-2xl transform transition-transform duration-300 ease-out
+            <div className={`fixed z-50 bg-white dark:bg-gray-900 shadow-2xl transform transition-transform duration-300 ease-out
                 bottom-0 left-0 right-0 rounded-t-2xl max-h-[90vh]
                 sm:inset-y-0 sm:left-auto sm:right-0 sm:rounded-none sm:w-[480px] lg:w-[520px] sm:max-h-none
                 ${open ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'}
             `}>
                 <div className="flex flex-col h-full">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
                         <div className="flex items-center gap-3">
                             {member?.avatar ? (
                                 <img src={member.avatar} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" />
@@ -131,20 +131,20 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                                 </div>
                             )}
                             <div>
-                                <h2 className="text-base font-semibold text-gray-900">{member?.name || 'Loading...'}</h2>
-                                <p className="text-xs text-gray-500">{member?.email}</p>
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{member?.name || 'Loading...'}</h2>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{member?.email}</p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                         >
                             <i className="bi bi-x-lg text-sm"></i>
                         </button>
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex border-b border-gray-100 px-5 flex-shrink-0">
+                    <div className="flex border-b border-gray-100 dark:border-gray-800 px-5 flex-shrink-0">
                         {[
                             { id: 'profile', label: 'Profile', icon: 'bi-person' },
                             { id: 'permissions', label: 'Permissions', icon: 'bi-shield-lock' },
@@ -170,7 +170,7 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                         {loading ? (
                             <div className="space-y-4 animate-pulse">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-16 bg-gray-100 rounded-xl" />
+                                    <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl" />
                                 ))}
                             </div>
                         ) : (
@@ -187,12 +187,12 @@ export default function MemberDrawer({ open, onClose, memberId }) {
 
                                         <Section title="Membership" icon="bi-diagram-3">
                                             <div className="grid grid-cols-2 gap-3">
-                                                <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                                                    <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Role</p>
+                                                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
+                                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Role</p>
                                                     <Badge color={roleColor}>{member.role_label}</Badge>
                                                 </div>
-                                                <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                                                    <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Status</p>
+                                                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
+                                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Status</p>
                                                     <Badge color={statusColor}>{member.status}</Badge>
                                                 </div>
                                             </div>
@@ -208,7 +208,7 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                                             <div className="flex gap-2 pt-2">
                                                 <a
                                                     href={adminUrl(`/admin/team/${member.id}/edit`)}
-                                                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                                                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-50 dark:bg-gray-950 transition-colors"
                                                 >
                                                     <i className="bi bi-pencil"></i> Edit Role
                                                 </a>
@@ -236,11 +236,11 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                                 {activeTab === 'permissions' && member && (
                                     <>
                                         <Section title="Role Permissions" icon="bi-shield-lock">
-                                            <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
                                                 <div className="flex items-center gap-2 mb-3">
                                                     <Badge color={roleColor}>{member.role_label}</Badge>
-                                                    <span className="text-xs text-gray-400">•</span>
-                                                    <span className="text-xs text-gray-500">{member.permissions?.length || 0} permissions</span>
+                                                    <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{member.permissions?.length || 0} permissions</span>
                                                 </div>
                                                 {member.is_owner ? (
                                                     <div className="flex items-center gap-2 p-2.5 rounded-lg bg-purple-50 border border-purple-100">
@@ -253,7 +253,7 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                                                             <PermissionChip key={perm} name={perm} />
                                                         ))}
                                                         {(!member.permissions || member.permissions.length === 0) && (
-                                                            <p className="text-xs text-gray-400">No permissions assigned</p>
+                                                            <p className="text-xs text-gray-400 dark:text-gray-500">No permissions assigned</p>
                                                         )}
                                                     </div>
                                                 )}
@@ -274,7 +274,7 @@ export default function MemberDrawer({ open, onClose, memberId }) {
                                         ) : (
                                             <div className="text-center py-12">
                                                 <i className="bi bi-clock-history text-3xl text-gray-300"></i>
-                                                <p className="text-sm text-gray-500 mt-2">No recent activity</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No recent activity</p>
                                             </div>
                                         )}
                                     </Section>

@@ -62,7 +62,7 @@ function VariantLabel({ attrs }) {
     return (
         <div className="flex flex-wrap gap-1">
             {values.map((val, i) => (
-                <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                     {val}
                 </span>
             ))}
@@ -105,18 +105,18 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                     <div className="flex items-center gap-3">
                         <Link
                             href={adminUrl('/admin/products')}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-500" />
+                            <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </Link>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h2 className="text-xl font-semibold text-gray-800 truncate max-w-md">{product.name}</h2>
+                                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 truncate max-w-md">{product.name}</h2>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ${typeConfig}`}>
                                     {TYPE_LABELS[product.type] || 'Single'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-500 mt-0.5">Product details and overview</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Product details and overview</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         {can('products.delete') && (
                             <button
                                 onClick={() => setDeleteModalOpen(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
                             >
                                 Delete
                             </button>
@@ -148,38 +148,38 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                     {/* Main Content */}
                     <div className="flex-1 min-w-0 space-y-6">
                         {/* Images */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-5 py-4 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Images</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Images</h3>
                             </div>
                             <div className="px-5 py-5">
                                 <div>
                                     {product.photo1_url ? (
                                         <div className="mb-4">
-                                            <p className="text-xs text-gray-500 mb-2 font-medium">Featured Image</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Featured Image</p>
                                             <img
                                                 src={product.photo1_url}
                                                 alt={product.name}
-                                                className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200"
+                                                className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-800"
                                             />
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 mb-4">
+                                        <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 mb-4">
                                             <Eye className="w-8 h-8 text-gray-300 mb-2" />
-                                            <p className="text-sm text-gray-400">No featured image</p>
+                                            <p className="text-sm text-gray-400 dark:text-gray-500">No featured image</p>
                                         </div>
                                     )}
 
                                     {(product.gallery_images_url || product.gallery_images)?.length > 0 && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-2 font-medium">Gallery Images ({product.gallery_images.length})</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Gallery Images ({product.gallery_images.length})</p>
                                             <div className="grid grid-cols-4 gap-3">
                                                 {(product.gallery_images_url || product.gallery_images).map((url, idx) => (
                                                     <img
                                                         key={idx}
                                                         src={url}
                                                         alt={`Gallery ${idx + 1}`}
-                                                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                                        className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-800"
                                                     />
                                                 ))}
                                             </div>
@@ -191,12 +191,12 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                         {/* Description */}
                         {product.description && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div className="px-5 py-4 border-b border-gray-100">
-                                    <h3 className="text-sm font-semibold text-gray-900">Description</h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Description</h3>
                                 </div>
                                 <div className="px-5 py-5">
-                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{product.description}</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{product.description}</p>
                                 </div>
                             </div>
                         )}
@@ -205,40 +205,40 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         {isVariable && (
                             <>
                                 {/* Pricing Summary */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                    <div className="px-5 py-4 border-b border-gray-100">
+                                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                         <div className="flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4 text-gray-400" />
-                                            <h3 className="text-sm font-semibold text-gray-900">Pricing</h3>
+                                            <DollarSign className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pricing</h3>
                                         </div>
                                     </div>
                                     <div className="px-5 py-5">
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-500 mb-1">Base Price</p>
-                                                <p className="text-lg font-semibold text-gray-900">{formatPrice(product.price)}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Base Price</p>
+                                                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatPrice(product.price)}</p>
                                             </div>
                                             {priceRange && priceRange.min !== priceRange.max && (
                                                 <>
                                                     <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Price Range</p>
-                                                        <p className="text-sm font-semibold text-gray-900">
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Price Range</p>
+                                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                                             {formatPrice(priceRange.min)} — {formatPrice(priceRange.max)}
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Spread</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Spread</p>
                                                         <div className="flex items-center gap-1">
-                                                            <TrendingDown className="w-3.5 h-3.5 text-gray-400" />
-                                                            <p className="text-sm font-medium text-gray-700">{formatPrice(priceRange.max - priceRange.min)}</p>
+                                                            <TrendingDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatPrice(priceRange.max - priceRange.min)}</p>
                                                         </div>
                                                     </div>
                                                 </>
                                             )}
                                             {product.base_price && product.base_price > product.price && (
                                                 <div>
-                                                    <p className="text-xs text-gray-500 mb-1">Compare at Price</p>
-                                                    <p className="text-lg font-medium text-gray-500 line-through">{formatPrice(product.base_price)}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Compare at Price</p>
+                                                    <p className="text-lg font-medium text-gray-500 dark:text-gray-400 line-through">{formatPrice(product.base_price)}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -247,26 +247,26 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                                 {/* Variant Summary Cards */}
                                 {variants.length > 0 && (
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Layers className="w-4 h-4 text-purple-500" />
-                                                <h3 className="text-sm font-semibold text-gray-900">Variants</h3>
+                                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Variants</h3>
                                             </div>
-                                            <span className="text-xs text-gray-500">{variants.length} variant{variants.length !== 1 ? 's' : ''}</span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">{variants.length} variant{variants.length !== 1 ? 's' : ''}</span>
                                         </div>
                                         <div className="px-5 py-5">
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
-                                                <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                                                    <p className="text-xs text-gray-500 mb-1">Total Variants</p>
-                                                    <p className="text-2xl font-bold text-gray-900">{variants.length}</p>
+                                                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Variants</p>
+                                                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{variants.length}</p>
                                                 </div>
-                                                <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                                                    <p className="text-xs text-gray-500 mb-1">Total Units</p>
-                                                    <p className="text-2xl font-bold text-gray-900">{totalStock}</p>
+                                                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Units</p>
+                                                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalStock}</p>
                                                 </div>
-                                                <div className="p-3 rounded-lg bg-gray-50 border border-gray-100 col-span-2 sm:col-span-1">
-                                                    <p className="text-xs text-gray-500 mb-1">Stock Status</p>
+                                                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 col-span-2 sm:col-span-1">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Stock Status</p>
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ${stockStatus.bg} ${stockStatus.text} ${stockStatus.ring}`}>
                                                         <span className={`w-1.5 h-1.5 rounded-full ${stockStatus.dot}`} />
                                                         {stockStatus.label}
@@ -276,41 +276,41 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                                             {/* Variant Table */}
                                             <div className="overflow-x-auto -mx-5 sm:mx-0">
-                                                <table className="min-w-full divide-y divide-gray-200">
-                                                    <thead className="bg-gray-50">
+                                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                                    <thead className="bg-gray-50 dark:bg-gray-950">
                                                         <tr>
-                                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variant</th>
-                                                            <th className="hidden sm:table-cell px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                                            <th className="hidden sm:table-cell px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Variant</th>
+                                                            <th className="hidden sm:table-cell px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU</th>
+                                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
+                                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stock</th>
+                                                            <th className="hidden sm:table-cell px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-gray-100 bg-white">
+                                                    <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-900">
                                                         {variants.map((variant) => {
                                                             const vStockStatus = getVariantStockStatus(variant.stock ?? 0);
                                                             const attrs = variant.attributes || {};
                                                             return (
-                                                                <tr key={variant.id} className="hover:bg-gray-50/50 transition-colors">
+                                                                <tr key={variant.id} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
                                                                     <td className="px-4 py-3">
                                                                         <div className="space-y-1">
                                                                             <VariantLabel attrs={attrs} />
                                                                         </div>
                                                                     </td>
                                                                     <td className="hidden sm:table-cell px-4 py-3">
-                                                                        <span className="text-sm font-mono text-gray-500">
+                                                                        <span className="text-sm font-mono text-gray-500 dark:text-gray-400">
                                                                             {variant.sku || '—'}
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-3">
-                                                                        <span className="text-sm font-medium text-gray-900">
+                                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                                             {variant.price ? formatPrice(variant.price) : (
-                                                                                <span className="text-gray-400 italic">Uses base</span>
+                                                                                <span className="text-gray-400 dark:text-gray-500 italic">Uses base</span>
                                                                             )}
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-3">
-                                                                        <span className="text-sm font-semibold text-gray-900">{variant.stock ?? 0}</span>
+                                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{variant.stock ?? 0}</span>
                                                                     </td>
                                                                     <td className="hidden sm:table-cell px-4 py-3">
                                                                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${vStockStatus.bg} ${vStockStatus.text} ${vStockStatus.ring}`}>
@@ -330,13 +330,13 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                                 {/* Empty variant state */}
                                 {variants.length === 0 && (
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
                                         <div className="px-5 py-12 text-center">
                                             <div className="w-16 h-16 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
                                                 <Layers className="w-8 h-8 text-purple-300" />
                                             </div>
-                                            <p className="text-sm font-medium text-gray-900">No variants defined</p>
-                                    <p className="text-sm text-gray-500 mt-1">This variable product has no variants yet.</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No variants defined</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">This variable product has no variants yet.</p>
                                     {can('products.edit') && (
                                         <Link
                                             href={adminUrl(`/admin/products/${product.id}/edit`)}
@@ -356,23 +356,23 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         {isSingle && (
                             <>
                                 {/* Pricing */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                    <div className="px-5 py-4 border-b border-gray-100">
+                                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                         <div className="flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4 text-gray-400" />
-                                            <h3 className="text-sm font-semibold text-gray-900">Pricing</h3>
+                                            <DollarSign className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pricing</h3>
                                         </div>
                                     </div>
                                     <div className="px-5 py-5">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-500 mb-1">Selling Price</p>
-                                                <p className="text-lg font-semibold text-gray-900">{formatPrice(product.price)}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Selling Price</p>
+                                                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatPrice(product.price)}</p>
                                             </div>
                                             {product.base_price && product.base_price > product.price && (
                                                 <div>
-                                                    <p className="text-xs text-gray-500 mb-1">Compare at Price</p>
-                                                    <p className="text-lg font-medium text-gray-500 line-through">{formatPrice(product.base_price)}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Compare at Price</p>
+                                                    <p className="text-lg font-medium text-gray-500 dark:text-gray-400 line-through">{formatPrice(product.base_price)}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -385,19 +385,19 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 </div>
 
                                 {/* Inventory */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                    <div className="px-5 py-4 border-b border-gray-100">
+                                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                         <div className="flex items-center gap-2">
-                                            <BarChart3 className="w-4 h-4 text-gray-400" />
-                                            <h3 className="text-sm font-semibold text-gray-900">Inventory</h3>
+                                            <BarChart3 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Inventory</h3>
                                         </div>
                                     </div>
                                     <div className="px-5 py-5">
                                         <div className="grid grid-cols-3 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-500 mb-1">Stock</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Stock</p>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-lg font-semibold text-gray-900">{product.stock} {product.unit?.short_name || ''}</span>
+                                                    <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{product.stock} {product.unit?.short_name || ''}</span>
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                                                         product.stock === 0 ? 'bg-red-100 text-red-700' :
                                                         product.stock < 10 ? 'bg-amber-100 text-amber-700' :
@@ -416,13 +416,13 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         {isCombo && comboItems.length > 0 && <ComboViewDetail product={product} />}
 
                         {isCombo && comboItems.length === 0 && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
                                 <div className="px-5 py-12 text-center">
                                     <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
                                         <Gift className="w-8 h-8 text-orange-300" />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-900">No components added</p>
-                                    <p className="text-sm text-gray-500 mt-1">This combo product has no items yet.</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No components added</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">This combo product has no items yet.</p>
                                     {can('products.edit') && (
                                         <Link
                                             href={adminUrl(`/admin/products/${product.id}/edit`)}
@@ -438,32 +438,32 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                         {/* ── Variant Inventory Summary (for variable products) ── */}
                         {isVariable && variants.length > 0 && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div className="px-5 py-4 border-b border-gray-100">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                     <div className="flex items-center gap-2">
-                                        <BarChart3 className="w-4 h-4 text-gray-400" />
-                                        <h3 className="text-sm font-semibold text-gray-900">Inventory Summary</h3>
+                                        <BarChart3 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Inventory Summary</h3>
                                     </div>
                                 </div>
                                 <div className="px-5 py-5">
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                        <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                                        <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <Layers className="w-3.5 h-3.5 text-purple-500" />
-                                                <p className="text-xs text-gray-500">Variants</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Variants</p>
                                             </div>
-                                            <p className="text-xl font-bold text-gray-900">{variants.length}</p>
+                                            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{variants.length}</p>
                                         </div>
-                                        <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                                        <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
-                                                <p className="text-xs text-gray-500">Total Units</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Total Units</p>
                                             </div>
-                                            <p className="text-xl font-bold text-gray-900">{totalStock} {product.unit?.short_name || ''}</p>
+                                            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{totalStock} {product.unit?.short_name || ''}</p>
                                         </div>
-                                        <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                                        <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <p className="text-xs text-gray-500">Status</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
                                             </div>
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ${stockStatus.bg} ${stockStatus.text} ${stockStatus.ring}`}>
                                                 <span className={`w-1.5 h-1.5 rounded-full ${stockStatus.dot}`} />
@@ -477,9 +477,9 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                         {/* ── Related Combos ── */}
                         {safeRelatedCombos.length > 0 && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div className="px-5 py-4 border-b border-gray-100">
-                                    <h3 className="text-sm font-semibold text-gray-900">Included in Combos ({safeRelatedCombos.length})</h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Included in Combos ({safeRelatedCombos.length})</h3>
                                 </div>
                                 <div className="px-5 py-5">
                                     <div className="space-y-2">
@@ -487,19 +487,19 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                             <Link
                                                 key={combo.id}
                                                 href={adminUrl(`/admin/products/${combo.id}`)}
-                                                className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                                                className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:bg-gray-950 transition-colors"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     {combo.photo1_url ? (
                                                         <img src={combo.photo1_url} alt={combo.name} className="w-10 h-10 rounded-lg object-cover" />
                                                     ) : (
                                                         <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                                                            <Gift className="w-5 h-5 text-gray-400" />
+                                                            <Gift className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <p className="text-sm font-medium text-gray-900">{combo.name}</p>
-                                                        <p className="text-xs text-gray-500">{formatPrice(combo.price)}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{combo.name}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatPrice(combo.price)}</p>
                                                     </div>
                                                 </div>
                                                 <span className="text-xs text-blue-600">View →</span>
@@ -514,9 +514,9 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                     {/* Sidebar */}
                     <div className="w-full lg:w-80 flex-shrink-0 space-y-4">
                         {/* Status */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Status</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status</h3>
                             </div>
                             <div className="px-4 py-4">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -533,39 +533,39 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         </div>
 
                         {/* Type */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Product Type</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Product Type</h3>
                             </div>
                             <div className="px-4 py-4">
                                 <div className="flex items-center gap-2.5">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeConfig}`}>
                                         <TypeIcon className="w-4 h-4" />
                                     </div>
-                                    <span className="text-sm text-gray-700">{TYPE_LABELS[product.type] || 'Single'}</span>
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{TYPE_LABELS[product.type] || 'Single'}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Inventory Quick View */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Inventory</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Inventory</h3>
                             </div>
                             <div className="px-4 py-4">
                                 {isVariable ? (
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Total Variant Stock</span>
-                                            <span className="text-lg font-bold text-gray-900">{totalStock} pcs</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Total Variant Stock</span>
+                                            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{totalStock} pcs</span>
                                         </div>
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Variants</span>
-                                            <span className="text-sm font-medium text-gray-900">{variants.length}</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Variants</span>
+                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{variants.length}</span>
                                         </div>
-                                        <hr className="border-gray-100" />
+                                        <hr className="border-gray-100 dark:border-gray-800" />
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Status</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
                                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${stockStatus.bg} ${stockStatus.text} ${stockStatus.ring}`}>
                                                 <span className={`w-1.5 h-1.5 rounded-full ${stockStatus.dot}`} />
                                                 {stockStatus.label}
@@ -575,30 +575,30 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 ) : isCombo ? (
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Bundle Stock</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Bundle Stock</span>
                                             <span className={`text-lg font-bold ${product.combo_availability?.available_stock <= 0 ? 'text-red-600' : product.combo_availability?.available_stock <= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                 {product.combo_availability?.available_stock ?? 0}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Components</span>
-                                            <span className="text-sm font-medium text-gray-900">{product.combo_summary?.item_count ?? comboItems.length}</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Components</span>
+                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{product.combo_summary?.item_count ?? comboItems.length}</span>
                                         </div>
                                         {product.combo_availability?.bottleneck && (
                                             <>
-                                                <hr className="border-gray-100" />
+                                                <hr className="border-gray-100 dark:border-gray-800" />
                                                 <div>
-                                                    <p className="text-xs text-gray-500 mb-1">Limited by</p>
-                                                    <p className="text-xs font-medium text-gray-700 truncate">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Limited by</p>
+                                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
                                                         {product.combo_availability.bottleneck.product_name}
                                                         {product.combo_availability.bottleneck.variant_label ? ` (${product.combo_availability.bottleneck.variant_label})` : ''}
                                                     </p>
                                                 </div>
                                             </>
                                         )}
-                                        <hr className="border-gray-100" />
+                                        <hr className="border-gray-100 dark:border-gray-800" />
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Status</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
                                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${stockStatus.bg} ${stockStatus.text} ${stockStatus.ring}`}>
                                                 <span className={`w-1.5 h-1.5 rounded-full ${stockStatus.dot}`} />
                                                 {stockStatus.label}
@@ -608,12 +608,12 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 ) : (
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Stock</span>
-                                            <span className="text-lg font-bold text-gray-900">{product.stock} {product.unit?.short_name || ''}</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Stock</span>
+                                            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{product.stock} {product.unit?.short_name || ''}</span>
                                         </div>
-                                        <hr className="border-gray-100" />
+                                        <hr className="border-gray-100 dark:border-gray-800" />
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">Status</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                                                 product.stock === 0 ? 'bg-red-100 text-red-700' :
                                                 product.stock < 10 ? 'bg-amber-100 text-amber-700' :
@@ -628,35 +628,35 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         </div>
 
                         {/* Organization */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-gray-100">
-                                <h3 className="text-sm font-semibold text-gray-900">Organization</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Organization</h3>
                             </div>
                             <div className="px-4 py-4 space-y-3">
                                 {product.category && (
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Category</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Category</p>
                                         <div className="flex items-center gap-2">
-                                            <Tag className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm text-gray-700">{product.category.name}</span>
+                                            <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                            <span className="text-sm text-gray-700 dark:text-gray-300">{product.category.name}</span>
                                         </div>
                                     </div>
                                 )}
                                 {product.unit && (
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Unit</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Unit</p>
                                         <div className="flex items-center gap-2">
-                                            <Package className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm text-gray-700">{product.unit.short_name}</span>
+                                            <Package className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                            <span className="text-sm text-gray-700 dark:text-gray-300">{product.unit.short_name}</span>
                                         </div>
                                     </div>
                                 )}
                                 {product.brand && (
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Brand</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Brand</p>
                                         <div className="flex items-center gap-2">
-                                            <Layers className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm text-gray-700">{product.brand.name}</span>
+                                            <Layers className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                            <span className="text-sm text-gray-700 dark:text-gray-300">{product.brand.name}</span>
                                         </div>
                                     </div>
                                 )}
@@ -665,36 +665,36 @@ export default function ProductShow({ product, relatedCombos = [] }) {
 
                         {/* SEO */}
                         {(product.seo_title || product.seo_description || product.seo_keywords || product.seo_image_url) && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div className="px-4 py-3 border-b border-gray-100">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                     <div className="flex items-center gap-2">
-                                        <Globe className="w-4 h-4 text-gray-400" />
-                                        <h3 className="text-sm font-semibold text-gray-900">SEO</h3>
+                                        <Globe className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">SEO</h3>
                                     </div>
                                 </div>
                                 <div className="px-4 py-4 space-y-3">
                                     {product.seo_title && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-1">SEO Title</p>
-                                            <p className="text-sm text-gray-700">{product.seo_title}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SEO Title</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300">{product.seo_title}</p>
                                         </div>
                                     )}
                                     {product.seo_description && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-1">SEO Description</p>
-                                            <p className="text-sm text-gray-700">{product.seo_description}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SEO Description</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300">{product.seo_description}</p>
                                         </div>
                                     )}
                                     {product.seo_keywords && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-1">SEO Keywords</p>
-                                            <p className="text-sm text-gray-700">{product.seo_keywords}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SEO Keywords</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300">{product.seo_keywords}</p>
                                         </div>
                                     )}
                                     {product.seo_image_url && (
                                         <div>
-                                            <p className="text-xs text-gray-500 mb-1">SEO Image</p>
-                                            <img src={product.seo_image_url} alt="SEO" className="w-24 h-24 rounded-lg object-cover border border-gray-200 mt-1" />
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SEO Image</p>
+                                            <img src={product.seo_image_url} alt="SEO" className="w-24 h-24 rounded-lg object-cover border border-gray-200 dark:border-gray-800 mt-1" />
                                         </div>
                                     )}
                                 </div>
@@ -702,36 +702,36 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         )}
 
                         {/* Meta Info */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                 <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-gray-400" />
-                                    <h3 className="text-sm font-semibold text-gray-900">Details</h3>
+                                    <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Details</h3>
                                 </div>
                             </div>
                             <div className="px-4 py-4 space-y-3">
                                 <div>
-                                    <p className="text-xs text-gray-500 mb-1">Created</p>
-                                    <p className="text-sm text-gray-700">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Created</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">
                                         {new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-500 mb-1">Last Updated</p>
-                                    <p className="text-sm text-gray-700">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Last Updated</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">
                                         {new Date(product.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-500 mb-1">Product ID</p>
-                                    <p className="text-sm font-mono text-gray-700">#{product.id}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Product ID</p>
+                                    <p className="text-sm font-mono text-gray-700 dark:text-gray-300">#{product.id}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Quick Actions */}
                         <div className="sticky bottom-4">
-                            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-3">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-4 space-y-3">
                                 {can('products.edit') && (
                                     <Link
                                         href={adminUrl(`/admin/products/${product.id}/edit`)}
@@ -743,7 +743,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 )}
                                 <Link
                                     href={adminUrl('/admin/products')}
-                                    className="w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors text-center block"
+                                    className="w-full px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors text-center block"
                                 >
                                     Back to Products
                                 </Link>
@@ -756,18 +756,18 @@ export default function ProductShow({ product, relatedCombos = [] }) {
             {/* Delete Confirmation Modal */}
             {deleteModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                                 <AlertCircle className="w-5 h-5 text-red-600" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Delete Product</h3>
-                                <p className="text-sm text-gray-500">This action cannot be undone</p>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete Product</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
                             </div>
                         </div>
-                        <div className="mb-6 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                            <p className="text-sm text-gray-700">
+                        <div className="mb-6 p-3 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
                                 Are you sure you want to delete <strong>{product.name}</strong>?
                             </p>
                             {product.has_orders ? (
@@ -776,7 +776,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                     <p className="text-xs text-red-600 mt-0.5">This product exists in customer orders and cannot be deleted. Deactivate it instead.</p>
                                 </div>
                             ) : (
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                     This will permanently remove the product, its images, variants, and combo relationships.
                                 </p>
                             )}
@@ -784,7 +784,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setDeleteModalOpen(false)}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>

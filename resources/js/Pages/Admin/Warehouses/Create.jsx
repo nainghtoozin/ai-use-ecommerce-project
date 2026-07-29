@@ -10,7 +10,7 @@ export default function WarehouseCreate() {
         return (
             <AdminLayout>
                 <Head title="Access Denied" />
-                <div className="py-12 text-center text-gray-500">You do not have permission to create warehouses.</div>
+                <div className="py-12 text-center text-gray-500 dark:text-gray-400">You do not have permission to create warehouses.</div>
             </AdminLayout>
         );
     }
@@ -53,63 +53,63 @@ export default function WarehouseCreate() {
                         <a
                             href={adminUrl('/admin/warehouses')}
                             onClick={(e) => { e.preventDefault(); router.get(adminUrl('/admin/warehouses')); }}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </a>
                         <div className="flex items-center gap-3">
-                            <Building2 className="w-8 h-8 text-gray-500" />
+                            <Building2 className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                             <div>
-                                <h1 className="text-2xl font-semibold text-gray-900">Create Warehouse</h1>
-                                <p className="text-sm text-gray-500">Add a new storage location.</p>
+                                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Create Warehouse</h1>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Add a new storage location.</p>
                             </div>
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+                    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
                             <input
                                 type="text"
                                 value={data.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
-                                className={`w-full border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+                                className={`w-full border ${errors.name ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                 placeholder="e.g. Main Warehouse"
                             />
                             {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
                             <input
                                 type="text"
                                 value={data.code}
                                 onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
-                                className={`w-full border ${errors.code ? 'border-red-300' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+                                className={`w-full border ${errors.code ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                 placeholder="e.g. WH-001"
                             />
                             {errors.code && <p className="text-sm text-red-600 mt-1">{errors.code}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                             <textarea
                                 value={data.description}
                                 onChange={(e) => handleChange('description', e.target.value)}
                                 rows={3}
-                                className={`w-full border ${errors.description ? 'border-red-300' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+                                className={`w-full border ${errors.description ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                 placeholder="Optional description..."
                             />
                             {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
                             <textarea
                                 value={data.address}
                                 onChange={(e) => handleChange('address', e.target.value)}
                                 rows={2}
-                                className={`w-full border ${errors.address ? 'border-red-300' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+                                className={`w-full border ${errors.address ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'} rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                                 placeholder="Optional address..."
                             />
                             {errors.address && <p className="text-sm text-red-600 mt-1">{errors.address}</p>}
@@ -121,26 +121,26 @@ export default function WarehouseCreate() {
                                     type="checkbox"
                                     checked={data.is_default}
                                     onChange={(e) => handleChange('is_default', e.target.checked)}
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                 />
-                                <span className="text-sm text-gray-700">Set as default warehouse</span>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">Set as default warehouse</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={data.is_active}
                                     onChange={(e) => handleChange('is_active', e.target.checked)}
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                 />
-                                <span className="text-sm text-gray-700">Active</span>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">Active</span>
                             </label>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                             <a
                                 href={adminUrl('/admin/warehouses')}
                                 onClick={(e) => { e.preventDefault(); router.get(adminUrl('/admin/warehouses')); }}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50"
                             >
                                 Cancel
                             </a>

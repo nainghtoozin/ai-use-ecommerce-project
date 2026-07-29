@@ -13,7 +13,7 @@ export default function UsersShow({ user, activities }) {
             banned: 'bg-red-100 text-red-800',
         };
         return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                 {status}
             </span>
         );
@@ -30,12 +30,12 @@ export default function UsersShow({ user, activities }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">User Details</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">User Details</h2>}>
             <Head title={`User: ${user.name}`} />
 
             <div className="py-6">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-4">
@@ -49,8 +49,8 @@ export default function UsersShow({ user, activities }) {
                                         )}
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-medium text-gray-900">{user.name}</h3>
-                                        <p className="text-sm text-gray-500">{user.email}</p>
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{user.name}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 {user.role_name || '—'}
@@ -76,31 +76,31 @@ export default function UsersShow({ user, activities }) {
 
                             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                 <div>
-                                    <span className="text-gray-500">ID:</span>
-                                    <span className="ml-2 text-gray-900 font-medium">#{user.id}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">ID:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-gray-100 font-medium">#{user.id}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Joined:</span>
-                                    <span className="ml-2 text-gray-900">{new Date(user.created_at).toLocaleDateString()}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Joined:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-gray-100">{new Date(user.created_at).toLocaleDateString()}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Email Verified:</span>
-                                    <span className="ml-2 text-gray-900">{user.email_verified_at ? new Date(user.email_verified_at).toLocaleDateString() : 'No'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Email Verified:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-gray-100">{user.email_verified_at ? new Date(user.email_verified_at).toLocaleDateString() : 'No'}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {can('users.view-activity') && (
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h3>
                             {activities.length === 0 ? (
-                                <p className="text-sm text-gray-500">No activity recorded yet.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
                             ) : (
                                 <div className="space-y-3">
                                     {activities.map((activity) => (
-                                        <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                                        <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
                                             <div className="flex-shrink-0 mt-0.5">
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                                                     activity.event === 'created' ? 'bg-green-100 text-green-600' :
@@ -123,8 +123,8 @@ export default function UsersShow({ user, activities }) {
                                                 </div>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-gray-900">{activity.description}</p>
-                                                <p className="text-xs text-gray-500 mt-1">{new Date(activity.created_at).toLocaleString()}</p>
+                                                <p className="text-sm text-gray-900 dark:text-gray-100">{activity.description}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(activity.created_at).toLocaleString()}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -135,7 +135,7 @@ export default function UsersShow({ user, activities }) {
                     )}
 
                     <div className="flex justify-start">
-                        <Link href={adminUrl('/admin/users')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <Link href={adminUrl('/admin/users')} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
                             <i className="bi bi-arrow-left mr-1"></i> Back to Users
                         </Link>
                     </div>

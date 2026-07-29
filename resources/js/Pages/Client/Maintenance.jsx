@@ -42,7 +42,7 @@ export default function Maintenance() {
 
                         <div className="mb-8 flex justify-center">
                             <div className="relative w-16 h-16">
-                                <div className="absolute inset-0 rounded-full border-[3px] border-gray-100"></div>
+                                <div className="absolute inset-0 rounded-full border-[3px] border-gray-100 dark:border-gray-800"></div>
                                 <div className="absolute inset-0 rounded-full border-[3px] border-transparent rounded-full animate-spin" style={{ borderTopColor: 'var(--theme-color, #3B82F6)', animationDuration: '0.8s' }}></div>
                                 <div className="absolute inset-0 rounded-full border-[3px] border-transparent rounded-full animate-spin" style={{ borderRightColor: 'var(--theme-color, #3B82F6)', animationDuration: '1.2s', animationDirection: 'reverse' }}></div>
                                 <div className="absolute inset-[14px] rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
@@ -51,37 +51,37 @@ export default function Maintenance() {
                             </div>
                         </div>
 
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3 tracking-tight">
                             Under Maintenance
                         </h1>
-                        <p className="text-gray-500 text-base sm:text-lg leading-relaxed mb-2">
+                        <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg leading-relaxed mb-2">
                             {message || 'We are currently performing scheduled maintenance. Please check back soon.'}
                         </p>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-gray-400 dark:text-gray-500 text-sm">
                             We expect to be back shortly. Thank you for your patience.
                         </p>
 
                         {(contactEmail || phone) && (
-                            <div className="mt-10 pt-8 border-t border-gray-100">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+                            <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800">
+                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
                                     Need help?
                                 </p>
                                 <div className="flex flex-wrap items-center justify-center gap-3">
                                     {contactEmail && (
                                         <a
                                             href={`mailto:${contactEmail}`}
-                                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm font-medium text-gray-700 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 hover:text-gray-900 transition-all duration-200"
+                                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 rounded-xl text-sm font-medium text-gray-700 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-gray-300 hover:text-gray-900 dark:text-gray-100 transition-all duration-200"
                                         >
-                                            <i className="bi bi-envelope text-gray-400"></i>
+                                            <i className="bi bi-envelope text-gray-400 dark:text-gray-500"></i>
                                             <span>{contactEmail}</span>
                                         </a>
                                     )}
                                     {phone && (
                                         <a
                                             href={`tel:${phone}`}
-                                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm font-medium text-gray-700 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 hover:text-gray-900 transition-all duration-200"
+                                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 rounded-xl text-sm font-medium text-gray-700 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-gray-300 hover:text-gray-900 dark:text-gray-100 transition-all duration-200"
                                         >
-                                            <i className="bi bi-telephone text-gray-400"></i>
+                                            <i className="bi bi-telephone text-gray-400 dark:text-gray-500"></i>
                                             <span>{phone}</span>
                                         </a>
                                     )}
@@ -91,32 +91,32 @@ export default function Maintenance() {
 
                         {(social.facebook_url || social.twitter_url || social.instagram_url || social.linkedin_url || social.youtube_url) && (
                             <div className="mt-6">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
                                     Follow us for updates
                                 </p>
                                 <div className="flex items-center justify-center gap-2">
                                     {social.facebook_url && (
-                                        <a href={social.facebook_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200">
+                                        <a href={social.facebook_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-all duration-200">
                                             <i className="bi bi-facebook text-lg"></i>
                                         </a>
                                     )}
                                     {social.twitter_url && (
-                                        <a href={social.twitter_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200">
+                                        <a href={social.twitter_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-all duration-200">
                                             <i className="bi bi-twitter-x text-lg"></i>
                                         </a>
                                     )}
                                     {social.instagram_url && (
-                                        <a href={social.instagram_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200">
+                                        <a href={social.instagram_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-all duration-200">
                                             <i className="bi bi-instagram text-lg"></i>
                                         </a>
                                     )}
                                     {social.linkedin_url && (
-                                        <a href={social.linkedin_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200">
+                                        <a href={social.linkedin_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-all duration-200">
                                             <i className="bi bi-linkedin text-lg"></i>
                                         </a>
                                     )}
                                     {social.youtube_url && (
-                                        <a href={social.youtube_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200">
+                                        <a href={social.youtube_url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-all duration-200">
                                             <i className="bi bi-youtube text-lg"></i>
                                         </a>
                                     )}
@@ -127,7 +127,7 @@ export default function Maintenance() {
                         <div className="mt-8">
                             <Link
                                 href="/"
-                                className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                                className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
                             >
                                 <i className="bi bi-arrow-clockwise"></i>
                                 <span>Refresh</span>

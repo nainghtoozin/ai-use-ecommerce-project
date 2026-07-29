@@ -53,19 +53,19 @@ export default function AdminHeader() {
                     </div>
                     <button
                         onClick={stopImpersonating}
-                        className="px-3 py-1 bg-white text-amber-700 rounded text-xs font-medium hover:bg-amber-50 transition-colors"
+                        className="px-3 py-1 bg-white dark:bg-gray-900 text-amber-700 rounded text-xs font-medium hover:bg-amber-50 transition-colors"
                     >
                         Back To SuperAdmin
                     </button>
                 </div>
             )}
-            <header className="bg-white border-b border-gray-200 h-14 lg:h-16 flex items-center px-4 lg:px-6 sticky top-0 z-20 shadow-sm">
+            <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-14 lg:h-16 flex items-center px-4 lg:px-6 sticky top-0 z-20 shadow-sm">
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                     <div className="lg:hidden w-10"></div>
                     <div>
-                        <h1 className="text-base lg:text-lg font-semibold text-gray-900">{getPageTitle()}</h1>
-                        <p className="text-xs text-gray-500 hidden lg:block">{subtitle}</p>
+                        <h1 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">{getPageTitle()}</h1>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 hidden lg:block">{subtitle}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-3">
@@ -78,19 +78,19 @@ export default function AdminHeader() {
                             View Store
                         </Link>
                     )}
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-950 rounded-lg">
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span className="text-xs text-gray-600">Online</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Online</span>
                     </div>
                     <NotificationBell isAdmin={true} />
                     <LanguageSwitcher />
-                    <div className="flex items-center gap-2 border-l border-gray-200 pl-2 lg:pl-3">
+                    <div className="flex items-center gap-2 border-l border-gray-200 dark:border-gray-800 pl-2 lg:pl-3">
                         <div className="w-7 lg:w-8 h-7 lg:h-8 text-white rounded-lg flex items-center justify-center text-xs font-bold shadow-sm" style={{ background: 'linear-gradient(135deg, var(--theme-color, #3B82F6), color-mix(in srgb, var(--theme-color, #3B82F6) 80%, black))' }}>
                             {auth?.user?.name?.charAt(0).toUpperCase()}
                         </div>
                         <div className="hidden lg:block">
-                            <span className="text-sm font-medium text-gray-700 block">{auth?.user?.name}</span>
-                            <span className="text-xs text-gray-500">{auth?.user?.role_label}</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">{auth?.user?.name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{auth?.user?.role_label}</span>
                         </div>
                     </div>
                 </div>

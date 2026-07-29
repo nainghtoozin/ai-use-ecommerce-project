@@ -10,15 +10,15 @@ export default function UsageProgressBar({ label, current, limit, isUnlimited, f
     return (
         <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">{label}</span>
+                <span className="text-gray-600 dark:text-gray-400">{label}</span>
                 <span className={`font-medium ${textColor}`}>
                     {displayCurrent}{' '}
-                    <span className="text-gray-400 font-normal">
+                    <span className="text-gray-400 dark:text-gray-500 font-normal">
                         / {displayLimit}
                     </span>
                 </span>
             </div>
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label={`${label}: ${current} of ${limit ?? 'unlimited'}`}>
+            <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label={`${label}: ${current} of ${limit ?? 'unlimited'}`}>
                 {isUnlimited ? (
                     <div className="h-full w-full bg-gradient-to-r from-blue-400 to-blue-300 rounded-full opacity-50" />
                 ) : (

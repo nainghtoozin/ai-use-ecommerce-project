@@ -59,20 +59,20 @@ export default function PlatformSettingsIndex({ settings }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Platform Settings</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Platform Settings</h2>}>
             <Head title="Platform Settings" />
 
             <div className="py-6">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <form onSubmit={handleSubmit} className="space-y-8">
                             {/* Section 1: General Information */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">General Information</h3>
-                                <p className="text-sm text-gray-500 mb-4">Manage platform-wide settings.</p>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">General Information</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Manage platform-wide settings.</p>
                                 <div className="space-y-4">
                                     <div>
-                                        <label htmlFor="site_name" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="site_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Platform Name <span className="text-red-500">*</span>
                                         </label>
                                         <input
@@ -80,13 +80,13 @@ export default function PlatformSettingsIndex({ settings }) {
                                             type="text"
                                             value={siteName}
                                             onChange={(e) => setSiteName(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             placeholder="My Application"
                                         />
                                         {errors.site_name && <p className="text-xs text-red-600 mt-1">{errors.site_name}</p>}
                                     </div>
                                     <div>
-                                        <label htmlFor="support_email" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="support_email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Support Email
                                         </label>
                                         <input
@@ -94,7 +94,7 @@ export default function PlatformSettingsIndex({ settings }) {
                                             type="email"
                                             value={supportEmail}
                                             onChange={(e) => setSupportEmail(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             placeholder="support@example.com"
                                         />
                                         {errors.support_email && <p className="text-xs text-red-600 mt-1">{errors.support_email}</p>}
@@ -103,9 +103,9 @@ export default function PlatformSettingsIndex({ settings }) {
                             </div>
 
                             {/* Section 2: Branding */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">Branding</h3>
-                                <p className="text-sm text-gray-500 mb-4">Upload your platform logo and favicon.</p>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Branding</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Upload your platform logo and favicon.</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <ImageUpload
                                         name="logo"
@@ -125,14 +125,14 @@ export default function PlatformSettingsIndex({ settings }) {
                             </div>
 
                             {/* Section 3: Trial Settings */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">Trial Settings</h3>
-                                <p className="text-sm text-gray-500 mb-4">Configure free trial for new merchants.</p>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Trial Settings</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Configure free trial for new merchants.</p>
                                 <div className="space-y-4">
-                                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
                                         <div>
-                                            <span className="text-sm font-medium text-gray-700">Trial Enabled</span>
-                                            <p className="text-xs text-gray-400">New merchants get a free trial when subscribing to a paid plan.</p>
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Trial Enabled</span>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">New merchants get a free trial when subscribing to a paid plan.</p>
                                         </div>
                                         <button
                                             type="button"
@@ -141,12 +141,12 @@ export default function PlatformSettingsIndex({ settings }) {
                                             onClick={() => setTrialEnabled(!trialEnabled)}
                                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${trialEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
                                         >
-                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${trialEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-900 shadow-sm transition-transform ${trialEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
                                         </button>
                                     </label>
                                     {trialEnabled && (
                                         <div>
-                                            <label htmlFor="trial_days" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="trial_days" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Trial Duration (Days)
                                             </label>
                                             <input
@@ -156,17 +156,17 @@ export default function PlatformSettingsIndex({ settings }) {
                                                 max="365"
                                                 value={trialDays}
                                                 onChange={(e) => setTrialDays(e.target.value)}
-                                                className="w-full max-w-xs rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                className="w-full max-w-xs rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             />
                                             {errors.trial_days && <p className="text-xs text-red-600 mt-1">{errors.trial_days}</p>}
                                         </div>
                                     )}
                                     {trialEnabled && (
-                                        <div className="ml-4 pl-4 border-l-2 border-gray-100 space-y-4">
-                                            <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div className="ml-4 pl-4 border-l-2 border-gray-100 dark:border-gray-800 space-y-4">
+                                            <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
                                                 <div>
-                                                    <span className="text-sm font-medium text-gray-700">Allow Trial Renewal</span>
-                                                    <p className="text-xs text-gray-400">Merchants can extend their trial period after it expires.</p>
+                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Allow Trial Renewal</span>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">Merchants can extend their trial period after it expires.</p>
                                                 </div>
                                                 <button
                                                     type="button"
@@ -175,12 +175,12 @@ export default function PlatformSettingsIndex({ settings }) {
                                                     onClick={() => setAllowTrialRenewal(!allowTrialRenewal)}
                                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${allowTrialRenewal ? 'bg-blue-600' : 'bg-gray-300'}`}
                                                 >
-                                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${allowTrialRenewal ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-900 shadow-sm transition-transform ${allowTrialRenewal ? 'translate-x-6' : 'translate-x-0.5'}`} />
                                                 </button>
                                             </label>
                                             {allowTrialRenewal && (
                                                 <div>
-                                                    <label htmlFor="max_trial_renewals" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    <label htmlFor="max_trial_renewals" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                         Max Trial Renewals
                                                     </label>
                                                     <input
@@ -190,9 +190,9 @@ export default function PlatformSettingsIndex({ settings }) {
                                                         max="255"
                                                         value={maxTrialRenewals}
                                                         onChange={(e) => setMaxTrialRenewals(e.target.value)}
-                                                        className="w-full max-w-xs rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                        className="w-full max-w-xs rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                                     />
-                                                    <p className="text-xs text-gray-400 mt-1">Set to 0 for unlimited renewals.</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Set to 0 for unlimited renewals.</p>
                                                     {errors.max_trial_renewals && <p className="text-xs text-red-600 mt-1">{errors.max_trial_renewals}</p>}
                                                 </div>
                                             )}
@@ -202,43 +202,43 @@ export default function PlatformSettingsIndex({ settings }) {
                             </div>
 
                             {/* Section 4: Currency Settings */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">Platform Currency</h3>
-                                <p className="text-sm text-gray-500 mb-4">Used across all SuperAdmin pages (Plans, Billing, Financial Console, etc.). Merchant stores use their own Website Settings currency.</p>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Platform Currency</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Used across all SuperAdmin pages (Plans, Billing, Financial Console, etc.). Merchant stores use their own Website Settings currency.</p>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label htmlFor="platform_currency_code" className="block text-sm font-medium text-gray-700 mb-1">Currency Code</label>
+                                        <label htmlFor="platform_currency_code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency Code</label>
                                         <input
                                             id="platform_currency_code"
                                             type="text"
                                             value={currencyCode}
                                             onChange={(e) => setCurrencyCode(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             placeholder="MMK"
                                             maxLength={10}
                                         />
                                         {errors.platform_currency_code && <p className="text-xs text-red-600 mt-1">{errors.platform_currency_code}</p>}
                                     </div>
                                     <div>
-                                        <label htmlFor="platform_currency_symbol" className="block text-sm font-medium text-gray-700 mb-1">Currency Symbol</label>
+                                        <label htmlFor="platform_currency_symbol" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency Symbol</label>
                                         <input
                                             id="platform_currency_symbol"
                                             type="text"
                                             value={currencySymbol}
                                             onChange={(e) => setCurrencySymbol(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             placeholder="Ks"
                                             maxLength={10}
                                         />
                                         {errors.platform_currency_symbol && <p className="text-xs text-red-600 mt-1">{errors.platform_currency_symbol}</p>}
                                     </div>
                                     <div>
-                                        <label htmlFor="platform_currency_position" className="block text-sm font-medium text-gray-700 mb-1">Symbol Position</label>
+                                        <label htmlFor="platform_currency_position" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symbol Position</label>
                                         <select
                                             id="platform_currency_position"
                                             value={currencyPosition}
                                             onChange={(e) => setCurrencyPosition(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         >
                                             <option value="before">Before (e.g. Ks1,000)</option>
                                             <option value="after">After (e.g. 1,000 Ks)</option>
@@ -246,7 +246,7 @@ export default function PlatformSettingsIndex({ settings }) {
                                         {errors.platform_currency_position && <p className="text-xs text-red-600 mt-1">{errors.platform_currency_position}</p>}
                                     </div>
                                     <div>
-                                        <label htmlFor="platform_decimal_places" className="block text-sm font-medium text-gray-700 mb-1">Decimal Places</label>
+                                        <label htmlFor="platform_decimal_places" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Decimal Places</label>
                                         <input
                                             id="platform_decimal_places"
                                             type="number"
@@ -254,7 +254,7 @@ export default function PlatformSettingsIndex({ settings }) {
                                             max="4"
                                             value={decimalPlaces}
                                             onChange={(e) => setDecimalPlaces(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         />
                                         {errors.platform_decimal_places && <p className="text-xs text-red-600 mt-1">{errors.platform_decimal_places}</p>}
                                     </div>
@@ -263,13 +263,13 @@ export default function PlatformSettingsIndex({ settings }) {
 
                             {/* Section 5: System Settings */}
                             <div className="pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">System Settings</h3>
-                                <p className="text-sm text-gray-500 mb-4">Control platform-wide features.</p>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">System Settings</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Control platform-wide features.</p>
                                 <div className="space-y-4">
-                                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
                                         <div>
-                                            <span className="text-sm font-medium text-gray-700">Maintenance Mode</span>
-                                            <p className="text-xs text-gray-400">When enabled, all storefronts display a maintenance notice.</p>
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Maintenance Mode</span>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">When enabled, all storefronts display a maintenance notice.</p>
                                         </div>
                                         <button
                                             type="button"
@@ -278,13 +278,13 @@ export default function PlatformSettingsIndex({ settings }) {
                                             onClick={() => setMaintenanceMode(!maintenanceMode)}
                                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${maintenanceMode ? 'bg-blue-600' : 'bg-gray-300'}`}
                                         >
-                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${maintenanceMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-900 shadow-sm transition-transform ${maintenanceMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
                                         </button>
                                     </label>
-                                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
                                         <div>
-                                            <span className="text-sm font-medium text-gray-700">Registration Enabled</span>
-                                            <p className="text-xs text-gray-400">Allow new merchants to sign up.</p>
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Registration Enabled</span>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">Allow new merchants to sign up.</p>
                                         </div>
                                         <button
                                             type="button"
@@ -293,14 +293,14 @@ export default function PlatformSettingsIndex({ settings }) {
                                             onClick={() => setRegistrationEnabled(!registrationEnabled)}
                                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${registrationEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
                                         >
-                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${registrationEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-900 shadow-sm transition-transform ${registrationEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
                                         </button>
                                     </label>
                                 </div>
                             </div>
 
                             {/* Submit */}
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                                 <button
                                     type="submit"
                                     disabled={processing}

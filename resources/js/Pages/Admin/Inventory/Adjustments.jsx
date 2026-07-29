@@ -53,12 +53,12 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
-                            <Link href={adminUrl('/admin/inventory/dashboard')} className="text-gray-400 hover:text-gray-600">
+                            <Link href={adminUrl('/admin/inventory/dashboard')} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
                             <div>
-                                <h1 className="text-2xl font-semibold text-gray-900">Stock Adjustments</h1>
-                                <p className="text-sm text-gray-500">History of all stock corrections and adjustments.</p>
+                                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Stock Adjustments</h1>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">History of all stock corrections and adjustments.</p>
                             </div>
                         </div>
                         <Link
@@ -71,18 +71,18 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                     </div>
 
                     {/* Search and Filters */}
-                    <div className="bg-white rounded-lg border border-gray-200 mb-4">
-                        <div className="p-4 border-b border-gray-200">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 mb-4">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                             <div className="flex flex-wrap gap-3">
                                 <div className="relative flex-1 min-w-[200px]">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                     <input
                                         type="text"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && applyFilter('search', search)}
                                         placeholder="Search by product, SKU, or adjustment number..."
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
                                 <button
@@ -105,7 +105,7 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                 <select
                                     value={filters.per_page || '15'}
                                     onChange={(e) => applyFilter('per_page', e.target.value)}
-                                    className="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    className="border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="10">10</option>
                                     <option value="15">15</option>
@@ -117,14 +117,14 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                         </div>
 
                         {showFilters && (
-                            <div className="p-4 bg-gray-50 border-b border-gray-200">
+                            <div className="p-4 bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Reason</label>
+                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Reason</label>
                                         <select
                                             value={filters.reason || ''}
                                             onChange={(e) => applyFilter('reason', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         >
                                             <option value="">All Reasons</option>
                                             {Object.entries(reasons).map(([key, label]) => (
@@ -134,11 +134,11 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
+                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
                                         <select
                                             value={filters.type || ''}
                                             onChange={(e) => applyFilter('type', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         >
                                             <option value="">All Types</option>
                                             <option value="increase">Increase</option>
@@ -147,11 +147,11 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Location</label>
+                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Location</label>
                                         <select
                                             value={filters.warehouse_id || ''}
                                             onChange={(e) => applyFilter('warehouse_id', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         >
                                             <option value="">All Locations</option>
                                             {warehouses.map((wh) => (
@@ -161,22 +161,22 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
+                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
                                         <input
                                             type="date"
                                             value={filters.date_from || ''}
                                             onChange={(e) => applyFilter('date_from', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
+                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
                                         <input
                                             type="date"
                                             value={filters.date_to || ''}
                                             onChange={(e) => applyFilter('date_to', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg text-sm px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                 </div>
@@ -186,7 +186,7 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                         <button
                                             type="button"
                                             onClick={clearFilters}
-                                            className="text-sm text-gray-500 hover:text-gray-700 underline"
+                                            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 underline"
                                         >
                                             Clear all filters
                                         </button>
@@ -197,31 +197,31 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                     </div>
 
                     {/* Table */}
-                    <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adjustment #</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Before</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">After</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Adjustment #</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Location</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Before</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Change</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">After</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reason</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                                     {adjustments.data?.length === 0 && (
                                         <tr>
-                                            <td colSpan="9" className="px-6 py-16 text-center text-gray-500">
+                                            <td colSpan="9" className="px-6 py-16 text-center text-gray-500 dark:text-gray-400">
                                                 <Settings className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                                <p className="text-sm font-medium text-gray-900 mb-1">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                                                     {hasActiveFilters ? 'No adjustments match your filters.' : 'No adjustments yet.'}
                                                 </p>
-                                                <p className="text-xs text-gray-400">
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">
                                                     {hasActiveFilters ? 'Try adjusting your search or filters.' : 'Adjustments will appear here when stock corrections are made.'}
                                                 </p>
                                             </td>
@@ -230,30 +230,30 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                     {adjustments.data?.map((a) => {
                                         const badgeClass = reasonBadgeClass[a.reason_key] || reasonBadgeClass.other;
                                         return (
-                                            <tr key={a.id} className="hover:bg-gray-50">
+                                            <tr key={a.id} className="hover:bg-gray-50 dark:bg-gray-950">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <Link href={adminUrl(`/admin/inventory/adjustments/${a.id}`)} className="text-sm font-mono font-medium text-blue-600 hover:text-blue-800">
                                                         {a.adjustment_number || `#${a.id}`}
                                                     </Link>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {new Date(a.created_at).toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     {a.product ? (
-                                                        <Link href={adminUrl(`/admin/inventory/product/${a.product.id}`)} className="text-sm font-medium text-gray-900 hover:text-blue-600">
+                                                        <Link href={adminUrl(`/admin/inventory/product/${a.product.id}`)} className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600">
                                                             {a.product.name}
                                                         </Link>
                                                     ) : (
-                                                        <span className="text-sm text-gray-400">Deleted Product</span>
+                                                        <span className="text-sm text-gray-400 dark:text-gray-500">Deleted Product</span>
                                                     )}
-                                                    {a.product?.sku && <div className="text-xs text-gray-400">{a.product.sku}</div>}
-                                                    {a.variant && <div className="text-xs text-gray-400">Variant: {a.variant.sku}</div>}
+                                                    {a.product?.sku && <div className="text-xs text-gray-400 dark:text-gray-500">{a.product.sku}</div>}
+                                                    {a.variant && <div className="text-xs text-gray-400 dark:text-gray-500">Variant: {a.variant.sku}</div>}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {a.warehouse?.name || '—'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700">
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 dark:text-gray-300">
                                                     {a.before_stock ?? '—'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -262,7 +262,7 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                                         {a.quantity > 0 ? '+' : ''}{a.quantity}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {a.after_stock ?? '—'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -274,7 +274,7 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                                     <div className="flex items-center justify-end gap-1">
                                                         <Link
                                                             href={adminUrl(`/admin/inventory/adjustments/${a.id}`)}
-                                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                                                             title="View"
                                                         >
                                                             <Eye className="w-4 h-4" />
@@ -282,7 +282,7 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                                                         <button
                                                             type="button"
                                                             onClick={() => setDeleteTarget(a)}
-                                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                                                             title="Delete"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -304,36 +304,36 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
             {/* Delete Confirmation Modal */}
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Delete Adjustment</h3>
-                            <button onClick={() => setDeleteTarget(null)} className="text-gray-400 hover:text-gray-600">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete Adjustment</h3>
+                            <button onClick={() => setDeleteTarget(null)} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                             Are you sure you want to delete this stock adjustment? This will remove the movement record and recalculate current stock.
                         </p>
 
-                        <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+                        <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4 mb-6 space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Adjustment</span>
-                                <span className="font-mono font-medium text-gray-900">{deleteTarget.adjustment_number || `#${deleteTarget.id}`}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Adjustment</span>
+                                <span className="font-mono font-medium text-gray-900 dark:text-gray-100">{deleteTarget.adjustment_number || `#${deleteTarget.id}`}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Product</span>
-                                <span className="font-medium text-gray-900">{deleteTarget.product?.name || 'Deleted Product'}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Product</span>
+                                <span className="font-medium text-gray-900 dark:text-gray-100">{deleteTarget.product?.name || 'Deleted Product'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Change</span>
+                                <span className="text-gray-500 dark:text-gray-400">Change</span>
                                 <span className={`font-medium ${deleteTarget.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {deleteTarget.quantity > 0 ? '+' : ''}{deleteTarget.quantity}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Reason</span>
-                                <span className="font-medium text-gray-900">{deleteTarget.reason_label}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Reason</span>
+                                <span className="font-medium text-gray-900 dark:text-gray-100">{deleteTarget.reason_label}</span>
                             </div>
                         </div>
 
@@ -341,7 +341,7 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
                             <button
                                 type="button"
                                 onClick={() => setDeleteTarget(null)}
-                                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50"
                             >
                                 Cancel
                             </button>

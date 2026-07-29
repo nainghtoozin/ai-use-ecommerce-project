@@ -52,25 +52,25 @@ export default function FlashMessages() {
         const currentPlan = auth?.user?.subscription?.plan_name || 'Free';
         return (
             <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
                     <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Crown className="w-8 h-8 text-amber-600" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Feature Unavailable</h2>
-                    <p className="text-gray-600 mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Feature Unavailable</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
                         <span className="font-medium">{locked.feature}</span> is not included in your current plan.
                     </p>
-                    <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+                    <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4 mb-6 space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Feature</span>
-                            <span className="font-medium text-gray-900">{locked.feature}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Feature</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{locked.feature}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Current Plan</span>
-                            <span className="font-medium text-gray-900">{currentPlan}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Current Plan</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{currentPlan}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Required Plan</span>
+                            <span className="text-gray-500 dark:text-gray-400">Required Plan</span>
                             <span className="font-medium text-blue-600">{locked.required_plan}</span>
                         </div>
                     </div>

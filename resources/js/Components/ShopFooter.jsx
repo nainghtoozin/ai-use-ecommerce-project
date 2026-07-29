@@ -8,14 +8,14 @@ function InfoModal({ open, onClose, title, children }) {
     return (
         <>
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="fixed inset-x-4 bottom-0 z-50 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[480px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[70vh] sm:max-h-[60vh] flex flex-col animate-slide-up">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-                    <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-                    <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <div className="fixed inset-x-4 bottom-0 z-50 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[480px] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[70vh] sm:max-h-[60vh] flex flex-col animate-slide-up">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+                    <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors">
                         <i className="bi bi-x-lg text-xs"></i>
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-5 py-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                <div className="flex-1 overflow-y-auto px-5 py-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
                     {children}
                 </div>
             </div>

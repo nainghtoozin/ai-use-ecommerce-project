@@ -96,15 +96,15 @@ export default function ComboBuilder({
     return (
         <div className="space-y-4">
             {/* Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50/50 to-amber-50/50">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-orange-50/50 to-amber-50/50">
                     <div className="flex items-center gap-3">
                         <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
                             <Gift className="w-4 h-4 text-orange-600" />
                         </div>
                         <div>
-                            <h3 className="text-base font-semibold text-gray-900">Combo Builder</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">Select existing products or specific variants to build your bundle</p>
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Combo Builder</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Select existing products or specific variants to build your bundle</p>
                         </div>
                     </div>
                 </div>
@@ -120,11 +120,11 @@ export default function ComboBuilder({
                     {/* Empty state */}
                     {localItems.length === 0 && (
                         <div className="text-center py-10">
-                            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                            <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
                                 <Package className="w-7 h-7 text-gray-300" />
                             </div>
-                            <p className="text-sm font-medium text-gray-600">No components yet</p>
-                            <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">No components yet</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
                                 Search and add products or specific variants above to start building your combo
                             </p>
                         </div>
@@ -134,7 +134,7 @@ export default function ComboBuilder({
                     {localItems.length > 0 && (
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-gray-500">
+                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                     {localItems.length} component{localItems.length !== 1 ? 's' : ''}
                                 </p>
                             </div>

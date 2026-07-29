@@ -15,12 +15,12 @@ export default function AdminLayout({ children, header = null }) {
                     --admin-theme-rgb: var(--theme-color-rgb, 59, 130, 246);
                 }
             `}</style>
-            <div className="min-h-screen flex bg-gray-100">
+            <div className="min-h-screen flex bg-gray-100 dark:bg-gray-800">
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0">
                     <AdminHeader />
                     {header && (
-                        <div className="bg-white border-b border-gray-200">
+                        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
                                 {header}
                             </div>

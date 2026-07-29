@@ -236,19 +236,19 @@ export default function SettingsEdit({ settings = {} }) {
 
   const renderField = (name, label, type = 'text', options = {}) => (
     <div className={options.colSpan || 'col-span-1'}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       {type === 'textarea' ? (
         <textarea
           value={data[name]}
           onChange={(e) => setData(name, e.target.value)}
           rows={options.rows || 3}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         />
       ) : type === 'select' ? (
         <select
           value={data[name]}
           onChange={(e) => setData(name, e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         >
           {options.options?.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -262,15 +262,15 @@ export default function SettingsEdit({ settings = {} }) {
             onChange={(e) => setData(name, e.target.checked)}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgba(var(--theme-color-rgb,59,130,246)/0.3)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--theme-color,#3B82F6)]"></div>
-          <span className="ml-3 text-sm text-gray-500">{options.switchLabel || ''}</span>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgba(var(--theme-color-rgb,59,130,246)/0.3)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-700 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--theme-color,#3B82F6)]"></div>
+          <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{options.switchLabel || ''}</span>
         </label>
       ) : (
         <input
           type={type}
           value={data[name]}
           onChange={(e) => setData(name, e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         />
       )}
       {errors[name] && <p className="mt-1 text-sm text-red-600">{errors[name]}</p>}
@@ -282,13 +282,13 @@ export default function SettingsEdit({ settings = {} }) {
       <Head title="Website Settings" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Website Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage all your website settings from one place.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Website Settings</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage all your website settings from one place.</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
           {/* Tabs */}
-          <div className="border-b border-gray-200 overflow-x-auto">
+          <div className="border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
             <nav className="flex space-x-1 px-4 min-w-max">
               {TABS.map(tab => (
                 <button
@@ -313,7 +313,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'general' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">General Settings</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">General Settings</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('site_name', 'Site Name')}
                     {renderField('site_tagline', 'Site Tagline')}
@@ -337,54 +337,54 @@ export default function SettingsEdit({ settings = {} }) {
                       />
                     </div>
                     <div className="col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency Name</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency Name</label>
                       <input
                         type="text"
                         value={CURRENCY_MAP[data.currency_code]?.name || ''}
                         readOnly
-                        className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        className="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                       />
                     </div>
                     <div className="col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency Symbol</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency Symbol</label>
                       <input
                         type="text"
                         value={data.currency_symbol}
                         readOnly
-                        className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        className="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                       />
                       {errors.currency_symbol && <p className="mt-1 text-sm text-red-600">{errors.currency_symbol}</p>}
                     </div>
                     <div className="col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Decimal Places</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Decimal Places</label>
                       <input
                         type="text"
                         value={CURRENCY_MAP[data.currency_code]?.decimalPlaces ?? ''}
                         readOnly
-                        className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        className="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2 bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                       />
                     </div>
 
                     {/* Theme Color Picker */}
                     <div className="col-span-1 md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Theme Color</label>
                       <div className="flex flex-wrap items-start gap-4">
                         <div className="flex flex-col items-center gap-2">
                           <div
-                            className="w-16 h-16 rounded-xl shadow-inner border-2 border-gray-200 transition-colors duration-200"
+                            className="w-16 h-16 rounded-xl shadow-inner border-2 border-gray-200 dark:border-gray-800 transition-colors duration-200"
                             style={{ backgroundColor: data.theme_color }}
                           />
                           <input
                             type="color"
                             value={data.theme_color}
                             onChange={(e) => setData('theme_color', e.target.value)}
-                            className="w-16 h-10 cursor-pointer rounded-lg border border-gray-300"
+                            className="w-16 h-10 cursor-pointer rounded-lg border border-gray-300 dark:border-gray-700"
                             title="Pick custom color"
                           />
                         </div>
 
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 mb-2">Preset Colors</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Preset Colors</p>
                           <div className="flex flex-wrap gap-2">
                             {PRESET_COLORS.map((color) => (
                               <button
@@ -407,26 +407,26 @@ export default function SettingsEdit({ settings = {} }) {
                               </button>
                             ))}
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">
-                            Selected: <span className="font-mono font-medium text-gray-600">{data.theme_color}</span>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                            Selected: <span className="font-mono font-medium text-gray-600 dark:text-gray-400">{data.theme_color}</span>
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-3">
-                        <label className="text-xs text-gray-500 mb-1 block">Custom Hex (optional)</label>
+                        <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Custom Hex (optional)</label>
                         <input
                           type="text"
                           value={data.theme_color}
                           onChange={(e) => setData('theme_color', e.target.value)}
                           placeholder="#3B82F6"
-                          className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
+                          className="w-full max-w-xs border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
                         />
                       </div>
 
                       {/* Live Preview */}
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-xs font-medium text-gray-500 mb-3">Live Preview</p>
+                      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">Live Preview</p>
                         <div className="flex flex-wrap gap-3 items-center">
                           <button
                             className="px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors"
@@ -467,7 +467,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'branding' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Branding</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Branding</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ImageUpload
                       name="logo"
@@ -511,7 +511,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'contact' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Contact Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('phone', 'Primary Phone')}
                     {renderField('secondary_phone', 'Secondary Phone')}
@@ -522,8 +522,8 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('telegram_username', 'Telegram Username')}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Address</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Address</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('address_line_1', 'Address Line 1')}
                     {renderField('address_line_2', 'Address Line 2')}
@@ -541,7 +541,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'about' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">About Us</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">About Us</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('about_title', 'About Title')}
                     {renderField('about_description', 'About Description', 'textarea', { rows: 5 })}
@@ -556,8 +556,8 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('company_name', 'Company Name')}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Mission & Vision</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Mission & Vision</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('mission_title', 'Mission Title')}
                     {renderField('mission_description', 'Mission Description', 'textarea')}
@@ -572,7 +572,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'social' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Social Media Links</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Social Media Links</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('facebook_url', 'Facebook URL')}
                     {renderField('twitter_url', 'Twitter URL')}
@@ -590,7 +590,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'seo' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">SEO Settings</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">SEO Settings</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {renderField('meta_title', 'Meta Title')}
                     {renderField('meta_description', 'Meta Description', 'textarea', { rows: 3 })}
@@ -599,8 +599,8 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('canonical_url', 'Canonical URL')}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Analytics</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Analytics</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {renderField('google_analytics_id', 'Google Analytics ID')}
                     {renderField('google_tag_manager_id', 'Google Tag Manager ID')}
@@ -614,7 +614,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'policies' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Website Policies</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Website Policies</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('privacy_policy', 'Privacy Policy', 'textarea', { rows: 5 })}
                     {renderField('terms_conditions', 'Terms & Conditions', 'textarea', { rows: 5 })}
@@ -629,7 +629,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'homepage' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Hero Section</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Hero Section</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('hero_title', 'Hero Title')}
                     {renderField('hero_subtitle', 'Hero Subtitle', 'textarea')}
@@ -637,11 +637,11 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('hero_button_link', 'Hero Button Link')}
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Hero Images
-                      <span className="text-gray-400 font-normal ml-1">({totalHeroCount}/{MAX_HERO_IMAGES})</span>
+                      <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">({totalHeroCount}/{MAX_HERO_IMAGES})</span>
                     </label>
-                    <p className="text-xs text-gray-500 mb-3">Upload up to {MAX_HERO_IMAGES} images for the homepage hero carousel. Click an image to replace it. Drag to reorder or use the arrow buttons.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Upload up to {MAX_HERO_IMAGES} images for the homepage hero carousel. Click an image to replace it. Drag to reorder or use the arrow buttons.</p>
 
                     {/* Preview Grid */}
                     {heroItems.length > 0 && (
@@ -649,7 +649,7 @@ export default function SettingsEdit({ settings = {} }) {
                         {heroItems.map((item, idx) => {
                           const previewUrl = item.type === 'new' ? URL.createObjectURL(item.file) : assetUrl(item.url);
                           return (
-                          <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow">
+                          <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 shadow-sm hover:shadow-md transition-shadow">
                             {/* Cover badge */}
                             {idx === 0 && (
                               <span className="absolute top-1 left-1 z-10 bg-yellow-500 text-white text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow">
@@ -685,7 +685,7 @@ export default function SettingsEdit({ settings = {} }) {
                                 />
                                 {/* Hover overlay */}
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white/20 backdrop-blur-sm rounded-full p-2 hover:bg-white/30">
+                                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white dark:bg-gray-900/20 backdrop-blur-sm rounded-full p-2 hover:bg-white dark:bg-gray-900/30">
                                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
@@ -695,7 +695,7 @@ export default function SettingsEdit({ settings = {} }) {
                             </label>
 
                             {/* Bottom toolbar */}
-                            <div className="flex items-center justify-between px-2 py-1.5 bg-gray-50 border-t border-gray-100">
+                            <div className="flex items-center justify-between px-2 py-1.5 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800">
                               <div className="flex items-center gap-0.5">
                                 <button
                                   type="button"
@@ -704,9 +704,9 @@ export default function SettingsEdit({ settings = {} }) {
                                   className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                   title="Move left"
                                 >
-                                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                  <svg className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                                 </button>
-                                <span className="text-[11px] text-gray-400 font-mono w-4 text-center select-none">{idx + 1}</span>
+                                <span className="text-[11px] text-gray-400 dark:text-gray-500 font-mono w-4 text-center select-none">{idx + 1}</span>
                                 <button
                                   type="button"
                                   onClick={() => moveHeroItem(item.id, 1)}
@@ -714,7 +714,7 @@ export default function SettingsEdit({ settings = {} }) {
                                   className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                   title="Move right"
                                 >
-                                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                  <svg className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                                 </button>
                                 {idx > 0 && (
                                   <button
@@ -733,7 +733,7 @@ export default function SettingsEdit({ settings = {} }) {
                                 className="p-1 rounded hover:bg-red-100 transition-colors group/delete"
                                 title="Remove"
                               >
-                                <svg className="w-3.5 h-3.5 text-gray-400 group-hover/delete:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                <svg className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 group-hover/delete:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
                             </div>
                           </div>
@@ -762,14 +762,14 @@ export default function SettingsEdit({ settings = {} }) {
                           className="hidden"
                         />
                         <div className="text-center">
-                          <svg className="mx-auto h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="mx-auto h-6 w-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3" />
                           </svg>
-                          <p className="mt-1 text-sm text-gray-600">
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                             <span className="font-medium text-blue-600">Click to upload</span> or drag & drop
                           </p>
-                          <p className="mt-0.5 text-xs text-gray-400">PNG, JPG, WEBP up to 2MB</p>
+                          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">PNG, JPG, WEBP up to 2MB</p>
                         </div>
                       </label>
                     )}
@@ -777,8 +777,8 @@ export default function SettingsEdit({ settings = {} }) {
                     {errors.hero_images && <p className="mt-2 text-sm text-red-600">{errors.hero_images}</p>}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Info Cards</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Info Cards</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {renderField('shipping_info', 'Shipping Info', 'textarea', { rows: 2 })}
                     {renderField('secure_payment_info', 'Secure Payment Info', 'textarea', { rows: 2 })}
@@ -792,7 +792,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'footer' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Footer Logo</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Footer Logo</h3>
                   <div className="max-w-xs">
                     <ImageUpload
                       name="footer_logo"
@@ -804,8 +804,8 @@ export default function SettingsEdit({ settings = {} }) {
                     />
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Footer Content</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Footer Content</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {renderField('footer_description', 'Footer Description', 'textarea', { rows: 3 })}
                     {renderField('footer_extra_text', 'Extra Text (About Us)', 'textarea', { rows: 4 })}
@@ -819,7 +819,7 @@ export default function SettingsEdit({ settings = {} }) {
             {activeTab === 'system' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Order Settings</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Order Settings</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('free_shipping_threshold', 'Free Shipping Threshold', 'number')}
                     {renderField('default_shipping_fee', 'Default Shipping Fee', 'number')}
@@ -827,8 +827,8 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('guest_checkout_enabled', 'Guest Checkout', 'switch', { switchLabel: 'Allow guest checkout' })}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">System Options</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">System Options</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('allow_registration', 'User Registration', 'switch', { switchLabel: 'Allow new user registration' })}
                     {renderField('enable_reviews', 'Product Reviews', 'switch', { switchLabel: 'Enable product reviews' })}
@@ -836,8 +836,8 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('enable_compare', 'Compare Products', 'switch', { switchLabel: 'Enable product comparison' })}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Maintenance Mode</h3>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Maintenance Mode</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {renderField('maintenance_mode', 'Maintenance Mode', 'switch', { switchLabel: 'Put website in maintenance mode' })}
                     {renderField('maintenance_message', 'Maintenance Message', 'textarea', { rows: 2 })}
@@ -847,7 +847,7 @@ export default function SettingsEdit({ settings = {} }) {
             )}
 
             {/* Submit */}
-            <div className="flex justify-end pt-6 border-t border-gray-200 mt-8">
+            <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-800 mt-8">
               <button
                 type="submit"
                 disabled={processing}

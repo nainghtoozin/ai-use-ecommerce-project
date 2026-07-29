@@ -16,7 +16,7 @@ function formatBytes(v) {
 function ProgressBar({ value, max }) {
     const pct = max > 0 ? Math.min(Math.round((value / max) * 100), 100) : 0;
     return (
-        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div className="h-full rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
         </div>
     );
@@ -25,7 +25,7 @@ function ProgressBar({ value, max }) {
 function StepIcon({ step, current }) {
     if (step < current) return <Check className="w-4 h-4 text-white" />;
     if (step === current) return <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-blue-200" />;
-    return <div className="w-4 h-4 bg-gray-100 rounded-full border-2 border-gray-200" />;
+    return <div className="w-4 h-4 bg-gray-100 dark:bg-gray-800 rounded-full border-2 border-gray-200 dark:border-gray-800" />;
 }
 
 function StepLine({ step, current }) {
@@ -57,7 +57,7 @@ function CopyButton({ text }) {
     return (
         <button
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
             aria-label={`Copy reference number ${text}`}
         >
             {copied ? <CheckCheck className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -107,17 +107,17 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
 
             <div className="p-6 lg:p-8 space-y-6 max-w-4xl mx-auto">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
-                    <p className="text-sm text-gray-500 mt-1">Review your order before proceeding to payment</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Checkout</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review your order before proceeding to payment</p>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-6">
                     <div className="flex items-center justify-between">
                         {steps.map((s, i) => (
                             <div key={s.key} className="flex items-center">
                                 <div className="flex flex-col items-center gap-1.5">
                                     <StepIcon step={i} current={1} />
-                                    <span className={`text-[10px] font-medium ${i <= 1 ? 'text-blue-600' : 'text-gray-400'}`}>{s.label}</span>
+                                    <span className={`text-[10px] font-medium ${i <= 1 ? 'text-blue-600' : 'text-gray-400 dark:text-gray-500'}`}>{s.label}</span>
                                 </div>
                                 {i < steps.length - 1 && <StepLine step={i} current={1} />}
                             </div>
@@ -127,28 +127,28 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">Order Summary</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Order Summary</h2>
                             </div>
                             <div className="p-6">
                                 <div className="flex items-start justify-between mb-4">
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h3 className="text-lg font-bold text-gray-900">{selectedPlan?.name}</h3>
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedPlan?.name}</h3>
                                             <StatusBadge status={subscription?.status || 'active'} size="sm" />
                                         </div>
-                                        <p className="text-sm text-gray-500 mt-0.5">{selectedPlan?.description}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{selectedPlan?.description}</p>
                                     </div>
                                 </div>
 
                                 <div className="flex items-baseline gap-1 mb-6">
-                                    <span className="text-3xl font-extrabold text-gray-900">
+                                    <span className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                                         {selectedPlan?.monthly_price === 0 ? 'Free' :
                                             selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                     </span>
                                     {selectedPlan?.monthly_price > 0 && (
-                                        <span className="text-sm text-gray-400">/month</span>
+                                        <span className="text-sm text-gray-400 dark:text-gray-500">/month</span>
                                     )}
                                     {hasYearlySavings && (
                                         <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700 rounded-full">
@@ -158,10 +158,10 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                 </div>
 
                                 {intent && (
-                                    <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+                                    <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-3 flex items-center justify-between">
                                         <div>
-                                            <span className="text-xs text-gray-400">Reference Number</span>
-                                            <p className="text-sm font-mono font-semibold text-gray-900">{intent.reference_number}</p>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">Reference Number</span>
+                                            <p className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">{intent.reference_number}</p>
                                         </div>
                                         <CopyButton text={intent.reference_number} />
                                     </div>
@@ -169,9 +169,9 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">What's Included</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">What's Included</h2>
                             </div>
                             <div className="p-6">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
@@ -184,11 +184,11 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                                         <Check className="w-3 h-3 text-emerald-600" />
                                                     </span>
                                                 ) : (
-                                                    <span className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                    <span className="w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                                                         <div className="w-2 h-0.5 bg-gray-300 rounded" />
                                                     </span>
                                                 )}
-                                                <span className={`text-sm ${f.enabled ? 'text-gray-900' : 'text-gray-400'}`}>{def?.label || f.key}</span>
+                                                <span className={`text-sm ${f.enabled ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>{def?.label || f.key}</span>
                                             </div>
                                         );
                                     })}
@@ -196,9 +196,9 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">Plan Limits</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Plan Limits</h2>
                             </div>
                             <div className="p-6">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -217,8 +217,8 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                         return (
                                             <div key={key}>
                                                 <div className="flex items-center justify-between mb-1">
-                                                    <span className="text-sm text-gray-600">{label}</span>
-                                                    <span className={`text-sm font-semibold ${unlimited ? 'text-blue-600' : 'text-gray-900'}`}>{display}</span>
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
+                                                    <span className={`text-sm font-semibold ${unlimited ? 'text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}>{display}</span>
                                                 </div>
                                                 {!unlimited && val > 0 && <ProgressBar value={val} max={val} />}
                                                 {unlimited && <div className="w-full h-2 bg-gradient-to-r from-blue-200 to-blue-100 rounded-full opacity-60" />}
@@ -230,16 +230,16 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                         </div>
 
                         {currentPlan && gainedFeatures.length > 0 && (
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="px-6 py-4 border-b border-gray-100">
-                                    <h2 className="text-base font-semibold text-gray-900">What You'll Gain</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">What You'll Gain</h2>
                                 </div>
                                 <div className="p-6">
                                     <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 rounded-lg">
                                         <ArrowRight className="w-5 h-5 text-blue-500 flex-shrink-0" />
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-900">{currentPlan.name}</span>
-                                            <span className="text-gray-400 mx-2">→</span>
+                                            <span className="font-medium text-gray-900 dark:text-gray-100">{currentPlan.name}</span>
+                                            <span className="text-gray-400 dark:text-gray-500 mx-2">→</span>
                                             <span className="font-medium text-blue-600">{selectedPlan?.name}</span>
                                         </div>
                                     </div>
@@ -247,7 +247,7 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                         {gainedFeatures.map(f => (
                                             <div key={f.key} className="flex items-center gap-2 text-sm">
                                                 <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                                                <span className="text-gray-700">{f.label}</span>
+                                                <span className="text-gray-700 dark:text-gray-300">{f.label}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -255,9 +255,9 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                             </div>
                         )}
 
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">Next Steps</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Next Steps</h2>
                             </div>
                             <div className="p-6">
                                 <div className="space-y-0">
@@ -275,8 +275,8 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                                     <Icon className={`w-4 h-4 ${step.color}`} />
                                                 </div>
                                                 <div className="pt-1.5">
-                                                    <p className="text-sm font-semibold text-gray-900">{step.label}</p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{step.label}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{step.desc}</p>
                                                 </div>
                                             </div>
                                         );
@@ -287,44 +287,44 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                     </div>
 
                     <div className="space-y-6">
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <h2 className="text-base font-semibold text-gray-900">Price Breakdown</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Price Breakdown</h2>
                             </div>
                             <div className="p-6">
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">{selectedPlan?.name} Plan</span>
-                                        <span className="font-semibold text-gray-900">
+                                        <span className="text-gray-600 dark:text-gray-400">{selectedPlan?.name} Plan</span>
+                                        <span className="font-semibold text-gray-900 dark:text-gray-100">
                                             {selectedPlan?.monthly_price === 0 ? 'Free' :
                                                 selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Billing Cycle</span>
-                                        <span className="font-medium text-gray-700 capitalize">{intent?.billing_cycle || 'monthly'}</span>
+                                        <span className="text-gray-400 dark:text-gray-500">Billing Cycle</span>
+                                        <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">{intent?.billing_cycle || 'monthly'}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Currency</span>
-                                        <span className="font-medium text-gray-700">{intent?.currency || 'MMK'}</span>
+                                        <span className="text-gray-400 dark:text-gray-500">Currency</span>
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">{intent?.currency || 'MMK'}</span>
                                     </div>
-                                    <div className="border-t border-gray-100 pt-3">
+                                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold text-gray-900">Subtotal</span>
-                                            <span className="text-sm font-semibold text-gray-900">
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Subtotal</span>
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                                 {selectedPlan?.monthly_price === 0 ? 'Free' :
                                                     selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between text-xs text-gray-400">
+                                    <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
                                         <span>Tax</span>
                                         <span>Calculated at payment</span>
                                     </div>
-                                    <div className="border-t border-gray-100 pt-3">
+                                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-base font-bold text-gray-900">Total</span>
-                                            <span className="text-base font-bold text-gray-900">
+                                            <span className="text-base font-bold text-gray-900 dark:text-gray-100">Total</span>
+                                            <span className="text-base font-bold text-gray-900 dark:text-gray-100">
                                                 {selectedPlan?.monthly_price === 0 ? 'Free' :
                                                     selectedPlan?.monthly_price !== null ? formatCurrency(selectedPlan.monthly_price, pc) : '—'}
                                             </span>
@@ -340,18 +340,18 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                         </div>
 
                         {currentPlan && (
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="px-6 py-4 border-b border-gray-100">
-                                    <h3 className="text-sm font-semibold text-gray-900">Plan Comparison</h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Plan Comparison</h3>
                                 </div>
                                 <div className="p-4">
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="text-gray-500">Current</span>
-                                            <span className="font-semibold text-gray-700">{currentPlan.name}</span>
+                                            <span className="text-gray-500 dark:text-gray-400">Current</span>
+                                            <span className="font-semibold text-gray-700 dark:text-gray-300">{currentPlan.name}</span>
                                         </div>
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="text-gray-500">Selected</span>
+                                            <span className="text-gray-500 dark:text-gray-400">Selected</span>
                                             <span className="font-semibold text-blue-600">{selectedPlan?.name}</span>
                                         </div>
                                     </div>
@@ -364,11 +364,11 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                                             const better = selected === null || (selected !== null && current !== null && selected >= current);
                                             return (
                                                 <div key={label} className="flex items-center justify-between">
-                                                    <span className="text-xs text-gray-500">{label}</span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-gray-400">{fmt(current)}</span>
+                                                        <span className="text-xs text-gray-400 dark:text-gray-500">{fmt(current)}</span>
                                                         <ArrowRight className="w-3 h-3 text-gray-300" />
-                                                        <span className={`text-xs font-semibold ${better ? 'text-green-600' : 'text-gray-700'}`}>{fmt(selected)}</span>
+                                                        <span className={`text-xs font-semibold ${better ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>{fmt(selected)}</span>
                                                         {better && selected !== current && <Check className="w-3 h-3 text-green-500" />}
                                                     </div>
                                                 </div>
@@ -401,7 +401,7 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
                             </button>
                             <button
                                 onClick={handleBack}
-                                className="w-full px-4 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                className="w-full px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
                             >
                                 Back to Plans
                             </button>

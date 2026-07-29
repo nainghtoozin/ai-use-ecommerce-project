@@ -77,21 +77,21 @@ export default function Reports({ promotions, products, categories }) {
     };
 
     function TrendChart({ data: trendData }) {
-        if (!trendData?.length) return <p className="text-sm text-gray-500 text-center py-8">No trend data available</p>;
+        if (!trendData?.length) return <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">No trend data available</p>;
         const maxDiscount = Math.max(...trendData.map(d => d.total_discount), 1);
         return (
             <div className="space-y-2">
                 {trendData.map(d => (
                     <div key={d.date} className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500 w-20 flex-shrink-0">{d.date}</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-20 flex-shrink-0">{d.date}</span>
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
                             <div
                                 className="h-full bg-blue-500 rounded-full transition-all duration-500"
                                 style={{ width: `${(d.total_discount / maxDiscount) * 100}%` }}
                             ></div>
                         </div>
-                        <span className="text-xs font-medium text-gray-700 w-24 text-right">{formatMoney(d.total_discount)}</span>
-                        <span className="text-xs text-gray-400 w-16 text-right">({d.order_count})</span>
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-24 text-right">{formatMoney(d.total_discount)}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 w-16 text-right">({d.order_count})</span>
                     </div>
                 ))}
             </div>
@@ -110,7 +110,7 @@ export default function Reports({ promotions, products, categories }) {
             free_shipping: 'Free Shipping',
         };
         return (
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[type] || 'bg-gray-100 text-gray-700'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[type] || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
                 {labels[type] || type}
             </span>
         );
@@ -124,38 +124,38 @@ export default function Reports({ promotions, products, categories }) {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Promotion Reports</h1>
-                        <p className="text-sm text-gray-500 mt-1">Analytics and performance metrics for promotions and coupons.</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Promotion Reports</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Analytics and performance metrics for promotions and coupons.</p>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Start Date</label>
                             <input
                                 type="date"
                                 value={filters.start_date}
                                 onChange={e => handleFilterChange('start_date', e.target.value)}
-                                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="w-full rounded-lg border-gray-200 dark:border-gray-800 text-sm focus:border-blue-500 focus:ring-blue-500"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">End Date</label>
                             <input
                                 type="date"
                                 value={filters.end_date}
                                 onChange={e => handleFilterChange('end_date', e.target.value)}
-                                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="w-full rounded-lg border-gray-200 dark:border-gray-800 text-sm focus:border-blue-500 focus:ring-blue-500"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Promotion</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Promotion</label>
                             <select
                                 value={filters.promotion_id}
                                 onChange={e => handleFilterChange('promotion_id', e.target.value)}
-                                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="w-full rounded-lg border-gray-200 dark:border-gray-800 text-sm focus:border-blue-500 focus:ring-blue-500"
                             >
                                 <option value="">All Promotions</option>
                                 {promotions.map(p => (
@@ -164,11 +164,11 @@ export default function Reports({ promotions, products, categories }) {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Product</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Product</label>
                             <select
                                 value={filters.product_id}
                                 onChange={e => handleFilterChange('product_id', e.target.value)}
-                                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="w-full rounded-lg border-gray-200 dark:border-gray-800 text-sm focus:border-blue-500 focus:ring-blue-500"
                             >
                                 <option value="">All Products</option>
                                 {products.map(p => (
@@ -177,11 +177,11 @@ export default function Reports({ promotions, products, categories }) {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Category</label>
                             <select
                                 value={filters.category_id}
                                 onChange={e => handleFilterChange('category_id', e.target.value)}
-                                className="w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="w-full rounded-lg border-gray-200 dark:border-gray-800 text-sm focus:border-blue-500 focus:ring-blue-500"
                             >
                                 <option value="">All Categories</option>
                                 {categories.map(c => (
@@ -194,7 +194,7 @@ export default function Reports({ promotions, products, categories }) {
 
                 {loading && (
                     <div className="flex items-center justify-center py-12">
-                        <div className="flex items-center gap-3 text-gray-500">
+                        <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
                             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                             <span>Loading report data...</span>
                         </div>
@@ -208,13 +208,13 @@ export default function Reports({ promotions, products, categories }) {
                             {statCards.map((stat, idx) => {
                                 const colors = colorMap[stat.color];
                                 return (
-                                    <div key={idx} className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 hover:shadow-lg transition-shadow duration-200">
+                                    <div key={idx} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5 hover:shadow-lg transition-shadow duration-200">
                                         <div className={`p-2 lg:p-2.5 rounded-lg ${colors.bg} inline-flex`}>
                                             <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
                                         </div>
-                                        <p className="text-lg sm:text-xl font-bold text-gray-900 mt-2 lg:mt-3 break-words">{stat.value}</p>
-                                        <p className="text-xs sm:text-sm text-gray-500 mt-1">{stat.label}</p>
-                                        {stat.sub && <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>}
+                                        <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mt-2 lg:mt-3 break-words">{stat.value}</p>
+                                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">{stat.label}</p>
+                                        {stat.sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{stat.sub}</p>}
                                     </div>
                                 );
                             })}
@@ -223,34 +223,34 @@ export default function Reports({ promotions, products, categories }) {
                         {/* Two Column: Top Promotions + Coupon Usage */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Top Performing Promotions */}
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                                    <h2 className="text-lg font-semibold text-gray-900">Top Performing Promotions</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Performing Promotions</h2>
                                 </div>
                                 <div className="p-5">
                                     {!data.top_promotions?.length ? (
                                         <div className="text-center py-8">
                                             <i className="bi bi-trophy text-4xl text-gray-300"></i>
-                                            <p className="text-sm text-gray-500 mt-2">No promotion usage data</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No promotion usage data</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
                                             {data.top_promotions.map((p, i) => (
-                                                <div key={p.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <div key={p.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center text-sm font-bold">
                                                         {i + 1}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{p.name}</p>
                                                         <div className="flex items-center gap-2 mt-0.5">
-                                                            {p.code && <span className="text-xs font-mono text-gray-400">{p.code}</span>}
+                                                            {p.code && <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{p.code}</span>}
                                                             <TypeBadge type={p.type} />
-                                                            <span className="text-xs text-gray-400">{p.type === 'percentage' ? `${p.value}%` : formatCurrency(p.value, cc)}</span>
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500">{p.type === 'percentage' ? `${p.value}%` : formatCurrency(p.value, cc)}</span>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-sm font-bold text-gray-900">{formatMoney(p.total_discount)}</p>
-                                                        <p className="text-xs text-gray-500">{p.usage_count} uses · {p.unique_users} users</p>
+                                                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatMoney(p.total_discount)}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{p.usage_count} uses · {p.unique_users} users</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -260,33 +260,33 @@ export default function Reports({ promotions, products, categories }) {
                             </div>
 
                             {/* Coupon Usage */}
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                                    <h2 className="text-lg font-semibold text-gray-900">Usage by Coupon</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Usage by Coupon</h2>
                                 </div>
                                 <div className="p-5">
                                     {!data.coupon_usage?.length ? (
                                         <div className="text-center py-8">
                                             <i className="bi bi-ticket text-4xl text-gray-300"></i>
-                                            <p className="text-sm text-gray-500 mt-2">No coupon usage data</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No coupon usage data</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
                                             {data.coupon_usage.map((c, i) => (
-                                                <div key={c.code + i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <div key={c.code + i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-white flex items-center justify-center text-sm font-bold">
                                                         {i + 1}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{c.name}</p>
                                                         <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-xs font-mono text-gray-400">{c.code}</span>
+                                                            <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{c.code}</span>
                                                             <TypeBadge type={c.type} />
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-sm font-bold text-gray-900">{formatMoney(c.total_discount)}</p>
-                                                        <p className="text-xs text-gray-500">{c.usage_count} uses</p>
+                                                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatMoney(c.total_discount)}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{c.usage_count} uses</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -299,9 +299,9 @@ export default function Reports({ promotions, products, categories }) {
                         {/* Three Column Row */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             {/* Daily Discount Trend */}
-                            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200">
-                                <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                                    <h2 className="text-lg font-semibold text-gray-900">Daily Discount Trend</h2>
+                            <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Discount Trend</h2>
                                 </div>
                                 <div className="p-5">
                                     <TrendChart data={data.daily_trend} />
@@ -309,25 +309,25 @@ export default function Reports({ promotions, products, categories }) {
                             </div>
 
                             {/* Type Breakdown */}
-                            <div className="bg-white rounded-xl border border-gray-200">
-                                <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                                    <h2 className="text-lg font-semibold text-gray-900">By Type</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">By Type</h2>
                                 </div>
                                 <div className="p-5">
                                     {!data.type_breakdown?.length ? (
                                         <div className="text-center py-8">
                                             <i className="bi bi-pie-chart text-4xl text-gray-300"></i>
-                                            <p className="text-sm text-gray-500 mt-2">No data</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No data</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
                                             {data.type_breakdown.map(t => (
-                                                <div key={t.type} className="p-4 rounded-lg bg-gray-50">
+                                                <div key={t.type} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-950">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <TypeBadge type={t.type} />
-                                                        <span className="text-sm font-bold text-gray-900">{formatMoney(t.total_discount)}</span>
+                                                        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatMoney(t.total_discount)}</span>
                                                     </div>
-                                                    <p className="text-xs text-gray-500">{t.usage_count} uses</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t.usage_count} uses</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -337,35 +337,35 @@ export default function Reports({ promotions, products, categories }) {
                         </div>
 
                         {/* Monthly Comparison */}
-                        <div className="bg-white rounded-xl border border-gray-200">
-                            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-900">Monthly Comparison</h2>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Monthly Comparison</h2>
                             </div>
                             <div className="p-5 overflow-x-auto">
                                 {!data.monthly_comparison?.length ? (
                                     <div className="text-center py-8">
                                         <i className="bi bi-bar-chart text-4xl text-gray-300"></i>
-                                        <p className="text-sm text-gray-500 mt-2">No monthly data</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No monthly data</p>
                                     </div>
                                 ) : (
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="border-b border-gray-200">
-                                                <th className="text-left py-3 px-2 font-medium text-gray-500">Month</th>
-                                                <th className="text-right py-3 px-2 font-medium text-gray-500">Total Orders</th>
-                                                <th className="text-right py-3 px-2 font-medium text-gray-500">Discounted</th>
-                                                <th className="text-right py-3 px-2 font-medium text-gray-500">Conv. Rate</th>
-                                                <th className="text-right py-3 px-2 font-medium text-gray-500">Revenue</th>
-                                                <th className="text-right py-3 px-2 font-medium text-gray-500">Discounts Given</th>
-                                                <th className="text-right py-3 px-2 font-medium text-gray-500">Impact %</th>
+                                            <tr className="border-b border-gray-200 dark:border-gray-800">
+                                                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Month</th>
+                                                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Total Orders</th>
+                                                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Discounted</th>
+                                                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Conv. Rate</th>
+                                                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Revenue</th>
+                                                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Discounts Given</th>
+                                                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Impact %</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {data.monthly_comparison.map(m => (
-                                                <tr key={m.month} className="border-b border-gray-100 hover:bg-gray-50">
-                                                    <td className="py-3 px-2 font-medium text-gray-900">{m.label}</td>
-                                                    <td className="py-3 px-2 text-right text-gray-700">{m.total_orders}</td>
-                                                    <td className="py-3 px-2 text-right text-gray-700">{m.discounted_orders}</td>
+                                                <tr key={m.month} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:bg-gray-950">
+                                                    <td className="py-3 px-2 font-medium text-gray-900 dark:text-gray-100">{m.label}</td>
+                                                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">{m.total_orders}</td>
+                                                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">{m.discounted_orders}</td>
                                                     <td className="py-3 px-2 text-right">
                                                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                                                             m.conversion_rate > 30 ? 'bg-green-100 text-green-700' :
@@ -375,7 +375,7 @@ export default function Reports({ promotions, products, categories }) {
                                                             {m.conversion_rate}%
                                                         </span>
                                                     </td>
-                                                    <td className="py-3 px-2 text-right text-gray-700">{formatMoney(m.total_revenue)}</td>
+                                                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">{formatMoney(m.total_revenue)}</td>
                                                     <td className="py-3 px-2 text-right text-red-600 font-medium">{formatMoney(m.total_discounts)}</td>
                                                     <td className="py-3 px-2 text-right">
                                                         {m.total_revenue > 0
@@ -395,7 +395,7 @@ export default function Reports({ promotions, products, categories }) {
                 {!loading && !data && (
                     <div className="text-center py-16">
                         <i className="bi bi-bar-chart-line text-5xl text-gray-300"></i>
-                        <p className="text-gray-500 mt-3">Select a date range and click the filters to load report data.</p>
+                        <p className="text-gray-500 dark:text-gray-400 mt-3">Select a date range and click the filters to load report data.</p>
                     </div>
                 )}
             </div>

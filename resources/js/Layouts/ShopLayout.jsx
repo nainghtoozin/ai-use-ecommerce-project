@@ -6,7 +6,7 @@ export default function ShopLayout({ children }) {
     return (
         <>
             <FlashMessages />
-            <div className="min-h-screen flex flex-col bg-gray-50">
+            <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
                 <ShopNavbar />
                 <main className="flex-1">
                     <div className="py-2">

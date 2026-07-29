@@ -17,32 +17,32 @@ export default function NotificationSettings({ settings = {} }) {
             <Head title="Notification Settings" />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Notification Settings</h1>
-                    <p className="text-sm text-gray-500 mt-1">Configure how order notifications are delivered.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notification Settings</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure how order notifications are delivered.</p>
                 </div>
 
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
                             <input
                                 id="notifications_enabled"
                                 type="checkbox"
                                 checked={data.notifications_enabled === 'true'}
                                 onChange={(e) => setData('notifications_enabled', e.target.checked ? 'true' : 'false')}
-                                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-700 rounded focus:ring-blue-500"
                             />
                             <div>
-                                <label htmlFor="notifications_enabled" className="text-sm font-medium text-gray-900 cursor-pointer">
+                                <label htmlFor="notifications_enabled" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
                                     Enable Website Notifications
                                 </label>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                     When enabled, customer and admin bell notifications will be created after an order is placed.
                                 </p>
                                 {errors.notifications_enabled && <p className="mt-1 text-sm text-red-600">{errors.notifications_enabled}</p>}
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                             <button
                                 type="submit"
                                 disabled={processing}

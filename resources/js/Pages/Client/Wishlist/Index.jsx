@@ -32,9 +32,9 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
     const productTypeLabel = product.is_variable ? 'Multiple Options' : product.is_combo ? 'Bundle' : 'Single';
 
     return (
-        <div className="group relative bg-white rounded-xl border border-gray-100/80 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col">
+        <div className="group relative bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800/80 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col">
             <Link href={`/client/product/${product.id}`} className="block">
-                <div className="relative h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-100 overflow-hidden">
+                <div className="relative h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     {product.photo1_url ? (
                         <img
                             src={product.photo1_url}
@@ -54,7 +54,7 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
                             </span>
                         </div>
                     ) : (
-                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 text-gray-700 text-[10px] font-medium rounded-full shadow-sm z-10">
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white dark:bg-gray-900/90 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded-full shadow-sm z-10">
                             {productTypeLabel}
                         </div>
                     )}
@@ -70,15 +70,15 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
             <div className="p-3 flex flex-col gap-0">
                 <Link href={`/client/product/${product.id}`}>
                     {product.category?.name && (
-                        <span className="inline-block max-w-[8rem] truncate px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded-full mb-1">
+                        <span className="inline-block max-w-[8rem] truncate px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] font-medium rounded-full mb-1">
                             {product.category.name}
                         </span>
                     )}
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
                         {product.name}
                     </h3>
                     {product.brand?.name && (
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                             {product.brand.name}
                         </p>
                     )}
@@ -86,12 +86,12 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
 
                 <div className="mt-1.5">
                     <div className="flex items-baseline gap-1 flex-wrap">
-                        <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
+                        <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
                             {Number(displayPrice).toLocaleString()}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
                         {originalPrice && (
-                            <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
+                            <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto leading-tight">
                                 {formatCurrency(originalPrice, cc)}
                             </span>
                         )}
@@ -110,7 +110,7 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
                     {isOutOfStock ? (
                         <button
                             disabled
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
                         >
                             <ShoppingCart className="w-3.5 h-3.5" />
                             Out of Stock
@@ -152,7 +152,7 @@ function WishlistItemCard({ item, onRemove, onAddToCart, addingId, processingId 
                     <button
                         onClick={() => onRemove(item.product_id)}
                         disabled={processingId === product.id}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 text-gray-500 rounded-lg text-xs font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
                     >
                         {processingId === product.id ? (
                             <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
@@ -174,7 +174,7 @@ function SkeletonGrid() {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+                <div key={i} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden animate-pulse">
                     <div className="h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-200" />
                     <div className="p-3">
                         <div className="h-2.5 bg-gray-200 rounded w-1/3 mb-1.5" />
@@ -192,11 +192,11 @@ function SkeletonGrid() {
 function EmptyState() {
     return (
         <div className="text-center py-16">
-            <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+            <div className="mx-auto w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
                 <Heart className="w-10 h-10 text-gray-300" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h2>
-            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Your wishlist is empty</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
                 Save your favorite items here and come back to them later.
             </p>
             <Link
@@ -248,11 +248,11 @@ export default function WishlistIndex({ wishlistItems = [] }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                             <Heart className="w-6 h-6 text-red-500 fill-red-500" />
                             My Wishlist
                         </h1>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'}
                         </p>
                     </div>
@@ -286,7 +286,7 @@ export default function WishlistIndex({ wishlistItems = [] }) {
                             <button
                                 onClick={handleClear}
                                 disabled={clearing}
-                                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-xl text-sm font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
                             >
                                 {clearing ? (
                                     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">

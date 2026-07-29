@@ -72,15 +72,15 @@ export default function MediaSection({
         <>
             <div className="flex items-center justify-between mb-3">
                 <div>
-                    <h4 className="text-sm font-semibold text-gray-900">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         Gallery Images
                         {totalImages > 0 && (
-                            <span className="ml-1.5 text-xs font-normal text-gray-400">
+                            <span className="ml-1.5 text-xs font-normal text-gray-400 dark:text-gray-500">
                                 ({totalImages}/{MAX_IMAGES})
                             </span>
                         )}
                     </h4>
-                    <p className="text-xs text-gray-500 mt-0.5">Maximum 10 images</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Maximum 10 images</p>
                 </div>
                 {totalImages > 0 && (
                     <button
@@ -120,7 +120,7 @@ export default function MediaSection({
                                         <button
                                             type="button"
                                             onClick={() => handleExistingRemove(index)}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 transition-colors shadow-sm"
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-gray-900/90 hover:bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors shadow-sm"
                                             title="Remove image"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +131,7 @@ export default function MediaSection({
                                 )}
                                 {isRemoved && (
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-xs font-medium text-red-600 bg-white/90 px-2 py-1 rounded-md">Removed</span>
+                                        <span className="text-xs font-medium text-red-600 bg-white dark:bg-gray-900/90 px-2 py-1 rounded-md">Removed</span>
                                     </div>
                                 )}
                             </div>
@@ -175,8 +175,8 @@ export default function MediaSection({
             )}
 
             {totalImages >= MAX_IMAGES && (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-center">
-                    <p className="text-sm text-gray-500">Maximum {MAX_IMAGES} images reached</p>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 px-4 py-3 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Maximum {MAX_IMAGES} images reached</p>
                 </div>
             )}
         </>

@@ -62,10 +62,10 @@ export default function NotificationBell({ isAdmin = false }) {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-[22rem] sm:w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden origin-top-right">
-                    <div className="px-4 py-3 border-b border-gray-100 bg-white flex items-center justify-between">
+                <div className="absolute right-0 mt-2 w-[22rem] sm:w-96 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 z-50 overflow-hidden origin-top-right">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Notifications</h3>
                             {unreadCount > 0 && (
                                 <span className="text-[11px] font-medium bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
                                     {unreadCount} new
@@ -74,7 +74,7 @@ export default function NotificationBell({ isAdmin = false }) {
                         </div>
                         <div className="flex items-center gap-1">
                             {!loaded && (
-                                <span className="text-[11px] text-gray-400 animate-pulse">Loading...</span>
+                                <span className="text-[11px] text-gray-400 dark:text-gray-500 animate-pulse">Loading...</span>
                             )}
                             {notifications.length > 0 && (
                                 <button
@@ -91,30 +91,30 @@ export default function NotificationBell({ isAdmin = false }) {
                         {!loaded ? (
                             <div className="py-16 text-center">
                                 <div className="inline-block w-8 h-8 border-[3px] border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-                                <p className="mt-3 text-sm text-gray-400">Loading notifications...</p>
+                                <p className="mt-3 text-sm text-gray-400 dark:text-gray-500">Loading notifications...</p>
                             </div>
                         ) : notifications.length === 0 ? (
                             <div className="py-16 text-center">
-                                <div className="mx-auto w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                                <div className="mx-auto w-14 h-14 bg-gray-50 dark:bg-gray-950 rounded-full flex items-center justify-center mb-3">
                                     <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                     </svg>
                                 </div>
-                                <p className="text-sm font-medium text-gray-500">No notifications yet</p>
-                                <p className="text-xs text-gray-400 mt-1">We'll notify you when something arrives.</p>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No notifications yet</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">We'll notify you when something arrives.</p>
                             </div>
                         ) : (
                             <>
                                 {groupNotificationsByDate(displayNotifications).map(([label, items]) => (
                                     <div key={label}>
                                         <div className="px-4 pt-3 pb-1">
-                                            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+                                            <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{label}</span>
                                         </div>
                                         {items.map((notification) => (
                                             <div
                                                 key={notification.id}
                                                 onClick={() => handleClick(notification)}
-                                                className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-gray-50 active:bg-gray-100 ${
+                                                className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-gray-50 dark:bg-gray-950 active:bg-gray-100 ${
                                                     !notification.isRead ? 'bg-blue-50/40' : ''
                                                 }`}
                                             >
@@ -125,17 +125,17 @@ export default function NotificationBell({ isAdmin = false }) {
                                                 </div>
                                                 <div className="flex-1 min-w-0 pt-0.5">
                                                     <div className="flex items-start justify-between gap-2">
-                                                        <p className={`text-sm leading-tight ${!notification.isRead ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+                                                        <p className={`text-sm leading-tight ${!notification.isRead ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600'}`}>
                                                             {notification.title}
                                                         </p>
                                                         {!notification.isRead && (
                                                             <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">
                                                         {notification.message}
                                                     </p>
-                                                    <p className="text-[11px] text-gray-400 mt-1.5">
+                                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
                                                         {timeAgo(notification.createdAt)}
                                                     </p>
                                                 </div>
@@ -145,7 +145,7 @@ export default function NotificationBell({ isAdmin = false }) {
                                 ))}
                                 {notifications.length > 10 && (
                                     <div className="px-4 py-2.5 text-center border-t border-gray-50">
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">
                                             +{notifications.length - 10} more notification{notifications.length - 10 !== 1 ? 's' : ''}
                                         </span>
                                     </div>
@@ -154,7 +154,7 @@ export default function NotificationBell({ isAdmin = false }) {
                         )}
                     </div>
 
-                    <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 flex items-center justify-between">
+                    <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/80 flex items-center justify-between">
                         <Link
                             href={isAdmin ? adminUrl('/admin/notifications') : '/notifications'}
                             onClick={() => setOpen(false)}
@@ -167,14 +167,14 @@ export default function NotificationBell({ isAdmin = false }) {
                         </Link>
                         <div className="flex items-center gap-2">
                             {notifications.length > 0 && (
-                                <button onClick={clearAll} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                                <button onClick={clearAll} className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors">
                                     Clear all
                                 </button>
                             )}
                             <Link
                                 href={isAdmin ? adminUrl('/admin/orders') : '/orders'}
                                 onClick={() => setOpen(false)}
-                                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
                             >
                                 {isAdmin ? 'Manage orders' : 'My orders'}
                             </Link>

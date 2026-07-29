@@ -28,23 +28,23 @@ export default function StorefrontRegister() {
             <Head title={`Register - ${tenant.name}`} />
 
             <div className="mb-6 text-center">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                     Register at {tenant.name}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Create your account to start shopping
                 </p>
             </div>
 
             <form onSubmit={submit}>
                 <div>
-                    <label htmlFor="name" className="block font-medium text-sm text-gray-700">Name</label>
+                    <label htmlFor="name" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Name</label>
                     <input
                         id="name"
                         type="text"
                         name="name"
                         value={data.name}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="name"
                         onChange={(e) => setData('name', e.target.value)}
                         required
@@ -53,13 +53,13 @@ export default function StorefrontRegister() {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="email" className="block font-medium text-sm text-gray-700">Email</label>
+                    <label htmlFor="email" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Email</label>
                     <input
                         id="email"
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="username"
                         onChange={(e) => setData('email', e.target.value)}
                         required
@@ -68,13 +68,13 @@ export default function StorefrontRegister() {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="password" className="block font-medium text-sm text-gray-700">Password</label>
+                    <label htmlFor="password" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Password</label>
                     <input
                         id="password"
                         type="password"
                         name="password"
                         value={data.password}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="new-password"
                         onChange={(e) => setData('password', e.target.value)}
                         required
@@ -83,13 +83,13 @@ export default function StorefrontRegister() {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="password_confirmation" className="block font-medium text-sm text-gray-700">Confirm Password</label>
+                    <label htmlFor="password_confirmation" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Confirm Password</label>
                     <input
                         id="password_confirmation"
                         type="password"
                         name="password_confirmation"
                         value={data.password_confirmation}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="new-password"
                         onChange={(e) => setData('password_confirmation', e.target.value)}
                         required
@@ -101,13 +101,13 @@ export default function StorefrontRegister() {
                     <div className="text-sm">
                         <Link
                             href={route('storefront.index', { store_slug: tenant.slug })}
-                            className="underline text-gray-600 hover:text-gray-900 mr-3"
+                            className="underline text-gray-600 hover:text-gray-900 dark:text-gray-100 mr-3"
                         >
                             Back to store
                         </Link>
                         <Link
                             href={route('storefront.login', { store_slug: tenant.slug })}
-                            className="underline text-gray-600 hover:text-gray-900"
+                            className="underline text-gray-600 hover:text-gray-900 dark:text-gray-100"
                         >
                             Already registered?
                         </Link>

@@ -95,7 +95,7 @@ const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo })
         label = 'Single';
     }
     return (
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 text-gray-700 text-[10px] font-medium rounded-full shadow-sm z-10">
+        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white dark:bg-gray-900/90 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded-full shadow-sm z-10">
             {label}
         </div>
     );
@@ -110,15 +110,15 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
             <div className="mt-1.5">
                 <div className="flex items-baseline gap-1 flex-wrap">
                     {label && (
-                        <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{label}</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{label}</span>
                     )}
-                    <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
+                    <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
                         {formatCurrency(display || Number(product.price ?? 0), cc)}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
                 </div>
                 {original && (
-                    <span className="text-xs text-gray-400 line-through w-full sm:w-auto block leading-tight">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto block leading-tight">
                         {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
@@ -138,12 +138,12 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
         return (
             <div className="mt-1.5">
                 <div className="flex items-baseline gap-1 flex-wrap">
-                    <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
+                    <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
                         {formatCurrency(display || Number(product.price ?? 0), cc)}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
                     {product.display_price_summary?.base_price > 0 && (
-                        <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto leading-tight">
                             {Number(product.display_price_summary.base_price).toLocaleString()} <span className="text-[10px]">{cc.code}</span>
                         </span>
                     )}
@@ -171,12 +171,12 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     return (
         <div className="mt-1.5">
             <div className="flex items-baseline gap-1 flex-wrap">
-                    <span className="text-[17px] font-extrabold text-gray-900 leading-tight">
+                    <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
                         {display || Number(product.price ?? 0).toLocaleString()}
                     </span>
-                <span className="text-[10px] text-gray-400 font-medium">{cc.code}</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
                 {original && (
-                    <span className="text-xs text-gray-400 line-through w-full sm:w-auto leading-tight">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto leading-tight">
                         {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
@@ -257,12 +257,12 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
     };
 
     return (
-        <div className="group relative bg-white rounded-xl border border-gray-100/80 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col"
+        <div className="group relative bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800/80 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col"
              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; }}
              onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
         >
             <Link href={productUrl} className="block">
-                <div className="relative h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-100 overflow-hidden">
+                <div className="relative h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     {product.photo1_url ? (
                         <>
                             <img
@@ -275,7 +275,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
                             />
                             {!imageLoaded && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: 'var(--theme-color, #3B82F6)' }}></div>
+                                    <div className="w-6 h-6 border-2 border-gray-200 dark:border-gray-800 rounded-full animate-spin" style={{ borderTopColor: 'var(--theme-color, #3B82F6)' }}></div>
                                 </div>
                             )}
                         </>
@@ -283,7 +283,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="text-center">
                                 <i className="bi bi-image text-2xl text-gray-300"></i>
-                                <p className="mt-1 text-xs text-gray-400">No Image</p>
+                                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">No Image</p>
                             </div>
                         </div>
                     )}
@@ -333,15 +333,15 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
             <div className="p-3 flex flex-col gap-0">
                 <Link href={productUrl}>
                     {product.category?.name && (
-                        <span className="inline-block max-w-[8rem] truncate px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded-full mb-1">
+                        <span className="inline-block max-w-[8rem] truncate px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] font-medium rounded-full mb-1">
                             {product.category.name}
                         </span>
                     )}
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-theme transition-colors">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug group-hover:text-theme transition-colors">
                         {product.name}
                     </h3>
                     {product.brand?.name && (
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                             {product.brand.name}
                         </p>
                     )}
@@ -361,7 +361,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
                     {isOutOfStock ? (
                         <button
                             disabled
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
                         >
                             <i className="bi bi-x-circle text-xs"></i>
                             Out of Stock

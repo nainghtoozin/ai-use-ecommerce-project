@@ -37,7 +37,7 @@ export default function WorkspaceSwitcher({ collapsed = false }) {
             <div className="relative">
                 <button
                     onClick={() => setOpen(!open)}
-                    className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white dark:bg-gray-900/[0.06] transition-colors"
                     title={`${current?.tenant_name} — ${formatRole(current?.role_name)}`}
                 >
                     <Building2 className="w-4 h-4" />
@@ -82,7 +82,7 @@ export default function WorkspaceSwitcher({ collapsed = false }) {
             <div className="relative px-2.5">
                 <button
                     onClick={() => setOpen(!open)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors group"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white dark:bg-gray-900/[0.06] transition-colors group"
                 >
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
@@ -105,7 +105,7 @@ export default function WorkspaceSwitcher({ collapsed = false }) {
                                 <button
                                     key={m.tenant_id}
                                     onClick={() => handleSwitch(m.tenant_slug)}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[0.04] hover:text-white transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-300 hover:bg-white dark:bg-gray-900/[0.04] hover:text-white transition-colors"
                                 >
                                     <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
                                         style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>

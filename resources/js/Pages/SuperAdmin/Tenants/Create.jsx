@@ -47,39 +47,39 @@ export default function CreateTenant({ plans }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Create Merchant</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Create Merchant</h2>}>
             <Head title="Create Merchant" />
 
             <div className="py-6">
                 <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div className="border-b border-gray-200 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Store Information</h3>
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Store Information</h3>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Store Name *</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Name *</label>
                                         <input
                                             type="text"
                                             value={form.name}
                                             onChange={(e) => handleChange('name', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             required
                                         />
                                         {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slug *</label>
                                         <input
                                             type="text"
                                             value={form.slug}
                                             onChange={(e) => handleChange('slug', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             placeholder="my-store"
                                             required
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">Used for subdomain: my-store.yourdomain.com</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Used for subdomain: my-store.yourdomain.com</p>
                                         {form.slug && (
                                             <p className="text-xs text-blue-500 mt-1">
                                                 Store URL: /store/{form.slug}
@@ -91,23 +91,23 @@ export default function CreateTenant({ plans }) {
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Custom Domain</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Domain</label>
                                         <input
                                             type="text"
                                             value={form.domain}
                                             onChange={(e) => handleChange('domain', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                             placeholder="store.example.com"
                                         />
                                         {errors.domain && <p className="text-xs text-red-600 mt-1">{errors.domain}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Email</label>
                                         <input
                                             type="email"
                                             value={form.email}
                                             onChange={(e) => handleChange('email', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         />
                                         {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
                                     </div>
@@ -115,11 +115,11 @@ export default function CreateTenant({ plans }) {
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                                         <select
                                             value={form.status}
                                             onChange={(e) => handleChange('status', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         >
                                             <option value="active">Active</option>
                                             <option value="suspended">Suspended</option>
@@ -127,11 +127,11 @@ export default function CreateTenant({ plans }) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan</label>
                                         <select
                                             value={form.plan_id}
                                             onChange={(e) => handleChange('plan_id', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         >
                                             <option value="">No Plan</option>
                                             {plans.map((plan) => (
@@ -144,15 +144,15 @@ export default function CreateTenant({ plans }) {
                                 </div>
                             </div>
 
-                            <div className="border-b border-gray-200 pb-6">
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-medium text-gray-900">Merchant Admin Account</h3>
-                                    <label className="flex items-center gap-2 text-sm text-gray-600">
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Merchant Admin Account</h3>
+                                    <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                         <input
                                             type="checkbox"
                                             checked={form.create_admin}
                                             onChange={(e) => handleChange('create_admin', e.target.checked)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
                                         />
                                         Create admin user
                                     </label>
@@ -161,34 +161,34 @@ export default function CreateTenant({ plans }) {
                                 {form.create_admin && (
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Name *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Admin Name *</label>
                                             <input
                                                 type="text"
                                                 value={form.admin_name}
                                                 onChange={(e) => handleChange('admin_name', e.target.value)}
-                                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                                 required={form.create_admin}
                                             />
                                             {errors.admin_name && <p className="text-xs text-red-600 mt-1">{errors.admin_name}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Email *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Admin Email *</label>
                                             <input
                                                 type="email"
                                                 value={form.admin_email}
                                                 onChange={(e) => handleChange('admin_email', e.target.value)}
-                                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                                 required={form.create_admin}
                                             />
                                             {errors.admin_email && <p className="text-xs text-red-600 mt-1">{errors.admin_email}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password *</label>
                                             <input
                                                 type="password"
                                                 value={form.admin_password}
                                                 onChange={(e) => handleChange('admin_password', e.target.value)}
-                                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                                 required={form.create_admin}
                                                 minLength={8}
                                             />
@@ -201,7 +201,7 @@ export default function CreateTenant({ plans }) {
                             <div className="flex items-center justify-end gap-3">
                                 <Link
                                     href="/superadmin/tenants"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
                                 </Link>

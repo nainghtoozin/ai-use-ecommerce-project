@@ -36,71 +36,71 @@ export default function EditTenant({ tenant, plans, currentPlanId }) {
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Edit Merchant: {tenant.name}</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Edit Merchant: {tenant.name}</h2>}>
             <Head title={`Edit Merchant - ${tenant.name}`} />
 
             <div className="py-6">
                 <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Store Name *</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Name *</label>
                                     <input
                                         type="text"
                                         value={form.name}
                                         onChange={(e) => handleChange('name', e.target.value)}
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         required
                                     />
                                     {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slug *</label>
                                     <input
                                         type="text"
                                         value={form.slug}
                                         onChange={(e) => handleChange('slug', e.target.value)}
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                         required
                                     />
                                     {errors.slug && <p className="text-xs text-red-600 mt-1">{errors.slug}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Store URL</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store URL</label>
                                     <input
                                         type="text"
                                         value={tenant.store_url ? `/store/${form.slug}` : '—'}
-                                        className="w-full rounded-lg border-gray-200 bg-gray-50 shadow-sm text-sm text-gray-500"
+                                        className="w-full rounded-lg border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 shadow-sm text-sm text-gray-500 dark:text-gray-400"
                                         disabled
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Custom Domain</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Domain</label>
                                     <input
                                         type="text"
                                         value={form.domain}
                                         onChange={(e) => handleChange('domain', e.target.value)}
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     />
                                     {errors.domain && <p className="text-xs text-red-600 mt-1">{errors.domain}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Email</label>
                                     <input
                                         type="email"
                                         value={form.email}
                                         onChange={(e) => handleChange('email', e.target.value)}
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     />
                                     {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                                     <select
                                         value={form.status}
                                         onChange={(e) => handleChange('status', e.target.value)}
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     >
                                         <option value="active">Active</option>
                                         <option value="suspended">Suspended</option>
@@ -108,11 +108,11 @@ export default function EditTenant({ tenant, plans, currentPlanId }) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan</label>
                                     <select
                                         value={form.plan_id}
                                         onChange={(e) => handleChange('plan_id', e.target.value)}
-                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                                     >
                                         <option value="">No Plan</option>
                                         {plans.map((plan) => (
@@ -124,10 +124,10 @@ export default function EditTenant({ tenant, plans, currentPlanId }) {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                                 <Link
                                     href="/superadmin/tenants"
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
                                 </Link>

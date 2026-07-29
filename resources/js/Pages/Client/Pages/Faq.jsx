@@ -15,17 +15,17 @@ export default function Faq({ websiteInfo }) {
             <Head title={`FAQ - ${websiteInfo?.name || ''}`} />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="max-w-3xl mx-auto">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Frequently Asked Questions</h1>
                     <div className="space-y-4">
                         {faqs.map((faq, index) => (
-                            <details key={index} className="bg-white rounded-lg border border-gray-200 group">
-                                <summary className="px-6 py-4 cursor-pointer font-medium text-gray-900 hover:text-blue-600 list-none flex items-center justify-between">
+                            <details key={index} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 group">
+                                <summary className="px-6 py-4 cursor-pointer font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 list-none flex items-center justify-between">
                                     {faq.q}
-                                    <svg className="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </summary>
-                                <div className="px-6 pb-4 text-gray-600 leading-relaxed">{faq.a}</div>
+                                <div className="px-6 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">{faq.a}</div>
                             </details>
                         ))}
                     </div>

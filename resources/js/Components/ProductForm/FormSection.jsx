@@ -12,11 +12,11 @@ export default function FormSection({
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${className}`}>
+        <div className={`bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden ${className}`}>
             <button
                 type="button"
                 onClick={() => collapsible && setIsOpen(!isOpen)}
-                className={`w-full px-5 py-4 flex items-center justify-between ${collapsible ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'}`}
+                className={`w-full px-5 py-4 flex items-center justify-between ${collapsible ? 'cursor-pointer hover:bg-gray-50 dark:bg-gray-950' : 'cursor-default'}`}
             >
                 <div className="flex items-center gap-3">
                     {icon && (
@@ -25,15 +25,15 @@ export default function FormSection({
                         </div>
                     )}
                     <div className="text-left">
-                        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
                         {description && (
-                            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>
                         )}
                     </div>
                 </div>
                 {collapsible && (
                     <svg
-                        className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -44,7 +44,7 @@ export default function FormSection({
             </button>
             {(!collapsible || isOpen) && (
                 <div className="px-5 pb-5">
-                    {collapsible && <div className="border-t border-gray-100 mb-4" />}
+                    {collapsible && <div className="border-t border-gray-100 dark:border-gray-800 mb-4" />}
                     <div className="space-y-4">
                         {children}
                     </div>

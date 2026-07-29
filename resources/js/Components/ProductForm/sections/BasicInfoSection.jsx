@@ -36,9 +36,9 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
     const isSingle = data.product_type === 'single';
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Basic Information</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Basic Information</h3>
             </div>
 
             <div className="px-6 py-6 space-y-6">
@@ -87,14 +87,14 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 {/* Category + Brand + Unit row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                             Category <span className="text-red-500">*</span>
                         </label>
                         <select
                             name="category_id"
                             value={data.category_id}
                             onChange={(e) => setData('category_id', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                         >
                             <option value="">Select category</option>
                             {categories.map((cat) => (
@@ -105,12 +105,12 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Brand</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Brand</label>
                         <select
                             name="brand_id"
                             value={data.brand_id}
                             onChange={(e) => setData('brand_id', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                         >
                             <option value="">No brand</option>
                             {brands.map((brand) => (
@@ -121,12 +121,12 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Unit</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unit</label>
                         <select
                             name="unit_id"
                             value={data.unit_id}
                             onChange={(e) => setData('unit_id', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                         >
                             <option value="">No unit</option>
                             {units.map((unit) => (
@@ -154,7 +154,7 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 {data.product_type === 'combo' && (
                     <>
                         {/* Divider */}
-                        <div className="border-t border-gray-100" />
+                        <div className="border-t border-gray-100 dark:border-gray-800" />
 
                         <FormTextarea
                             label="Description"
@@ -169,11 +169,11 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 )}
 
                 {/* Divider */}
-                <div className="border-t border-gray-100" />
+                <div className="border-t border-gray-100 dark:border-gray-800" />
 
                 {/* Primary Product Image (all product types) */}
                 <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Primary Product Image <span className="text-red-500">*</span></h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Primary Product Image <span className="text-red-500">*</span></h4>
                     <ImageUpload
                         name="photo1"
                         label=""
@@ -186,11 +186,11 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 {isSingle && (
                     <>
                         {/* Divider */}
-                        <div className="border-t border-gray-100" />
+                        <div className="border-t border-gray-100 dark:border-gray-800" />
 
                         {/* Pricing row */}
                         <div>
-                            <h4 className="text-sm font-semibold text-gray-900 mb-4">Pricing</h4>
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Pricing</h4>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 <FormInput
                                     label="Sales Price"
@@ -232,12 +232,12 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         </div>
 
                         {/* Divider */}
-                        <div className="border-t border-gray-100" />
+                        <div className="border-t border-gray-100 dark:border-gray-800" />
 
                         {/* Inventory — only when inventory feature is disabled (backward compat) */}
                         {!inventoryEnabled && (
                             <div>
-                                <h4 className="text-sm font-semibold text-gray-900 mb-4">Inventory</h4>
+                                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Inventory</h4>
                                 <div className="space-y-4 max-w-md">
                                     <FormInput
                                         label="Quantity In Stock"
@@ -267,11 +267,11 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 )}
 
                 {/* Divider */}
-                <div className="border-t border-gray-100" />
+                <div className="border-t border-gray-100 dark:border-gray-800" />
 
                 {/* Status */}
                 <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Status</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Status</h4>
                     <div className="flex items-center gap-4">
                         {['active', 'draft', 'inactive'].map((option) => (
                             <label key={option} className="flex items-center gap-2 cursor-pointer">
@@ -281,9 +281,9 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                                     value={option}
                                     checked={status === option}
                                     onChange={(e) => setStatus(e.target.value)}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-700 focus:ring-blue-500"
                                 />
-                                <span className="text-sm text-gray-700 capitalize">{option}</span>
+                                <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{option}</span>
                             </label>
                         ))}
                     </div>

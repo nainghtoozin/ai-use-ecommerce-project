@@ -66,15 +66,15 @@ function ComboItemRow({ item, isBottleneck, index }) {
     const photoUrl = item.photo_url || null;
 
     return (
-        <div className={`group relative flex items-start gap-4 p-4 rounded-xl border transition-all ${isBottleneck ? 'border-orange-300 bg-orange-50/50 ring-1 ring-orange-200' : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'}`}>
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
+        <div className={`group relative flex items-start gap-4 p-4 rounded-xl border transition-all ${isBottleneck ? 'border-orange-300 bg-orange-50/50 ring-1 ring-orange-200' : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-200 hover:shadow-sm'}`}>
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400">
                 {index + 1}
             </div>
 
             {photoUrl ? (
-                <img src={photoUrl} alt={item.product_name} className="flex-shrink-0 w-14 h-14 rounded-lg object-cover border border-gray-100" />
+                <img src={photoUrl} alt={item.product_name} className="flex-shrink-0 w-14 h-14 rounded-lg object-cover border border-gray-100 dark:border-gray-800" />
             ) : (
-                <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
+                <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 flex items-center justify-center">
                     <Package className="w-6 h-6 text-gray-300" />
                 </div>
             )}
@@ -83,7 +83,7 @@ function ComboItemRow({ item, isBottleneck, index }) {
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{item.product_name}</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product_name}</p>
                             {isBottleneck && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
                                     <ArrowDown className="w-3 h-3" />
@@ -99,7 +99,7 @@ function ComboItemRow({ item, isBottleneck, index }) {
                                 </span>
                             </div>
                         )}
-                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                             <span>{item.link_type === 'variant' ? 'Specific Variant' : 'Base Product'}</span>
                             <span className="text-gray-300">·</span>
                             <span>Stock: {stock}</span>
@@ -107,8 +107,8 @@ function ComboItemRow({ item, isBottleneck, index }) {
                     </div>
 
                     <div className="flex-shrink-0 text-right">
-                        <p className="text-sm font-semibold text-gray-900">{formatPrice(item.unit_price)}</p>
-                        <p className="text-xs text-gray-500">{formatPrice(item.subtotal)} total</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatPrice(item.unit_price)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatPrice(item.subtotal)} total</p>
                     </div>
                 </div>
 
@@ -117,7 +117,7 @@ function ComboItemRow({ item, isBottleneck, index }) {
                         <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-gray-900 text-white">
                             ×{item.quantity}
                         </span>
-                        <span className="text-xs text-gray-500">per bundle</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">per bundle</span>
                     </div>
 
                     <div className="h-4 w-px bg-gray-200" />
@@ -132,7 +132,7 @@ function ComboItemRow({ item, isBottleneck, index }) {
                     <div className="h-4 w-px bg-gray-200" />
 
                     <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-gray-500">→</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">→</span>
                         <span className={`text-xs font-semibold ${possibleCombos <= 0 ? 'text-red-600' : possibleCombos <= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
                             {possibleCombos} bundles possible
                         </span>
@@ -194,28 +194,28 @@ export default function ComboViewDetail({ product }) {
                         <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
                             <Package className="w-4 h-4 text-orange-600" />
                         </div>
-                        <h3 className="text-sm font-semibold text-gray-900">Bundle Overview</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bundle Overview</h3>
                     </div>
                 </div>
                 <div className="px-5 py-5">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="p-3 rounded-lg bg-white/80 border border-orange-100/60">
-                            <p className="text-xs text-gray-500 mb-1">Components</p>
-                            <p className="text-2xl font-bold text-gray-900">{itemCount}</p>
+                        <div className="p-3 rounded-lg bg-white dark:bg-gray-900/80 border border-orange-100/60">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Components</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{itemCount}</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-white/80 border border-orange-100/60">
-                            <p className="text-xs text-gray-500 mb-1">Bundle Stock</p>
+                        <div className="p-3 rounded-lg bg-white dark:bg-gray-900/80 border border-orange-100/60">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bundle Stock</p>
                             <p className={`text-2xl font-bold ${availableStock <= 0 ? 'text-red-600' : availableStock <= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                 {availableStock}
                             </p>
                         </div>
-                        <div className="p-3 rounded-lg bg-white/80 border border-orange-100/60">
-                            <p className="text-xs text-gray-500 mb-1">Bundle Price</p>
-                            <p className="text-lg font-bold text-gray-900">{formatPrice(comboPrice)}</p>
+                        <div className="p-3 rounded-lg bg-white dark:bg-gray-900/80 border border-orange-100/60">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bundle Price</p>
+                            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatPrice(comboPrice)}</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-white/80 border border-orange-100/60">
-                            <p className="text-xs text-gray-500 mb-1">Value if Separate</p>
-                            <p className="text-lg font-semibold text-gray-500">{formatPrice(basePrice)}</p>
+                        <div className="p-3 rounded-lg bg-white dark:bg-gray-900/80 border border-orange-100/60">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Value if Separate</p>
+                            <p className="text-lg font-semibold text-gray-500 dark:text-gray-400">{formatPrice(basePrice)}</p>
                         </div>
                     </div>
 
@@ -292,13 +292,13 @@ export default function ComboViewDetail({ product }) {
             )}
 
             {/* Bundle Includes Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-gray-400" />
-                        <h3 className="text-sm font-semibold text-gray-900">Bundle Includes</h3>
+                        <Package className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bundle Includes</h3>
                     </div>
-                    <span className="text-xs text-gray-500">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
                 </div>
                 <div className="px-5 py-4 space-y-3">
                     {resolvedItems.map((item, index) => {
@@ -319,27 +319,27 @@ export default function ComboViewDetail({ product }) {
             </div>
 
             {/* Pricing Breakdown */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-2">
-                        <TrendingDown className="w-4 h-4 text-gray-400" />
-                        <h3 className="text-sm font-semibold text-gray-900">Pricing Breakdown</h3>
+                        <TrendingDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pricing Breakdown</h3>
                     </div>
                 </div>
                 <div className="px-5 py-5">
                     <div className="space-y-3">
                         {resolvedItems.map((item) => (
                             <div key={item.id} className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">
+                                <span className="text-gray-600 dark:text-gray-400">
                                     {item.product_name}{item.variant_label ? ` (${item.variant_label})` : ''} × {item.quantity}
                                 </span>
-                                <span className="font-medium text-gray-900">{formatPrice(item.subtotal)}</span>
+                                <span className="font-medium text-gray-900 dark:text-gray-100">{formatPrice(item.subtotal)}</span>
                             </div>
                         ))}
-                        <hr className="border-gray-100" />
+                        <hr className="border-gray-100 dark:border-gray-800" />
                         <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Individual Total</span>
-                            <span className="font-medium text-gray-500">{formatPrice(basePrice)}</span>
+                            <span className="text-gray-500 dark:text-gray-400">Individual Total</span>
+                            <span className="font-medium text-gray-500 dark:text-gray-400">{formatPrice(basePrice)}</span>
                         </div>
                         {savings > 0 && (
                             <div className="flex items-center justify-between text-sm">
@@ -347,10 +347,10 @@ export default function ComboViewDetail({ product }) {
                                 <span className="text-green-600 font-semibold">−{formatPrice(savings)} ({savingsPct}%)</span>
                             </div>
                         )}
-                        <hr className="border-gray-100" />
+                        <hr className="border-gray-100 dark:border-gray-800" />
                         <div className="flex items-center justify-between">
-                            <span className="text-base font-semibold text-gray-900">Bundle Price</span>
-                            <span className="text-lg font-bold text-gray-900">{formatPrice(comboPrice)}</span>
+                            <span className="text-base font-semibold text-gray-900 dark:text-gray-100">Bundle Price</span>
+                            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatPrice(comboPrice)}</span>
                         </div>
                     </div>
                 </div>

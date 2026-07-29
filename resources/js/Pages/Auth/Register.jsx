@@ -28,13 +28,13 @@ export default function Register() {
 
             <form onSubmit={submit}>
                 <div>
-                    <label htmlFor="name" className="block font-medium text-sm text-gray-700">Name</label>
+                    <label htmlFor="name" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Name</label>
                     <input
                         id="name"
                         type="text"
                         name="name"
                         value={data.name}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="name"
                         onChange={(e) => setData('name', e.target.value)}
                         required
@@ -43,13 +43,13 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="email" className="block font-medium text-sm text-gray-700">Email</label>
+                    <label htmlFor="email" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Email</label>
                     <input
                         id="email"
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="username"
                         onChange={(e) => setData('email', e.target.value)}
                         required
@@ -58,13 +58,13 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="password" className="block font-medium text-sm text-gray-700">Password</label>
+                    <label htmlFor="password" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Password</label>
                     <input
                         id="password"
                         type="password"
                         name="password"
                         value={data.password}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="new-password"
                         onChange={(e) => setData('password', e.target.value)}
                         required
@@ -73,13 +73,13 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <label htmlFor="password_confirmation" className="block font-medium text-sm text-gray-700">Confirm Password</label>
+                    <label htmlFor="password_confirmation" className="block font-medium text-sm text-gray-700 dark:text-gray-300">Confirm Password</label>
                     <input
                         id="password_confirmation"
                         type="password"
                         name="password_confirmation"
                         value={data.password_confirmation}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         autoComplete="new-password"
                         onChange={(e) => setData('password_confirmation', e.target.value)}
                         required
@@ -88,7 +88,7 @@ export default function Register() {
                 </div>
 
                 <div className="flex items-center justify-between mt-4">
-                    <Link href="/login" className="underline text-sm text-gray-600 hover:text-gray-900">
+                    <Link href="/login" className="underline text-sm text-gray-600 hover:text-gray-900 dark:text-gray-100">
                         Already registered?
                     </Link>
 

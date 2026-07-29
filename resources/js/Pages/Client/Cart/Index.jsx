@@ -185,7 +185,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Shopping Cart</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Shopping Cart</h1>
                     {cartItems?.length > 0 && (
                         <button
                             onClick={handleClearCart}
@@ -198,10 +198,10 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                 </div>
 
                 {!cartItems?.length ? (
-                    <div className="text-center py-12 sm:py-16 bg-white rounded-xl border border-gray-200">
+                    <div className="text-center py-12 sm:py-16 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
                         <i className="bi bi-cart-x text-5xl text-gray-300"></i>
-                        <h3 className="mt-4 text-lg font-medium text-gray-900">Your cart is empty</h3>
-                        <p className="mt-2 text-gray-500">Browse our products and add items to your cart.</p>
+                        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">Your cart is empty</h3>
+                        <p className="mt-2 text-gray-500 dark:text-gray-400">Browse our products and add items to your cart.</p>
                         <Link
                             href="/"
                             className="mt-6 inline-block px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -213,7 +213,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-4">
                             {/* Table header - hidden on mobile */}
-                            <div className="hidden md:grid md:grid-cols-[5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="hidden md:grid md:grid-cols-[5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 <div></div>
                                 <div>Product</div>
                                 <div className="text-center">Unit Price</div>
@@ -225,23 +225,23 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                             {cartItems.map((item) => {
                                 const lineSubtotal = Number(item.price) * Number(item.quantity);
                                 return (
-                                    <div key={item.cart_key} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-sm transition-shadow">
+                                    <div key={item.cart_key} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4 hover:shadow-sm transition-shadow">
                                         {/* Mobile layout */}
                                         <div className="md:hidden flex gap-3">
                                             <Link
                                                 href={`/client/product/${item.id}`}
-                                                className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden"
+                                                className="w-20 h-20 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden"
                                             >
                                                 {item.photo1_url ? (
                                                     <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full">
-                                                        <i className="bi bi-image text-gray-400 text-xl"></i>
+                                                        <i className="bi bi-image text-gray-400 dark:text-gray-500 text-xl"></i>
                                                     </div>
                                                 )}
                                             </Link>
                                             <div className="flex-1 min-w-0">
-                                                <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 line-clamp-2">
+                                                <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 line-clamp-2">
                                                     {item.name}
                                                 </Link>
                                                 {item.variant_name && (
@@ -251,16 +251,16 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                 )}
                                                 <div className="mt-2 space-y-1.5 text-sm">
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-500">Unit Price</span>
-                                                        <span className="text-gray-800 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                        <span className="text-gray-500 dark:text-gray-400">Unit Price</span>
+                                                        <span className="text-gray-800 dark:text-gray-200 font-medium">{formatCurrency(item.price, cc)}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <span className="text-gray-500">Qty</span>
-                                                        <div className="flex items-center border border-gray-300 rounded-lg">
+                                                        <span className="text-gray-500 dark:text-gray-400">Qty</span>
+                                                        <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
                                                             <button
                                                                 onClick={() => handleStepperClick(item.cart_key, -1)}
                                                                 disabled={updating === item.cart_key}
-                                                                className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded-l-lg disabled:opacity-50 transition-colors"
+                                                                className="px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-50 transition-colors"
                                                             >
                                                                 <i className="bi bi-dash"></i>
                                                             </button>
@@ -272,20 +272,20 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                                 onBlur={() => commitDraft(item.cart_key)}
                                                                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                                                                 disabled={updating === item.cart_key}
-                                                                className="w-12 sm:w-14 text-center text-sm font-semibold text-gray-900 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                                                                className="w-12 sm:w-14 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                                                             />
                                                             <button
                                                                 onClick={() => handleStepperClick(item.cart_key, 1)}
                                                                 disabled={updating === item.cart_key}
-                                                                className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded-r-lg disabled:opacity-50 transition-colors"
+                                                                className="px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-r-lg disabled:opacity-50 transition-colors"
                                                             >
                                                                 <i className="bi bi-plus"></i>
                                                             </button>
                                                         </div>
                                                     </div>
-                                                    <div className="flex justify-between border-t border-gray-100 pt-1.5">
-                                                        <span className="text-gray-700 font-semibold">Subtotal</span>
-                                                        <span className="text-gray-900 font-bold">{formatCurrency(lineSubtotal, cc)}</span>
+                                                    <div className="flex justify-between border-t border-gray-100 dark:border-gray-800 pt-1.5">
+                                                        <span className="text-gray-700 dark:text-gray-300 font-semibold">Subtotal</span>
+                                                        <span className="text-gray-900 dark:text-gray-100 font-bold">{formatCurrency(lineSubtotal, cc)}</span>
                                                     </div>
                                                 </div>
                                                 <button
@@ -303,19 +303,19 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                         <div className="hidden md:grid md:grid-cols-[5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 items-center">
                                             <Link
                                                 href={`/client/product/${item.id}`}
-                                                className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden"
+                                                className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden"
                                             >
                                                 {item.photo1_url ? (
                                                     <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full">
-                                                        <i className="bi bi-image text-gray-400 text-xl"></i>
+                                                        <i className="bi bi-image text-gray-400 dark:text-gray-500 text-xl"></i>
                                                     </div>
                                                 )}
                                             </Link>
 
                                             <div>
-                                                <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 line-clamp-2">
+                                                <Link href={`/client/product/${item.id}`} className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 line-clamp-2">
                                                     {item.name}
                                                 </Link>
                                                 {item.variant_name && (
@@ -326,15 +326,15 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                             </div>
 
                                             <div className="text-center">
-                                                <span className="text-sm text-gray-800 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">{formatCurrency(item.price, cc)}</span>
                                             </div>
 
                                             <div className="flex justify-center">
-                                                <div className="flex items-center border border-gray-300 rounded-lg">
+                                                <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
                                                     <button
                                                         onClick={() => handleStepperClick(item.cart_key, -1)}
                                                         disabled={updating === item.cart_key}
-                                                        className="px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-l-lg disabled:opacity-50 transition-colors"
+                                                        className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-50 transition-colors"
                                                     >
                                                         <i className="bi bi-dash"></i>
                                                     </button>
@@ -346,12 +346,12 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                         onBlur={() => commitDraft(item.cart_key)}
                                                         onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                                                         disabled={updating === item.cart_key}
-                                                        className="w-14 text-center text-sm font-semibold text-gray-900 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                                                        className="w-14 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                                                     />
                                                     <button
                                                         onClick={() => handleStepperClick(item.cart_key, 1)}
                                                         disabled={updating === item.cart_key}
-                                                        className="px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-r-lg disabled:opacity-50 transition-colors"
+                                                        className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-r-lg disabled:opacity-50 transition-colors"
                                                     >
                                                         <i className="bi bi-plus"></i>
                                                     </button>
@@ -359,7 +359,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                             </div>
 
                                             <div className="text-right">
-                                                <span className="text-sm font-bold text-gray-900">{formatCurrency(lineSubtotal, cc)}</span>
+                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(lineSubtotal, cc)}</span>
                                             </div>
 
                                             <div className="flex justify-center">
@@ -379,11 +379,11 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                         </div>
 
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 sticky top-24">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+                            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 sticky top-24">
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Order Summary</h2>
 
                                 <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between text-gray-600">
+                                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
                                         <span>Subtotal ({cartItems.reduce((s, i) => s + i.quantity, 0)} items)</span>
                                         <span>{formatCurrency(subtotal, cc)}</span>
                                     </div>
@@ -400,22 +400,22 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                         </div>
                                     )}
 
-                                    <div className="flex justify-between text-gray-600">
+                                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
                                         <span>Shipping</span>
                                         <span className="text-green-600">Calculated at checkout</span>
                                     </div>
 
-                                    <div className="border-t border-gray-200 pt-3 flex justify-between font-semibold text-gray-900">
+                                    <div className="border-t border-gray-200 dark:border-gray-800 pt-3 flex justify-between font-semibold text-gray-900 dark:text-gray-100">
                                         <span>Total</span>
                                         <span>{formatCurrency(finalTotal, cc)}</span>
                                     </div>
                                 </div>
 
                                 {/* Promo Code Section */}
-                                <div className="mt-5 pt-4 border-t border-gray-200 space-y-3">
+                                <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
                                     {!appliedPromotion && !appliedCoupon && (
                                         <div>
-                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Have a promo code?</p>
+                                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Have a promo code?</p>
                                             <div className="flex gap-2">
                                                 <input
                                                     type="text"
@@ -423,7 +423,7 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
                                                     onChange={e => setPromoCode(e.target.value)}
                                                     placeholder="Enter code"
                                                     maxLength={50}
-                                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyPromotion(promoCode))}
                                                 />
                                                 <button

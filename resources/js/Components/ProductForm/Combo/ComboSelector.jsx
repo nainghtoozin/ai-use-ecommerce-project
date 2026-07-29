@@ -23,7 +23,7 @@ export default function ComboSelector({ products, onSelect, excludeIds = [] }) {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50/50 transition-all text-sm font-medium"
+                className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50/50 transition-all text-sm font-medium"
             >
                 <Search className="w-4 h-4" />
                 Add product to combo...
@@ -32,16 +32,16 @@ export default function ComboSelector({ products, onSelect, excludeIds = [] }) {
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-20" onClick={() => { setIsOpen(false); setSearch(''); }} />
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 z-30 overflow-hidden">
-                        <div className="p-3 border-b border-gray-100">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 z-30 overflow-hidden">
+                        <div className="p-3 border-b border-gray-100 dark:border-gray-800">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search products..."
-                                    className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                    className="w-full border border-gray-200 dark:border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                                     autoFocus
                                 />
                             </div>
@@ -49,7 +49,7 @@ export default function ComboSelector({ products, onSelect, excludeIds = [] }) {
 
                         <div className="max-h-72 overflow-y-auto">
                             {filtered.length === 0 ? (
-                                <div className="px-4 py-8 text-center text-sm text-gray-500">
+                                <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                     No products found
                                 </div>
                             ) : (
@@ -58,36 +58,36 @@ export default function ComboSelector({ products, onSelect, excludeIds = [] }) {
                                         <button
                                             type="button"
                                             onClick={() => handleSelect(product)}
-                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:bg-gray-950 transition-colors text-left"
                                         >
                                             {product.photo1_url ? (
-                                                <img src={product.photo1_url} alt={product.name} className="w-9 h-9 rounded-lg object-cover border border-gray-200" />
+                                                <img src={product.photo1_url} alt={product.name} className="w-9 h-9 rounded-lg object-cover border border-gray-200 dark:border-gray-800" />
                                             ) : (
-                                                <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                                                     <Search className="w-4 h-4 text-gray-300" />
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
                                                     {product.type === 'variable' ? 'Variable' : 'Single'}
                                                     {product.category_name && ` · ${product.category_name}`}
                                                 </p>
                                             </div>
-                                            <span className="text-xs font-medium text-gray-600">{product.stock} in stock</span>
+                                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{product.stock} in stock</span>
                                         </button>
 
                                         {product.type === 'variable' && product.variants?.length > 0 && (
-                                            <div className="bg-gray-50/50 pl-12 pr-4 py-1 space-y-0.5">
+                                            <div className="bg-gray-50 dark:bg-gray-950/50 pl-12 pr-4 py-1 space-y-0.5">
                                                 {product.variants.map((v) => (
                                                     <button
                                                         key={v.id}
                                                         type="button"
                                                         onClick={() => handleSelect(product, v)}
-                                                        className="w-full flex items-center gap-2 px-3 py-1.5 rounded hover:bg-white transition-colors text-left"
+                                                        className="w-full flex items-center gap-2 px-3 py-1.5 rounded hover:bg-white dark:bg-gray-900 transition-colors text-left"
                                                     >
-                                                        <span className="text-xs text-gray-500 truncate flex-1">{v.label}</span>
-                                                        <span className="text-xs text-gray-400">{v.stock} stk</span>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{v.label}</span>
+                                                        <span className="text-xs text-gray-400 dark:text-gray-500">{v.stock} stk</span>
                                                     </button>
                                                 ))}
                                             </div>

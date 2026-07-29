@@ -42,7 +42,7 @@ export default function SubscriptionStatusBanner() {
                         <strong>Grace Period:</strong> Your subscription expired. Renew within <strong>{graceDaysRemaining} day{graceDaysRemaining !== 1 ? 's' : ''}</strong> to avoid service interruption.
                     </span>
                 </div>
-                <button onClick={handleRenew} className="px-3 py-1 text-xs font-medium text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors flex-shrink-0">
+                <button onClick={handleRenew} className="px-3 py-1 text-xs font-medium text-amber-700 bg-white dark:bg-gray-900 border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors flex-shrink-0">
                     Renew Now
                 </button>
             </div>
@@ -58,7 +58,7 @@ export default function SubscriptionStatusBanner() {
                         <strong>Subscription Expired.</strong> Your store is now restricted. Renew to restore full access.
                     </span>
                 </div>
-                <button onClick={handleRenew} className="px-3 py-1 text-xs font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-100 transition-colors flex-shrink-0">
+                <button onClick={handleRenew} className="px-3 py-1 text-xs font-medium text-red-700 bg-white dark:bg-gray-900 border border-red-300 rounded-lg hover:bg-red-100 transition-colors flex-shrink-0">
                     Renew Now
                 </button>
             </div>

@@ -9,7 +9,7 @@ export default function FeaturedCategories({ categories }) {
     return (
         <section id="categories-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
             <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Categories</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Categories</h2>
                 <Link
                     href={tenant ? `/store/${tenant.slug}/products` : '/?categories=all'}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
@@ -22,9 +22,9 @@ export default function FeaturedCategories({ categories }) {
                     <Link
                         key={category.id}
                         href={tenant ? `/store/${tenant.slug}/products?category=${category.id}` : `/?category=${category.id}`}
-                        className="group flex flex-col items-center gap-2 p-4 sm:p-5 bg-white rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
+                        className="group flex flex-col items-center gap-2 p-4 sm:p-5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
                     >
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-gray-950 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
                             {category.image ? (
                                 <img
                                     src={assetUrl(category.image)}
@@ -33,17 +33,17 @@ export default function FeaturedCategories({ categories }) {
                                     loading="lazy"
                                 />
                             ) : (
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                                 </svg>
                             )}
                         </div>
                         <div className="text-center">
-                            <h3 className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-full">
+                            <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 transition-colors truncate max-w-full">
                                 {category.name}
                             </h3>
                             {category.products_count > 0 && (
-                                <p className="mt-0.5 text-xs text-gray-400">{category.products_count} items</p>
+                                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{category.products_count} items</p>
                             )}
                         </div>
                     </Link>

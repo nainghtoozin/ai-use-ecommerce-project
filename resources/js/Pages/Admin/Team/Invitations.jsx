@@ -29,11 +29,11 @@ function LoadingSkeleton({ rows = 5 }) {
 function EmptyState() {
     return (
         <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 mb-4">
                 <i className="bi bi-envelope-paper text-3xl text-gray-300"></i>
             </div>
-            <p className="text-sm font-medium text-gray-600">No pending invitations</p>
-            <p className="text-xs text-gray-400 mt-1">Invite team members from the Team dashboard.</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">No pending invitations</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Invite team members from the Team dashboard.</p>
         </div>
     );
 }
@@ -45,7 +45,7 @@ function RoleBadge({ role }) {
         customer: 'bg-gray-50 text-gray-600 ring-gray-500/20',
     };
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[role] || 'bg-gray-50 text-gray-600 ring-gray-500/20'}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[role] || 'bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 ring-gray-500/20'}`}>
             {role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'}
         </span>
     );
@@ -58,7 +58,7 @@ function StatusBadge({ isExpired, isPending }) {
     if (isPending) {
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20">Pending</span>;
     }
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20">—</span>;
+    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-500/20">—</span>;
 }
 
 export default function TeamInvitations({ invitations, filters }) {
@@ -110,22 +110,22 @@ export default function TeamInvitations({ invitations, filters }) {
     const isEmpty = !loading && data.length === 0;
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Pending Invitations</h2>}>
+        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Pending Invitations</h2>}>
             <Head title="Pending Invitations" />
 
             <div className="p-6 lg:p-8 space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Invitations</h1>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Invitations</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {invitations?.total ? `${invitations.total} pending invitation${invitations.total !== 1 ? 's' : ''}` : 'Manage pending team invitations'}
                         </p>
                     </div>
                     <div className="flex gap-2">
                         <Link
                             href={adminUrl('/admin/team')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-50 dark:bg-gray-950 transition-colors"
                         >
                             <i className="bi bi-arrow-left"></i>
                             Back to Team
@@ -143,24 +143,24 @@ export default function TeamInvitations({ invitations, filters }) {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <div className="p-4 border-b border-gray-100">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
                             <div className="flex-1 relative">
-                                <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm"></i>
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by email..."
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                 />
                             </div>
                             <div className="flex gap-2">
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => handleFilter(e.target.value)}
-                                    className="px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                                    className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900 min-w-[120px]"
                                 >
                                     <option value="">All Status</option>
                                     <option value="pending">Pending</option>
@@ -184,7 +184,7 @@ export default function TeamInvitations({ invitations, filters }) {
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="text-left text-xs text-gray-500 uppercase tracking-wider bg-gray-50/80">
+                                        <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-950/80">
                                             <th className="px-5 py-3 font-semibold">Email</th>
                                             <th className="px-5 py-3 font-semibold">Role</th>
                                             <th className="px-5 py-3 font-semibold">Invited By</th>
@@ -202,7 +202,7 @@ export default function TeamInvitations({ invitations, filters }) {
                         {showSkeleton && (
                             <div className="md:hidden space-y-3 p-4">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+                                    <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
                                 ))}
                             </div>
                         )}
@@ -215,7 +215,7 @@ export default function TeamInvitations({ invitations, filters }) {
                                 <div className="hidden md:block overflow-x-auto">
                                     <table className="w-full">
                                         <thead>
-                                            <tr className="text-left text-xs text-gray-500 uppercase tracking-wider bg-gray-50/80">
+                                            <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-950/80">
                                                 <th className="px-5 py-3 font-semibold">Email</th>
                                                 <th className="px-5 py-3 font-semibold">Role</th>
                                                 <th className="px-5 py-3 font-semibold">Invited By</th>
@@ -227,14 +227,14 @@ export default function TeamInvitations({ invitations, filters }) {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {data.map((invitation) => (
-                                                <tr key={invitation.id} className="hover:bg-gray-50/60 transition-colors group">
+                                                <tr key={invitation.id} className="hover:bg-gray-50 dark:bg-gray-950/60 transition-colors group">
                                                     <td className="px-5 py-3.5">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white">
                                                                 <i className="bi bi-envelope text-sm"></i>
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="text-sm font-medium text-gray-900 truncate">{invitation.email}</p>
+                                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{invitation.email}</p>
                                                                 {invitation.is_expired && (
                                                                     <p className="text-[11px] text-red-500 flex items-center gap-1 mt-0.5"><i className="bi bi-clock"></i> Expired</p>
                                                                 )}
@@ -242,21 +242,21 @@ export default function TeamInvitations({ invitations, filters }) {
                                                         </div>
                                                     </td>
                                                     <td className="px-5 py-3.5"><RoleBadge role={invitation.role} /></td>
-                                                    <td className="px-5 py-3.5 text-sm text-gray-500 whitespace-nowrap">{invitation.invited_by || '—'}</td>
-                                                    <td className="px-5 py-3.5 text-sm text-gray-500 whitespace-nowrap">{invitation.invited_at || '—'}</td>
+                                                    <td className="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{invitation.invited_by || '—'}</td>
+                                                    <td className="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{invitation.invited_at || '—'}</td>
                                                     <td className="px-5 py-3.5 text-sm whitespace-nowrap">
-                                                        <span className={invitation.is_expired ? 'text-red-500' : 'text-gray-500'}>{invitation.expires_at || '—'}</span>
+                                                        <span className={invitation.is_expired ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}>{invitation.expires_at || '—'}</span>
                                                     </td>
                                                     <td className="px-5 py-3.5"><StatusBadge isExpired={invitation.is_expired} isPending={!invitation.is_expired} /></td>
                                                     <td className="px-5 py-3.5 text-right">
                                                         {canManage && (
                                                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 {!invitation.is_expired && (
-                                                                    <button onClick={() => handleResend(invitation)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Resend">
+                                                                    <button onClick={() => handleResend(invitation)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Resend">
                                                                         <i className="bi bi-send text-sm"></i>
                                                                     </button>
                                                                 )}
-                                                                <button onClick={() => handleCancel(invitation)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Cancel">
+                                                                <button onClick={() => handleCancel(invitation)} className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Cancel">
                                                                     <i className="bi bi-x-circle text-sm"></i>
                                                                 </button>
                                                             </div>
@@ -271,14 +271,14 @@ export default function TeamInvitations({ invitations, filters }) {
                                 {/* Mobile Cards */}
                                 <div className="md:hidden divide-y divide-gray-100">
                                     {data.map((invitation) => (
-                                        <div key={invitation.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                        <div key={invitation.id} className="p-4 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white flex-shrink-0">
                                                         <i className="bi bi-envelope text-sm"></i>
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-medium text-gray-900 truncate">{invitation.email}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{invitation.email}</p>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <RoleBadge role={invitation.role} />
                                                             <StatusBadge isExpired={invitation.is_expired} isPending={!invitation.is_expired} />
@@ -298,7 +298,7 @@ export default function TeamInvitations({ invitations, filters }) {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
+                                            <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
                                                 <span>By {invitation.invited_by || '—'}</span>
                                                 <span>•</span>
                                                 <span>Sent {invitation.invited_at || '—'}</span>
@@ -314,7 +314,7 @@ export default function TeamInvitations({ invitations, filters }) {
 
                     {/* Pagination */}
                     {invitations?.links && invitations.links.length > 3 && (
-                        <div className="px-5 py-4 border-t border-gray-100 flex flex-wrap items-center gap-1.5">
+                        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-1.5">
                             {invitations.links.map((link, i) => (
                                 <button
                                     key={i}
@@ -329,7 +329,7 @@ export default function TeamInvitations({ invitations, filters }) {
                                 />
                             ))}
                             {invitations.total > 0 && (
-                                <span className="ml-auto text-xs text-gray-400">
+                                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
                                     Showing {invitations.from}–{invitations.to} of {invitations.total}
                                 </span>
                             )}

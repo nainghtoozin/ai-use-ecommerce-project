@@ -29,19 +29,19 @@ export default function PricingSection({ plans }) {
     };
 
     return (
-        <section id="pricing" className="py-16 sm:py-20 lg:py-24 bg-white scroll-mt-16">
+        <section id="pricing" className="py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-900 scroll-mt-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto mb-10">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
                         Simple, Transparent Pricing
                     </h2>
-                    <p className="mt-4 text-gray-500 text-lg">
+                    <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
                         Start free. Upgrade when you grow. No hidden fees.
                     </p>
                 </div>
 
                 <div className="flex items-center justify-center gap-3 mb-10">
-                    <span className={`text-sm font-medium ${!isYearly ? 'text-gray-900' : 'text-gray-400'}`}>Monthly</span>
+                    <span className={`text-sm font-medium ${!isYearly ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>Monthly</span>
                     <button
                         type="button"
                         role="switch"
@@ -50,9 +50,9 @@ export default function PricingSection({ plans }) {
                         onClick={() => setIsYearly(!isYearly)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isYearly ? 'bg-blue-600' : 'bg-gray-300'}`}
                     >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`} />
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-900 transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
-                    <span className={`text-sm font-medium ${isYearly ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-medium ${isYearly ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>
                         Yearly
                     </span>
                 </div>
@@ -102,29 +102,29 @@ export default function PricingSection({ plans }) {
 
                                 <div className="mb-6">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-xl font-bold text-gray-900">{planName}</h3>
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{planName}</h3>
                                         {planSlug === 'business' && (
                                             <Sparkles className="w-4 h-4 text-amber-400" aria-label="Best value" />
                                         )}
                                     </div>
                                     {plan.description && (
-                                        <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{plan.description}</p>
                                     )}
 
                                     <div className="mt-4 flex items-baseline gap-1">
                                         {price !== null ? (
                                             <>
-                                                <span className="text-4xl font-bold text-gray-900">
+                                                <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">
                                                     {price === 0 ? 'Free' : formatCurrency(price, pc)}
                                                 </span>
-                                                <span className="text-sm text-gray-400">{period}</span>
+                                                <span className="text-sm text-gray-400 dark:text-gray-500">{period}</span>
                                             </>
                                         ) : (
-                                            <span className="text-4xl font-bold text-gray-900">Contact Us</span>
+                                            <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">Contact Us</span>
                                         )}
                                     </div>
                                     {effectiveMonthly !== null && (
-                                        <p className="text-xs text-gray-400 mt-1">
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                                             {pc.symbol}{effectiveMonthly}/month billed yearly
                                         </p>
                                     )}
@@ -140,7 +140,7 @@ export default function PricingSection({ plans }) {
                                 </div>
 
                                 {isCurrentPlan ? (
-                                    <div className="w-full py-2.5 rounded-lg text-sm font-medium text-center bg-gray-100 text-gray-400 cursor-not-allowed">
+                                    <div className="w-full py-2.5 rounded-lg text-sm font-medium text-center bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed">
                                         Current Plan
                                     </div>
                                 ) : (

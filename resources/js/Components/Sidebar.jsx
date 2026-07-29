@@ -29,7 +29,7 @@ function CategoryList({ categories, selectedCategory, onCategoryClick }) {
                     }`}
                     style={selectedCategory == cat.id ? { backgroundColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.1)', color: 'var(--theme-color, #3B82F6)' } : {}}
                 >
-                    <svg className="w-4 h-4 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                     <span className="truncate">{cat.name}</span>
@@ -37,7 +37,7 @@ function CategoryList({ categories, selectedCategory, onCategoryClick }) {
             ))}
 
             {categories.length === 0 && (
-                <p className="text-sm text-gray-400 py-4 text-center">No categories available</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">No categories available</p>
             )}
         </div>
     );
@@ -64,13 +64,13 @@ export default function Sidebar({ categories, selectedCategory, onCategoryChange
             )}
 
             <aside
-                className={`fixed lg:hidden top-0 left-0 z-50 h-full w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+                className={`fixed lg:hidden top-0 left-0 z-50 h-full w-72 bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto ${
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                    <h3 className="text-base font-semibold text-gray-900">Categories</h3>
-                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Categories</h3>
+                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:bg-gray-800">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -83,8 +83,8 @@ export default function Sidebar({ categories, selectedCategory, onCategoryChange
 
             <div className="hidden lg:block w-64 flex-shrink-0">
                 <div className="sticky top-20">
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">
                             Categories
                         </h3>
                         {list}
