@@ -88,6 +88,7 @@ class IdentityProjection
             'email_verified_at' => $user->email_verified_at,
             'joined_at' => $joinedAt,
             'created_at' => $user->created_at?->toDateString(),
+            'last_login_at' => $user->last_login_at?->toISOString() ?? ($membership?->last_login_at?->toISOString()),
             'memberships' => $memberships,
         ];
     }

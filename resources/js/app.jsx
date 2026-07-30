@@ -5,6 +5,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { ThemeProvider } from '@/Contexts/ThemeContext';
 
 window.Pusher = Pusher;
 
@@ -35,7 +36,12 @@ createInertiaApp({
         return pages[`./Pages/${name}.jsx`];
     },
     setup({ el, App, props }) {
-        createRoot(el).render(<App {...props} />);
+        const initialTheme = props.initialPage.props.theme || 'system';
+        createRoot(el).render(
+            <ThemeProvider initialTheme={initialTheme}>
+                <App {...props} />
+            </ThemeProvider>
+        );
     },
     progress: {
         color: '#4B5563',

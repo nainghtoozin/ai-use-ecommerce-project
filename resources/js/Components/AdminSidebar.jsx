@@ -435,7 +435,7 @@ export default function AdminSidebar() {
                         <div className="mt-2.5 flex gap-1.5">
                             <Link
                                 href={adminUrl('/profile')}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-white dark:bg-gray-900/[0.06] hover:bg-white dark:bg-gray-900/[0.1] rounded-md text-slate-300 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-white/[0.08] hover:bg-white/[0.12] rounded-md text-slate-300 hover:text-white transition-colors"
                             >
                                 <User className="w-3 h-3" />{t('general.profile')}
                             </Link>

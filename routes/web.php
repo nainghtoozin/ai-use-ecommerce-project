@@ -157,6 +157,10 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     // Store-based customer area (authenticated)
     Route::middleware(['auth:web,accounts', 'tenant.access'])->prefix('customer')->name('customer.')->group(function () {
         Route::get('/account', [\App\Http\Controllers\StorefrontCustomerController::class, 'account'])->name('account');
+        Route::get('/profile', [\App\Http\Controllers\StorefrontCustomerController::class, 'profile'])->name('profile');
+        Route::patch('/profile', [\App\Http\Controllers\StorefrontCustomerController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/profile/password', [\App\Http\Controllers\StorefrontCustomerController::class, 'updatePassword'])->name('profile.password');
+        Route::delete('/account', [\App\Http\Controllers\StorefrontCustomerController::class, 'deleteAccount'])->name('account.delete');
         Route::get('/orders', [\App\Http\Controllers\StorefrontCustomerController::class, 'orders'])->name('orders');
         Route::get('/orders/{order}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showOrder'])->name('orders.show');
         Route::post('/orders/{order}/cancel', [\App\Http\Controllers\StorefrontCustomerController::class, 'cancelOrder'])->name('orders.cancel');

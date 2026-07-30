@@ -14,6 +14,8 @@ use App\Services\OrderService;
 use App\Services\OrderStatusTransitionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class StorefrontCustomerController extends Controller
@@ -81,17 +83,153 @@ class StorefrontCustomerController extends Controller
 
         $addressesCount = $user->addresses()->count();
 
+        $recentOrders = $user->orders()
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['id', 'invoice_number', 'order_status', 'total_amount', 'created_at']);
+
         return Inertia::render('Storefront/Account', [
             'tenant' => $this->tenantData($tenant),
             'customer' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'phone' => $user->phone ?? '',
+                'profile_image_url' => $user->profile_image_url,
                 'member_since' => $user->created_at,
                 'addresses_count' => $addressesCount,
+                'notification_preferences' => $user->notification_preferences ?? [],
+                'email_verified' => $user->hasVerifiedEmail(),
+                'last_login_at' => $user->last_login_at?->toISOString(),
+                'has_orders' => $user->orders()->exists(),
+                'locale' => $user->locale ?? 'en',
             ],
             'orderStats' => $orderStats,
+            'recentOrders' => $recentOrders,
+            'mustVerifyEmail' => $user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail(),
+            'status' => session('status'),
+            'defaultTab' => $request->query('tab', 'dashboard'),
         ]);
+    }
+
+    public function profile(Request $request, $storeSlug = null)
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        return Inertia::render('Storefront/Profile', [
+            'tenant' => $this->tenantData($tenant),
+            'customer' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? '',
+                'profile_image_url' => $user->profile_image_url,
+            ],
+            'mustVerifyEmail' => $user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail(),
+            'status' => session('status'),
+        ]);
+    }
+
+    public function updateProfile(Request $request, $storeSlug = null)
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'profile_image' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? $user->phone,
+        ]);
+
+        if ($request->hasFile('profile_image')) {
+            $imageService = app(ImageService::class);
+            $imagePath = $imageService->upload($request->file('profile_image'), 'profiles');
+            if ($user->profile_image) {
+                $imageService->delete($user->profile_image);
+            }
+            $user->profile_image = $imagePath;
+        }
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        return Redirect::route('storefront.customer.account', ['store_slug' => $tenant->slug, 'tab' => 'profile'])
+            ->with('status', 'profile-updated');
+    }
+
+    public function updatePassword(Request $request, $storeSlug = null)
+    {
+        $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return Redirect::route('storefront.customer.account', ['store_slug' => $storeSlug, 'tab' => 'security'])
+            ->with('status', 'password-updated');
+    }
+
+    public function deleteAccount(Request $request, $storeSlug = null)
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $hasOrders = $user->orders()->exists();
+
+        \DB::transaction(function () use ($user, $hasOrders) {
+            if ($hasOrders) {
+                $anonymizedEmail = 'deleted_' . $user->id . '_' . time() . '@anonymized.local';
+                $user->update([
+                    'name' => 'Deleted User',
+                    'email' => $anonymizedEmail,
+                    'phone' => null,
+                    'profile_image' => null,
+                    'password' => Hash::make(bin2hex(random_bytes(16))),
+                    'email_verified_at' => null,
+                    'status' => 'deleted',
+                ]);
+
+                $user->addresses()->update([
+                    'first_name' => 'Deleted',
+                    'last_name' => 'User',
+                    'phone' => null,
+                    'address_line' => 'Anonymized',
+                ]);
+            } else {
+                $user->addresses()->delete();
+                if ($user->profile_image) {
+                    app(ImageService::class)->delete($user->profile_image);
+                }
+                $user->delete();
+            }
+        });
+
+        \Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/')->with('success', 'Your account has been deleted successfully.');
     }
 
     public function orders(Request $request, $storeSlug = null)
