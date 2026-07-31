@@ -104,13 +104,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->forget('current_tenant_slug');
 
-        ActivityLogger::log(
-            'User logged in',
-            'login',
-            $authenticatable,
-            ['ip' => $request->ip(), 'user_agent' => $request->userAgent()],
-            'auth'
-        );
+        // Login activity is logged by UpdateAccountLastLogin listener
 
         return redirect()->to(app(LoginRedirectResolver::class)->resolveLogin($authenticatable));
     }

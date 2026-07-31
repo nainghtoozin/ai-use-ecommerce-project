@@ -8,11 +8,11 @@ use App\Services\PerPageTrait;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class ActivityLogController extends Controller
+class AuditLogController extends Controller
 {
     use PerPageTrait;
 
-    // Security/auth events that belong to Audit Log (exclude from Activity)
+    // Security/auth events that belong to Audit Log
     const AUDIT_EVENTS = [
         'login', 'logout', 'password_reset', 'password_changed',
         'email_verified', 'registered',
@@ -33,7 +33,7 @@ class ActivityLogController extends Controller
 
     public function index(Request $request)
     {
-        if (!auth()->user()->can('activity.view')) {
+        if (!auth()->user()->can('audit.view')) {
             abort(403, 'Unauthorized');
         }
 
@@ -45,13 +45,10 @@ class ActivityLogController extends Controller
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
 
-        $hasFilters = $category || $severity || $event || $causerId || $search || $dateFrom || $dateTo;
-
         $query = ActivityLog::with('causer', 'impersonator', 'impersonatedUser')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('activity_logs.tenant_id', $t->id))
-            // Exclude audit/security events from Activity view
-            ->whereNotIn('event', self::AUDIT_EVENTS)
-            // Only apply category filter when user selects one
+            // Only show audit/security events
+            ->whereIn('event', self::AUDIT_EVENTS)
             ->when($category, fn($q, $v) => $q->where('category', $v))
             ->when($severity, fn($q, $v) => $q->where('severity', $v))
             ->when($event, fn($q, $v) => $q->where('event', $v))
@@ -81,7 +78,7 @@ class ActivityLogController extends Controller
             $showPagination = false;
         }
 
-        return Inertia::render('Admin/ActivityLogs/Index', [
+        return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
             'showPagination' => $showPagination,
             'filters' => [
@@ -94,15 +91,8 @@ class ActivityLogController extends Controller
                 'date_to' => $dateTo,
             ],
             'categories' => [
-                ActivityLog::CATEGORY_ORDERS => 'Orders',
-                ActivityLog::CATEGORY_INVENTORY => 'Inventory',
-                ActivityLog::CATEGORY_PRODUCTS => 'Products',
-                ActivityLog::CATEGORY_USERS => 'Users',
-                ActivityLog::CATEGORY_WEBSITE => 'Website',
-                ActivityLog::CATEGORY_SETTINGS => 'Settings',
-                ActivityLog::CATEGORY_BILLING => 'Billing',
-                ActivityLog::CATEGORY_NOTIFICATIONS => 'Notifications',
-                ActivityLog::CATEGORY_SYSTEM => 'System',
+                ActivityLog::CATEGORY_AUTH => 'Authentication',
+                ActivityLog::CATEGORY_SECURITY => 'Security',
             ],
             'severities' => ActivityLog::getSeverities(),
         ]);
@@ -110,16 +100,16 @@ class ActivityLogController extends Controller
 
     public function show(int $id)
     {
-        if (!auth()->user()->can('activity.view')) {
+        if (!auth()->user()->can('audit.view')) {
             abort(403, 'Unauthorized');
         }
 
         $log = ActivityLog::with('causer', 'subject', 'impersonator', 'impersonatedUser')
             ->when($this->getTenantFilter(), fn($q, $t) => $q->where('activity_logs.tenant_id', $t->id))
-            ->whereNotIn('event', self::AUDIT_EVENTS)
+            ->whereIn('event', self::AUDIT_EVENTS)
             ->findOrFail($id);
 
-        return Inertia::render('Admin/ActivityLogs/Show', [
+        return Inertia::render('Admin/AuditLogs/Show', [
             'log' => $log,
         ]);
     }

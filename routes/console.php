@@ -10,6 +10,9 @@ Artisan::command('inspire', function () {
 
 Schedule::command('messages:cleanup')->daily();
 
+// ── Activity logs cleanup ──
+Schedule::command('activity-logs:cleanup')->dailyAt('03:00');
+
 // ── Team invitations ──
 Schedule::command('invitations:expire')->everyFifteenMinutes();
 Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();

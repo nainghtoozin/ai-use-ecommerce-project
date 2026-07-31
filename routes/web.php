@@ -502,6 +502,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
         // ============================================================
+        // AUDIT LOG ROUTES
+        // ============================================================
+        Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('audit-logs.show');
+
+        // ============================================================
         // ROLE MANAGEMENT ROUTES
         // ============================================================
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');

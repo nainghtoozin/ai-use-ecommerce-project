@@ -1,38 +1,51 @@
 import { useState } from 'react';
-import { Link, usePage, router, Head } from '@inertiajs/react';
+import { router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import PerPageSelect from '@/Components/PerPageSelect';
 import { adminUrl } from '@/Utils/adminUrl';
 import {
-    Package, Archive, Tag, Users, Globe, Settings,
-    CreditCard, Bell, Server, Clock, Filter, Search, ChevronDown,
-    ChevronRight, X, Info, CheckCircle, AlertTriangle, XCircle,
-    AlertCircle, Eye, Calendar, Monitor, Smartphone, Laptop,
-    ShoppingCart, FileText, MessageSquare, Send, User
+    Shield, User, Lock, Unlock, Key, UserCheck, UserX,
+    Clock, Filter, Search, ChevronRight, X, Info, CheckCircle,
+    AlertTriangle, XCircle, AlertCircle, Eye, Monitor, Smartphone,
+    Laptop, Globe, LogIn, LogOut, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 
-const CATEGORY_ICONS = {
-    orders: ShoppingCart,
-    inventory: Archive,
-    products: Tag,
-    users: Users,
-    website: Globe,
-    settings: Settings,
-    billing: CreditCard,
-    notifications: Bell,
-    system: Server,
+const EVENT_ICONS = {
+    login: LogIn,
+    logout: LogOut,
+    password_reset: Key,
+    password_changed: Key,
+    email_verified: CheckCircle,
+    registered: UserCheck,
+    suspended: ShieldAlert,
+    banned: UserX,
+    activated: ShieldCheck,
+    locked: Lock,
+    unlocked: Unlock,
+    impersonation_started: Eye,
+    impersonation_ended: Eye,
+    role_assigned: Shield,
+    role_removed: Shield,
+    permission_changed: Shield,
 };
 
-const CATEGORY_COLORS = {
-    orders: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-    inventory: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-    products: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-    users: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-    website: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400',
-    settings: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-    billing: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-    notifications: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400',
-    system: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+const EVENT_COLORS = {
+    login: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    logout: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+    password_reset: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    password_changed: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    email_verified: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+    registered: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    suspended: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    banned: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    activated: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    locked: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    unlocked: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    impersonation_started: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    impersonation_ended: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    role_assigned: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    role_removed: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    permission_changed: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
 };
 
 const SEVERITY_CONFIG = {
@@ -48,8 +61,8 @@ function DetailModal({ log, onClose }) {
 
     const severity = SEVERITY_CONFIG[log.severity] || SEVERITY_CONFIG.info;
     const SeverityIcon = severity.icon;
-    const CategoryIcon = CATEGORY_ICONS[log.category] || Server;
-    const categoryColor = CATEGORY_COLORS[log.category] || CATEGORY_COLORS.system;
+    const EventIcon = EVENT_ICONS[log.event] || Shield;
+    const eventColor = EVENT_COLORS[log.event] || 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -57,11 +70,11 @@ function DetailModal({ log, onClose }) {
             <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${categoryColor}`}>
-                            <CategoryIcon className="w-5 h-5" />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${eventColor}`}>
+                            <EventIcon className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Audit Trail Details</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Security Event Details</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">#{log.id}</p>
                         </div>
                     </div>
@@ -71,27 +84,21 @@ function DetailModal({ log, onClose }) {
                 </div>
 
                 <div className="overflow-y-auto p-6 space-y-6">
-                    {/* Event & Severity */}
                     <div className="flex items-center gap-3 flex-wrap">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${severity.color}`}>
                             <SeverityIcon className="w-4 h-4" />
                             {severity.label}
                         </span>
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${categoryColor}`}>
-                            <CategoryIcon className="w-4 h-4" />
-                            {log.category || 'System'}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                            Event: <span className="font-medium text-gray-900 dark:text-white">{log.event}</span>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${eventColor}`}>
+                            <EventIcon className="w-4 h-4" />
+                            {log.event?.replace(/_/g, ' ')}
                         </span>
                     </div>
 
-                    {/* Description */}
                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
                         <p className="text-sm text-gray-900 dark:text-white">{log.description}</p>
                     </div>
 
-                    {/* Details Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -101,7 +108,7 @@ function DetailModal({ log, onClose }) {
                         </div>
                         <div className="space-y-1">
                             <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                <User className="w-3 h-3" /> Performed By
+                                <User className="w-3 h-3" /> User
                             </p>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
                                 {log.impersonator ? log.impersonator.name : log.causer ? log.causer.name : 'System'}
@@ -139,21 +146,8 @@ function DetailModal({ log, onClose }) {
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{log.properties.device}</p>
                             </div>
                         )}
-                        {log.subject_type && (
-                            <div className="space-y-1">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Related Model</p>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">{log.subject_type.split('\\').pop()}</p>
-                            </div>
-                        )}
-                        {log.subject_id && (
-                            <div className="space-y-1">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Subject ID</p>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">#{log.subject_id}</p>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Properties JSON */}
                     {log.properties && Object.keys(log.properties).length > 0 && (
                         <div>
                             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Properties</p>
@@ -169,21 +163,19 @@ function DetailModal({ log, onClose }) {
 }
 
 function TimelineItem({ log, onClick }) {
-    const CategoryIcon = CATEGORY_ICONS[log.category] || Server;
-    const categoryColor = CATEGORY_COLORS[log.category] || CATEGORY_COLORS.system;
+    const EventIcon = EVENT_ICONS[log.event] || Shield;
+    const eventColor = EVENT_COLORS[log.event] || 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
     const severity = SEVERITY_CONFIG[log.severity] || SEVERITY_CONFIG.info;
 
     return (
         <div className="flex gap-4 group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl p-3 -mx-3 transition-colors" onClick={() => onClick(log)}>
-            {/* Timeline line */}
             <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${categoryColor}`}>
-                    <CategoryIcon className="w-5 h-5" />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${eventColor}`}>
+                    <EventIcon className="w-5 h-5" />
                 </div>
                 <div className="w-px flex-1 bg-gray-200 dark:bg-gray-800 mt-2" />
             </div>
 
-            {/* Content */}
             <div className="flex-1 pb-6">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -191,7 +183,7 @@ function TimelineItem({ log, onClick }) {
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${severity.color}`}>
                                 {severity.label}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">{log.category || 'System'}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{log.event?.replace(/_/g, ' ')}</span>
                         </div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{log.description}</p>
                         <div className="flex items-center gap-3 mt-1.5">
@@ -219,14 +211,13 @@ function TimelineItem({ log, onClick }) {
     );
 }
 
-export default function ActivityLogsIndex({ logs, filters, showPagination = true, categories = {}, severities = {} }) {
+export default function AuditLogsIndex({ logs, filters, showPagination = true, categories = {}, severities = {} }) {
     const [selectedLog, setSelectedLog] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
     const [localFilters, setLocalFilters] = useState({
-        log_name: filters?.log_name || '',
-        event: filters?.event || '',
         category: filters?.category || '',
         severity: filters?.severity || '',
+        event: filters?.event || '',
         search: filters?.search || '',
         date_from: filters?.date_from || '',
         date_to: filters?.date_to || '',
@@ -235,27 +226,26 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
     function handleFilterChange(key, value) {
         const newFilters = { ...localFilters, [key]: value };
         setLocalFilters(newFilters);
-        router.get(adminUrl('/admin/activity-logs'), newFilters, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/audit-logs'), newFilters, { preserveState: true, replace: true });
     }
 
     function clearFilters() {
         const emptyFilters = { category: '', severity: '', event: '', search: '', date_from: '', date_to: '' };
         setLocalFilters(emptyFilters);
-        router.get(adminUrl('/admin/activity-logs'), {}, { preserveState: true, replace: true });
+        router.get(adminUrl('/admin/audit-logs'), {}, { preserveState: true, replace: true });
     }
 
     const hasActiveFilters = Object.values(localFilters).some(v => v !== '');
 
     return (
         <AdminLayout>
-            <Head title="Activity Log" />
+            <Head title="Audit Log" />
 
             <div className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 space-y-6">
-                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Activity Log</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Business and operations activities</p>
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Audit Log</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Security and compliance events</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -278,7 +268,6 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
                     </div>
                 </div>
 
-                {/* Filters */}
                 {showFilters && (
                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
                         <div className="flex items-center justify-between mb-4">
@@ -350,7 +339,6 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
                     </div>
                 )}
 
-                {/* Timeline */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                     <div className="p-5">
                         {logs.data.length > 0 ? (
@@ -361,16 +349,15 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
                             </div>
                         ) : (
                             <div className="text-center py-16">
-                                <Server className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">No activity logs found</p>
+                                <Shield className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">No audit logs found</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {hasActiveFilters ? 'Try adjusting your filters' : 'Activity will appear here as events occur'}
+                                    {hasActiveFilters ? 'Try adjusting your filters' : 'Security events will appear here'}
                                 </p>
                             </div>
                         )}
                     </div>
 
-                    {/* Pagination */}
                     {showPagination && logs.links && (
                         <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-800">
                             <div className="flex items-center justify-between">
@@ -398,7 +385,6 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
                 </div>
             </div>
 
-            {/* Detail Modal */}
             {selectedLog && <DetailModal log={selectedLog} onClose={() => setSelectedLog(null)} />}
         </AdminLayout>
     );

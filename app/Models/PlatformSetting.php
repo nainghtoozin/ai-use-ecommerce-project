@@ -24,6 +24,7 @@ class PlatformSetting extends Model
         'trial_days',
         'allow_trial_renewal',
         'max_trial_renewals',
+        'audit_retention_days',
         'platform_currency_code',
         'platform_currency_symbol',
         'platform_currency_position',
@@ -37,6 +38,7 @@ class PlatformSetting extends Model
         'trial_days' => 'integer',
         'allow_trial_renewal' => 'boolean',
         'max_trial_renewals' => 'integer',
+        'audit_retention_days' => 'integer',
         'platform_decimal_places' => 'integer',
     ];
 

@@ -94,7 +94,8 @@ export default function AdminSidebar() {
                 {
                     title: 'Logs',
                     items: [
-                        { label: t('navigation.activity_logs'), href: '/admin/activity-logs', icon: 'Activity' },
+                        { label: 'Activity', href: '/admin/activity-logs', icon: 'Activity' },
+                        { label: 'Audit Log', href: '/admin/audit-logs', icon: 'Shield' },
                     ]
                 },
             ];
@@ -173,7 +174,8 @@ export default function AdminSidebar() {
                     ...(can('users.view') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'Users' }] : []),
                     ...(can('users.view') || auth?.user?.is_owner ? [{ label: t('navigation.staff'), href: '/admin/team', icon: 'UserPlus' }] : []),
                     ...(can('roles.view') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'Shield' }] : []),
-                    ...(can('activity-logs.view') ? [{ label: t('navigation.activity_logs'), href: '/admin/activity-logs', icon: 'Activity' }] : []),
+                    ...(can('activity.view') ? [{ label: 'Activity', href: '/admin/activity-logs', icon: 'Activity' }] : []),
+                    ...(can('audit.view') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
                     { label: t('navigation.notifications'), href: '/admin/notifications', icon: 'Bell' },
                 ]
             },
