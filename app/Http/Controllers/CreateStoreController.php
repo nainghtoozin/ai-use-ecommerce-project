@@ -63,9 +63,14 @@ class CreateStoreController extends Controller
                 'store_url' => '/store/' . $slug,
                 'email' => $validated['owner_email'],
                 'status' => 'pending',
-                'settings' => $validated['description']
-                    ? ['description' => $validated['description']]
-                    : null,
+                'settings' => [
+                    'language' => 'en',
+                    'theme' => 'light',
+                    'timezone' => 'Asia/Yangon',
+                    'currency' => 'MMK',
+                    'notifications' => true,
+                    'description' => $validated['description'] ?? null,
+                ],
             ]);
 
             Tenant::clearDefaultCache();

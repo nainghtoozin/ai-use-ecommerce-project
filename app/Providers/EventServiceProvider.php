@@ -8,12 +8,17 @@ use App\Listeners\ActivateTenantOnVerified;
 use App\Listeners\CreateTransactionFromCompletedIntent;
 use App\Listeners\GenerateInvoiceFromCompletedIntent;
 use App\Listeners\PaymentTimelineEventSubscriber;
+use App\Listeners\UpdateAccountLastLogin;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
+        Login::class => [
+            UpdateAccountLastLogin::class,
+        ],
         PaymentIntentCompleted::class => [
             CreateTransactionFromCompletedIntent::class,
             ActivateSubscriptionOnPaymentCompleted::class,

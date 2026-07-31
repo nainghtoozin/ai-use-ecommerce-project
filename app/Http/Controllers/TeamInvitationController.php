@@ -133,6 +133,14 @@ class TeamInvitationController extends Controller
             'password' => Hash::make($request->password),
             'status' => Account::STATUS_ACTIVE,
             'email_verified_at' => now(),
+            'notification_preferences' => [
+                'email' => true,
+                'browser' => true,
+                'telegram' => true,
+                'marketing' => false,
+                'order_updates' => true,
+                'system_alerts' => true,
+            ],
         ]);
 
         return $this->completeInvitation($request, $invitation, $account, [

@@ -311,6 +311,14 @@ class TenantBootstrapService
                 'new_plan_id' => $plan->id,
                 'old_status' => null,
             ]);
+
+            // Update tenant with subscription details
+            $tenant->update([
+                'subscription_plan_id' => $plan->id,
+                'expires_at' => $trialEndsAt,
+                'status' => 'trialing',
+                'activated_at' => now(),
+            ]);
         } else {
             $startsAt = $status === 'active' ? now() : null;
             $expiresAt = $status === 'active'
@@ -324,11 +332,25 @@ class TenantBootstrapService
                 'starts_at' => $startsAt,
                 'expires_at' => $expiresAt,
             ]);
+
+            // Update tenant with subscription details
+            $tenantUpdate = [
+                'subscription_plan_id' => $plan->id,
+                'status' => $status,
+            ];
+
+            if ($expiresAt) {
+                $tenantUpdate['expires_at'] = $expiresAt;
+            }
+
+            if ($status === 'active') {
+                $tenantUpdate['activated_at'] = now();
+            }
+
+            $tenant->update($tenantUpdate);
         }
 
         FeatureGate::clearCache($plan);
-
-        $tenant->update(['status' => $subscription->status]);
 
         return $subscription;
     }

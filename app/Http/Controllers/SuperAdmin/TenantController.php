@@ -73,7 +73,14 @@ class TenantController extends Controller
                 'store_url' => '/store/' . $storeSlug,
                 'email' => $validated['email'] ?? null,
                 'status' => $validated['status'] ?? 'active',
-                'settings' => isset($validated['plan_id']) && $validated['plan_id'] ? ['plan_id' => $validated['plan_id']] : null,
+                'settings' => [
+                    'language' => 'en',
+                    'theme' => 'light',
+                    'timezone' => 'Asia/Yangon',
+                    'currency' => 'MMK',
+                    'notifications' => true,
+                    'plan_id' => $validated['plan_id'] ?? null,
+                ],
             ]);
 
             Tenant::clearDefaultCache();

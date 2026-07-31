@@ -38,6 +38,46 @@ class Tenant extends Model
         'used_storage_bytes' => 'integer',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($tenant) {
+            // Set default settings if not provided
+            if (empty($tenant->settings)) {
+                $tenant->settings = [
+                    'language' => 'en',
+                    'theme' => 'light',
+                    'timezone' => 'Asia/Yangon',
+                    'currency' => 'MMK',
+                    'notifications' => true,
+                ];
+            }
+
+            // Generate store_url if not set
+            if (empty($tenant->store_url) && !empty($tenant->slug)) {
+                $tenant->store_url = '/store/' . $tenant->slug;
+            }
+
+            // Set activated_at if status is active and not already set
+            if ($tenant->status === 'active' && empty($tenant->activated_at)) {
+                $tenant->activated_at = now();
+            }
+        });
+
+        static::saved(function ($tenant) {
+            // Sync activated_at when status changes to active
+            if ($tenant->status === 'active' && empty($tenant->activated_at)) {
+                $tenant->updateQuietly(['activated_at' => now()]);
+            }
+
+            // Sync locked_at when status changes to suspended/expired
+            if (in_array($tenant->status, ['suspended', 'expired', 'locked']) && empty($tenant->locked_at)) {
+                $tenant->updateQuietly(['locked_at' => now()]);
+            }
+        });
+    }
+
     public function getStoreSlugAttribute(): string
     {
         return $this->slug;

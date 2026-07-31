@@ -166,6 +166,14 @@ class AdminUserController extends Controller
                     'email' => $data['email'],
                     'password' => Hash::make($data['password']),
                     'status' => $data['status'] ?? Account::STATUS_ACTIVE,
+                    'notification_preferences' => [
+                        'email' => true,
+                        'browser' => true,
+                        'telegram' => true,
+                        'marketing' => false,
+                        'order_updates' => true,
+                        'system_alerts' => true,
+                    ],
                 ]);
             }
 
@@ -191,6 +199,14 @@ class AdminUserController extends Controller
                 'password' => Hash::make($data['password']),
                 'status' => $data['status'] ?? User::STATUS_ACTIVE,
                 'allow_cod' => $data['allow_cod'] ?? false,
+                'notification_preferences' => [
+                    'email' => true,
+                    'browser' => true,
+                    'telegram' => true,
+                    'marketing' => false,
+                    'order_updates' => true,
+                    'system_alerts' => true,
+                ],
             ]);
 
             if ($request->hasFile('profile_image')) {
