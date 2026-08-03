@@ -55,6 +55,10 @@ class VerifyEmailController extends Controller
     {
         $url = app(LoginRedirectResolver::class)->resolveAfterEmailVerification($authenticatable);
 
+        if ($authenticatable instanceof Account) {
+            return redirect()->to($url)->with('status', 'email-verified');
+        }
+
         if ($url === route('login')) {
             return redirect()->to($url)->with('status', 'email-verified');
         }

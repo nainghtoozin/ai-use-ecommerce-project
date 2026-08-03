@@ -1,40 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-
-const faqs = [
-    {
-        q: 'How do I create a store?',
-        a: 'Click "Start Free Trial" and fill in your store name and details. You\'ll be guided through the setup process and your store will be ready in minutes.',
-    },
-    {
-        q: 'Is there a free plan available?',
-        a: 'Yes! Our Free plan includes standard products, order management, and cash on delivery. No credit card required to start.',
-    },
-    {
-        q: 'Can I use my own domain name?',
-        a: 'The Starter plan and above include custom domain support. You can use your own domain to give your store a professional branded URL.',
-    },
-    {
-        q: 'What payment methods are supported?',
-        a: 'We support multiple payment gateways including KBZPay, WavePay, AYA Pay, cash on delivery, and bank transfers. Higher plans include Stripe and PayPal for international payments.',
-    },
-    {
-        q: 'Can I upgrade or downgrade my plan?',
-        a: 'Yes, you can change your plan at any time. When upgrading, you get immediate access to new features. Our team can assist with plan changes.',
-    },
-    {
-        q: 'Is there a trial period for paid plans?',
-        a: 'Yes, paid plans come with a free trial period. You can explore all features before committing to a subscription.',
-    },
-    {
-        q: 'How does Telegram integration work?',
-        a: 'Our Telegram bot sends real-time notifications for new orders, payments, and inventory alerts. You can also manage orders directly from Telegram.',
-    },
-    {
-        q: 'What kind of support do you offer?',
-        a: 'We provide email support for all plans. Priority support is available for higher-tier plans. Check our contact page for more details.',
-    },
-];
+import { useTranslation } from '@/Utils/useTranslation';
 
 function FaqItem({ faq, isOpen, toggle }) {
     return (
@@ -60,21 +26,25 @@ function FaqItem({ faq, isOpen, toggle }) {
 }
 
 export default function FaqSection() {
+    const { t } = useTranslation();
     const [openIndex, setOpenIndex] = useState(null);
 
     const toggle = (index) => {
         setOpenIndex(openIndex === index ? null : index);
     };
 
+    const faqItems = t('landing.faq.items');
+    const faqs = Array.isArray(faqItems) ? faqItems : [];
+
     return (
         <section id="faq" className="py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-900 scroll-mt-16">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto mb-12">
                     <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
-                        Frequently Asked Questions
+                        {t('landing.faq.title')}
                     </h2>
                     <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
-                        Everything you need to know about the platform.
+                        {t('landing.faq.subtitle')}
                     </p>
                 </div>
 

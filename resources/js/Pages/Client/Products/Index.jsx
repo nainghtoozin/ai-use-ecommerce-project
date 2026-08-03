@@ -133,7 +133,7 @@ export default function ClientProductIndex() {
                         </p>
                         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link
-                                href="/create-store"
+                                href="/register"
                                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-white dark:bg-gray-900 text-indigo-700 font-bold text-base rounded-xl hover:bg-indigo-50 transition-all shadow-lg"
                             >
                                 <i className="bi bi-plus-circle"></i>

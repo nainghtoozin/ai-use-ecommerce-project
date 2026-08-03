@@ -96,6 +96,9 @@ Route::prefix('store/{store_slug}/admin')
     // ── Operations routes (blocked when expired/suspended/locked) ──
     Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'index'])->name('dashboard');
+        Route::post('/onboarding/dismiss', [\App\Http\Controllers\Admin\AdminController::class, 'dismissOnboarding'])->name('onboarding.dismiss');
+        Route::post('/onboarding/reset', [\App\Http\Controllers\Admin\AdminController::class, 'resetOnboarding'])->name('onboarding.reset');
+        Route::get('/settings/onboarding', [\App\Http\Controllers\Admin\AdminController::class, 'onboardingSettings'])->name('settings.onboarding');
 
         // Products
         Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');

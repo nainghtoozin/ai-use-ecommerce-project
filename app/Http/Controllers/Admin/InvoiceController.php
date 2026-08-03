@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Models\WebsiteInfo;
+use App\Services\ImageService;
 use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -151,7 +153,19 @@ class InvoiceController extends Controller
 
         $invoice->load(['plan', 'subscription', 'paymentIntent', 'tenant']);
 
-        $html = view('pdf.invoice', ['invoice' => $invoice])->render();
+        $websiteInfo = WebsiteInfo::getSettings();
+        $themeColor = $websiteInfo->theme_color ?: '#3B82F6';
+
+        $html = view('pdf.invoice', [
+            'invoice' => $invoice,
+            'siteName' => $websiteInfo->site_name ?? $tenant->name ?? config('app.name'),
+            'siteDescription' => $websiteInfo->site_description ?? null,
+            'logoUrl' => $websiteInfo->logo_url ?? null,
+            'themeColor' => $themeColor,
+            'contactEmail' => $websiteInfo->contact_email ?? $websiteInfo->support_email ?? null,
+            'phone' => $websiteInfo->phone ?? null,
+            'footerCopyright' => $websiteInfo->footer_copyright ?? null,
+        ])->render();
 
         $filename = $invoice->invoice_number . '.html';
 

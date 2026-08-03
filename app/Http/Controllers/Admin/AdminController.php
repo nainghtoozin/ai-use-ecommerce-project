@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\OnboardingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -88,8 +90,52 @@ class AdminController extends Controller
                 'selectedPeriod'       => $period,
                 'startDate'            => $startDate,
                 'endDate'              => $endDate,
+                'onboarding'           => $this->getOnboardingData($request),
             ]
         ));
+    }
+
+    private function getOnboardingData(Request $request): ?array
+    {
+        $tenant = tenant();
+        if (!$tenant) {
+            return null;
+        }
+
+        $user = $request->user();
+        if (!$user instanceof Account) {
+            return null;
+        }
+
+        if (!$user->isOwner()) {
+            return null;
+        }
+
+        return app(OnboardingService::class)->getOnboardingData($tenant, $user);
+    }
+
+    public function dismissOnboarding(Request $request)
+    {
+        $tenant = tenant();
+        if (!$tenant) {
+            return back();
+        }
+
+        app(OnboardingService::class)->dismiss($tenant);
+
+        return back();
+    }
+
+    public function resetOnboarding(Request $request)
+    {
+        $tenant = tenant();
+        if (!$tenant) {
+            return back();
+        }
+
+        app(OnboardingService::class)->resetOnboarding($tenant);
+
+        return back();
     }
 
     /**
@@ -191,6 +237,25 @@ class AdminController extends Controller
             return "_{$period}_{$startDate}_{$endDate}";
         }
         return "_{$period}";
+    }
+
+    public function onboardingSettings(Request $request)
+    {
+        $tenant = tenant();
+        if (!$tenant) {
+            return back();
+        }
+
+        $user = $request->user();
+        $onboarding = null;
+
+        if ($user instanceof Account && $user->isOwner()) {
+            $service = app(OnboardingService::class);
+            $service->resetOnboarding($tenant);
+            $onboarding = $service->getOnboardingData($tenant, $user);
+        }
+
+        return redirect()->route('admin.dashboard');
     }
 
     public function showLogin()

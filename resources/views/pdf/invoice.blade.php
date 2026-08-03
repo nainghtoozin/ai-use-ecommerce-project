@@ -2,14 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $invoice->invoice_number }}</title>
+    <title>{{ $invoice->invoice_number }} — {{ $siteName }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 12px; color: #1f2937; line-height: 1.5; padding: 40px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #e5e7eb; }
-        .header-left h1 { font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 4px; }
-        .header-left .subtitle { font-size: 13px; color: #6b7280; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid {{ $themeColor }}; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-left .logo { max-height: 48px; max-width: 180px; object-fit: contain; }
+        .header-left .brand h1 { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 2px; }
+        .header-left .brand .subtitle { font-size: 13px; color: #6b7280; }
         .header-right { text-align: right; }
+        .header-right .invoice-number { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 4px; }
         .header-right .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-paid { background: #d1fae5; color: #065f46; }
         .badge-unpaid { background: #fef3c7; color: #92400e; }
@@ -42,10 +45,18 @@
 <body>
     <div class="header">
         <div class="header-left">
-            <h1>{{ $invoice->invoice_number }}</h1>
-            <p class="subtitle">{{ $invoice->plan?->name ?? 'Subscription' }} Invoice</p>
+            @if($logoUrl)
+                <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="logo">
+            @endif
+            <div class="brand">
+                <h1>{{ $siteName }}</h1>
+                @if($siteDescription)
+                    <p class="subtitle">{{ Str::limit($siteDescription, 60) }}</p>
+                @endif
+            </div>
         </div>
         <div class="header-right">
+            <p class="invoice-number">{{ $invoice->invoice_number }}</p>
             <span class="badge badge-{{ $invoice->status }}">
                 {{ ucfirst($invoice->status) }}
             </span>
@@ -121,7 +132,14 @@
     @endif
 
     <div class="footer">
-        <p>{{ config('app.name') }} — Invoice {{ $invoice->invoice_number }}</p>
+        @if($footerCopyright)
+            <p>{{ $footerCopyright }}</p>
+        @else
+            <p>{{ $siteName }} — Invoice {{ $invoice->invoice_number }}</p>
+        @endif
+        @if($contactEmail)
+            <p style="margin-top:4px;">{{ $contactEmail }}@if($phone) · {{ $phone }}@endif</p>
+        @endif
     </div>
 </body>
 </html>

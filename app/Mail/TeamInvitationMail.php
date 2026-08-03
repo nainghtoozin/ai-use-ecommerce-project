@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\PlatformSetting;
 use App\Models\TeamInvitation;
+use App\Models\WebsiteInfo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -35,7 +36,16 @@ class TeamInvitationMail extends Mailable implements ShouldQueue
         $inviter = $invitation->inviter;
         $platform = PlatformSetting::current();
 
-        $logoUrl = $platform->site_logo ? $platform->site_logo_url : null;
+        $websiteInfo = WebsiteInfo::withoutTenantScope(function () use ($tenant) {
+            return WebsiteInfo::where('tenant_id', $tenant->id)->first();
+        });
+
+        $logoUrl = null;
+        if ($websiteInfo && $websiteInfo->logo) {
+            $logoUrl = $websiteInfo->logo_url;
+        } elseif ($platform->site_logo) {
+            $logoUrl = $platform->site_logo_url;
+        }
 
         return new Content(
             view: 'mail.invitation',

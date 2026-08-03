@@ -14,7 +14,7 @@ class ActivityLogController extends Controller
 
     // Security/auth events that belong to Audit Log (exclude from Activity)
     const AUDIT_EVENTS = [
-        'login', 'logout', 'password_reset', 'password_changed',
+        'login', 'logout', 'password_reset', 'password_changed', 'failed_login',
         'email_verified', 'registered',
         'suspended', 'banned', 'activated', 'locked', 'unlocked',
         'impersonation_started', 'impersonation_ended',

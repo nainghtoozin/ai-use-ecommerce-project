@@ -45,8 +45,13 @@ trait LogsActivity
         $impersonatorId = session('impersonator_id');
         $isImpersonating = $impersonatorId && auth()->check() && $impersonatorId !== auth()->id();
 
+        $category = $this->resolveActivityCategory($event, $logName);
+        $severity = $this->resolveActivitySeverity($event);
+
         ActivityLog::create([
             'log_name' => $logName,
+            'category' => $category,
+            'severity' => $severity,
             'description' => $description,
             'subject_type' => static::class,
             'subject_id' => $this->getKey(),
@@ -58,5 +63,32 @@ trait LogsActivity
             'event' => $event,
             'batch_uuid' => (string) Str::uuid(),
         ]);
+    }
+
+    protected function resolveActivityCategory(string $event, string $logName): string
+    {
+        $categoryMap = [
+            'product' => ActivityLog::CATEGORY_PRODUCTS,
+            'category' => ActivityLog::CATEGORY_PRODUCTS,
+            'brand' => ActivityLog::CATEGORY_PRODUCTS,
+            'order' => ActivityLog::CATEGORY_ORDERS,
+            'payment_method' => ActivityLog::CATEGORY_SETTINGS,
+            'user' => ActivityLog::CATEGORY_USERS,
+            'role' => ActivityLog::CATEGORY_SECURITY,
+            'permission' => ActivityLog::CATEGORY_SECURITY,
+            'subscription' => ActivityLog::CATEGORY_BILLING,
+            'invoice' => ActivityLog::CATEGORY_BILLING,
+        ];
+
+        return $categoryMap[$logName] ?? ActivityLog::CATEGORY_SYSTEM;
+    }
+
+    protected function resolveActivitySeverity(string $event): string
+    {
+        return match ($event) {
+            'created' => ActivityLog::SEVERITY_SUCCESS,
+            'deleted' => ActivityLog::SEVERITY_WARNING,
+            default => ActivityLog::SEVERITY_INFO,
+        };
     }
 }

@@ -29,8 +29,10 @@ use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\ClientOrderController;
 use App\Http\Controllers\Client\StaticPagesController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StoreSetupController;
 use App\Http\Controllers\TelegramIntegrationController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +48,23 @@ Route::get('/products', [ClientController::class, 'products'])->name('products.p
 Route::get('/create-store', [CreateStoreController::class, 'index'])->name('create-store');
 Route::post('/create-store', [CreateStoreController::class, 'store'])->name('create-store.store');
 Route::get('/store-registration/success', [CreateStoreController::class, 'success'])->name('create-store.success');
+
+// Public language switcher (no auth required)
+Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch.public');
+
+// Public marketplace / store directory
+Route::get('/marketplace', [\App\Http\Controllers\MarketplaceController::class, 'index'])->name('marketplace.index');
+
+// ============================================================
+// ONBOARDING ROUTES (authenticated, verified, no tenant required)
+// ============================================================
+Route::middleware(['auth:web,accounts', 'verified'])->group(function () {
+    Route::get('/onboarding/store', [OnboardingController::class, 'store'])->name('onboarding.store');
+    Route::get('/onboarding/store-setup', [StoreSetupController::class, 'create'])->name('onboarding.store-setup');
+    Route::post('/onboarding/store-setup', [StoreSetupController::class, 'store'])->name('onboarding.store-setup.store');
+    Route::get('/onboarding/check-slug', [StoreSetupController::class, 'checkSlug'])->name('onboarding.check-slug');
+    Route::get('/onboarding/success/{store_slug}', [StoreSetupController::class, 'success'])->name('onboarding.success');
+});
 
 // ============================================================
 // DEV TOOL — test email sending (local only)
@@ -107,6 +126,7 @@ Route::prefix('client')->name('client.')->group(function () {
 
     Route::get('/about', [StaticPagesController::class, 'about'])->name('pages.about');
     Route::get('/contact', [StaticPagesController::class, 'contact'])->name('pages.contact');
+    Route::post('/contact', [StaticPagesController::class, 'submitContact'])->name('pages.contact.submit');
     Route::get('/faq', [StaticPagesController::class, 'faq'])->name('pages.faq');
     Route::get('/privacy', [StaticPagesController::class, 'privacy'])->name('pages.privacy');
     Route::get('/terms', [StaticPagesController::class, 'terms'])->name('pages.terms');
@@ -316,6 +336,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     // ── Operations routes (blocked when expired/suspended/locked) ──
     Route::middleware(['tenant.active', 'tenant.locked'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+        Route::post('/onboarding/dismiss', [AdminController::class, 'dismissOnboarding'])->name('onboarding.dismiss');
+        Route::post('/onboarding/reset', [AdminController::class, 'resetOnboarding'])->name('onboarding.reset');
+        Route::get('/settings/onboarding', [AdminController::class, 'onboardingSettings'])->name('settings.onboarding');
         Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');

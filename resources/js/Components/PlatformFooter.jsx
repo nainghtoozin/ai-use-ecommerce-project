@@ -1,24 +1,27 @@
 import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
+import { useTranslation } from '@/Utils/useTranslation';
 
 export default function PlatformFooter() {
     const { platform_setting } = usePage().props;
+    const { t } = useTranslation();
     const logoUrl = assetUrl(platform_setting?.site_logo);
     const siteName = platform_setting?.site_name || 'My Store';
     const themeColor = 'var(--theme-color, #3B82F6)';
 
     const platformLinks = [
-        { label: 'Create Store', href: '/create-store' },
-        { label: 'Features', href: '/#features' },
-        { label: 'Pricing', href: '/#pricing' },
-        { label: 'FAQ', href: '/#faq' },
+        { label: t('landing.footer.create_store'), href: '/register' },
+        { label: t('landing.footer.features'), href: '/#features' },
+        { label: t('landing.footer.pricing'), href: '/#pricing' },
+        { label: t('landing.footer.faq'), href: '/#faq' },
+        { label: t('landing.footer.marketplace'), href: '/marketplace' },
     ];
 
     const companyLinks = [
-        { label: 'About Us', href: '/client/about' },
-        { label: 'Privacy Policy', href: '/client/privacy' },
-        { label: 'Terms of Service', href: '/client/terms' },
-        { label: 'Contact', href: '/client/contact' },
+        { label: t('landing.footer.about_us'), href: '/client/about' },
+        { label: t('landing.footer.privacy_policy'), href: '/client/privacy' },
+        { label: t('landing.footer.terms_of_service'), href: '/client/terms' },
+        { label: t('landing.footer.contact'), href: '/client/contact' },
     ];
 
     return (
@@ -29,7 +32,7 @@ export default function PlatformFooter() {
                         <div className="col-span-2">
                             <Link href="/" className="flex items-center gap-2.5 mb-3">
                                 {logoUrl ? (
-                                    <img src={logoUrl} alt={siteName} className="h-8 w-auto" />
+                                    <img src={logoUrl} alt={siteName} className="h-8 w-auto" loading="lazy" />
                                 ) : (
                                     <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: themeColor }}>
                                         <i className="bi bi-shop text-white text-base"></i>
@@ -38,13 +41,12 @@ export default function PlatformFooter() {
                                 <span className="text-lg font-bold">{siteName}</span>
                             </Link>
                             <p className="text-slate-400 text-xs leading-relaxed max-w-md">
-                                Launch Your Online Store — A complete e-commerce platform for Myanmar merchants.
-                                Create your branded storefront, manage products, accept orders, and grow your business — all in one place.
+                                {t('landing.footer.description')}
                             </p>
                         </div>
 
                         <div>
-                            <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Platform</h4>
+                            <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">{t('landing.footer.platform')}</h4>
                             <ul className="space-y-2">
                                 {platformLinks.map((link) => (
                                     <li key={link.href + link.label}>
@@ -57,7 +59,7 @@ export default function PlatformFooter() {
                         </div>
 
                         <div>
-                            <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Company</h4>
+                            <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">{t('landing.footer.company')}</h4>
                             <ul className="space-y-2">
                                 {companyLinks.map((link) => (
                                     <li key={link.href + link.label}>
@@ -74,7 +76,7 @@ export default function PlatformFooter() {
                 <div className="py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div className="flex items-center gap-2 text-slate-500 text-xs">
                         <i className="bi bi-copyright"></i>
-                        <span>{new Date().getFullYear()} {siteName}. All rights reserved.</span>
+                        <span>{t('landing.footer.copyright', { year: new Date().getFullYear(), siteName })}</span>
                     </div>
                     {platform_setting?.support_email && (
                         <a href={`mailto:${platform_setting.support_email}`} className="text-xs text-slate-400 hover:text-white transition-colors">

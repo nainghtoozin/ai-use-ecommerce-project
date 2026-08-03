@@ -222,6 +222,7 @@ class HandleInertiaRequests extends Middleware
                 'billing',
                 'reports',
                 'customers',
+                'landing',
             ];
 
             $translations = [];
@@ -251,6 +252,7 @@ class HandleInertiaRequests extends Middleware
                 'reports' => [],
                 'customers' => [],
                 'validation' => [],
+                'landing' => [],
             ];
         }
     }

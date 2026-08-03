@@ -48,8 +48,8 @@ class ActivityLogger
 
     protected static function resolveCategory(string $event, ?string $logName): string
     {
-        $authEvents = ['login', 'logout', 'password_reset', 'email_verified', 'registered'];
-        $securityEvents = ['suspended', 'banned', 'activated', 'locked', 'unlocked', 'impersonation_started', 'impersonation_ended'];
+        $authEvents = ['login', 'logout', 'password_reset', 'email_verified', 'registered', 'password_changed'];
+        $securityEvents = ['suspended', 'banned', 'activated', 'locked', 'unlocked', 'impersonation_started', 'impersonation_ended', 'failed_login'];
         $orderEvents = ['order_created', 'order_status_changed', 'order_cancelled', 'order_completed'];
         $paymentEvents = ['payment_verified', 'payment_rejected', 'payment_proof_uploaded', 'payment_refunded'];
         $productEvents = ['product_created', 'product_updated', 'product_deleted', 'product_bulk_deleted'];
@@ -92,7 +92,7 @@ class ActivityLogger
     protected static function resolveSeverity(string $event): string
     {
         $successEvents = ['login', 'registered', 'email_verified', 'activated', 'payment_verified', 'order_completed', 'subscription_renewed'];
-        $warningEvents = ['suspended', 'payment_rejected', 'low_stock_alert', 'subscription_expired', 'order_cancelled'];
+        $warningEvents = ['suspended', 'payment_rejected', 'low_stock_alert', 'subscription_expired', 'order_cancelled', 'failed_login'];
         $errorEvents = ['banned', 'locked', 'payment_failed'];
         $criticalEvents = ['account_deleted', 'data_breach', 'security_violation'];
 

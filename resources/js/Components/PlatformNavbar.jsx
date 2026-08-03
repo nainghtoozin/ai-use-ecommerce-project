@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
+import { useTranslation } from '@/Utils/useTranslation';
 import NotificationBell from '@/Components/NotificationBell';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
 
 export default function PlatformNavbar() {
     const { props, url } = usePage();
     const { auth, platform_setting } = props;
+    const { t } = useTranslation();
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -39,9 +42,10 @@ export default function PlatformNavbar() {
     const logout = () => router.post('/logout', { context: '' });
 
     const navLinks = [
-        { label: 'Features', href: '/#features', icon: 'bi-star' },
-        { label: 'Pricing', href: '/#pricing', icon: 'bi-currency-dollar' },
-        { label: 'FAQ', href: '/#faq', icon: 'bi-question-circle' },
+        { label: t('landing.nav.features'), href: '/#features', icon: 'bi-star' },
+        { label: t('landing.nav.pricing'), href: '/#pricing', icon: 'bi-currency-dollar' },
+        { label: t('landing.nav.marketplace'), href: '/marketplace', icon: 'bi-shop' },
+        { label: t('landing.nav.faq'), href: '/#faq', icon: 'bi-question-circle' },
     ];
 
     return (
@@ -50,7 +54,7 @@ export default function PlatformNavbar() {
                 <div className="flex items-center justify-between h-14 lg:h-16 gap-2 lg:gap-4">
                     <Link href="/" className="flex items-center gap-2 flex-shrink-0">
                         {logoUrl ? (
-                            <img src={logoUrl} alt={siteName} className="h-8 w-auto lg:h-9" />
+                            <img src={logoUrl} alt={siteName} className="h-8 w-auto lg:h-9" loading="lazy" />
                         ) : (
                             <div className="h-8 w-8 lg:h-9 lg:w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                 <i className="bi bi-shop text-white text-base lg:text-lg"></i>
@@ -67,7 +71,7 @@ export default function PlatformNavbar() {
                                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                     isActive(item.href)
                                         ? 'text-white'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
                                 }`}
                                 style={isActive(item.href) ? { backgroundColor: 'var(--theme-color, #3B82F6)' } : {}}
                             >
@@ -78,12 +82,14 @@ export default function PlatformNavbar() {
                     </div>
 
                     <div className="flex items-center gap-1">
+                        <LanguageSwitcher />
+
                         {auth?.user ? (
                             <>
                                 <NotificationBell />
                                 <Link
                                     href="/chat"
-                                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors hidden sm:block"
+                                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors hidden sm:block"
                                     title="Messages"
                                 >
                                     <i className="bi bi-chat-dots text-xl"></i>
@@ -91,7 +97,7 @@ export default function PlatformNavbar() {
                                 <div ref={userMenuRef} className="relative">
                                     <button
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                        className="flex items-center gap-2 px-1.5 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
+                                        className="flex items-center gap-2 px-1.5 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                                     >
                                         <div className="w-7 lg:w-8 h-7 lg:h-8 text-white rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                                             {auth.user.name?.charAt(0).toUpperCase()}
@@ -108,18 +114,18 @@ export default function PlatformNavbar() {
                                                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{auth.user.email}</p>
                                                 </div>
                                                 <div className="py-1">
-                                                    <Link href="/customer/account" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
+                                                    <Link href="/customer/account" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
                                                         <i className="bi bi-grid text-gray-400 dark:text-gray-500"></i>
-                                                        My Account
+                                                        {t('landing.nav.my_account')}
                                                     </Link>
-                                                    <Link href="/customer/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
+                                                    <Link href="/customer/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
                                                         <i className="bi bi-receipt text-gray-400 dark:text-gray-500"></i>
-                                                        My Orders
+                                                        {t('landing.nav.my_orders')}
                                                     </Link>
                                                     <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
                                                         <button onClick={logout} className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                                             <i className="bi bi-box-arrow-right text-gray-400 dark:text-gray-500"></i>
-                                                            Logout
+                                                            {t('landing.nav.logout')}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -130,24 +136,24 @@ export default function PlatformNavbar() {
                             </>
                         ) : (
                             <div className="hidden sm:flex items-center gap-2">
-                                <Link href="/create-store" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
-                                    Create Store
+                                <Link href="/register" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                                    {t('landing.nav.start_free_trial')}
                                 </Link>
-                                <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors">
-                                    Merchant Login
+                                <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                                    {t('landing.nav.sign_in')}
                                 </Link>
                                 <Link href="/client/contact" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
                                     style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                     onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                                     onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
-                                    Contact Us
+                                    {t('landing.nav.contact')}
                                 </Link>
                             </div>
                         )}
 
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
+                            className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         >
                             <i className={`bi ${mobileMenuOpen ? 'bi-x-lg' : 'bi-list'} text-xl`}></i>
                         </button>
@@ -167,7 +173,7 @@ export default function PlatformNavbar() {
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                                         isActive(item.href)
                                             ? 'text-white'
-                                            : 'text-gray-600 hover:bg-gray-100'
+                                            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                                     }`}
                                     style={isActive(item.href) ? { backgroundColor: 'var(--theme-color, #3B82F6)' } : {}}
                                 >
@@ -177,14 +183,16 @@ export default function PlatformNavbar() {
                             ))}
                         </div>
 
+                        <LanguageSwitcher variant="mobile" />
+
                         {!auth?.user && (
                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
-                                <Link href="/login" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:bg-gray-950">
-                                    Merchant Login
+                                <Link href="/login" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-950">
+                                    {t('landing.nav.sign_in')}
                                 </Link>
-                                <Link href="/create-store" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
+                                <Link href="/register" className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
                                     style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
-                                    Create Store
+                                    {t('landing.nav.start_free_trial')}
                                 </Link>
                             </div>
                         )}

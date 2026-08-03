@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteInfo;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class StaticPagesController extends Controller
@@ -37,6 +38,35 @@ class StaticPagesController extends Controller
             'contact_info' => $settings->contact_info,
             'address_info' => $settings->address_info,
         ]);
+    }
+
+    public function submitContact(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:5000',
+        ]);
+
+        $settings = WebsiteInfo::getSettings();
+        $toEmail = $settings->support_email ?? $settings->contact_email ?? config('mail.from.address');
+
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "Name: {$validated['name']}\nEmail: {$validated['email']}\nSubject: {$validated['subject']}\n\nMessage:\n{$validated['message']}",
+                function ($message) use ($toEmail, $validated) {
+                    $message->to($toEmail)
+                        ->subject('Contact Form: ' . $validated['subject'])
+                        ->replyTo($validated['email'], $validated['name']);
+                }
+            );
+        } catch (\Throwable $e) {
+            // Silently fail — don't expose mail errors to users
+            report($e);
+        }
+
+        return back()->with('success', 'Thank you! Your message has been sent.');
     }
 
     public function faq()

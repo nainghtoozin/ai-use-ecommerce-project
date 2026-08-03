@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,14 @@ class PasswordController extends Controller
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        ActivityLogger::log(
+            'Password changed',
+            'password_changed',
+            $request->user(),
+            ['ip' => $request->ip()],
+            'security'
+        );
 
         Auth::logout();
         $request->session()->invalidate();

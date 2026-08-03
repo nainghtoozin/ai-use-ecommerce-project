@@ -79,6 +79,10 @@ class TenantMembership extends Model
             return true;
         }
 
-        return $this->role->hasPermissionTo($ability);
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        return $this->role?->hasPermissionTo($ability) ?? false;
     }
 }

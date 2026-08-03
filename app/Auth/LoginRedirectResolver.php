@@ -5,6 +5,7 @@ namespace App\Auth;
 use App\Models\Account;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\PostLoginRedirectService;
 use Illuminate\Http\RedirectResponse;
 
 class LoginRedirectResolver
@@ -28,6 +29,10 @@ class LoginRedirectResolver
             }
 
             return route('storefront.index', ['store_slug' => $storeSlug]);
+        }
+
+        if ($authenticatable instanceof Account && !$this->hasMemberships($authenticatable)) {
+            return app(PostLoginRedirectService::class)->resolveDestination($authenticatable);
         }
 
         if ($authenticatable->isAdmin()) {
@@ -87,6 +92,10 @@ class LoginRedirectResolver
         $tenant = $this->resolveTenant($authenticatable);
         if ($tenant) {
             return route('storefront.onboarding.complete', ['store_slug' => $tenant->slug]);
+        }
+
+        if ($authenticatable instanceof Account && !$this->hasMemberships($authenticatable)) {
+            return route('onboarding.store');
         }
 
         return route('login');
@@ -193,6 +202,11 @@ class LoginRedirectResolver
         }
 
         return null;
+    }
+
+    private function hasMemberships(Account $account): bool
+    {
+        return $account->memberships()->exists();
     }
 
     private function fallbackLogoutRedirect(User|Account|null $authenticatable, ?string $storeSlug): string

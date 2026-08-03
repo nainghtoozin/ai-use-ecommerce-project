@@ -15,6 +15,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
     UserCircle, UserPlus, Activity, Shield, Archive,
+    Rocket,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'admin_sidebar_open_section';
@@ -27,13 +28,13 @@ const iconMap = {
     Users, UserCog, ShieldCheck, History,
     Bell, Globe, BellRing, Send, Settings,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
-    UserCircle, UserPlus, Activity, Shield, Archive,
+    UserCircle, UserPlus, Activity, Shield, Archive, Rocket,
 };
 
-function Icon({ name, className = '' }) {
+function Icon({ name, className = '', ...props }) {
     const LucideIcon = iconMap[name];
     if (!LucideIcon) return null;
-    return <LucideIcon className={`w-[18px] h-[18px] ${className}`} />;
+    return <LucideIcon className={`w-[18px] h-[18px] ${className}`} {...props} />;
 }
 
 export default function AdminSidebar() {
@@ -185,6 +186,7 @@ export default function AdminSidebar() {
                     ...(can('settings.website') ? [{ label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' }] : []),
                     ...(can('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
                     ...(can('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
+                    ...(isOwner ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),
                     ...(can('settings.view') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
                 ]
             }
@@ -389,15 +391,16 @@ export default function AdminSidebar() {
                                                     >
                                                         {/* Active accent border */}
                                                         {active && (
-                                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-blue-400 rounded-r-full" />
+                                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }} />
                                                         )}
                                                         <Icon
                                                             name={item.icon}
                                                             className={`flex-shrink-0 ${
                                                                 active
-                                                                    ? 'text-blue-400'
+                                                                    ? ''
                                                                     : 'text-gray-400 group-hover:text-gray-300'
                                                             }`}
+                                                            style={active ? { color: 'var(--theme-color, #3B82F6)' } : undefined}
                                                         />
                                                         {!collapsed && (
                                                             <span className="truncate">{item.label}</span>

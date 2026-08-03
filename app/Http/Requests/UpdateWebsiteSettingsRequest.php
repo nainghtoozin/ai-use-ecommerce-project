@@ -67,6 +67,8 @@ class UpdateWebsiteSettingsRequest extends FormRequest
             'hero_images' => 'nullable|array|max:5',
             'hero_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
             'hero_images_existing' => 'nullable|array|max:5',
+            'footer_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'about_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'footer_description' => 'nullable|string|max:1000',
             'footer_extra_text' => 'nullable|string|max:5000',
             'footer_copyright' => 'nullable|string|max:255',

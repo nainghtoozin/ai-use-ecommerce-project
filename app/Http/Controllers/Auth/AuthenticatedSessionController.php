@@ -102,6 +102,11 @@ class AuthenticatedSessionController extends Controller
 
         $authenticatable = Auth::guard($guard)->user();
 
+        if (!$authenticatable->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice')
+                ->with('status', 'Please verify your email before continuing.');
+        }
+
         $request->session()->forget('current_tenant_slug');
 
         // Login activity is logged by UpdateAccountLastLogin listener

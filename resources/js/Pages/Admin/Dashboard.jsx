@@ -5,6 +5,7 @@ import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useState } from 'react';
 import { usePermission } from '@/Hooks/usePermission';
 import { useTranslation } from '@/Utils/useTranslation';
+import OnboardingChecklist from '@/Components/OnboardingChecklist';
 
 const paymentMethodStyles = {
     kpay:      { icon: 'bi-phone',       bg: 'bg-blue-100', text: 'text-blue-600' },
@@ -42,6 +43,7 @@ export default function AdminDashboard({
     selectedPeriod,
     startDate,
     endDate,
+    onboarding,
 }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const { t } = useTranslation();
@@ -185,6 +187,8 @@ export default function AdminDashboard({
             <Head title={t('navigation.dashboard')} />
 
             <div className="p-6 lg:p-8 space-y-6">
+                {onboarding && <OnboardingChecklist onboarding={onboarding} />}
+
                 {showBanner && (
                     <div className={`rounded-xl border p-4 sm:p-5 ${
                         subscriptionStatus === 'suspended'

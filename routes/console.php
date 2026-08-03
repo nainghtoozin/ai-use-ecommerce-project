@@ -22,3 +22,5 @@ Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();
 // hourly otherwise (prevents subscriptions lingering past thresholds).
 Schedule::command('subscriptions:process-expired')->everyFiveMinutes();
 Schedule::command('subscriptions:send-expiry-warnings')->dailyAt('08:00');
+Schedule::command('subscriptions:send-reminders')->dailyAt('09:00');
+Schedule::command('subscriptions:apply-scheduled-changes')->hourly();

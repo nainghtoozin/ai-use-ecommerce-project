@@ -52,8 +52,7 @@ class ClientOrderController extends Controller
 
     public function store(Request $request)
     {
-        Log::info('========== CHECKOUT STARTED ==========');
-        Log::info('Raw request data:', $request->all());
+        Log::info('Checkout started', ['user_id' => $request->user()?->id]);
 
         $customerData = [];
         $itemsData = [];
@@ -62,10 +61,8 @@ class ClientOrderController extends Controller
             $customerInput = $request->customer;
             if (is_string($customerInput)) {
                 $customerData = json_decode($customerInput, true);
-                Log::info('Parsed customer from JSON string:', $customerData);
             } else {
                 $customerData = $customerInput;
-                Log::info('Using customer as array:', $customerData);
             }
         }
 
@@ -73,10 +70,8 @@ class ClientOrderController extends Controller
             $itemsInput = $request->items;
             if (is_string($itemsInput)) {
                 $itemsData = json_decode($itemsInput, true);
-                Log::info('Parsed items from JSON string:', $itemsData);
             } else {
                 $itemsData = $itemsInput;
-                Log::info('Using items as array:', $itemsData);
             }
         }
 
@@ -145,12 +140,10 @@ class ClientOrderController extends Controller
             }
         }
 
-        Log::info('Transformed items:', $items);
-
         try {
             $this->orderService->validateStock($items);
         } catch (\InvalidArgumentException $e) {
-            Log::warning('Stock validation failed:', ['error' => $e->getMessage()]);
+            Log::warning('Stock validation failed', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'message' => $e->getMessage(),
@@ -180,10 +173,7 @@ class ClientOrderController extends Controller
             $request->validate(['payment_proof' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
             $path = $this->imageService->upload($request->file('payment_proof'), 'payment-proofs');
             $orderData['payment_proof'] = $path;
-            Log::info('Payment proof uploaded:', ['path' => $path]);
         }
-
-        Log::info('Order data prepared:', $orderData);
 
         $couponData = $this->resolveCouponFromSession($items, $orderData['city_id'] ?? null);
         $promotionData = $this->resolvePromotionFromSession($items, $orderData['city_id'] ?? null);
@@ -192,16 +182,9 @@ class ClientOrderController extends Controller
         try {
             $order = $this->orderService->createOrder($orderData, $items, $couponData, $promotionData);
 
-            Log::info('========== ORDER CREATED SUCCESS ==========');
-            Log::info('Order ID:', ['order_id' => $order->id]);
+            Log::info('Order created', ['order_id' => $order->id, 'user_id' => $request->user()?->id]);
 
             $verifyOrder = Order::find($order->id);
-            $verifyItems = OrderItem::where('order_id', $order->id)->get();
-
-            Log::info('Verification:', [
-                'order_exists' => $verifyOrder ? 'YES' : 'NO',
-                'items_count' => $verifyItems->count(),
-            ]);
 
             if (! $verifyOrder) {
                 throw new \Exception('Order not found in database after creation!');

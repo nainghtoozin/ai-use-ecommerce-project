@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
+use App\Models\Tenant;
 use App\Services\FeatureGate;
 use Inertia\Inertia;
 
@@ -70,10 +71,31 @@ class PublicLandingController extends Controller
             return $cat;
         }, $featureCategories);
 
+        // Featured stores for directory preview
+        $featuredStores = Tenant::where('status', 'active')
+            ->whereNotNull('activated_at')
+            ->withCount('products')
+            ->orderBy('created_at', 'desc')
+            ->limit(6)
+            ->get(['id', 'name', 'slug', 'logo', 'status'])
+            ->map(function ($store) {
+                $settings = $store->settings ?? [];
+                return [
+                    'id' => $store->id,
+                    'name' => $store->name,
+                    'slug' => $store->slug,
+                    'logo_url' => $store->logo_url,
+                    'description' => $settings['description'] ?? '',
+                    'products_count' => $store->products_count,
+                    'store_url' => '/store/' . $store->slug,
+                ];
+            });
+
         return Inertia::render('Public/Landing', [
             'plans' => $plans,
             'featureCategories' => $featureCategories,
             'allFeatureDefs' => $allFeatureDefs,
+            'featuredStores' => $featuredStores,
         ]);
     }
 }

@@ -42,7 +42,8 @@ class AdminReportController extends Controller
             'date_from', 'date_to', 'category_id', 'search', 'stock_status',
         ]));
         ksort($relevant);
-        return self::CACHE_PREFIX . $section . '_' . md5(json_encode($relevant));
+        $tenantId = tenant()?->id ?? 'global';
+        return self::CACHE_PREFIX . $section . '_t' . $tenantId . '_' . md5(json_encode($relevant));
     }
 
     /**
@@ -55,7 +56,8 @@ class AdminReportController extends Controller
             'payment_status', 'verification_status', 'search', 'search_by',
         ]));
         ksort($relevant);
-        return 'payments_' . $section . '_' . md5(json_encode($relevant));
+        $tenantId = tenant()?->id ?? 'global';
+        return 'payments_' . $section . '_t' . $tenantId . '_' . md5(json_encode($relevant));
     }
 
     /**

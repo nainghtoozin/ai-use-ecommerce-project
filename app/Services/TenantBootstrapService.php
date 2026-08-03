@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\SubscriptionAuditService;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +44,7 @@ class TenantBootstrapService
      */
     public function bootstrap(Tenant $tenant, array $options = []): User|Account|null
     {
-        $steps = ['roles', 'subscription', 'owner'];
+        $steps = ['roles', 'subscription', 'owner', 'defaults'];
 
         try {
             return DB::transaction(function () use ($tenant, $options) {
@@ -75,6 +76,7 @@ class TenantBootstrapService
                 $this->createDefaultCategories($tenant);
                 $this->createDefaultBrands($tenant);
                 $this->createDefaultPaymentMethods($tenant);
+                $this->createDefaultWarehouse($tenant);
 
                 TenantCreated::dispatch($tenant, $owner);
 
@@ -194,11 +196,16 @@ class TenantBootstrapService
 
         if ($existingAccount) {
             // Reuse existing Account — update name/password if provided
-            $existingAccount->update([
+            $updateData = [
                 'name' => $options['owner_name'] ?? $existingAccount->name,
-                'password' => Hash::make($options['owner_password']),
                 'status' => Account::STATUS_ACTIVE,
-            ]);
+            ];
+
+            if (!empty($options['owner_password'])) {
+                $updateData['password'] = Hash::make($options['owner_password']);
+            }
+
+            $existingAccount->update($updateData);
 
             if (!empty($options['email_verified'])) {
                 $existingAccount->markEmailAsVerified();
@@ -280,6 +287,16 @@ class TenantBootstrapService
      */
     protected function createSubscription(Tenant $tenant, ?int $planId = null, string $status = 'pending'): ?Subscription
     {
+        $existing = $tenant->subscription()->first();
+        if ($existing) {
+            Log::info('Subscription already exists for tenant, skipping creation', [
+                'tenant_id' => $tenant->id,
+                'existing_subscription_id' => $existing->id,
+                'existing_status' => $existing->status,
+            ]);
+            return $existing;
+        }
+
         $settings = PlatformSetting::current();
 
         $plan = $this->resolvePlan($planId, $settings);
@@ -463,6 +480,25 @@ class TenantBootstrapService
                 $method->is_active = true;
                 $method->save();
             }
+        }
+    }
+
+    protected function createDefaultWarehouse(Tenant $tenant): void
+    {
+        $existing = Warehouse::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->where('is_default', true)
+            ->first();
+
+        if (!$existing) {
+            $warehouse = new Warehouse();
+            $warehouse->tenant_id = $tenant->id;
+            $warehouse->name = $tenant->name . ' - Main Warehouse';
+            $warehouse->code = 'MAIN';
+            $warehouse->description = 'Primary inventory location';
+            $warehouse->is_default = true;
+            $warehouse->is_active = true;
+            $warehouse->save();
         }
     }
 }

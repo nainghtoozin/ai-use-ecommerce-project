@@ -251,12 +251,16 @@ class StorefrontController extends Controller
     private function applyInStockFilter($query): void
     {
         $query->where(function ($q) {
-            $q->where('type', Product::TYPE_SINGLE)
-              ->where('stock', '>', 0);
-            $q->orWhere('type', Product::TYPE_VARIABLE)
-              ->whereHas('variants', fn($v) => $v->selectRaw('SUM(stock) > 0'));
-            $q->orWhere('type', Product::TYPE_COMBO)
-              ->whereHas('comboItems.comboProduct', fn($c) => $c->where('stock', '>', 0));
+            $q->where(function ($sq) {
+                $sq->where('type', Product::TYPE_SINGLE)
+                    ->where('stock', '>', 0);
+            })->orWhere(function ($sq) {
+                $sq->where('type', Product::TYPE_VARIABLE)
+                    ->whereHas('variants', fn($v) => $v->selectRaw('SUM(stock) > 0'));
+            })->orWhere(function ($sq) {
+                $sq->where('type', Product::TYPE_COMBO)
+                    ->whereHas('comboItems.comboProduct', fn($c) => $c->where('stock', '>', 0));
+            });
         });
     }
 

@@ -14,6 +14,7 @@ use App\Services\OrderService;
 use App\Services\OrderStatusTransitionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
@@ -140,7 +141,7 @@ class StorefrontCustomerController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'profile_image' => ['nullable', 'image', 'max:2048'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
 
         $user->fill([
@@ -181,6 +182,11 @@ class StorefrontCustomerController extends Controller
         $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        $guard = config('identity.use_accounts') ? 'accounts' : 'web';
+        Auth::guard($guard)->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return Redirect::route('storefront.customer.account', ['store_slug' => $storeSlug, 'tab' => 'security'])
             ->with('status', 'password-updated');
