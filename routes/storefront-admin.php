@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\WebsiteFaqController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\ChatController;
@@ -266,6 +267,18 @@ Route::prefix('store/{store_slug}/admin')
         // Website Info
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
         Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
+
+        // Website FAQs
+        Route::get('/faqs', [WebsiteFaqController::class, 'index'])->name('faqs.index');
+        Route::get('/faqs/create', [WebsiteFaqController::class, 'create'])->name('faqs.create');
+        Route::post('/faqs', [WebsiteFaqController::class, 'store'])->name('faqs.store');
+        Route::get('/faqs/{faq}/edit', [WebsiteFaqController::class, 'edit'])->name('faqs.edit');
+        Route::put('/faqs/{faq}', [WebsiteFaqController::class, 'update'])->name('faqs.update');
+        Route::delete('/faqs/{faq}', [WebsiteFaqController::class, 'destroy'])->name('faqs.destroy');
+        Route::post('/faqs/{faq}/toggle', [WebsiteFaqController::class, 'toggle'])->name('faqs.toggle');
+        Route::post('/faqs/{faq}/duplicate', [WebsiteFaqController::class, 'duplicate'])->name('faqs.duplicate');
+        Route::post('/faqs/reorder', [WebsiteFaqController::class, 'reorder'])->name('faqs.reorder');
+        Route::post('/faqs/bulk-action', [WebsiteFaqController::class, 'bulkAction'])->name('faqs.bulk-action');
 
         // Notification Settings
         Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import ShopLayout from '@/Layouts/ShopLayout';
 import { ChevronDown, Search } from 'lucide-react';
-import { useTranslation } from '@/Utils/useTranslation';
 
 function FaqItem({ faq, isOpen, toggle }) {
     return (
@@ -9,7 +9,7 @@ function FaqItem({ faq, isOpen, toggle }) {
             <button
                 type="button"
                 onClick={toggle}
-                className="w-full flex items-center justify-between py-5 px-6 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 rounded-lg"
+                className="w-full flex items-center justify-between py-4 px-5 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 aria-expanded={isOpen}
             >
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100 pr-4">{faq.question}</span>
@@ -18,44 +18,31 @@ function FaqItem({ faq, isOpen, toggle }) {
                 />
             </button>
             {isOpen && (
-                <div className="px-6 pb-5 prose prose-sm max-w-none text-gray-500 dark:text-gray-400 leading-relaxed" dangerouslySetInnerHTML={{ __html: faq.answer }} />
+                <div className="px-5 pb-4">
+                    <div
+                        className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: faq.answer }}
+                    />
+                </div>
             )}
         </div>
     );
 }
 
-export default function FaqSection() {
-    const { platformFaqs } = usePage().props;
-    const { t } = useTranslation();
+export default function StoreFaq({ tenant, faqs = [], categories = {} }) {
     const [openIndex, setOpenIndex] = useState(null);
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
 
     const toggle = (index) => setOpenIndex(openIndex === index ? null : index);
 
-    // Use DB FAQs if available, fall back to translations
-    const dbFaqs = Array.isArray(platformFaqs) && platformFaqs.length > 0 ? platformFaqs : null;
-
-    const faqs = useMemo(() => {
-        if (!dbFaqs) {
-            const translated = t('landing.faq.items');
-            return Array.isArray(translated) ? translated.map((item, i) => ({
-                id: i,
-                category: 'general',
-                question: item.q,
-                answer: `<p>${item.a}</p>`,
-            })) : [];
-        }
-        return dbFaqs;
-    }, [dbFaqs, t]);
-
-    const categories = useMemo(() => {
+    const categoryKeys = useMemo(() => {
         const cats = new Set(faqs.map(f => f.category).filter(Boolean));
         return ['all', ...Array.from(cats)];
     }, [faqs]);
 
     const categoryLabels = {
-        all: t('landing.faq.all_categories') || 'All',
+        all: 'All',
         general: 'General',
         getting_started: 'Getting Started',
         billing: 'Billing',
@@ -63,6 +50,9 @@ export default function FaqSection() {
         features: 'Features',
         security: 'Security',
         support: 'Support',
+        shipping: 'Shipping & Delivery',
+        returns: 'Returns & Refunds',
+        ...categories,
     };
 
     const filteredFaqs = useMemo(() => {
@@ -81,14 +71,16 @@ export default function FaqSection() {
     }, [faqs, activeCategory, search]);
 
     return (
-        <section id="faq" className="py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-900 scroll-mt-16">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-2xl mx-auto mb-10">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
-                        {t('landing.faq.title')}
-                    </h2>
-                    <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
-                        {t('landing.faq.subtitle')}
+        <ShopLayout>
+            <Head title={`FAQ - ${tenant?.name || 'Store'}`} />
+
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
+                        Frequently Asked Questions
+                    </h1>
+                    <p className="mt-3 text-gray-500 dark:text-gray-400 text-lg">
+                        Find answers to common questions about our store.
                     </p>
                 </div>
 
@@ -99,15 +91,15 @@ export default function FaqSection() {
                         type="text"
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setOpenIndex(null); }}
-                        placeholder={t('landing.faq.search_placeholder') || 'Search frequently asked questions...'}
+                        placeholder="Search questions..."
                         className="w-full pl-11 pr-4 py-3 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
 
                 {/* Category filters */}
-                {categories.length > 2 && (
+                {categoryKeys.length > 2 && (
                     <div className="flex flex-wrap gap-2 mb-6">
-                        {categories.map((cat) => (
+                        {categoryKeys.map((cat) => (
                             <button
                                 key={cat}
                                 onClick={() => { setActiveCategory(cat); setOpenIndex(null); }}
@@ -125,7 +117,7 @@ export default function FaqSection() {
 
                 {/* FAQ List */}
                 {filteredFaqs.length > 0 ? (
-                    <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800" role="list" aria-label="Frequently asked questions">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800 shadow-sm">
                         {filteredFaqs.map((faq, index) => (
                             <FaqItem
                                 key={faq.id || index}
@@ -136,13 +128,16 @@ export default function FaqSection() {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-12">
+                    <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <i className="bi bi-question-circle text-2xl text-gray-400 dark:text-gray-500"></i>
+                        </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                             {search ? 'No results found for your search.' : 'No FAQs available yet.'}
                         </p>
                     </div>
                 )}
             </div>
-        </section>
+        </ShopLayout>
     );
 }

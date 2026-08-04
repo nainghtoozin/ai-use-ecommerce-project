@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Services\FaqService;
 use App\Services\FeatureGate;
 use Inertia\Inertia;
 
@@ -91,11 +92,21 @@ class PublicLandingController extends Controller
                 ];
             });
 
+        // Platform FAQs (cached, active only)
+        $faqService = app(FaqService::class);
+        $faqs = $faqService->getActivePublic()->map(fn ($faq) => [
+            'id' => $faq->id,
+            'category' => $faq->category,
+            'question' => $faq->question,
+            'answer' => $faq->answer,
+        ]);
+
         return Inertia::render('Public/Landing', [
             'plans' => $plans,
             'featureCategories' => $featureCategories,
             'allFeatureDefs' => $allFeatureDefs,
             'featuredStores' => $featuredStores,
+            'platformFaqs' => $faqs,
         ]);
     }
 }

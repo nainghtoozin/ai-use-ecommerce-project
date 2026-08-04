@@ -28,6 +28,7 @@ const TABS = [
   { id: 'policies', label: 'Policies', icon: 'bi-file-text' },
   { id: 'homepage', label: 'Homepage', icon: 'bi-house' },
   { id: 'footer', label: 'Footer', icon: 'bi-layout-text-window-reverse' },
+  { id: 'faq', label: 'FAQ', icon: 'bi-question-circle', href: '/admin/faqs' },
   { id: 'system', label: 'System', icon: 'bi-sliders' },
 ];
 
@@ -293,7 +294,13 @@ export default function SettingsEdit({ settings = {} }) {
               {TABS.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    if (tab.href) {
+                      router.visit(adminUrl(tab.href));
+                    } else {
+                      setActiveTab(tab.id);
+                    }
+                  }}
                    className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'text-white border-transparent'

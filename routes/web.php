@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\WebsiteFaqController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminOrderOverrideController;
 use App\Http\Controllers\Admin\AdminReportController;
@@ -139,6 +140,9 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/', [\App\Http\Controllers\StorefrontController::class, 'index'])->name('index');
     Route::get('/products', [\App\Http\Controllers\StorefrontController::class, 'products'])->name('products');
     Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
+
+    // Store FAQ (public)
+    Route::get('/faq', [\App\Http\Controllers\StorefrontController::class, 'faq'])->name('faq');
 
     // Store-based customer registration
     Route::get('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'create'])->name('register');
@@ -485,6 +489,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
         Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
 
+        // Website FAQs
+        Route::get('/faqs', [WebsiteFaqController::class, 'index'])->name('faqs.index');
+        Route::get('/faqs/create', [WebsiteFaqController::class, 'create'])->name('faqs.create');
+        Route::post('/faqs', [WebsiteFaqController::class, 'store'])->name('faqs.store');
+        Route::get('/faqs/{faq}/edit', [WebsiteFaqController::class, 'edit'])->name('faqs.edit');
+        Route::put('/faqs/{faq}', [WebsiteFaqController::class, 'update'])->name('faqs.update');
+        Route::delete('/faqs/{faq}', [WebsiteFaqController::class, 'destroy'])->name('faqs.destroy');
+        Route::post('/faqs/{faq}/toggle', [WebsiteFaqController::class, 'toggle'])->name('faqs.toggle');
+        Route::post('/faqs/{faq}/duplicate', [WebsiteFaqController::class, 'duplicate'])->name('faqs.duplicate');
+        Route::post('/faqs/reorder', [WebsiteFaqController::class, 'reorder'])->name('faqs.reorder');
+        Route::post('/faqs/bulk-action', [WebsiteFaqController::class, 'bulkAction'])->name('faqs.bulk-action');
+
         // Notification Settings
         Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');
         Route::post('/settings/notifications', [AdminNotificationSettingsController::class, 'update'])->name('settings.notifications.update');
@@ -619,6 +635,17 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
 
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');
+
+    // FAQ Management
+    Route::get('/faqs', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'index'])->name('faqs.index');
+    Route::get('/faqs/create', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'create'])->name('faqs.create');
+    Route::post('/faqs', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'store'])->name('faqs.store');
+    Route::get('/faqs/{faq}/edit', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'edit'])->name('faqs.edit');
+    Route::put('/faqs/{faq}', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'update'])->name('faqs.update');
+    Route::delete('/faqs/{faq}', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'destroy'])->name('faqs.destroy');
+    Route::post('/faqs/{faq}/toggle', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'toggle'])->name('faqs.toggle');
+    Route::post('/faqs/reorder', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'reorder'])->name('faqs.reorder');
+    Route::post('/faqs/bulk-action', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'bulkAction'])->name('faqs.bulk-action');
 
     Route::post('/impersonate/{user}', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
 

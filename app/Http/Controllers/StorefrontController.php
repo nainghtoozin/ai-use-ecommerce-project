@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Tenant;
 use App\Services\ProductService;
+use App\Services\WebsiteFaqService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,6 +15,7 @@ class StorefrontController extends Controller
 {
     public function __construct(
         private readonly ProductService $productService,
+        private readonly WebsiteFaqService $faqService,
     ) {}
 
     public function index(Request $request)
@@ -181,6 +183,42 @@ class StorefrontController extends Controller
             'product' => $product,
             'promotion' => $promotion,
             'detail' => $detail,
+        ]);
+    }
+
+    public function faq(Request $request)
+    {
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(404);
+        }
+
+        if ($tenant->isLocked()) {
+            return $this->renderLocked($tenant);
+        }
+
+        $faqs = $this->faqService->getActiveForTenant($tenant->id);
+        $categories = $this->faqService->getCategories();
+
+        $faqCategories = $faqs->pluck('category')->unique()->filter()->values()->toArray();
+        $availableCategories = array_intersect_key($categories, array_flip($faqCategories));
+
+        return Inertia::render('Storefront/Faq', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'store_url' => $tenant->store_url,
+                'logo' => $tenant->logo,
+                'status' => $tenant->status,
+            ],
+            'faqs' => $faqs->map(fn ($faq) => [
+                'id' => $faq->id,
+                'category' => $faq->category,
+                'question' => $faq->question,
+                'answer' => $faq->answer,
+            ]),
+            'categories' => $availableCategories,
         ]);
     }
 

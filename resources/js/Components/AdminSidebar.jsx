@@ -15,7 +15,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
     UserCircle, UserPlus, Activity, Shield, Archive,
-    Rocket,
+    Rocket, HelpCircle,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'admin_sidebar_open_section';
@@ -28,7 +28,7 @@ const iconMap = {
     Users, UserCog, ShieldCheck, History,
     Bell, Globe, BellRing, Send, Settings,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
-    UserCircle, UserPlus, Activity, Shield, Archive, Rocket,
+    UserCircle, UserPlus, Activity, Shield, Archive, Rocket, HelpCircle,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -89,6 +89,7 @@ export default function AdminSidebar() {
                     title: t('navigation.settings'),
                     items: [
                         { label: 'Platform', href: '/superadmin/platform-settings', icon: 'Settings' },
+                        { label: 'FAQ Management', href: '/superadmin/faqs', icon: 'HelpCircle' },
                         { label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' },
                     ]
                 },

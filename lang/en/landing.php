@@ -125,6 +125,8 @@ return [
     'faq' => [
         'title' => 'Frequently Asked Questions',
         'subtitle' => 'Everything you need to know about the platform.',
+        'all_categories' => 'All',
+        'search_placeholder' => 'Search frequently asked questions...',
         'items' => [
             [
                 'q' => 'How do I create a store?',
