@@ -28,7 +28,7 @@ const TABS = [
   { id: 'policies', label: 'Policies', icon: 'bi-file-text' },
   { id: 'homepage', label: 'Homepage', icon: 'bi-house' },
   { id: 'footer', label: 'Footer', icon: 'bi-layout-text-window-reverse' },
-  { id: 'faq', label: 'FAQ', icon: 'bi-question-circle', href: '/admin/faqs' },
+  { id: 'faq', label: 'FAQ', icon: 'bi-question-circle', href: '/admin/faqs', external: true },
   { id: 'system', label: 'System', icon: 'bi-sliders' },
 ];
 
@@ -310,6 +310,9 @@ export default function SettingsEdit({ settings = {} }) {
                 >
                   <i className={`bi ${tab.icon} mr-2`}></i>
                   {tab.label}
+                  {tab.external && (
+                    <i className="bi bi-box-arrow-up-right ml-1.5 text-[10px] opacity-60"></i>
+                  )}
                 </button>
               ))}
             </nav>

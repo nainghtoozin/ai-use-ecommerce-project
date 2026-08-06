@@ -182,6 +182,12 @@ export default function AdminSidebar() {
                 ]
             },
             {
+                title: 'Content',
+                items: [
+                    ...(can('products.view') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
+                ]
+            },
+            {
                 title: t('navigation.settings'),
                 items: [
                     ...(can('settings.website') ? [{ label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' }] : []),

@@ -141,8 +141,16 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/products', [\App\Http\Controllers\StorefrontController::class, 'products'])->name('products');
     Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
 
-    // Store FAQ (public)
-    Route::get('/faq', [\App\Http\Controllers\StorefrontController::class, 'faq'])->name('faq');
+    // Store CMS pages (public, tenant-aware)
+    Route::get('/faq', [\App\Http\Controllers\StorefrontCmsController::class, 'faq'])->name('faq');
+    Route::get('/about', [\App\Http\Controllers\StorefrontCmsController::class, 'about'])->name('about');
+    Route::get('/contact', [\App\Http\Controllers\StorefrontCmsController::class, 'contact'])->name('contact');
+    Route::post('/contact', [\App\Http\Controllers\StorefrontCmsController::class, 'submitContact'])->name('contact.submit');
+    Route::get('/privacy-policy', [\App\Http\Controllers\StorefrontCmsController::class, 'privacyPolicy'])->name('privacy');
+    Route::get('/terms-and-conditions', [\App\Http\Controllers\StorefrontCmsController::class, 'termsConditions'])->name('terms');
+    Route::get('/shipping-policy', [\App\Http\Controllers\StorefrontCmsController::class, 'shippingPolicy'])->name('shipping');
+    Route::get('/return-policy', [\App\Http\Controllers\StorefrontCmsController::class, 'returnPolicy'])->name('returns');
+    Route::get('/refund-policy', [\App\Http\Controllers\StorefrontCmsController::class, 'refundPolicy'])->name('refunds');
 
     // Store-based customer registration
     Route::get('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'create'])->name('register');
