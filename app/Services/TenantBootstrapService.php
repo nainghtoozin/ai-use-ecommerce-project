@@ -16,6 +16,7 @@ use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\WebsiteFaq;
 use App\Services\SubscriptionAuditService;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
@@ -72,11 +73,10 @@ class TenantBootstrapService
 
                 $this->assignOwnerRole($owner, $tenant);
 
-                $this->createDefaultUnits($tenant);
-                $this->createDefaultCategories($tenant);
-                $this->createDefaultBrands($tenant);
                 $this->createDefaultPaymentMethods($tenant);
                 $this->createDefaultWarehouse($tenant);
+                $this->seedDefaultFaqs($tenant);
+                $this->seedStarterMasterData($tenant);
 
                 TenantCreated::dispatch($tenant, $owner);
 
@@ -388,77 +388,6 @@ class TenantBootstrapService
         return Plan::free();
     }
 
-    protected function createDefaultUnits(Tenant $tenant): void
-    {
-        $units = [
-            ['name' => 'Piece', 'short_name' => 'pcs'],
-            ['name' => 'Box', 'short_name' => 'box'],
-            ['name' => 'Pack', 'short_name' => 'pk'],
-            ['name' => 'Kg', 'short_name' => 'kg'],
-            ['name' => 'Gram', 'short_name' => 'g'],
-            ['name' => 'Liter', 'short_name' => 'L'],
-            ['name' => 'Meter', 'short_name' => 'm'],
-        ];
-
-        foreach ($units as $data) {
-            $existing = Unit::withoutTenantScope()
-                ->where('tenant_id', $tenant->id)
-                ->where('name', $data['name'])
-                ->first();
-
-            if (!$existing) {
-                $unit = new Unit();
-                $unit->tenant_id = $tenant->id;
-                $unit->name = $data['name'];
-                $unit->short_name = $data['short_name'];
-                $unit->is_active = true;
-                $unit->save();
-            }
-        }
-    }
-
-    protected function createDefaultCategories(Tenant $tenant): void
-    {
-        $categories = [
-            'General', 'Fashion', 'Electronics', 'Beauty',
-            'Home & Living', 'Food & Grocery', 'Sports', 'Other',
-        ];
-
-        foreach ($categories as $name) {
-            $existing = Category::withoutTenantScope()
-                ->where('tenant_id', $tenant->id)
-                ->where('name', $name)
-                ->first();
-
-            if (!$existing) {
-                $category = new Category();
-                $category->tenant_id = $tenant->id;
-                $category->name = $name;
-                $category->save();
-            }
-        }
-    }
-
-    protected function createDefaultBrands(Tenant $tenant): void
-    {
-        $brands = ['Local Made', 'No Brand', 'Imported', 'Custom Brand'];
-
-        foreach ($brands as $name) {
-            $existing = Brand::withoutTenantScope()
-                ->where('tenant_id', $tenant->id)
-                ->where('name', $name)
-                ->first();
-
-            if (!$existing) {
-                $brand = new Brand();
-                $brand->tenant_id = $tenant->id;
-                $brand->name = $name;
-                $brand->is_active = true;
-                $brand->save();
-            }
-        }
-    }
-
     protected function createDefaultPaymentMethods(Tenant $tenant): void
     {
         $methods = [
@@ -499,6 +428,163 @@ class TenantBootstrapService
             $warehouse->is_default = true;
             $warehouse->is_active = true;
             $warehouse->save();
+        }
+    }
+
+    protected function seedDefaultFaqs(Tenant $tenant): void
+    {
+        $existingCount = WebsiteFaq::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->count();
+
+        if ($existingCount > 0) {
+            return;
+        }
+
+        $faqs = [
+            [
+                'category' => 'getting_started',
+                'question_en' => 'How do I place an order?',
+                'question_my' => 'ကျွန်ုပ် ဘယ်လိုမှာယူရမလဲ?',
+                'answer_en' => '<p>To place an order, browse our products, add items to your cart, and proceed to checkout. You can pay using various payment methods including cash on delivery, mobile banking, and bank transfer.</p>',
+                'answer_my' => '<p>မှာယူရန် ကျွန်ုပ်တို့၏ ထုတ်ကုန်များကို ရှာဖွေပြီး သင့်စျေးခြင်းထဲသို့ ထည့်ပါ။ ထို့နောက် checkout သို့ သွားပါ။</p>',
+                'sort_order' => 1,
+            ],
+            [
+                'category' => 'billing',
+                'question_en' => 'What payment methods do you accept?',
+                'question_my' => 'ဘယ်လိုငွေပေးချေမှုနည်းလမ်းတွေကို လက်ခံပါသလဲ?',
+                'answer_en' => '<p>We accept various payment methods including Cash on Delivery (COD), mobile banking (KBZPay, WavePay, AYA Pay), bank transfers, and more.</p>',
+                'answer_my' => '<p>ကျွန်ုပ်တို့သည် ငွေသားဖြင့်ပေးချေမှု (COD)၊ မိုဘိုင်းဘဏ်၊ ဘဏ်လွှဲပြောင်းမှု အပါအဝင် ငွေပေးချေမှုနည်းလမ်းများစွာကို လက်ခံပါသည်။</p>',
+                'sort_order' => 2,
+            ],
+            [
+                'category' => 'shipping',
+                'question_en' => 'How long does shipping take?',
+                'question_my' => 'ပို့ဆောင်မှု ဘယ်လောက်ကြာသလဲ?',
+                'answer_en' => '<p>Shipping times vary depending on your location. Typically, orders are delivered within 2-5 business days for major cities and 5-10 business days for remote areas.</p>',
+                'answer_my' => '<p>ပို့ဆောင်ချိန်သည် သင့်တည်နေရာပေါ်မူတည်ပါသည်။ ပုံမှန်အားဖြင့် အဓိကမြို့ကြီးများအတွက် 2-5 လုပ်ငန်းရက်အတွင်း ပို့ဆောင်ပေးပါသည်။</p>',
+                'sort_order' => 3,
+            ],
+            [
+                'category' => 'returns',
+                'question_en' => 'What is your return policy?',
+                'question_my' => 'သင်တို့၏ ပြန်ပေးမူဝါဒက ဘာလဲ?',
+                'answer_en' => '<p>We offer a 7-day return policy for most items. Products must be in their original condition with all tags attached.</p>',
+                'answer_my' => '<p>ကျွန်ုပ်တို့သည် ပစ္စည်းအများစုအတွက် ရက် ၇ ပြန်ပေးမူဝါဒကို ပေးပါသည်။</p>',
+                'sort_order' => 4,
+            ],
+            [
+                'category' => 'support',
+                'question_en' => 'How can I contact customer support?',
+                'question_my' => 'ဖောက်သည်ပံ့ပိုးမှုကို ဘယ်လိုဆက်သွယ်ရမလဲ?',
+                'answer_en' => '<p>You can reach our customer support team through the Contact Us page on our website. We typically respond within 24 hours during business days.</p>',
+                'answer_my' => '<p>ကျွန်ုပ်တို့၏ ဖောက်သည်ပံ့ပိုးမှုအဖွဲ့ကို ကျွန်ုပ်တို့၏ ဝက်ဘ်ဆိုက်ရှိ ဆက်သွယ်ရန် စာမျက်နှာမှတစ်ဆင့် ဆက်သွယ်နိုင်ပါသည်။</p>',
+                'sort_order' => 5,
+            ],
+        ];
+
+        foreach ($faqs as $faqData) {
+            WebsiteFaq::withoutTenantScope()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'question_en' => $faqData['question_en']],
+                [
+                    'category' => $faqData['category'],
+                    'question_my' => $faqData['question_my'],
+                    'answer_en' => $faqData['answer_en'],
+                    'answer_my' => $faqData['answer_my'],
+                    'sort_order' => $faqData['sort_order'],
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Seed starter categories, brands, and units for a new tenant.
+     *
+     * Gives merchants a ready-to-use set of master data so they can
+     * start creating products immediately after store setup.
+     */
+    protected function seedStarterMasterData(Tenant $tenant): void
+    {
+        $this->seedStarterCategories($tenant);
+        $this->seedStarterBrands($tenant);
+        $this->seedStarterUnits($tenant);
+    }
+
+    protected function seedStarterCategories(Tenant $tenant): void
+    {
+        $categories = [
+            ['name' => 'Electronics', 'description' => 'Gadgets, devices, and electronic accessories'],
+            ['name' => 'Fashion', 'description' => 'Clothing, shoes, and accessories'],
+            ['name' => 'Beauty', 'description' => 'Skincare, makeup, and personal care products'],
+            ['name' => 'Grocery', 'description' => 'Food, beverages, and daily essentials'],
+            ['name' => 'Home & Living', 'description' => 'Furniture, decor, and household items'],
+            ['name' => 'Sports & Outdoors', 'description' => 'Sports gear, fitness equipment, and outdoor essentials'],
+            ['name' => 'Books & Stationery', 'description' => 'Books, notebooks, and office supplies'],
+            ['name' => 'Health & Personal Care', 'description' => 'Wellness, supplements, and hygiene products'],
+            ['name' => 'Baby & Kids', 'description' => 'Toys, clothing, and essentials for children'],
+            ['name' => 'Other', 'description' => 'Miscellaneous items'],
+        ];
+
+        foreach ($categories as $category) {
+            Category::withoutTenantScope()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'name' => $category['name']],
+                [
+                    'tenant_id' => $tenant->id,
+                    'description' => $category['description'],
+                ]
+            );
+        }
+    }
+
+    protected function seedStarterBrands(Tenant $tenant): void
+    {
+        $brands = [
+            ['name' => 'Generic', 'slug' => 'generic', 'description' => 'Generic or unbranded products'],
+            ['name' => 'No Brand', 'slug' => 'no-brand', 'description' => 'Products without a specific brand'],
+        ];
+
+        foreach ($brands as $brand) {
+            Brand::withoutTenantScope()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'name' => $brand['name']],
+                [
+                    'tenant_id' => $tenant->id,
+                    'slug' => $brand['slug'],
+                    'description' => $brand['description'],
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
+    protected function seedStarterUnits(Tenant $tenant): void
+    {
+        $units = [
+            ['name' => 'Piece', 'short_name' => 'pc', 'description' => 'Single item'],
+            ['name' => 'Box', 'short_name' => 'box', 'description' => 'Packaged in a box'],
+            ['name' => 'Pack', 'short_name' => 'pk', 'description' => 'Packaged in a pack'],
+            ['name' => 'Bottle', 'short_name' => 'btl', 'description' => 'Bottled item'],
+            ['name' => 'Kg', 'short_name' => 'kg', 'description' => 'Kilogram'],
+            ['name' => 'Gram', 'short_name' => 'g', 'description' => 'Gram'],
+            ['name' => 'Liter', 'short_name' => 'L', 'description' => 'Liter'],
+            ['name' => 'Meter', 'short_name' => 'm', 'description' => 'Meter'],
+            ['name' => 'Pair', 'short_name' => 'pr', 'description' => 'A pair of items'],
+            ['name' => 'Set', 'short_name' => 'set', 'description' => 'A set of items'],
+            ['name' => 'Roll', 'short_name' => 'roll', 'description' => 'Rolled material'],
+            ['name' => 'Carton', 'short_name' => 'ctn', 'description' => 'Packaged in a carton'],
+        ];
+
+        foreach ($units as $unit) {
+            Unit::withoutTenantScope()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'name' => $unit['name']],
+                [
+                    'tenant_id' => $tenant->id,
+                    'short_name' => $unit['short_name'],
+                    'description' => $unit['description'],
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }

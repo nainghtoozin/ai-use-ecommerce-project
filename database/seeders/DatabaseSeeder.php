@@ -10,13 +10,14 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             // ─────────────────────────────────────────────────────────
-            // PLATFORM SEEDERS (no tenant dependency)
+            // GLOBAL SEEDERS (no tenant dependency)
             // ─────────────────────────────────────────────────────────
             PermissionSeeder::class,         // Global permissions
             RoleAndPermissionSeeder::class,   // Global superadmin role + SuperAdmin Account
             PlanSeeder::class,               // Subscription plans
             PlatformSettingSeeder::class,     // Platform settings
             BillingPaymentMethodSeeder::class, // Platform billing methods
+            CityTownshipSeeder::class,       // Global cities + townships (shared reference data)
 
             // ─────────────────────────────────────────────────────────
             // TENANT BOOTSTRAP (creates tenants + memberships)
@@ -26,14 +27,17 @@ class DatabaseSeeder extends Seeder
             MembershipSeeder::class,         // Tenant roles + owner + customer memberships
 
             // ─────────────────────────────────────────────────────────
-            // TENANT-SCOPED SEEDERS (require tenants to exist)
+            // TENANT DEFAULTS (payment methods, website info, FAQs)
             // ─────────────────────────────────────────────────────────
-            LocationSeeder::class,           // Cities + townships (per tenant)
-            WebsiteSettingsSeeder::class,    // Website info (per tenant)
-            PaymentMethodSeeder::class,      // Payment methods (per tenant)
-            CategorySeeder::class,           // Product categories (per tenant)
-            UnitSeeder::class,               // Product units (per tenant)
-            BrandSeeder::class,              // Product brands (per tenant)
+            TenantDefaultSeeder::class,      // Payment methods + WebsiteInfo + FAQs per tenant
+
+            // ─────────────────────────────────────────────────────────
+            // DEMO DATA (optional - for development/demo only)
+            // Categories, Brands, Units are importable via templates
+            // ─────────────────────────────────────────────────────────
+            CategorySeeder::class,           // Demo categories (per tenant)
+            UnitSeeder::class,               // Demo units (per tenant)
+            BrandSeeder::class,              // Demo brands (per tenant)
         ]);
     }
 }

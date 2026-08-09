@@ -11,6 +11,7 @@ class Unit extends Model
     use HasFactory, TenantAware;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'short_name',
         'description',

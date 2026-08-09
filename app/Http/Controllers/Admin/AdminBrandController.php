@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateBrandRequest;
 use App\Models\Brand;
 use App\Services\BrandService;
 use App\Services\ImageService;
+use App\Services\MasterDataImportService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -115,5 +116,28 @@ class AdminBrandController extends Controller
             'brands' => $brands,
             'query' => $query,
         ]);
+    }
+
+    public function importDefaults(MasterDataImportService $importService)
+    {
+        if (!auth()->user()->can('brands.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenantId = tenant()?->id;
+
+        if (!$tenantId) {
+            return back()->withErrors(['error' => 'No tenant context found.']);
+        }
+
+        $stats = $importService->importBrands($tenantId);
+
+        $message = sprintf(
+            '%d brands imported successfully. %d existing brands skipped.',
+            $stats['imported'],
+            $stats['skipped']
+        );
+
+        return back()->with('success', $message);
     }
 }

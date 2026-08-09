@@ -2,14 +2,13 @@ import { useState, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
-import { Search, Plus, Trash2, Image } from 'lucide-react';
+import { Search, Plus, Trash2, Image, Download } from 'lucide-react';
 import { usePermission } from '@/Hooks/usePermission';
 
 export default function BrandsIndex({ brands, query = '' }) {
     const { can } = usePermission();
     const [search, setSearch] = useState(query);
     const [deleteModal, setDeleteModal] = useState(null);
-    const searchTimeout = useRef(null);
 
     function handleSearch(e) {
         e.preventDefault();
@@ -28,6 +27,12 @@ export default function BrandsIndex({ brands, query = '' }) {
         }
     }
 
+    function handleImportDefaults() {
+        if (confirm('Import default brands for this store?')) {
+            router.post(adminUrl('/admin/brands/import-defaults'));
+        }
+    }
+
     return (
         <AdminLayout>
             <Head title="Brands" />
@@ -37,12 +42,23 @@ export default function BrandsIndex({ brands, query = '' }) {
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Brands</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage product brands</p>
                     </div>
-                    {can('brands.create') && (
-                        <Link href={adminUrl('/admin/brands/create')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                            <Plus className="w-4 h-4" />
-                            Add Brand
-                        </Link>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {can('brands.create') && (
+                            <button
+                                onClick={handleImportDefaults}
+                                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                            >
+                                <Download className="w-4 h-4" />
+                                Import Default Brands
+                            </button>
+                        )}
+                        {can('brands.create') && (
+                            <Link href={adminUrl('/admin/brands/create')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                <Plus className="w-4 h-4" />
+                                Create
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -76,7 +92,7 @@ export default function BrandsIndex({ brands, query = '' }) {
                                         </td>
                                     </tr>
                                 ) : brands.data.map((brand, index) => (
-                                    <tr key={brand.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
+                                    <tr key={brand.id} className="hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
                                         <td className="px-6 py-4">
                                             {brand.logo_url ? (
                                                 <img src={brand.logo_url} alt={brand.name} className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-800" />

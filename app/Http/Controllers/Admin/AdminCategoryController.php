@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLogger;
+use App\Services\MasterDataImportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\Category;
@@ -51,7 +52,7 @@ class AdminCategoryController extends Controller
         return admin_redirect('admin.categories.index')
                          ->with('success', 'Category created successfully!');
     }
-    
+
     public function edit(Category $category)
     {
         if (!auth()->user()->can('categories.update')) {
@@ -115,5 +116,27 @@ class AdminCategoryController extends Controller
             'query' => $query,
         ]);
     }
-    
+
+    public function importDefaults(MasterDataImportService $importService)
+    {
+        if (!auth()->user()->can('categories.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenantId = tenant()?->id;
+
+        if (!$tenantId) {
+            return back()->withErrors(['error' => 'No tenant context found.']);
+        }
+
+        $stats = $importService->importCategories($tenantId);
+
+        $message = sprintf(
+            '%d categories imported successfully. %d existing categories skipped.',
+            $stats['imported'],
+            $stats['skipped']
+        );
+
+        return back()->with('success', $message);
+    }
 }

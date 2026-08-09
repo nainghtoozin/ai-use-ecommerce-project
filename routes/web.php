@@ -376,6 +376,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/categories/{category}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit');
         Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::post('/categories/import-defaults', [AdminCategoryController::class, 'importDefaults'])->name('categories.import-defaults');
 
         // Products
         Route::get('/products/type-select', [AdminProductController::class, 'typeSelect'])->name('products.type-select');
@@ -483,6 +484,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/units/{unit}/edit', [AdminUnitController::class, 'edit'])->name('units.edit');
         Route::put('/units/{unit}', [AdminUnitController::class, 'update'])->name('units.update');
         Route::delete('/units/{unit}', [AdminUnitController::class, 'destroy'])->name('units.destroy');
+        Route::post('/units/import-defaults', [AdminUnitController::class, 'importDefaults'])->name('units.import-defaults');
 
         // Brands
         Route::get('/brands', [AdminBrandController::class, 'index'])->name('brands.index');
@@ -492,6 +494,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/brands/{brand}/edit', [AdminBrandController::class, 'edit'])->name('brands.edit');
         Route::put('/brands/{brand}', [AdminBrandController::class, 'update'])->name('brands.update');
         Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy'])->name('brands.destroy');
+        Route::post('/brands/import-defaults', [AdminBrandController::class, 'importDefaults'])->name('brands.import-defaults');
 
         // Website Info (now uses SettingsController)
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');

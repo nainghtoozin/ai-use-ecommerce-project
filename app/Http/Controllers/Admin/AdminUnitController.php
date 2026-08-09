@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Unit;
+use App\Services\MasterDataImportService;
 use App\Services\UnitService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -101,5 +102,28 @@ class AdminUnitController extends Controller
             'units' => $units,
             'query' => $query,
         ]);
+    }
+
+    public function importDefaults(MasterDataImportService $importService)
+    {
+        if (!auth()->user()->can('units.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenantId = tenant()?->id;
+
+        if (!$tenantId) {
+            return back()->withErrors(['error' => 'No tenant context found.']);
+        }
+
+        $stats = $importService->importUnits($tenantId);
+
+        $message = sprintf(
+            '%d units imported successfully. %d existing units skipped.',
+            $stats['imported'],
+            $stats['skipped']
+        );
+
+        return back()->with('success', $message);
     }
 }

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Category extends Model
 {
     use HasFactory, TenantAware;
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['tenant_id', 'name', 'description'];
 
     public function products() {
         return $this->hasMany(Product::class);

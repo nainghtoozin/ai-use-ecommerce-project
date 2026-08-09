@@ -149,6 +149,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update')->whereNumber('category');
         Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy')->whereNumber('category');
         Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
+        Route::post('/categories/import-defaults', [AdminCategoryController::class, 'importDefaults'])->name('categories.import-defaults');
 
         // Inventory
         Route::get('/inventory/dashboard', [AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');
@@ -182,6 +183,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/units/{unit}', [AdminUnitController::class, 'update'])->name('units.update')->whereNumber('unit');
         Route::delete('/units/{unit}', [AdminUnitController::class, 'destroy'])->name('units.destroy')->whereNumber('unit');
         Route::get('/units/search', [AdminUnitController::class, 'search'])->name('units.search');
+        Route::post('/units/import-defaults', [AdminUnitController::class, 'importDefaults'])->name('units.import-defaults');
 
         // Brands
         Route::get('/brands', [AdminBrandController::class, 'index'])->name('brands.index');
@@ -191,6 +193,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/brands/{brand}', [AdminBrandController::class, 'update'])->name('brands.update')->whereNumber('brand');
         Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy'])->name('brands.destroy')->whereNumber('brand');
         Route::get('/brands/search', [AdminBrandController::class, 'search'])->name('brands.search');
+        Route::post('/brands/import-defaults', [AdminBrandController::class, 'importDefaults'])->name('brands.import-defaults');
 
         // Banners
         Route::get('/banners', [AdminPromotionBannerController::class, 'index'])->name('banners.index');

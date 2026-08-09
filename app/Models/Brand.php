@@ -13,6 +13,7 @@ class Brand extends Model
     use HasFactory, TenantAware;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'slug',
         'description',
