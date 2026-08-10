@@ -3,8 +3,10 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
+import ExportDialog from '@/Components/ExportDialog';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
+import { Download } from 'lucide-react';
 
 export default function AdminOrdersIndex({ orders, filters = {}, showPagination = true, warning = null }) {
     const { auth, platform_setting, website_info } = usePage().props;
@@ -16,6 +18,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
         payment_status: filters.payment_status || '',
         search: filters.search || '',
     });
+    const [exportOpen, setExportOpen] = useState(false);
 
     const orderStatusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
@@ -53,7 +56,19 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
             <Head title="Orders" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Orders</h1>
+                <div className="flex items-center justify-between mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Orders</h1>
+                    {can('orders.view') && (
+                        <button
+                            type="button"
+                            onClick={() => setExportOpen(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export
+                        </button>
+                    )}
+                </div>
 
                 {/* Filters */}
                 <form onSubmit={handleFilter} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 mb-6">
@@ -229,6 +244,13 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                     )}
                 </div>
             </div>
+
+            <ExportDialog
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                type="orders"
+                filters={filterForm}
+            />
         </AdminLayout>
     );
 }

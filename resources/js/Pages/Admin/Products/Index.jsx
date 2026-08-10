@@ -3,6 +3,8 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
+import ImportWizard from '@/Components/ImportWizard';
+import ExportDialog from '@/Components/ExportDialog';
 import {
     Package,
     Layers,
@@ -18,6 +20,10 @@ import {
     Eye,
     Pencil,
     Archive,
+    Upload,
+    Download,
+    FileSpreadsheet,
+    History,
 } from 'lucide-react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
@@ -105,6 +111,9 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
     const [selectAll, setSelectAll] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [bulkAction, setBulkAction] = useState('');
+    const [importOpen, setImportOpen] = useState(false);
+    const [variantImportOpen, setVariantImportOpen] = useState(false);
+    const [exportOpen, setExportOpen] = useState(false);
 
     const hasFilters = search || categoryId || brandId || type || status || stock;
     const currentPageIds = products?.data?.map(p => p.id) || [];
@@ -257,6 +266,59 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <Archive className="w-4 h-4" />
                             Inventory
                         </Link>
+                        {can('products.view') && (
+                            <button
+                                type="button"
+                                onClick={() => setExportOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                            >
+                                <Download className="w-4 h-4" />
+                                Export
+                            </button>
+                        )}
+                        <a
+                            href={adminUrl('/admin/products/import/template?type=products')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            Single Product Template
+                        </a>
+                        <a
+                            href={adminUrl('/admin/products/import/template?type=variants')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            Variant Template
+                        </a>
+                        {can('products.create') && (
+                            <button
+                                type="button"
+                                onClick={() => setImportOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                            >
+                                <Upload className="w-4 h-4" />
+                                Import Products
+                            </button>
+                        )}
+                        {can('products.create') && (
+                            <button
+                                type="button"
+                                onClick={() => setVariantImportOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                            >
+                                <Layers className="w-4 h-4" />
+                                Import Variants
+                            </button>
+                        )}
+                        {can('products.view') && (
+                            <Link
+                                href={adminUrl('/admin/products/import/history/page')}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                            >
+                                <History className="w-4 h-4" />
+                                History
+                            </Link>
+                        )}
                         {can('products.create') && (
                             <Link
                                 href={adminUrl('/admin/products/type-select')}
@@ -683,6 +745,31 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                     </div>
                 </div>
             )}
+
+            {/* Import Products Wizard */}
+            <ImportWizard
+                isOpen={importOpen}
+                onClose={() => setImportOpen(false)}
+                onComplete={() => router.reload()}
+                type="products"
+            />
+
+            {/* Import Variants Wizard */}
+            <ImportWizard
+                isOpen={variantImportOpen}
+                onClose={() => setVariantImportOpen(false)}
+                onComplete={() => router.reload()}
+                type="variants"
+            />
+
+            {/* Export Dialog */}
+            <ExportDialog
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                type="products"
+                filters={{ search, category_id: categoryId, brand_id: brandId, type, status, stock }}
+                selectedIds={selectedIds}
+            />
         </AdminLayout>
     );
 }

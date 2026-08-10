@@ -115,6 +115,46 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/products/bulk-activate', [AdminProductController::class, 'bulkActivate'])->name('products.bulk-activate');
         Route::post('/products/bulk-deactivate', [AdminProductController::class, 'bulkDeactivate'])->name('products.bulk-deactivate');
 
+        // Product Import/Export
+        Route::post('/products/import/parse', [\App\Http\Controllers\Admin\ImportExportController::class, 'parseFile'])->name('products.import.parse');
+        Route::post('/products/import/validate', [\App\Http\Controllers\Admin\ImportExportController::class, 'validateImport'])->name('products.import.validate');
+        Route::post('/products/import', [\App\Http\Controllers\Admin\ImportExportController::class, 'import'])->name('products.import');
+        Route::get('/products/import/template', [\App\Http\Controllers\Admin\ImportExportController::class, 'template'])->name('products.import.template');
+        Route::get('/products/export', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportProducts'])->name('products.export');
+
+        // Multi-Sheet Product Import
+        Route::post('/products/import/upload', [\App\Http\Controllers\Admin\ImportExportController::class, 'uploadMultiSheet'])->name('products.import.upload');
+        Route::post('/products/import/validate-sheet', [\App\Http\Controllers\Admin\ImportExportController::class, 'validateMultiSheet'])->name('products.import.validate-sheet');
+        Route::post('/products/import/execute', [\App\Http\Controllers\Admin\ImportExportController::class, 'importMultiSheet'])->name('products.import.execute');
+
+        // Variant Import
+        Route::post('/products/import/validate-variants', [\App\Http\Controllers\Admin\ImportExportController::class, 'validateVariantSheet'])->name('products.import.validate-variants');
+        Route::post('/products/import/execute-variants', [\App\Http\Controllers\Admin\ImportExportController::class, 'importVariantSheet'])->name('products.import.execute-variants');
+
+        // Variant Export
+        Route::get('/variants/export', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportVariants'])->name('variants.export');
+
+        // Import History
+        Route::get('/products/import/history', [\App\Http\Controllers\Admin\ImportExportController::class, 'importHistory'])->name('products.import.history');
+        Route::get('/products/import/history/page', [\App\Http\Controllers\Admin\ImportExportController::class, 'importHistoryPage'])->name('products.import.history.page');
+        Route::get('/products/import/history/{importHistory}', [\App\Http\Controllers\Admin\ImportExportController::class, 'importHistoryShow'])->name('products.import.history.show');
+        Route::get('/products/import/history/{importHistory}/page', [\App\Http\Controllers\Admin\ImportExportController::class, 'importHistoryShowPage'])->name('products.import.history.show.page');
+        Route::get('/products/import/history/{importHistory}/errors', [\App\Http\Controllers\Admin\ImportExportController::class, 'importErrorReport'])->name('products.import.history.errors');
+
+        // Order Export
+        Route::get('/orders/export', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportOrders'])->name('orders.export');
+
+        // Report Export
+        Route::get('/reports/export', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportReport'])->name('reports.export');
+
+        // Google Sheets Integration
+        Route::get('/google-sheets/auth', [\App\Http\Controllers\Admin\GoogleSheetsController::class, 'auth'])->name('google-sheets.auth');
+        Route::get('/google-sheets/callback', [\App\Http\Controllers\Admin\GoogleSheetsController::class, 'callback'])->name('google-sheets.callback');
+        Route::get('/google-sheets/status', [\App\Http\Controllers\Admin\GoogleSheetsController::class, 'status'])->name('google-sheets.status');
+        Route::post('/google-sheets/disconnect', [\App\Http\Controllers\Admin\GoogleSheetsController::class, 'disconnect'])->name('google-sheets.disconnect');
+        Route::post('/google-sheets/worksheets', [\App\Http\Controllers\Admin\GoogleSheetsController::class, 'worksheets'])->name('google-sheets.worksheets');
+        Route::post('/export/google-sheets', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportGoogleSheets'])->name('export.google-sheets');
+
         // Orders
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
