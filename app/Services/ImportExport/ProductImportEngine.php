@@ -394,9 +394,22 @@ class ProductImportEngine
                 }
             }
 
+            $variableSkus = [];
+            foreach ($products as $row) {
+                $sku = trim((string)($row['sku'] ?? ''));
+                $type = strtolower(trim((string)($row['product_type'] ?? 'single')));
+                if (!empty($sku) && $type === 'variable') {
+                    $variableSkus[$sku] = true;
+                }
+            }
+
             foreach ($variants as $row) {
                 $parentSku = trim((string)($row['parent_sku'] ?? ''));
                 $variantSku = trim((string)($row['variant_sku'] ?? ''));
+
+                if (!isset($variableSkus[$parentSku])) {
+                    continue;
+                }
 
                 $parent = $productMap[$parentSku] ?? null;
                 if (!$parent) {
