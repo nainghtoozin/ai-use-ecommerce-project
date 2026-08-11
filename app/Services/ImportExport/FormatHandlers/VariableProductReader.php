@@ -5,57 +5,36 @@ namespace App\Services\ImportExport\FormatHandlers;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-class ProductImportReader
+class VariableProductReader
 {
     public function read(UploadedFile $file): array
     {
         $spreadsheet = IOFactory::load($file->getRealPath());
-        $result = [
-            'products' => [],
-            'variants' => [],
-            'sheet_names' => [],
-            'has_products_sheet' => false,
-            'has_variants_sheet' => false,
-        ];
+        $variantsSheet = $spreadsheet->getSheetByName('Variants');
 
-        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-            $result['sheet_names'][] = $sheet->getTitle();
+        if (!$variantsSheet) {
+            $variantsSheet = $spreadsheet->getActiveSheet();
         }
 
-        $productsSheet = $this->findSheet($spreadsheet, 'Products');
-        if ($productsSheet) {
-            $result['has_products_sheet'] = true;
-            $result['products'] = $this->parseSheet($productsSheet);
-        }
-
-        $variantsSheet = $this->findSheet($spreadsheet, 'Variants');
-        if ($variantsSheet) {
-            $result['has_variants_sheet'] = true;
-            $result['variants'] = $this->parseSheet($variantsSheet);
-        }
-
+        $rows = $this->readSheet($variantsSheet);
         $spreadsheet->disconnectWorksheets();
 
-        return $result;
+        return ['variants' => $rows];
     }
 
-    private function findSheet($spreadsheet, string $name)
+    public function validateStructure(UploadedFile $file): array
     {
-        $sheet = $spreadsheet->getSheetByName($name);
-        if ($sheet) {
-            return $sheet;
-        }
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $variantsSheet = $spreadsheet->getSheetByName('Variants');
+        $spreadsheet->disconnectWorksheets();
 
-        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-            if (strtolower(trim($sheet->getTitle())) === strtolower($name)) {
-                return $sheet;
-            }
-        }
-
-        return null;
+        return [
+            'valid' => $variantsSheet !== null,
+            'has_variants_sheet' => $variantsSheet !== null,
+        ];
     }
 
-    private function parseSheet($sheet): array
+    private function readSheet($sheet): array
     {
         $rows = [];
         foreach ($sheet->getRowIterator() as $row) {

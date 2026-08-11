@@ -10,17 +10,17 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class VariantImportTemplate implements FromCollection, WithHeadings, WithTitle, WithStyles, WithColumnWidths
+class VariableProductTemplateExport implements FromCollection, WithHeadings, WithTitle, WithStyles, WithColumnWidths
 {
     public function collection(): Collection
     {
         return collect([
-            ['TS001', 'Basic T-Shirt', 'Fashion', 'Nike', 'pcs', 'TS001-RED-S', 'Color', 'Red', 'Size', 'S', '', '', '29.99', '15.00', '10', 'BAR-TS001-RS', 'active'],
-            ['TS001', 'Basic T-Shirt', 'Fashion', 'Nike', 'pcs', 'TS001-RED-M', 'Color', 'Red', 'Size', 'M', '', '', '29.99', '15.00', '15', 'BAR-TS001-RM', 'active'],
-            ['TS001', 'Basic T-Shirt', 'Fashion', 'Nike', 'pcs', 'TS001-BLU-S', 'Color', 'Blue', 'Size', 'S', '', '', '29.99', '15.00', '8', 'BAR-TS001-BS', 'active'],
-            ['TS001', 'Basic T-Shirt', 'Fashion', 'Nike', 'pcs', 'TS001-BLU-M', 'Color', 'Blue', 'Size', 'M', '', '', '29.99', '15.00', '12', 'BAR-TS001-BM', 'active'],
-            ['CAP001', 'Baseball Cap', 'Accessories', 'Nike', 'pcs', 'CAP001-BLK', 'Color', 'Black', '', '', '', '', '24.99', '12.00', '20', 'BAR-CAP-BLK', 'active'],
-            ['CAP001', 'Baseball Cap', 'Accessories', 'Nike', 'pcs', 'CAP001-WHT', 'Color', 'White', '', '', '', '', '24.99', '12.00', '18', 'BAR-CAP-WHT', 'active'],
+            ['SHIRT-001', 'Basic T-Shirt', 'Clothing', 'Nike', 'pcs', 'SHIRT-001-RED-S', 'Color', 'Red', 'Size', 'S', '', '', '29.99', '15.00', '10', 'BAR-TS001-RS', 'active'],
+            ['SHIRT-001', 'Basic T-Shirt', 'Clothing', 'Nike', 'pcs', 'SHIRT-001-RED-M', 'Color', 'Red', 'Size', 'M', '', '', '29.99', '15.00', '15', 'BAR-TS001-RM', 'active'],
+            ['SHIRT-001', 'Basic T-Shirt', 'Clothing', 'Nike', 'pcs', 'SHIRT-001-BLU-S', 'Color', 'Blue', 'Size', 'S', '', '', '29.99', '15.00', '8', 'BAR-TS001-BS', 'active'],
+            ['SHIRT-001', 'Basic T-Shirt', 'Clothing', 'Nike', 'pcs', 'SHIRT-001-BLU-M', 'Color', 'Blue', 'Size', 'M', '', '', '29.99', '15.00', '12', 'BAR-TS001-BM', 'active'],
+            ['CAP-001', 'Baseball Cap', 'Accessories', 'Nike', 'pcs', 'CAP-001-BLK', 'Color', 'Black', '', '', '', '', '24.99', '12.00', '20', 'BAR-CAP-BLK', 'active'],
+            ['CAP-001', 'Baseball Cap', 'Accessories', 'Nike', 'pcs', 'CAP-001-WHT', 'Color', 'White', '', '', '', '', '24.99', '12.00', '18', 'BAR-CAP-WHT', 'active'],
         ]);
     }
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ErrorReportExport;
 use App\Exports\ProductImportTemplate;
-use App\Exports\VariantImportTemplate;
 use App\Http\Controllers\Controller;
 use App\Models\ImportHistory;
 use App\Services\ImportExport\ColumnMapper;
@@ -127,7 +126,6 @@ class ImportExportController extends Controller
     public function template(Request $request)
     {
         $format = $request->input('format', 'xlsx');
-        $type = $request->input('type', 'products');
 
         if ($format === 'csv') {
             $legacyType = $request->input('legacy_type', 'simple');
@@ -146,14 +144,6 @@ class ImportExportController extends Controller
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => "attachment; filename=\"{$template['filename']}.csv\"",
             ]);
-        }
-
-        if ($type === 'variants') {
-            return Excel::download(
-                new VariantImportTemplate(),
-                'variants_import_template.xlsx',
-                ExcelFormat::XLSX
-            );
         }
 
         return Excel::download(
@@ -197,6 +187,39 @@ class ImportExportController extends Controller
         $filters = $request->only(['ids']);
 
         return $this->productExportService->exportVariants($format, $filters, $tenantId);
+    }
+
+    public function validateVariableProducts(Request $request)
+    {
+        return $this->validateMultiSheet($request);
+    }
+
+    public function importVariableProducts(Request $request)
+    {
+        return $this->importMultiSheet($request);
+    }
+
+    public function exportVariableProducts(Request $request)
+    {
+        if (!auth()->user()->can('products.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $format = $request->input('format', 'xlsx');
+        $scope = $request->input('scope', 'all');
+        $tenantId = tenant()?->id;
+
+        $filters = [];
+
+        if ($scope === 'filtered') {
+            $filters = $request->only(['search', 'category_id', 'brand_id', 'status', 'stock']);
+        }
+
+        if ($scope === 'selected' && $request->has('ids')) {
+            $filters['ids'] = $request->input('ids');
+        }
+
+        return $this->productExportService->exportVariableProducts($format, $filters, $tenantId);
     }
 
     public function exportOrders(Request $request)
@@ -335,28 +358,44 @@ class ImportExportController extends Controller
 
         try {
             $reader = new ProductImportReader();
-            $structure = $reader->validateStructure($request->file('file'));
+            $data = $reader->read($request->file('file'));
 
-            if (!$structure['valid']) {
-                $actual = $structure['actual_sheet'] ?? 'unknown';
-                return response()->json(['error' => "This file does not have a \"Products\" sheet. It has a sheet named \"{$actual}\". Please download the latest product import template and try again."], 422);
+            if (!$data['has_products_sheet']) {
+                return response()->json(['error' => 'Products sheet is required. Please download the Product Import Template.'], 422);
             }
 
-            $data = $reader->read($request->file('file'));
+            $productRows = $data['products'] ?? [];
+            $variantRows = $data['variants'] ?? [];
+
+            $hasVariable = false;
+            foreach ($productRows as $row) {
+                $type = strtolower(trim((string)($row['product_type'] ?? 'single')));
+                if ($type === 'variable') {
+                    $hasVariable = true;
+                    break;
+                }
+            }
+
+            if ($hasVariable && empty($variantRows)) {
+                return response()->json(['error' => 'Variants sheet is required because variable products were detected in the Products sheet.'], 422);
+            }
 
             $resolver = new MasterDataResolver($tenantId);
             $skuService = app(SkuService::class);
             $inventoryService = app(InventoryService::class);
 
             $engine = new ProductImportEngine($resolver, $skuService, $inventoryService);
-            $validation = $engine->validateProductsOnly($data['rows'] ?? []);
+            $validation = $engine->validate($productRows, $variantRows);
 
             return response()->json([
                 'valid' => $validation['valid'],
                 'errors' => $validation['errors'],
                 'warnings' => $validation['warnings'],
                 'summary' => $validation['summary'],
-                'preview' => array_slice($data['rows'] ?? [], 0, 5),
+                'preview' => [
+                    'products' => array_slice($productRows, 0, 5),
+                    'variants' => array_slice($variantRows, 0, 5),
+                ],
             ]);
         } catch (\Throwable $e) {
             Log::error('Product validation failed', [
@@ -364,7 +403,7 @@ class ImportExportController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            return response()->json(['error' => 'Could not process this file. Please make sure it matches the product import template.'], 422);
+            return response()->json(['error' => 'Could not process this file. Please verify the template format and try again.'], 422);
         }
     }
 
@@ -388,6 +427,29 @@ class ImportExportController extends Controller
         $history = null;
 
         try {
+            $reader = new ProductImportReader();
+            $data = $reader->read($request->file('file'));
+
+            if (!$data['has_products_sheet']) {
+                return response()->json(['error' => 'Products sheet is required. Please download the Product Import Template.'], 422);
+            }
+
+            $productRows = $data['products'] ?? [];
+            $variantRows = $data['variants'] ?? [];
+
+            $hasVariable = false;
+            foreach ($productRows as $row) {
+                $type = strtolower(trim((string)($row['product_type'] ?? 'single')));
+                if ($type === 'variable') {
+                    $hasVariable = true;
+                    break;
+                }
+            }
+
+            if ($hasVariable && empty($variantRows)) {
+                return response()->json(['error' => 'Variants sheet is required because variable products were detected in the Products sheet.'], 422);
+            }
+
             $history = ImportHistory::create([
                 'tenant_id' => $tenantId,
                 'user_id' => auth()->id(),
@@ -398,9 +460,6 @@ class ImportExportController extends Controller
                 'import_mode' => $request->input('import_mode'),
             ]);
 
-            $reader = new ProductImportReader();
-            $data = $reader->read($request->file('file'));
-
             $resolver = new MasterDataResolver($tenantId);
             $skuService = app(SkuService::class);
             $inventoryService = app(InventoryService::class);
@@ -408,9 +467,7 @@ class ImportExportController extends Controller
             $engine = new ProductImportEngine($resolver, $skuService, $inventoryService);
             $mode = $request->input('import_mode', 'create_new');
 
-            $productRows = $data['rows'] ?? [];
-
-            $validation = $engine->validateProductsOnly($productRows);
+            $validation = $engine->validate($productRows, $variantRows);
             $allErrors = array_merge($validation['errors'], $validation['warnings']);
             $errorReportPath = null;
 
@@ -420,9 +477,9 @@ class ImportExportController extends Controller
             }
 
             $history->update([
-                'total_rows' => count($productRows),
+                'total_rows' => count($productRows) + count($variantRows),
                 'total_products' => count($productRows),
-                'total_variants' => 0,
+                'total_variants' => count($variantRows),
                 'warning_count' => $validation['summary']['warning_count'] ?? 0,
                 'error_count' => count($validation['errors']),
                 'errors' => $validation['errors'],
@@ -445,7 +502,7 @@ class ImportExportController extends Controller
                 ], 422);
             }
 
-            $result = $engine->importProducts($productRows, $mode);
+            $result = $engine->import($productRows, $variantRows, $mode);
             $duration = (int) ((microtime(true) - $startTime) * 1000);
 
             $status = ($validation['summary']['warning_count'] ?? 0) > 0
@@ -457,6 +514,7 @@ class ImportExportController extends Controller
                 'products_created' => $result['products_created'] ?? 0,
                 'products_skipped' => $result['products_skipped'] ?? 0,
                 'variants_created' => $result['variants_created'] ?? 0,
+                'variants_skipped' => $result['variants_skipped'] ?? 0,
                 'duration_ms' => $duration,
             ]);
 
@@ -475,7 +533,7 @@ class ImportExportController extends Controller
                 ]);
             }
 
-            Log::error('Multi-sheet import failed', [
+            Log::error('Product import failed', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

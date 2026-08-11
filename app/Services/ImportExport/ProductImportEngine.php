@@ -40,8 +40,24 @@ class ProductImportEngine
         $this->seenSkus = [];
         $this->seenVariantSkus = [];
 
+        $variableSkus = $this->buildVariableSkuMap($products);
+
         $this->validateProducts($products);
-        $this->validateVariants($variants, $products);
+
+        if (empty($variableSkus) && !empty($variants)) {
+            $this->addWarning('Variants', 0, 'variants', '',
+                'Variants sheet contains ' . count($variants) . ' row(s), but no variable products were found in the Products sheet. These variant rows will be ignored.');
+            $applicableVariants = 0;
+        } elseif (!empty($variableSkus) && empty($variants)) {
+            $this->addError('Variants', 0, 'variants', '',
+                'Variable products were found in the Products sheet, but no variant rows were provided. Variants are required for variable products.');
+            $applicableVariants = 0;
+        } elseif (!empty($variableSkus)) {
+            $this->validateVariants($variants, $variableSkus);
+            $applicableVariants = $this->countApplicableVariants($variants, $variableSkus);
+        } else {
+            $applicableVariants = 0;
+        }
 
         $productErrors = collect($this->errors)->where('sheet', 'Products')->count();
         $variantErrors = collect($this->errors)->where('sheet', 'Variants')->count();
@@ -52,9 +68,9 @@ class ProductImportEngine
             'warnings' => $this->warnings,
             'summary' => [
                 'total_products' => count($products),
-                'total_variants' => count($variants),
+                'total_variants' => $applicableVariants,
                 'valid_products' => count($products) - $productErrors,
-                'valid_variants' => count($variants) - $variantErrors,
+                'valid_variants' => $applicableVariants - $variantErrors,
                 'error_products' => $productErrors,
                 'error_variants' => $variantErrors,
                 'warning_count' => count($this->warnings),
@@ -227,9 +243,34 @@ class ProductImportEngine
         }
     }
 
-    private function validateVariants(array $variants, array $products): void
+    private function buildVariableSkuMap(array $products): array
     {
-        $productSkus = collect($products)->map(fn($p) => trim((string)($p['sku'] ?? '')))->filter()->toArray();
+        $map = [];
+        foreach ($products as $p) {
+            $sku = trim((string)($p['sku'] ?? ''));
+            $type = strtolower(trim((string)($p['product_type'] ?? 'single')));
+            if (!empty($sku) && $type === 'variable') {
+                $map[$sku] = true;
+            }
+        }
+        return $map;
+    }
+
+    private function countApplicableVariants(array $variants, array $variableSkus): int
+    {
+        $count = 0;
+        foreach ($variants as $row) {
+            $parentSku = trim((string)($row['parent_sku'] ?? ''));
+            if (isset($variableSkus[$parentSku])) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    private function validateVariants(array $variants, array $variableSkus): void
+    {
+        $allWorkbookSkus = array_fill_keys(array_keys($variableSkus), true);
 
         foreach ($variants as $index => $row) {
             $rowNum = $index + 2;
@@ -238,14 +279,33 @@ class ProductImportEngine
 
             if (empty($parentSku)) {
                 $this->addError('Variants', $rowNum, 'parent_sku', '', 'Parent SKU is required.');
-            } elseif (!in_array($parentSku, $productSkus)) {
-                $existingParent = Product::withoutTenantScope()
-                    ->where('tenant_id', $this->resolver->getTenantId())
-                    ->where('sku', $parentSku)
-                    ->first();
-                if (!$existingParent) {
-                    $this->addError('Variants', $rowNum, 'parent_sku', $parentSku, "Parent product with SKU \"{$parentSku}\" not found.");
+                continue;
+            }
+
+            if (!isset($variableSkus[$parentSku])) {
+                $isInWorkbook = isset($allWorkbookSkus[$parentSku]);
+                $existingParent = null;
+                if (!$isInWorkbook) {
+                    $existingParent = Product::withoutTenantScope()
+                        ->where('tenant_id', $this->resolver->getTenantId())
+                        ->where('sku', $parentSku)
+                        ->first();
                 }
+
+                if ($existingParent) {
+                    $existingType = strtolower($existingParent->type->value ?? '');
+                    if ($existingType !== 'variable') {
+                        $this->addError('Variants', $rowNum, 'parent_sku', $parentSku,
+                            "Product SKU \"{$parentSku}\" is a Single Product and cannot have variants. Change the Product Type to Variable or remove this Variant row.");
+                    }
+                } elseif (!$isInWorkbook) {
+                    $this->addError('Variants', $rowNum, 'parent_sku', $parentSku,
+                        "Parent SKU \"{$parentSku}\" does not match any Variable Product in the Products sheet. Add the parent product to the Products sheet with Product Type set to Variable, or correct the Parent SKU.");
+                } else {
+                    $this->addError('Variants', $rowNum, 'parent_sku', $parentSku,
+                        "Product SKU \"{$parentSku}\" is a Single Product and cannot have variants. Change the Product Type to Variable or remove this Variant row.");
+                }
+                continue;
             }
 
             if (empty($variantSku)) {

@@ -139,20 +139,17 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
     const fileInputRef = useRef(null);
 
     const isVariants = type === 'variants';
-    const title = isVariants ? 'Import Variants' : 'Import Products';
-    const templateDesc = isVariants
-        ? 'Add variants to existing variable products.'
-        : 'Use this template for products without variants.';
+    const isVariable = type === 'variable';
+    const title = isVariable ? 'Import Variable Products' : isVariants ? 'Import Variants' : 'Import Products';
+    const templateDesc = isVariable
+        ? 'Create parent variable products and their variants together using the Products + Variants sheets.'
+        : isVariants
+            ? 'Add variants to existing variable products.'
+            : 'Import single products, or variable products with their variants.';
 
-    const validateEndpoint = isVariants
-        ? '/admin/products/import/validate-variants'
-        : '/admin/products/import/validate-sheet';
-    const importEndpoint = isVariants
-        ? '/admin/products/import/execute-variants'
-        : '/admin/products/import/execute';
-    const templateEndpoint = isVariants
-        ? '/admin/products/import/template?type=variants'
-        : '/admin/products/import/template?type=products';
+    const validateEndpoint = '/admin/products/import/validate-sheet';
+    const importEndpoint = '/admin/products/import/execute';
+    const templateEndpoint = '/admin/products/import/template';
 
     const reset = useCallback(() => {
         setStep('upload');
@@ -298,7 +295,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
                         <div className="flex items-center gap-3">
-                            {isVariants ? <Layers className="w-5 h-5 text-blue-600" /> : <Package className="w-5 h-5 text-blue-600" />}
+                            {isVariable ? <Package className="w-5 h-5 text-purple-600" /> : isVariants ? <Layers className="w-5 h-5 text-blue-600" /> : <Package className="w-5 h-5 text-blue-600" />}
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
                                 <p className="text-xs text-gray-500 mt-0.5">{templateDesc}</p>
@@ -344,7 +341,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                                     >
                                         <input ref={fileInputRef} type="file" accept=".xlsx" onChange={handleFileSelect} className="hidden" />
                                         <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Drop your {isVariants ? 'variants' : 'products'} template here, or <span className="text-blue-600">browse</span></p>
+                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Drop your {isVariable ? 'variable products' : isVariants ? 'variants' : 'products'} template here, or <span className="text-blue-600">browse</span></p>
                                         <p className="text-xs text-gray-400 mt-1">XLSX files up to 10MB</p>
                                     </div>
                                 )}
@@ -352,7 +349,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                                 <div className="flex items-center justify-center">
                                     <button onClick={handleDownloadTemplate} className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
                                         <Download className="w-4 h-4" />
-                                        Download {isVariants ? 'Variant' : 'Product'} Template
+                                        Download {isVariable ? 'Variable Product' : isVariants ? 'Variant' : 'Product'} Template
                                     </button>
                                 </div>
                             </div>
@@ -371,7 +368,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                         {step === 'confirm' && (
                             <div className="flex flex-col items-center justify-center py-12">
                                 <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Importing {isVariants ? 'variants' : 'products'}...</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Importing {isVariable ? 'variable products' : isVariants ? 'variants' : 'products'}...</p>
                                 <p className="text-xs text-gray-400 mt-1">Do not close this window.</p>
                             </div>
                         )}
@@ -382,8 +379,8 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                                 {/* Summary Cards */}
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     {[
-                                        { label: 'Total Rows', value: totalRows, color: 'text-gray-700 dark:text-gray-300', bg: 'bg-gray-50 dark:bg-gray-800' },
-                                        { label: 'Valid', value: totalValid, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
+                                        { label: 'Products', value: summary.total_products || 0, color: 'text-gray-700 dark:text-gray-300', bg: 'bg-gray-50 dark:bg-gray-800' },
+                                        { label: 'Variants', value: summary.total_variants || 0, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
                                         { label: 'Warnings', value: totalWarnings, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
                                         { label: 'Errors', value: totalErrors, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20' },
                                     ].map(({ label, value, color, bg }) => (
@@ -472,7 +469,18 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                                 </div>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {isVariants ? [
+                                    {isVariable ? [
+                                        { label: 'Products Created', value: result.products_created || 0, icon: CheckCircle, color: 'text-green-600' },
+                                        { label: 'Products Skipped', value: result.products_skipped || 0, icon: AlertTriangle, color: 'text-amber-600' },
+                                        { label: 'Variants Created', value: result.variants_created || 0, icon: Layers, color: 'text-blue-600' },
+                                        { label: 'Errors', value: result.errors?.length || 0, icon: XCircle, color: 'text-red-600' },
+                                    ].map(({ label, value, icon: Icon, color }) => (
+                                        <div key={label} className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                            <Icon className={`w-5 h-5 mx-auto mb-1 ${color}`} />
+                                            <p className={`text-xl font-bold ${color}`}>{value}</p>
+                                            <p className="text-xs text-gray-500">{label}</p>
+                                        </div>
+                                    )) : isVariants ? [
                                         { label: 'Variants Created', value: result.variants_created || 0, icon: CheckCircle, color: 'text-green-600' },
                                         { label: 'Variants Skipped', value: result.variants_skipped || 0, icon: AlertTriangle, color: 'text-amber-600' },
                                         { label: 'Errors', value: result.errors?.length || 0, icon: XCircle, color: 'text-red-600' },

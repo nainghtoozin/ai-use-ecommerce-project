@@ -131,6 +131,11 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/products/import/validate-variants', [\App\Http\Controllers\Admin\ImportExportController::class, 'validateVariantSheet'])->name('products.import.validate-variants');
         Route::post('/products/import/execute-variants', [\App\Http\Controllers\Admin\ImportExportController::class, 'importVariantSheet'])->name('products.import.execute-variants');
 
+        // Variable Product Import/Export
+        Route::post('/products/import/validate-variable', [\App\Http\Controllers\Admin\ImportExportController::class, 'validateVariableProducts'])->name('products.import.validate-variable');
+        Route::post('/products/import/execute-variable', [\App\Http\Controllers\Admin\ImportExportController::class, 'importVariableProducts'])->name('products.import.execute-variable');
+        Route::get('/products/export/variable', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportVariableProducts'])->name('products.export.variable');
+
         // Variant Export
         Route::get('/variants/export', [\App\Http\Controllers\Admin\ImportExportController::class, 'exportVariants'])->name('variants.export');
 

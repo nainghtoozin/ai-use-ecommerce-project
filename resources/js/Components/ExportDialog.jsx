@@ -67,7 +67,9 @@ export default function ExportDialog({ isOpen, onClose, type = 'products', filte
 
         const endpoint = exportType === 'variants'
             ? `/admin/variants/export?format=${format}`
-            : `/admin/${type}/export?${new URLSearchParams(params).toString()}`;
+            : exportType === 'variable_products'
+                ? `/admin/products/export/variable?${new URLSearchParams(params).toString()}`
+                : `/admin/${type}/export?${new URLSearchParams(params).toString()}`;
 
         window.location.href = adminUrl(endpoint);
 
@@ -120,9 +122,10 @@ export default function ExportDialog({ isOpen, onClose, type = 'products', filte
                                 {/* What to export */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Export</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-3 gap-2">
                                         {[
                                             { value: 'products', icon: Package, label: 'Products', desc: 'Single products only' },
+                                            { value: 'variable_products', icon: Layers, label: 'Variable Products', desc: 'Parents + variants' },
                                             { value: 'variants', icon: Layers, label: 'Variants', desc: 'Variant details' },
                                         ].map(({ value, icon: Icon, label, desc }) => (
                                             <button
@@ -161,13 +164,13 @@ export default function ExportDialog({ isOpen, onClose, type = 'products', filte
                                 </div>
 
                                 {/* Scope */}
-                                {exportType === 'products' && (
+                                {(exportType === 'products' || exportType === 'variable_products') && (
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Scope</label>
                                         <div className="space-y-2">
                                             {[
-                                                { value: 'all', label: 'All Single Products', desc: 'Export all single products' },
-                                                { value: 'filtered', label: 'Filtered Products', desc: 'Export filtered single products' },
+                                                { value: 'all', label: exportType === 'variable_products' ? 'All Variable Products' : 'All Single Products', desc: exportType === 'variable_products' ? 'Export all variable products with variants' : 'Export all single products' },
+                                                { value: 'filtered', label: 'Filtered Products', desc: 'Export filtered products' },
                                                 ...(selectedIds.length > 0 ? [{ value: 'selected', label: `Selected (${selectedIds.length})`, desc: 'Export selected products' }] : []),
                                             ].map(({ value, label, desc }) => (
                                                 <label key={value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${scope === value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>

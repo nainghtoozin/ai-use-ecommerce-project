@@ -6,6 +6,7 @@ use App\Enums\ProductType;
 use App\Exports\ProductDataExport;
 use App\Exports\ProductExportSheet;
 use App\Exports\VariantExportSheet;
+use App\Exports\VariableProductExport;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\ImportExport\FormatHandlers\CsvHandler;
@@ -158,6 +159,80 @@ class ProductExportService
         return $this->csvHandler->write($headers, $rows, $filename);
     }
 
+    public function exportVariableProducts(string $format, array $filters, int $tenantId)
+    {
+        $query = Product::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->where('type', ProductType::VARIABLE)
+            ->with(['category', 'brand', 'unit', 'variants']);
+
+        $this->applyFilters($query, $filters);
+
+        $products = $query->orderBy('name')->get();
+
+        if ($products->isEmpty()) {
+            return response()->json(['error' => 'No variable products found to export.'], 422);
+        }
+
+        $productRows = [];
+        $variantRows = [];
+
+        foreach ($products as $product) {
+            $productRows[] = [
+                $product->sku ?? '',
+                $product->name,
+                'variable',
+                $product->description ?? '',
+                $product->category?->name ?? '',
+                $product->brand?->name ?? '',
+                $product->unit?->name ?? '',
+                $product->price,
+                $product->cost_price ?? '',
+                '',
+                $product->barcode ?? '',
+                $product->status,
+            ];
+
+            foreach ($product->variants as $variant) {
+                $attrs = $variant->attributes ?? [];
+                $attrKeys = array_keys($attrs);
+                $attrValues = array_values($attrs);
+
+                $variantRows[] = [
+                    $product->sku,
+                    $variant->sku ?? '',
+                    $attrKeys[0] ?? '',
+                    $attrValues[0] ?? '',
+                    $attrKeys[1] ?? '',
+                    $attrValues[1] ?? '',
+                    $attrKeys[2] ?? '',
+                    $attrValues[2] ?? '',
+                    $variant->price ?? $product->price,
+                    $variant->cost_price ?? '',
+                    $variant->stock ?? 0,
+                    $variant->barcode ?? '',
+                    $variant->status ?? 'active',
+                ];
+            }
+        }
+
+        $filename = 'variable_products_' . now()->format('Y-m-d_His');
+
+        if ($format === 'xlsx') {
+            return Excel::download(
+                new VariableProductExport($productRows, $variantRows),
+                "{$filename}.xlsx",
+                ExcelFormat::XLSX
+            );
+        }
+
+        return $this->csvHandler->write(
+            $this->getVariableProductSheetHeaders(),
+            $productRows,
+            $filename
+        );
+    }
+
     private function applyFilters($query, array $filters): void
     {
         if (!empty($filters['search'])) {
@@ -254,6 +329,16 @@ class ProductExportService
             'SKU', 'Product Name', 'Product Type', 'Description',
             'Category', 'Brand', 'Unit', 'Selling Price', 'Cost Price',
             'Stock', 'Barcode', 'Status', 'Notes',
+        ];
+    }
+
+    private function getVariableProductSheetHeaders(): array
+    {
+        return [
+            'Parent SKU', 'Parent Name', 'Category', 'Brand', 'Unit',
+            'Variant SKU', 'Option 1 Name', 'Option 1 Value',
+            'Option 2 Name', 'Option 2 Value', 'Option 3 Name', 'Option 3 Value',
+            'Selling Price', 'Cost Price', 'Stock', 'Barcode', 'Status',
         ];
     }
 

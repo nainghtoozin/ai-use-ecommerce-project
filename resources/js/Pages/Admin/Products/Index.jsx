@@ -7,7 +7,6 @@ import ImportWizard from '@/Components/ImportWizard';
 import ExportDialog from '@/Components/ExportDialog';
 import {
     Package,
-    Layers,
     Gift,
     Plus,
     Search,
@@ -112,7 +111,6 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [bulkAction, setBulkAction] = useState('');
     const [importOpen, setImportOpen] = useState(false);
-    const [variantImportOpen, setVariantImportOpen] = useState(false);
     const [exportOpen, setExportOpen] = useState(false);
 
     const hasFilters = search || categoryId || brandId || type || status || stock;
@@ -277,18 +275,11 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             </button>
                         )}
                         <a
-                            href={adminUrl('/admin/products/import/template?type=products')}
+                            href={adminUrl('/admin/products/import/template')}
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
                         >
                             <FileSpreadsheet className="w-4 h-4" />
-                            Single Product Template
-                        </a>
-                        <a
-                            href={adminUrl('/admin/products/import/template?type=variants')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                        >
-                            <FileSpreadsheet className="w-4 h-4" />
-                            Variant Template
+                            Download Product Template
                         </a>
                         {can('products.create') && (
                             <button
@@ -298,16 +289,6 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             >
                                 <Upload className="w-4 h-4" />
                                 Import Products
-                            </button>
-                        )}
-                        {can('products.create') && (
-                            <button
-                                type="button"
-                                onClick={() => setVariantImportOpen(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                            >
-                                <Layers className="w-4 h-4" />
-                                Import Variants
                             </button>
                         )}
                         {can('products.view') && (
@@ -752,14 +733,6 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                 onClose={() => setImportOpen(false)}
                 onComplete={() => router.reload()}
                 type="products"
-            />
-
-            {/* Import Variants Wizard */}
-            <ImportWizard
-                isOpen={variantImportOpen}
-                onClose={() => setVariantImportOpen(false)}
-                onComplete={() => router.reload()}
-                type="variants"
             />
 
             {/* Export Dialog */}
