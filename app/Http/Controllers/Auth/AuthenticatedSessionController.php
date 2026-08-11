@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Account;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -52,17 +53,23 @@ class AuthenticatedSessionController extends Controller
                     ])->onlyInput('email');
                 }
 
-                if ($account->getCurrentMembership() && !$account->isSuperAdmin()) {
-                    return back()->withErrors([
-                        'email' => 'Please login through your store URL.',
-                    ])->onlyInput('email');
+                if (!$account->isSuperAdmin() && $account->getCurrentMembership()) {
+                    $hasOwnerMembership = TenantMembership::where('account_id', $account->id)
+                        ->where('is_owner', true)
+                        ->exists();
+
+                    if (!$hasOwnerMembership) {
+                        return back()->withErrors([
+                            'email' => 'Please login through your store URL.',
+                        ])->onlyInput('email');
+                    }
                 }
             }
         } else {
             $user = User::where('email', $request->email)->first();
 
             if ($user) {
-                if ($user->tenant_id && !$user->isSuperAdmin()) {
+                if ($user->tenant_id && !$user->isSuperAdmin() && !$user->is_owner) {
                     return back()->withErrors([
                         'email' => 'Please login through your store URL.',
                     ])->onlyInput('email');
