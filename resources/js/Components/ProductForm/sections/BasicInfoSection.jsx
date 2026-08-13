@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import FormInput from '../FormInput';
-import FormTextarea from '../FormTextarea';
 import ImageUpload from '@/Components/ImageUpload';
+import RichTextEditor from '@/Components/editor/RichTextEditor';
 import { usePage } from '@inertiajs/react';
 
 function slugify(text) {
@@ -140,15 +140,19 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 </div>
 
                 {/* Short Description */}
-                <FormTextarea
-                    label="Short Description"
-                    name="short_description"
-                    value={data.short_description || ''}
-                    onChange={(e) => setData('short_description', e.target.value)}
-                    placeholder="Brief summary for listings and search results..."
-                    error={errors.short_description}
-                    rows={2}
-                />
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Short Description
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Brief summary shown in product cards and previews.</p>
+                    <RichTextEditor
+                        value={data.short_description || ''}
+                        onChange={(v) => setData('short_description', v)}
+                        placeholder="Brief summary for listings and search results..."
+                        minHeight="100px"
+                    />
+                    {errors.short_description && <p className="mt-1 text-xs text-red-600">{errors.short_description}</p>}
+                </div>
 
                 {/* Combo: inline Description */}
                 {data.product_type === 'combo' && (
@@ -156,15 +160,19 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         {/* Divider */}
                         <div className="border-t border-gray-100 dark:border-gray-800" />
 
-                        <FormTextarea
-                            label="Description"
-                            name="description"
-                            value={data.description || ''}
-                            onChange={(e) => setData('description', e.target.value)}
-                            placeholder="Detailed description of the bundle..."
-                            error={errors.description}
-                            rows={4}
-                        />
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Description
+                            </label>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Detailed description of the bundle.</p>
+                            <RichTextEditor
+                                value={data.description || ''}
+                                onChange={(v) => setData('description', v)}
+                                placeholder="Detailed description of the bundle..."
+                                minHeight="120px"
+                            />
+                            {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
+                        </div>
                     </>
                 )}
 

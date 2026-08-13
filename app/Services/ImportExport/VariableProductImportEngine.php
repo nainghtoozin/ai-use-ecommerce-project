@@ -100,6 +100,8 @@ class VariableProductImportEngine
                     'name' => $parentName,
                     'slug' => Str::slug($parentName) . '-' . Str::random(6),
                     'sku' => $parentSku,
+                    'short_description' => $firstRow['short_description'] ?? $firstRow['description'] ?? null,
+                    'description' => $firstRow['full_description'] ?? null,
                     'price' => !empty($firstRow['selling_price']) ? (float)$firstRow['selling_price'] : 0,
                     'base_price' => !empty($firstRow['selling_price']) ? (float)$firstRow['selling_price'] : 0,
                     'cost_price' => !empty($firstRow['cost_price']) ? (float)$firstRow['cost_price'] : null,

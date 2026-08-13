@@ -27,8 +27,8 @@ class ProductImportTemplateProductsSheet implements FromCollection, WithTitle, W
     public function collection(): Collection
     {
         return collect([
-            ['WM001', 'Wireless Mouse', 'single', 'Ergonomic wireless mouse with USB receiver', 'Electronics', 'Generic', 'Piece', '19.99', '10.00', '50', '123456789012', 'active', ''],
-            ['TS001', 'Basic T-Shirt', 'variable', 'Cotton t-shirt available in multiple sizes', 'Clothing', 'Apparel Co', 'Piece', '14.99', '6.00', '0', '123456789020', 'active', ''],
+            ['WM001', 'Wireless Mouse', 'single', 'Ergonomic wireless mouse with USB receiver', '', 'Electronics', 'Generic', 'Piece', '19.99', '10.00', '50', '123456789012', 'active', ''],
+            ['TS001', 'Basic T-Shirt', 'variable', 'Cotton t-shirt available in multiple sizes', '', 'Clothing', 'Apparel Co', 'Piece', '14.99', '6.00', '0', '123456789020', 'active', ''],
         ]);
     }
 
@@ -39,6 +39,7 @@ class ProductImportTemplateProductsSheet implements FromCollection, WithTitle, W
             'Product Name',
             'Product Type',
             'Description',
+            'Full Description',
             'Category',
             'Brand',
             'Unit',
@@ -64,9 +65,9 @@ class ProductImportTemplateProductsSheet implements FromCollection, WithTitle, W
     public function columnWidths(): array
     {
         return [
-            'A' => 18, 'B' => 30, 'C' => 12, 'D' => 40,
-            'E' => 18, 'F' => 15, 'G' => 12, 'H' => 14,
-            'I' => 12, 'J' => 10, 'K' => 18, 'L' => 10, 'M' => 20,
+            'A' => 18, 'B' => 30, 'C' => 12, 'D' => 40, 'E' => 40,
+            'F' => 18, 'G' => 15, 'H' => 12, 'I' => 14,
+            'J' => 12, 'K' => 10, 'L' => 18, 'M' => 10, 'N' => 20,
         ];
     }
 }

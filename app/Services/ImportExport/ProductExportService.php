@@ -80,6 +80,7 @@ class ProductExportService
                 $product->sku ?? '',
                 $product->name,
                 $product->type === ProductType::VARIABLE ? 'variable' : 'single',
+                $product->short_description ?? '',
                 $product->description ?? '',
                 $product->category?->name ?? '',
                 $product->brand?->name ?? '',
@@ -182,6 +183,7 @@ class ProductExportService
                 $product->sku ?? '',
                 $product->name,
                 'variable',
+                $product->short_description ?? '',
                 $product->description ?? '',
                 $product->category?->name ?? '',
                 $product->brand?->name ?? '',
@@ -283,6 +285,7 @@ class ProductExportService
                 $product->sku ?? '',
                 $product->name,
                 $product->type === ProductType::VARIABLE ? 'variable' : 'single',
+                $product->short_description ?? '',
                 $product->description ?? '',
                 $product->category?->name ?? '',
                 $product->brand?->name ?? '',
@@ -326,7 +329,7 @@ class ProductExportService
     private function getProductsheetHeaders(): array
     {
         return [
-            'SKU', 'Product Name', 'Product Type', 'Description',
+            'SKU', 'Product Name', 'Product Type', 'Description', 'Full Description',
             'Category', 'Brand', 'Unit', 'Selling Price', 'Cost Price',
             'Stock', 'Barcode', 'Status', 'Notes',
         ];

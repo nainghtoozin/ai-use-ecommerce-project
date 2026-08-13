@@ -25,6 +25,7 @@ class ProductExportSheet implements FromCollection, WithHeadings, WithStyles, Wi
             'Product Name',
             'Product Type',
             'Description',
+            'Full Description',
             'Category',
             'Brand',
             'Unit',
@@ -45,9 +46,9 @@ class ProductExportSheet implements FromCollection, WithHeadings, WithStyles, Wi
     public function columnWidths(): array
     {
         return [
-            'A' => 18, 'B' => 30, 'C' => 12, 'D' => 40,
-            'E' => 18, 'F' => 15, 'G' => 12, 'H' => 14,
-            'I' => 12, 'J' => 10, 'K' => 18, 'L' => 10, 'M' => 20,
+            'A' => 18, 'B' => 30, 'C' => 12, 'D' => 40, 'E' => 40,
+            'F' => 18, 'G' => 15, 'H' => 12, 'I' => 14,
+            'J' => 12, 'K' => 10, 'L' => 18, 'M' => 10, 'N' => 20,
         ];
     }
 }

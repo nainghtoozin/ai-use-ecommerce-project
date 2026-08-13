@@ -135,11 +135,7 @@ export default function SidebarSection({
 
                     <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Short Description</p>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                            {data.short_description || (
-                                <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
-                            )}
-                        </p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2" dangerouslySetInnerHTML={{ __html: data.short_description || '<span class="text-gray-400 dark:text-gray-500 italic">Not set</span>' }} />
                     </div>
                 </div>
             </div>

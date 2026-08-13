@@ -25,7 +25,7 @@ class UpdateProductRequest extends FormRequest
                 Rule::unique('products', 'sku')->where('tenant_id', tenant()?->id)->ignore($product?->id),
             ],
             'barcode'         => 'nullable|string|max:100',
-            'short_description' => 'nullable|string|max:500',
+            'short_description' => 'nullable|string',
             'description'     => 'nullable|string',
             'cost_price'      => 'nullable|numeric|min:0',
             'stock'           => 'nullable|integer|min:0',

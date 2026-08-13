@@ -195,9 +195,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                 <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Description</h3>
                                 </div>
-                                <div className="px-5 py-5">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{product.description}</p>
-                                </div>
+                                <div className="px-5 py-5 prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: product.description }} />
                             </div>
                         )}
 

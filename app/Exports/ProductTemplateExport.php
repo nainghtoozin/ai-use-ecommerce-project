@@ -291,11 +291,11 @@ class ProductsSheet implements FromCollection, WithTitle, WithHeadings, WithStyl
     {
         return collect([
             // Single product example
-            ['WM001', 'Wireless Mouse', 'single', 'Ergonomic wireless mouse with USB receiver', 'Electronics', 'Generic', 'Piece', '19.99', '10.00', '50', '123456789012', 'active', '', '', ''],
-            ['USB-CABLE-001', 'USB-C Charging Cable', 'single', 'Fast charging USB-C cable 1m', 'Electronics', 'Generic', 'Piece', '9.99', '4.00', '100', '123456789013', 'active', '', '', ''],
+            ['WM001', 'Wireless Mouse', 'single', 'Ergonomic wireless mouse with USB receiver', '', 'Electronics', 'Generic', 'Piece', '19.99', '10.00', '50', '123456789012', 'active', '', '', ''],
+            ['USB-CABLE-001', 'USB-C Charging Cable', 'single', 'Fast charging USB-C cable 1m', '', 'Electronics', 'Generic', 'Piece', '9.99', '4.00', '100', '123456789013', 'active', '', '', ''],
             // Variable product example (parent only — variants go in Variants sheet)
-            ['TS001', 'Basic T-Shirt', 'variable', 'Premium cotton t-shirt available in multiple colors and sizes', 'Fashion', 'Nike', 'Piece', '29.99', '15.00', '', '', 'active', 'Color, Size', 'Red, Blue / S, M', ''],
-            ['CAP001', 'Baseball Cap', 'variable', 'Adjustable baseball cap with logo', 'Fashion', 'Nike', 'Piece', '24.99', '12.00', '', '', 'active', 'Color', 'Black, White, Red', ''],
+            ['TS001', 'Basic T-Shirt', 'variable', 'Premium cotton t-shirt available in multiple colors and sizes', '', 'Fashion', 'Nike', 'Piece', '29.99', '15.00', '', '', 'active', 'Color, Size', 'Red, Blue / S, M', ''],
+            ['CAP001', 'Baseball Cap', 'variable', 'Adjustable baseball cap with logo', '', 'Fashion', 'Nike', 'Piece', '24.99', '12.00', '', '', 'active', 'Color', 'Black, White, Red', ''],
         ]);
     }
 
@@ -311,6 +311,7 @@ class ProductsSheet implements FromCollection, WithTitle, WithHeadings, WithStyl
             'Product Name',
             'Product Type',
             'Description',
+            'Full Description',
             'Category',
             'Brand',
             'Unit',
@@ -339,17 +340,18 @@ class ProductsSheet implements FromCollection, WithTitle, WithHeadings, WithStyl
             'B' => 30,  // Product Name
             'C' => 12,  // Product Type
             'D' => 40,  // Description
-            'E' => 18,  // Category
-            'F' => 15,  // Brand
-            'G' => 12,  // Unit
-            'H' => 14,  // Selling Price
-            'I' => 12,  // Cost Price
-            'J' => 10,  // Stock
-            'K' => 18,  // Barcode
-            'L' => 10,  // Status
-            'M' => 22,  // Variant Option Names
-            'N' => 30,  // Variant Option Values
-            'O' => 20,  // Notes
+            'E' => 40,  // Full Description
+            'F' => 18,  // Category
+            'G' => 15,  // Brand
+            'H' => 12,  // Unit
+            'I' => 14,  // Selling Price
+            'J' => 12,  // Cost Price
+            'K' => 10,  // Stock
+            'L' => 18,  // Barcode
+            'M' => 10,  // Status
+            'N' => 22,  // Variant Option Names
+            'O' => 30,  // Variant Option Values
+            'P' => 20,  // Notes
         ];
     }
 }

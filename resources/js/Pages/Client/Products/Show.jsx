@@ -323,9 +323,7 @@ export default function ProductShow({ product, promotion, detail }) {
 
                         {/* Short Description */}
                         <div className="mt-4">
-                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3">
-                                {product.short_description || 'No short description available for this product.'}
-                            </p>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3" dangerouslySetInnerHTML={{ __html: product.short_description || 'No short description available for this product.' }} />
                         </div>
 
                         {/* Variable: Available Options */}
@@ -464,9 +462,7 @@ export default function ProductShow({ product, promotion, detail }) {
                         {/* Description Section */}
                         <div className="mt-4">
                             <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">Product Description</h2>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">
-                                {truncatedDescription}
-                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: truncatedDescription }} />
                             {isLongDescription && (
                                 <button onClick={() => setShowDescriptionModal(true)} className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                                     Read More
@@ -529,9 +525,7 @@ export default function ProductShow({ product, promotion, detail }) {
                                 </svg>
                             </button>
                         </div>
-                        <div className="px-6 py-4 overflow-y-auto max-h-[80vh] text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
-                            {product.description}
-                        </div>
+                        <div className="px-6 py-4 overflow-y-auto max-h-[80vh] text-sm text-gray-600 dark:text-gray-400 leading-relaxed prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: product.description }} />
                     </div>
                 </div>
             )}
