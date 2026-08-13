@@ -63,8 +63,10 @@ export default function ShopFooter() {
 
     const description = fs.description || website_info?.footer_description || website_info?.about_description || '';
     const extraText = fs.extra_text || '';
-    const descTruncated = description.length > 120;
-    const descPreview = descTruncated ? description.substring(0, 120) + '...' : description;
+    const stripHtml = (html) => html.replace(/<[^>]*>/g, '');
+    const descStripped = stripHtml(description);
+    const descTruncated = descStripped.length > 120;
+    const descPreview = descTruncated ? descStripped.substring(0, 120) + '...' : descStripped;
 
     const footerCopyright = website_info?.footer_copyright || `\u00A9 ${new Date().getFullYear()} ${siteName}. All rights reserved.`;
 
@@ -111,14 +113,14 @@ export default function ShopFooter() {
                 onClose={() => setInfoModal(null)}
                 title={`About ${siteName}`}
             >
-                {description}
+                <span dangerouslySetInnerHTML={{ __html: description }} />
             </InfoModal>
             <InfoModal
                 open={infoModal === 'extra'}
                 onClose={() => setInfoModal(null)}
                 title={`About ${siteName}`}
             >
-                {extraText}
+                <span dangerouslySetInnerHTML={{ __html: extraText }} />
             </InfoModal>
             <BackToTop />
 

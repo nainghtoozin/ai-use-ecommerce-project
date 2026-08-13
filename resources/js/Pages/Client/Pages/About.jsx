@@ -13,9 +13,10 @@ export default function About({ about_title, about_description, mission_title, m
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                         {about_title || settings.about_title || 'About Us'}
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-12">
-                        {about_description || settings.about_description || 'Learn more about our company, mission, and vision.'}
-                    </p>
+                    <p
+                        className="text-gray-600 dark:text-gray-400 leading-relaxed mb-12"
+                        dangerouslySetInnerHTML={{ __html: about_description || settings.about_description || 'Learn more about our company, mission, and vision.' }}
+                    />
 
                     <div className="grid md:grid-cols-2 gap-8 mb-12">
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8">
@@ -27,9 +28,10 @@ export default function About({ about_title, about_description, mission_title, m
                             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
                                 {mission_title || settings.mission_title || 'Our Mission'}
                             </h2>
-                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                                {mission_description || settings.mission_description || 'Our mission is to provide the best service to our customers.'}
-                            </p>
+                            <p
+                                className="text-gray-600 dark:text-gray-400 leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: mission_description || settings.mission_description || 'Our mission is to provide the best service to our customers.' }}
+                            />
                         </div>
 
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8">
@@ -42,9 +44,10 @@ export default function About({ about_title, about_description, mission_title, m
                             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
                                 {vision_title || settings.vision_title || 'Our Vision'}
                             </h2>
-                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                                {vision_description || settings.vision_description || 'Our vision is to be the leading provider in our industry.'}
-                            </p>
+                            <p
+                                className="text-gray-600 dark:text-gray-400 leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: vision_description || settings.vision_description || 'Our vision is to be the leading provider in our industry.' }}
+                            />
                         </div>
                     </div>
                 </div>

@@ -345,7 +345,7 @@ export default function AppLayout({ children, header = null }) {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">{siteName}</h3>
-                                    <p className="text-gray-400 dark:text-gray-500 text-sm">{website_info?.about_description || 'Your trusted online store'}</p>
+                                    <p className="text-gray-400 dark:text-gray-500 text-sm" dangerouslySetInnerHTML={{ __html: website_info?.about_description || 'Your trusted online store' }} />
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold mb-2">Quick Links</h3>

@@ -26,9 +26,10 @@ export default function StorefrontHero({ store, websiteInfo }) {
                         {storeName}
                     </h1>
                     {storeDescription && (
-                        <p className="mt-1 text-sm sm:text-sm text-indigo-100 leading-relaxed max-w-xl line-clamp-2">
-                            {storeDescription}
-                        </p>
+                        <p
+                            className="mt-1 text-sm sm:text-sm text-indigo-100 leading-relaxed max-w-xl line-clamp-2"
+                            dangerouslySetInnerHTML={{ __html: storeDescription }}
+                        />
                     )}
                     <div className="mt-3 flex flex-wrap gap-2">
                         <a

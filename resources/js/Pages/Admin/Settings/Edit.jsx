@@ -7,6 +7,7 @@ import { adminUrl } from '@/Utils/adminUrl';
 import TimezoneSelect from '@/Components/TimezoneSelect';
 import CurrencySelect from '@/Components/CurrencySelect';
 import { CURRENCY_MAP } from '@/Data/currencies';
+import RichTextEditor from '@/Components/editor/RichTextEditor';
 
 const PRESET_COLORS = [
   { name: 'Blue', value: '#3B82F6' },
@@ -327,7 +328,16 @@ export default function SettingsEdit({ settings = {} }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('site_name', 'Site Name')}
                     {renderField('site_tagline', 'Site Tagline')}
-                    {renderField('site_description', 'Site Description', 'textarea')}
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site Description</label>
+                      <RichTextEditor
+                        value={data.site_description || ''}
+                        onChange={(v) => setData('site_description', v)}
+                        placeholder="Brief description of your site..."
+                        minHeight="100px"
+                      />
+                      {errors.site_description && <p className="mt-1 text-sm text-red-600">{errors.site_description}</p>}
+                    </div>
                     {renderField('site_keywords', 'Site Keywords')}
                     <div className="col-span-1 md:col-span-2">
                       <TimezoneSelect
@@ -554,7 +564,16 @@ export default function SettingsEdit({ settings = {} }) {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">About Us</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('about_title', 'About Title')}
-                    {renderField('about_description', 'About Description', 'textarea', { rows: 5 })}
+                    <div className="col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">About Description</label>
+                      <RichTextEditor
+                        value={data.about_description || ''}
+                        onChange={(v) => setData('about_description', v)}
+                        placeholder="Write about your company..."
+                        minHeight="200px"
+                      />
+                      {errors.about_description && <p className="mt-1 text-sm text-red-600">{errors.about_description}</p>}
+                    </div>
                     <ImageUpload
                       name="about_image"
                       label="About Image"
@@ -570,9 +589,27 @@ export default function SettingsEdit({ settings = {} }) {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Mission & Vision</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('mission_title', 'Mission Title')}
-                    {renderField('mission_description', 'Mission Description', 'textarea')}
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mission Description</label>
+                      <RichTextEditor
+                        value={data.mission_description || ''}
+                        onChange={(v) => setData('mission_description', v)}
+                        placeholder="Describe your mission..."
+                        minHeight="150px"
+                      />
+                      {errors.mission_description && <p className="mt-1 text-sm text-red-600">{errors.mission_description}</p>}
+                    </div>
                     {renderField('vision_title', 'Vision Title')}
-                    {renderField('vision_description', 'Vision Description', 'textarea')}
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vision Description</label>
+                      <RichTextEditor
+                        value={data.vision_description || ''}
+                        onChange={(v) => setData('vision_description', v)}
+                        placeholder="Describe your vision..."
+                        minHeight="150px"
+                      />
+                      {errors.vision_description && <p className="mt-1 text-sm text-red-600">{errors.vision_description}</p>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -626,10 +663,46 @@ export default function SettingsEdit({ settings = {} }) {
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Website Policies</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField('privacy_policy', 'Privacy Policy', 'textarea', { rows: 5 })}
-                    {renderField('terms_conditions', 'Terms & Conditions', 'textarea', { rows: 5 })}
-                    {renderField('return_policy', 'Return Policy', 'textarea', { rows: 5 })}
-                    {renderField('shipping_policy', 'Shipping Policy', 'textarea', { rows: 5 })}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Privacy Policy</label>
+                      <RichTextEditor
+                        value={data.privacy_policy || ''}
+                        onChange={(v) => setData('privacy_policy', v)}
+                        placeholder="Write your privacy policy..."
+                        minHeight="200px"
+                      />
+                      {errors.privacy_policy && <p className="mt-1 text-sm text-red-600">{errors.privacy_policy}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Terms & Conditions</label>
+                      <RichTextEditor
+                        value={data.terms_conditions || ''}
+                        onChange={(v) => setData('terms_conditions', v)}
+                        placeholder="Write your terms and conditions..."
+                        minHeight="200px"
+                      />
+                      {errors.terms_conditions && <p className="mt-1 text-sm text-red-600">{errors.terms_conditions}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Return Policy</label>
+                      <RichTextEditor
+                        value={data.return_policy || ''}
+                        onChange={(v) => setData('return_policy', v)}
+                        placeholder="Write your return policy..."
+                        minHeight="200px"
+                      />
+                      {errors.return_policy && <p className="mt-1 text-sm text-red-600">{errors.return_policy}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Shipping Policy</label>
+                      <RichTextEditor
+                        value={data.shipping_policy || ''}
+                        onChange={(v) => setData('shipping_policy', v)}
+                        placeholder="Write your shipping policy..."
+                        minHeight="200px"
+                      />
+                      {errors.shipping_policy && <p className="mt-1 text-sm text-red-600">{errors.shipping_policy}</p>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -817,8 +890,26 @@ export default function SettingsEdit({ settings = {} }) {
                 <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Footer Content</h3>
                   <div className="grid grid-cols-1 gap-4">
-                    {renderField('footer_description', 'Footer Description', 'textarea', { rows: 3 })}
-                    {renderField('footer_extra_text', 'Extra Text (About Us)', 'textarea', { rows: 4 })}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Footer Description</label>
+                      <RichTextEditor
+                        value={data.footer_description || ''}
+                        onChange={(v) => setData('footer_description', v)}
+                        placeholder="Footer description text..."
+                        minHeight="100px"
+                      />
+                      {errors.footer_description && <p className="mt-1 text-sm text-red-600">{errors.footer_description}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Extra Text (About Us)</label>
+                      <RichTextEditor
+                        value={data.footer_extra_text || ''}
+                        onChange={(v) => setData('footer_extra_text', v)}
+                        placeholder="Additional footer text..."
+                        minHeight="120px"
+                      />
+                      {errors.footer_extra_text && <p className="mt-1 text-sm text-red-600">{errors.footer_extra_text}</p>}
+                    </div>
                     {renderField('footer_copyright', 'Copyright Text')}
                   </div>
                 </div>
@@ -850,7 +941,16 @@ export default function SettingsEdit({ settings = {} }) {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Maintenance Mode</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {renderField('maintenance_mode', 'Maintenance Mode', 'switch', { switchLabel: 'Put website in maintenance mode' })}
-                    {renderField('maintenance_message', 'Maintenance Message', 'textarea', { rows: 2 })}
+                    <div className="col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Maintenance Message</label>
+                      <RichTextEditor
+                        value={data.maintenance_message || ''}
+                        onChange={(v) => setData('maintenance_message', v)}
+                        placeholder="Maintenance message shown to visitors..."
+                        minHeight="100px"
+                      />
+                      {errors.maintenance_message && <p className="mt-1 text-sm text-red-600">{errors.maintenance_message}</p>}
+                    </div>
                   </div>
                 </div>
               </div>

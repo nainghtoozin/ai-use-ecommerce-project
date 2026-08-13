@@ -55,7 +55,9 @@ export default function Maintenance() {
                             Under Maintenance
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg leading-relaxed mb-2">
-                            {message || 'We are currently performing scheduled maintenance. Please check back soon.'}
+                            {message ? (
+                                <span dangerouslySetInnerHTML={{ __html: message }} />
+                            ) : 'We are currently performing scheduled maintenance. Please check back soon.'}
                         </p>
                         <p className="text-gray-400 dark:text-gray-500 text-sm">
                             We expect to be back shortly. Thank you for your patience.
