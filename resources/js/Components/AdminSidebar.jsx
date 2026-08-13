@@ -20,6 +20,61 @@ import {
 
 const STORAGE_KEY = 'admin_sidebar_open_section';
 
+const SECTION_VIS_KEY = {
+    'Overview': 'overview',
+    'Catalog': 'catalog',
+    'Inventory': 'inventory',
+    'Sales': 'sales',
+    'Marketing': 'marketing',
+    'Billing': 'billing',
+    'Analytics': 'analytics',
+    'Locations': 'locations',
+    'Staff': 'staff',
+    'Content': 'content',
+    'Settings': 'settings',
+};
+
+const ITEM_VIS_KEY = {
+    '/admin/products': 'catalog.products',
+    '/admin/categories': 'catalog.categories',
+    '/admin/brands': 'catalog.brands',
+    '/admin/units': 'catalog.units',
+    '/admin/inventory/dashboard': 'inventory.dashboard',
+    '/admin/inventory': 'inventory.products',
+    '/admin/inventory/stock-history': 'inventory.stock_history',
+    '/admin/inventory/movements': 'inventory.movements',
+    '/admin/inventory/adjustments': 'inventory.adjustments',
+    '/admin/orders': 'sales.orders',
+    '/admin/payment-methods': 'sales.payment_methods',
+    '/admin/coupons': 'marketing.coupons',
+    '/admin/promotions': 'marketing.promotions',
+    '/admin/flash-sales': 'marketing.flash_sales',
+    '/admin/billing': 'billing.overview',
+    '/admin/billing/subscription': 'billing.subscription',
+    '/admin/billing/upgrade': 'billing.upgrade',
+    '/admin/billing/invoices': 'billing.invoices',
+    '/admin/billing/payment-history': 'billing.history',
+    '/admin/billing/settings': 'billing.settings',
+    '/admin/reports/sales': 'analytics.sales',
+    '/admin/reports/product-sales': 'analytics.products',
+    '/admin/reports/payments': 'analytics.payments',
+    '/admin/cities': 'locations.cities',
+    '/admin/townships': 'locations.townships',
+    '/admin/users': 'staff.members',
+    '/admin/team': 'staff.staff',
+    '/admin/roles': 'staff.roles',
+    '/admin/activity-logs': 'staff.activity',
+    '/admin/audit-logs': 'staff.audit',
+    '/admin/notifications': 'staff.notifications',
+    '/admin/faqs': 'content.faq',
+    '/admin/website-info/edit': 'settings.website',
+    '/admin/settings/notifications': 'settings.notifications',
+    '/admin/settings/telegram-integration': 'settings.telegram',
+    '/admin/settings/onboarding': 'settings.setup_guide',
+    '/admin/settings': 'settings.general',
+    '/admin/settings/menu-visibility': 'settings.menu_visibility',
+};
+
 const iconMap = {
     LayoutDashboard, Package, Tags, Megaphone,
     BarChart3, ShoppingBag, Receipt,
@@ -39,13 +94,15 @@ function Icon({ name, className = '', ...props }) {
 
 export default function AdminSidebar() {
     const { props, url } = usePage();
-    const { auth, website_info, platform_setting, tenant, featureStatus } = props;
+    const { auth, website_info, platform_setting, tenant, featureStatus, menuVisibility } = props;
     const { t } = useTranslation();
     const userPermissions = auth?.user?.permissions;
     const isSuperAdmin = auth?.user?.is_superadmin;
     const isOwner = auth?.user?.is_owner;
     const can = (perm) => isSuperAdmin || isOwner || userPermissions?.includes(perm);
     const hasFeature = (key) => featureStatus?.[key]?.enabled !== false;
+    const vis = menuVisibility || {};
+    const isVis = (key) => vis[key] !== false;
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
@@ -107,98 +164,99 @@ export default function AdminSidebar() {
             {
                 title: t('navigation.overview'),
                 items: [
-                    ...(can('dashboard.view') ? [{ label: t('navigation.dashboard'), href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
+                    ...(can('dashboard.view') && isVis('overview') ? [{ label: t('navigation.dashboard'), href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
                 ]
             },
             {
                 title: t('navigation.catalog'),
                 items: [
-                    ...(can('products.view') ? [{ label: t('navigation.products'), href: '/admin/products', icon: 'Package' }] : []),
-                    ...(can('categories.view') ? [{ label: t('navigation.categories'), href: '/admin/categories', icon: 'Tags' }] : []),
-                    ...(can('brands.view') ? [{ label: t('navigation.brands'), href: '/admin/brands', icon: 'Layers' }] : []),
-                    ...(can('units.view') ? [{ label: t('navigation.units'), href: '/admin/units', icon: 'Ruler' }] : []),
+                    ...(can('products.view') && isVis('catalog.products') ? [{ label: t('navigation.products'), href: '/admin/products', icon: 'Package' }] : []),
+                    ...(can('categories.view') && isVis('catalog.categories') ? [{ label: t('navigation.categories'), href: '/admin/categories', icon: 'Tags' }] : []),
+                    ...(can('brands.view') && isVis('catalog.brands') ? [{ label: t('navigation.brands'), href: '/admin/brands', icon: 'Layers' }] : []),
+                    ...(can('units.view') && isVis('catalog.units') ? [{ label: t('navigation.units'), href: '/admin/units', icon: 'Ruler' }] : []),
                 ]
             },
             ...(can('inventory.view') && hasFeature('inventory_management') ? [{
                 title: t('navigation.inventory'),
                 items: [
-                    { label: t('navigation.dashboard'), href: '/admin/inventory/dashboard', icon: 'LayoutDashboard' },
-                    { label: 'Products Inventory', href: '/admin/inventory', icon: 'Archive' },
-                    { label: 'Stock History', href: '/admin/inventory/stock-history', icon: 'Clock' },
-                    { label: 'Stock Movements', href: '/admin/inventory/movements', icon: 'Activity' },
-                    { label: 'Stock Adjustments', href: '/admin/inventory/adjustments', icon: 'Settings' },
+                    ...(isVis('inventory.dashboard') ? [{ label: t('navigation.dashboard'), href: '/admin/inventory/dashboard', icon: 'LayoutDashboard' }] : []),
+                    ...(isVis('inventory.products') ? [{ label: 'Products Inventory', href: '/admin/inventory', icon: 'Archive' }] : []),
+                    ...(isVis('inventory.stock_history') ? [{ label: 'Stock History', href: '/admin/inventory/stock-history', icon: 'Clock' }] : []),
+                    ...(isVis('inventory.movements') ? [{ label: 'Stock Movements', href: '/admin/inventory/movements', icon: 'Activity' }] : []),
+                    ...(isVis('inventory.adjustments') ? [{ label: 'Stock Adjustments', href: '/admin/inventory/adjustments', icon: 'Settings' }] : []),
                 ]
             }] : []),
             {
                 title: t('navigation.sales'),
                 items: [
-                    ...(can('orders.view') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
-                    ...(can('payments.view') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
+                    ...(can('orders.view') && isVis('sales.orders') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
+                    ...(can('payments.view') && isVis('sales.payment_methods') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
                 ]
             },
             {
                 title: t('navigation.marketing'),
                 items: [
-                    ...(can('coupons.view') && hasFeature('coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
-                    ...(can('promotions.view') && hasFeature('promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
-                    ...(hasFeature('flash_sales') ? [{ label: t('navigation.flash_sales'), href: '/admin/flash-sales', icon: 'Zap' }] : []),
+                    ...(can('coupons.view') && hasFeature('coupons') && isVis('marketing.coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
+                    ...(can('promotions.view') && hasFeature('promotions') && isVis('marketing.promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
+                    ...(hasFeature('flash_sales') && isVis('marketing.flash_sales') ? [{ label: t('navigation.flash_sales'), href: '/admin/flash-sales', icon: 'Zap' }] : []),
                 ]
             },
             ...(can('billing.view') ? [{
                 title: t('navigation.billing'),
                 items: [
-                    { label: 'Overview', href: '/admin/billing', icon: 'CreditCard' },
-                    { label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' },
-                    { label: 'Upgrade', href: '/admin/billing/upgrade', icon: 'ArrowUp' },
-                    { label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' },
-                    { label: 'History', href: '/admin/billing/payment-history', icon: 'Clock' },
-                    { label: t('navigation.settings'), href: '/admin/billing/settings', icon: 'Settings' },
+                    ...(isVis('billing.overview') ? [{ label: 'Overview', href: '/admin/billing', icon: 'CreditCard' }] : []),
+                    ...(isVis('billing.subscription') ? [{ label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' }] : []),
+                    ...(isVis('billing.upgrade') ? [{ label: 'Upgrade', href: '/admin/billing/upgrade', icon: 'ArrowUp' }] : []),
+                    ...(isVis('billing.invoices') ? [{ label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' }] : []),
+                    ...(isVis('billing.history') ? [{ label: 'History', href: '/admin/billing/payment-history', icon: 'Clock' }] : []),
+                    ...(isVis('billing.settings') ? [{ label: t('navigation.settings'), href: '/admin/billing/settings', icon: 'Settings' }] : []),
                 ]
             }] : []),
             {
                 title: t('navigation.analytics'),
                 items: [
-                    ...(can('reports.sales') && hasFeature('reports') ? [{ label: 'Sales', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
-                    ...(can('reports.products') && hasFeature('reports') ? [{ label: t('navigation.products'), href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
-                    ...(can('reports.payments') && hasFeature('reports') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
+                    ...(can('reports.sales') && hasFeature('reports') && isVis('analytics.sales') ? [{ label: 'Sales', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
+                    ...(can('reports.products') && hasFeature('reports') && isVis('analytics.products') ? [{ label: t('navigation.products'), href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
+                    ...(can('reports.payments') && hasFeature('reports') && isVis('analytics.payments') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
                 ]
             },
             {
                 title: t('navigation.locations'),
                 items: [
-                    ...(can('cities.view') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
-                    ...(can('townships.view') ? [{ label: t('navigation.townships'), href: '/admin/townships', icon: 'MapPin' }] : []),
+                    ...(can('cities.view') && isVis('locations.cities') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
+                    ...(can('townships.view') && isVis('locations.townships') ? [{ label: t('navigation.townships'), href: '/admin/townships', icon: 'MapPin' }] : []),
                 ]
             },
             {
                 title: t('navigation.staff'),
                 items: [
-                    ...(can('users.view') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'Users' }] : []),
-                    ...(can('users.view') || auth?.user?.is_owner ? [{ label: t('navigation.staff'), href: '/admin/team', icon: 'UserPlus' }] : []),
-                    ...(can('roles.view') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'Shield' }] : []),
-                    ...(can('activity.view') ? [{ label: 'Activity', href: '/admin/activity-logs', icon: 'Activity' }] : []),
-                    ...(can('audit.view') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
-                    { label: t('navigation.notifications'), href: '/admin/notifications', icon: 'Bell' },
+                    ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'Users' }] : []),
+                    ...((can('users.view') || auth?.user?.is_owner) && isVis('staff.staff') ? [{ label: t('navigation.staff'), href: '/admin/team', icon: 'UserPlus' }] : []),
+                    ...(can('roles.view') && isVis('staff.roles') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'Shield' }] : []),
+                    ...(can('activity.view') && isVis('staff.activity') ? [{ label: 'Activity', href: '/admin/activity-logs', icon: 'Activity' }] : []),
+                    ...(can('audit.view') && isVis('staff.audit') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
+                    ...(isVis('staff.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/notifications', icon: 'Bell' }] : []),
                 ]
             },
             {
                 title: 'Content',
                 items: [
-                    ...(can('products.view') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
+                    ...(can('products.view') && isVis('content.faq') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
                 ]
             },
             {
                 title: t('navigation.settings'),
                 items: [
-                    ...(can('settings.website') ? [{ label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' }] : []),
-                    ...(can('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
-                    ...(can('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
-                    ...(isOwner ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),
-                    ...(can('settings.view') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
+                    ...(can('settings.website') && isVis('settings.website') ? [{ label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' }] : []),
+                    ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
+                    ...(can('settings.telegram') && isVis('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
+                    ...(isOwner && isVis('settings.setup_guide') ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),
+                    ...(can('settings.view') && isVis('settings.general') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
+                    ...(isOwner && isVis('settings.menu_visibility') ? [{ label: 'Menu Visibility', href: '/admin/settings/menu-visibility', icon: 'Layers' }] : []),
                 ]
             }
         ];
-    }, [userPermissions, isSuperAdmin, t]);
+    }, [userPermissions, isSuperAdmin, t, menuVisibility]);
 
     function matchPath(href) {
         if (href === '/') return url === '/' ? 1 : 0;

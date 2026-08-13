@@ -51,7 +51,12 @@ class Tenant extends Model
                     'timezone' => 'Asia/Yangon',
                     'currency' => 'MMK',
                     'notifications' => true,
+                    'admin_menu_visibility' => \App\Services\MenuVisibilityService::getDefaults(),
                 ];
+            } elseif (empty($tenant->settings['admin_menu_visibility'] ?? null)) {
+                $settings = $tenant->settings;
+                $settings['admin_menu_visibility'] = \App\Services\MenuVisibilityService::getDefaults();
+                $tenant->settings = $settings;
             }
 
             // Generate store_url if not set

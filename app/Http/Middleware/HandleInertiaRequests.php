@@ -86,6 +86,9 @@ class HandleInertiaRequests extends Middleware
         $websiteSettings = $settingsModel ? $settingsModel->toArray() : [];
 
         $wishlistEnabled = !$isSuperAdmin && $settingsModel && ($settingsModel->enable_wishlist ?? true);
+
+        $menuVisibility = $isSuperAdmin ? [] : \App\Services\MenuVisibilityService::getVisibility($tenant);
+
         if ($tenant && !$request->route('store_slug')) {
             $tenant = null;
         }
@@ -130,6 +133,7 @@ class HandleInertiaRequests extends Middleware
             }),
             'featureStatus' => $isSuperAdmin ? [] : FeatureGate::forUser()->getAllFeaturesStatus(),
             'subscription_limits' => $isSuperAdmin ? [] : ($authenticatable ? SubscriptionLimitService::for()->getAllLimits() : []),
+            'menuVisibility' => $menuVisibility,
         ]);
     }
 
@@ -223,6 +227,7 @@ class HandleInertiaRequests extends Middleware
                 'reports',
                 'customers',
                 'landing',
+                'admin_menu_visibility',
             ];
 
             $translations = [];
@@ -253,6 +258,7 @@ class HandleInertiaRequests extends Middleware
                 'customers' => [],
                 'validation' => [],
                 'landing' => [],
+                'admin_menu_visibility' => [],
             ];
         }
     }

@@ -561,6 +561,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/settings/notifications', [AdminNotificationSettingsController::class, 'edit'])->name('settings.notifications');
         Route::post('/settings/notifications', [AdminNotificationSettingsController::class, 'update'])->name('settings.notifications.update');
 
+        // Menu Visibility Settings
+        Route::get('/settings/menu-visibility', [\App\Http\Controllers\Admin\AdminMenuVisibilityController::class, 'edit'])->name('settings.menu-visibility');
+        Route::post('/settings/menu-visibility', [\App\Http\Controllers\Admin\AdminMenuVisibilityController::class, 'update'])->name('settings.menu-visibility.update');
+        Route::post('/settings/menu-visibility/show-all', [\App\Http\Controllers\Admin\AdminMenuVisibilityController::class, 'showAll'])->name('settings.menu-visibility.show-all');
+        Route::post('/settings/menu-visibility/reset-defaults', [\App\Http\Controllers\Admin\AdminMenuVisibilityController::class, 'resetDefaults'])->name('settings.menu-visibility.reset-defaults');
+
         // Payment Methods
         Route::resource('payment-methods', AdminPaymentMethodController::class)->except(['show']);
         Route::post('payment-methods/{paymentMethod}/toggle', [AdminPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
