@@ -61,6 +61,11 @@ class PaymentIntent extends Model
         return $this->hasMany(PaymentEvidence::class);
     }
 
+    public function receipt(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Receipt::class);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(PaymentReview::class)->latest();

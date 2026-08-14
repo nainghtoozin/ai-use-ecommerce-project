@@ -591,7 +591,7 @@ class AdminBillingController extends Controller
             ->with('success', 'Scheduled plan change has been cancelled.');
     }
 
-    public function checkout(string $planSlug)
+    public function checkout(Request $request, string $planSlug)
     {
         if (!auth()->user()->can('billing.view')) {
             abort(403, 'Unauthorized');
@@ -620,8 +620,8 @@ class AdminBillingController extends Controller
         $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
         $currency = Currency::fromEnum($currencyCode);
 
-        $billingCycle = 'monthly';
-        $amount = (float) ($plan->monthly_price ?? 0);
+        $billingCycle = $request->validate(['billing_cycle' => ['nullable', 'in:monthly,yearly']])['billing_cycle'] ?? 'monthly';
+        $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
         $gateway = 'manual';
 
         try {
@@ -669,6 +669,20 @@ class AdminBillingController extends Controller
             });
 
             $currentPlan = $subscription?->plan;
+            $paymentMethods = BillingPaymentMethod::active()
+                ->where('supports_manual_payment', true)
+                ->orderBy('sort_order')
+                ->orderBy('display_name')
+                ->get()
+                ->map(fn($pm) => [
+                    'id' => $pm->id,
+                    'name' => $pm->display_name,
+                    'account_name' => $pm->account_name,
+                    'account_number' => $pm->account_number,
+                    'bank_name' => $pm->bank_name,
+                    'instructions' => $pm->instructions,
+                    'qr_image_url' => $pm->qr_image_url,
+                ]);
 
             return Inertia::render('Admin/Billing/Checkout', [
                 'intent' => [
@@ -741,6 +755,7 @@ class AdminBillingController extends Controller
                 ] : null,
                 'allFeatureDefs' => $allFeatureDefs,
                 'plans' => $plans,
+                'paymentMethods' => $paymentMethods,
             ]);
         } catch (\Exception $e) {
             return redirect()->route('storefront.admin.billing.upgrade', ['store_slug' => $tenant->slug])
@@ -794,7 +809,7 @@ class AdminBillingController extends Controller
             }
         }
 
-        $paymentMethods = BillingPaymentMethod::active()
+            $paymentMethods = BillingPaymentMethod::active()
             ->where('supports_manual_payment', true)
             ->orderBy('sort_order')
             ->orderBy('display_name')
@@ -880,16 +895,18 @@ class AdminBillingController extends Controller
                 metadata: [
                     'payment_method_id' => $validated['payment_method_id'],
                     'uploaded_by' => 'merchant',
+                    'submitted_at' => now()->toDateTimeString(),
                 ],
                 senderName: $validated['sender_name'],
                 senderAccount: $validated['sender_account'],
                 transactionReference: $validated['transaction_reference'],
                 transferredAmount: (float) $validated['transferred_amount'],
-                transferDate: $validated['transfer_date'],
+                transferDate: now()->toDateString(),
             );
 
             $manualPayment = app(ManualPaymentService::class);
             $manualPayment->confirmPayment($intent);
+            app(\App\Services\InvoiceService::class)->generateFromPaymentIntent($intent->fresh());
 
             $intent->refresh();
 

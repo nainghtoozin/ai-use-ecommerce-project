@@ -3,10 +3,13 @@
 namespace App\Providers;
 
 use App\Events\Payments\PaymentIntentCompleted;
+use App\Events\Payments\PaymentIntentRejected;
 use App\Listeners\ActivateSubscriptionOnPaymentCompleted;
 use App\Listeners\ActivateTenantOnVerified;
 use App\Listeners\CreateTransactionFromCompletedIntent;
 use App\Listeners\GenerateInvoiceFromCompletedIntent;
+use App\Listeners\CreateReceiptFromCompletedIntent;
+use App\Listeners\MarkInvoiceRejected;
 use App\Listeners\PaymentTimelineEventSubscriber;
 use App\Listeners\UpdateAccountLastLogin;
 use Illuminate\Auth\Events\Login;
@@ -23,6 +26,10 @@ class EventServiceProvider extends ServiceProvider
             CreateTransactionFromCompletedIntent::class,
             ActivateSubscriptionOnPaymentCompleted::class,
             GenerateInvoiceFromCompletedIntent::class,
+            CreateReceiptFromCompletedIntent::class,
+        ],
+        PaymentIntentRejected::class => [
+            MarkInvoiceRejected::class,
         ],
         Verified::class => [
             ActivateTenantOnVerified::class,

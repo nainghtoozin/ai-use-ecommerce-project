@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Tenant;
-use App\Models\WebsiteInfo;
-use App\Services\ImageService;
 use App\Services\InvoiceService;
+use App\Services\ReceiptService;
+use App\Services\SubscriptionDocumentPdfService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -31,7 +31,7 @@ class InvoiceController extends Controller
         }
 
         $query = Invoice::forTenant($tenant->id)
-            ->with(['plan', 'subscription'])
+            ->with(['plan', 'subscription', 'receipt'])
             ->latest();
 
         if ($request->filled('status')) {
@@ -73,6 +73,7 @@ class InvoiceController extends Controller
             'issued_at' => $inv->issued_at?->toDateTimeString(),
             'paid_at' => $inv->paid_at?->toDateTimeString(),
             'created_at' => $inv->created_at->toDateTimeString(),
+            'receipt_number' => $inv->receipt?->receipt_number,
         ]);
 
         $plans = Plan::active()->ordered()->get(['id', 'name']);
@@ -97,7 +98,7 @@ class InvoiceController extends Controller
             abort(404);
         }
 
-        $invoice->load(['plan', 'subscription', 'paymentIntent']);
+        $invoice->load(['plan', 'subscription', 'paymentIntent', 'receipt']);
 
         return Inertia::render('Admin/Billing/InvoiceDetail', [
             'invoice' => [
@@ -135,11 +136,15 @@ class InvoiceController extends Controller
                     'gateway' => $invoice->paymentIntent->gateway,
                     'status' => $invoice->paymentIntent->status,
                 ] : null,
+                'receipt' => $invoice->receipt ? [
+                    'id' => $invoice->receipt->id,
+                    'receipt_number' => $invoice->receipt->receipt_number,
+                ] : null,
             ],
         ]);
     }
 
-    public function download(Request $request, Invoice $invoice)
+    public function download(Request $request, Invoice $invoice, SubscriptionDocumentPdfService $documents)
     {
         if (!auth()->user()->can('billing.view')) {
             abort(403);
@@ -153,26 +158,28 @@ class InvoiceController extends Controller
 
         $invoice->load(['plan', 'subscription', 'paymentIntent', 'tenant']);
 
-        $websiteInfo = WebsiteInfo::getSettings();
-        $themeColor = $websiteInfo->theme_color ?: '#3B82F6';
+        return $documents->invoice($invoice);
+    }
 
-        $html = view('pdf.invoice', [
-            'invoice' => $invoice,
-            'siteName' => $websiteInfo->site_name ?? $tenant->name ?? config('app.name'),
-            'siteDescription' => $websiteInfo->site_description ?? null,
-            'logoUrl' => $websiteInfo->logo_url ?? null,
-            'themeColor' => $themeColor,
-            'contactEmail' => $websiteInfo->contact_email ?? $websiteInfo->support_email ?? null,
-            'phone' => $websiteInfo->phone ?? null,
-            'footerCopyright' => $websiteInfo->footer_copyright ?? null,
-        ])->render();
+    public function downloadReceipt(Request $request, Invoice $invoice, ReceiptService $receipts, SubscriptionDocumentPdfService $documents)
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403);
+        }
 
-        $filename = $invoice->invoice_number . '.html';
+        $tenant = Tenant::getCurrent();
+        if (!$tenant || $invoice->tenant_id !== $tenant->id) {
+            abort(404);
+        }
 
-        return response($html, 200, [
-            'Content-Type' => 'text/html',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+        if ($invoice->status !== Invoice::STATUS_PAID) {
+            abort(422, 'Receipt is only available after payment approval.');
+        }
+
+        $invoice->loadMissing('paymentIntent', 'receipt');
+        $receipt = $receipts->createFromPaidInvoice($invoice);
+
+        return $documents->receipt($receipt);
     }
 
     public function markPaid(Request $request, Invoice $invoice)
@@ -207,5 +214,25 @@ class InvoiceController extends Controller
         $invoice->markAsCancelled();
 
         return redirect()->back()->with('success', 'Invoice cancelled.');
+    }
+
+    public function destroy(Request $request, Invoice $invoice)
+    {
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403);
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant || $invoice->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        if ($invoice->status === Invoice::STATUS_PAID) {
+            abort(403, 'Paid invoices cannot be deleted.');
+        }
+
+        $invoice->delete();
+
+        return redirect()->back()->with('success', 'Invoice removed from billing history.');
     }
 }

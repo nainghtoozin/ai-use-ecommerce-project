@@ -6,6 +6,7 @@ import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { X, Sparkles, TrendingUp, Lightbulb, Star, Zap, HelpCircle, ShieldCheck, Calendar } from 'lucide-react';
 import PlanFeatureList from '@/Components/Billing/PlanFeatureList';
+import { useTranslation } from '@/Utils/useTranslation';
 
 function formatBytes(v) {
     if (v === null || v === undefined) return null;
@@ -78,16 +79,17 @@ function UpgradeRecommendations({ usage, plans }) {
     );
 }
 
-function PlanCard({ plan, isRecommended, onUpgradeClick, allFeatureDefs, featureCategories }) {
+function PlanCard({ plan, isRecommended, billingInterval, onUpgradeClick, allFeatureDefs, featureCategories }) {
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
-    const price = plan.monthly_price;
+    const { t } = useTranslation();
+    const price = billingInterval === 'yearly' ? plan.yearly_price : plan.monthly_price;
     const isCurrent = plan.is_current;
     const meta = planMeta[plan.slug] || { audience: '', badge: null, color: 'gray' };
     const savingsPct = plan.yearly_savings_percent;
     const yearlySavings = plan.monthly_price && plan.yearly_price
         ? (parseFloat(plan.monthly_price) * 12) - parseFloat(plan.yearly_price)
         : 0;
-    const hasSavings = yearlySavings > 0;
+    const hasSavings = billingInterval === 'yearly' && yearlySavings > 0;
 
     const badge = (() => {
         if (isCurrent) return { label: 'Current Plan', classes: 'bg-blue-600 text-white' };
@@ -116,16 +118,16 @@ function PlanCard({ plan, isRecommended, onUpgradeClick, allFeatureDefs, feature
                     <h3 className={`text-xl font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900 dark:text-gray-100'}`}>{plan.name}</h3>
                     {meta.badge === 'best_value' && !isCurrent && <Sparkles className="w-4 h-4 text-purple-400" />}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{meta.audience}</p>
+                 <p className="text-sm text-gray-500 dark:text-gray-400">{plan.description || meta.audience}</p>
                 <div className="mt-4 flex items-baseline gap-1">
                     <span className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">
                         {price === 0 ? 'Free' : price !== null ? formatCurrency(price, pc) : '—'}
                     </span>
                     {price !== null && price > 0 && (
-                        <span className="text-sm text-gray-400 dark:text-gray-500">/month</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/{billingInterval === 'yearly' ? t('billing.yearly').toLowerCase() : t('billing.monthly').toLowerCase()}</span>
                     )}
                 </div>
-                {!isCurrent && hasSavings && (
+                    {!isCurrent && hasSavings && (
                     <p className="text-xs text-emerald-600 font-medium mt-1">
                         {formatCurrency(plan.yearly_price, pc)}/year — Save {savingsPct}%
                     </p>
@@ -163,6 +165,8 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogTarget, setDialogTarget] = useState(null);
     const [dialogFeatureKey, setDialogFeatureKey] = useState(null);
+    const [billingInterval, setBillingInterval] = useState(subscription?.billing_interval || 'monthly');
+    const { t } = useTranslation();
 
     const recommendedSlug = useMemo(() => {
         if (!usage || !plans) return null;
@@ -190,9 +194,21 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
 
             <div className="p-6 lg:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
+                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Plan Selection & Upgrade</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Compare plans and choose the right one for your business</p>
+                     </div>
+                    <div className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1">
+                        {['monthly', 'yearly'].map((interval) => (
+                            <button
+                                key={interval}
+                                type="button"
+                                onClick={() => setBillingInterval(interval)}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${billingInterval === interval ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                            >
+                                {interval === 'yearly' ? t('billing.yearly') : t('billing.monthly')}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -284,6 +300,7 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                             <PlanCard
                                 key={plan.slug}
                                 plan={plan}
+                                billingInterval={billingInterval}
                                 isRecommended={!plan.is_current && recommendedSlug === plan.slug}
                                 onUpgradeClick={openUpgradeFlow}
                                 allFeatureDefs={allFeatureDefs}
@@ -319,6 +336,7 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                 featureKey={dialogFeatureKey}
                 allFeatureDefs={allFeatureDefs}
                 subscription={subscription}
+                billingInterval={billingInterval}
             />
         </AdminLayout>
     );

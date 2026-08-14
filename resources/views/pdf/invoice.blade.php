@@ -66,16 +66,17 @@
     <div class="info-grid">
         <div class="info-block">
             <h3>Bill To</h3>
-            <p><strong>{{ $invoice->tenant?->name ?? $invoice->tenant?->business_name ?? 'N/A' }}</strong></p>
-            <p class="label">{{ $invoice->tenant?->email ?? '' }}</p>
-            <p class="label">{{ $invoice->tenant?->phone ?? '' }}</p>
+            <p><strong>{{ $ownerName }}</strong></p>
+            <p class="label">{{ $ownerEmail }}</p>
+            <p class="label">{{ $storeName }}</p>
         </div>
         <div class="info-block">
             <h3>Invoice Details</h3>
-            <p><strong>Issued:</strong> {{ $invoice->issued_at?->format('M d, Y') ?? 'N/A' }}</p>
-            <p><strong>Period:</strong> {{ $invoice->billing_period_start?->format('M d, Y') ?? 'N/A' }} — {{ $invoice->billing_period_end?->format('M d, Y') ?? 'N/A' }}</p>
+            <p><strong>Invoice Date:</strong> {{ $invoice->issued_at?->format('M d, Y') ?? 'N/A' }}</p>
+            <p><strong>Subscription Start:</strong> {{ $invoice->billing_period_start?->format('M d, Y') ?? 'N/A' }}</p>
+            <p><strong>Subscription End:</strong> {{ $invoice->billing_period_end?->format('M d, Y') ?? 'N/A' }}</p>
+            <p><strong>Subscription Period:</strong> {{ $invoice->billing_period_start?->format('M d, Y') ?? 'N/A' }} → {{ $invoice->billing_period_end?->format('M d, Y') ?? 'N/A' }}</p>
             <p><strong>Billing Cycle:</strong> {{ ucfirst($invoice->billing_interval ?? 'monthly') }}</p>
-            <p><strong>Due Date:</strong> {{ $invoice->billing_period_end?->format('M d, Y') ?? 'N/A' }}</p>
         </div>
     </div>
 
@@ -83,23 +84,21 @@
         <thead>
             <tr>
                 <th>Description</th>
-                <th class="text-right">Qty</th>
-                <th class="text-right">Unit Price</th>
+                <th>Billing Period</th>
                 <th class="text-right">Amount</th>
             </tr>
         </thead>
         <tbody>
             @php $lineItems = $invoice->line_items ?: [['description' => ($invoice->plan?->name ?? 'Subscription Plan'), 'quantity' => 1, 'unit_price' => (float) $invoice->amount, 'amount' => (float) $invoice->amount]]; @endphp
-            @forelse ($lineItems as $item)
+            @forelse (array_filter($lineItems, fn ($item) => !str_starts_with(strtolower($item['description'] ?? ''), 'tax')) as $item)
                 <tr>
                     <td>{{ $item['description'] ?? 'Subscription' }}</td>
-                    <td class="text-right">{{ $item['quantity'] ?? 1 }}</td>
-                    <td class="text-right">{{ number_format($item['unit_price'] ?? 0, 2) }} {{ $invoice->currency }}</td>
+                    <td>{{ ucfirst($invoice->billing_interval ?? 'monthly') }}</td>
                     <td class="text-right">{{ number_format($item['amount'] ?? 0, 2) }} {{ $invoice->currency }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="4" style="text-align:center;color:#9ca3af;">No line items</td>
+                    <td colspan="3" style="text-align:center;color:#9ca3af;">No line items</td>
                 </tr>
             @endforelse
         </tbody>
@@ -111,12 +110,6 @@
                 <td>Subtotal</td>
                 <td class="text-right">{{ number_format((float) ($invoice->subtotal ?? $invoice->amount), 2) }} {{ $invoice->currency }}</td>
             </tr>
-            @if ((float) ($invoice->tax ?? 0) > 0)
-            <tr>
-                <td>Tax</td>
-                <td class="text-right">{{ number_format((float) $invoice->tax, 2) }} {{ $invoice->currency }}</td>
-            </tr>
-            @endif
             <tr class="total-row">
                 <td>Total</td>
                 <td class="text-right"><strong>{{ number_format((float) ($invoice->total ?? $invoice->amount), 2) }} {{ $invoice->currency }}</strong></td>
@@ -130,6 +123,11 @@
         <p>{{ $invoice->notes }}</p>
     </div>
     @endif
+
+    <div class="notes">
+        <h3>Terms &amp; Conditions</h3>
+        <p>Subscription access is based on the selected plan and billing period. Manual payments are subject to verification. Plan limits and included features follow the selected plan.</p>
+    </div>
 
     <div class="footer">
         @if($footerCopyright)

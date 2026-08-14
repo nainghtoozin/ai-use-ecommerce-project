@@ -82,6 +82,8 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing/invoices', [InvoiceController::class, 'index'])->name('billing.invoices');
     Route::get('/billing/invoices/{invoice}', [InvoiceController::class, 'show'])->name('billing.invoices.show');
     Route::get('/billing/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('billing.invoices.download');
+    Route::get('/billing/invoices/{invoice}/receipt', [InvoiceController::class, 'downloadReceipt'])->name('billing.invoices.receipt');
+    Route::delete('/billing/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('billing.invoices.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

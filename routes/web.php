@@ -337,7 +337,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     // ── Invoice routes ──
     Route::get('/billing/invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'index'])->name('billing.invoices');
     Route::get('/billing/invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'show'])->name('billing.invoices.show');
-    Route::get('/billing/invoices/{invoice}/download', [\App\Http\Controllers\Admin\InvoiceController::class, 'download'])->name('billing.invoices.download');
+        Route::get('/billing/invoices/{invoice}/download', [\App\Http\Controllers\Admin\InvoiceController::class, 'download'])->name('billing.invoices.download');
+        Route::get('/billing/invoices/{invoice}/receipt', [\App\Http\Controllers\Admin\InvoiceController::class, 'downloadReceipt'])->name('billing.invoices.receipt');
+        Route::delete('/billing/invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'destroy'])->name('billing.invoices.destroy');
 
     // ── Language switcher ──
     Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');

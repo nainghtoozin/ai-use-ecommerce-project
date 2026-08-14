@@ -7,16 +7,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use TenantAware;
+    use TenantAware, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
     const STATUS_UNPAID = 'unpaid';
     const STATUS_PAID = 'paid';
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_REFUNDED = 'refunded';
+    const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
         'tenant_id',
@@ -57,7 +59,7 @@ class Invoice extends Model
     public static function generateNumber(): string
     {
         $prefix = 'INV-' . now()->format('Y') . '-';
-        $last = static::where('invoice_number', 'like', $prefix . '%')
+        $last = static::withTrashed()->where('invoice_number', 'like', $prefix . '%')
             ->orderBy('invoice_number', 'desc')
             ->value('invoice_number');
 
@@ -84,6 +86,11 @@ class Invoice extends Model
     public function paymentIntent(): BelongsTo
     {
         return $this->belongsTo(PaymentIntent::class);
+    }
+
+    public function receipt(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Receipt::class);
     }
 
     public function scopeDraft(Builder $q): Builder

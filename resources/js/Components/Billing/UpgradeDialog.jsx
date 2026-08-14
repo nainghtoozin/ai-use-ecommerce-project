@@ -3,8 +3,9 @@ import { X, ArrowRight, Check, ArrowUpDown, Calendar } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
+import { useTranslation } from '@/Utils/useTranslation';
 
-export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan, featureKey, allFeatureDefs, subscription }) {
+export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan, featureKey, allFeatureDefs, subscription, billingInterval = 'monthly' }) {
     const dialogRef = useRef(null);
     const previousFocusRef = useRef(null);
 
@@ -37,6 +38,7 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
     }, [isOpen, onClose]);
 
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+    const { t } = useTranslation();
 
     if (!isOpen) return null;
 
@@ -59,7 +61,7 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
 
     const handleUpgrade = () => {
         if (targetPlan?.slug) {
-            router.get(adminUrl(`/admin/billing/checkout/${targetPlan.slug}`), {}, { preserveState: false });
+            router.get(adminUrl(`/admin/billing/checkout/${targetPlan.slug}`), { billing_cycle: billingInterval }, { preserveState: false });
         } else {
             router.get(adminUrl('/admin/billing'), {}, { preserveState: false });
         }
@@ -70,6 +72,7 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
         if (targetPlan?.id) {
             router.post(adminUrl('/admin/billing/change-plan/preview'), {
                 plan_id: targetPlan.id,
+                billing_interval: billingInterval,
             }, { preserveState: false });
         }
         onClose();
@@ -158,11 +161,11 @@ export default function UpgradeDialog({ isOpen, onClose, currentPlan, targetPlan
 
                     {targetPlan && currentPlan && (
                         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">Monthly price</span>
-                            {targetPlan.monthly_price !== null ? (
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{billingInterval === 'yearly' ? t('billing.yearly_price') : t('billing.monthly_price')}</span>
+                            {(billingInterval === 'yearly' ? targetPlan.yearly_price : targetPlan.monthly_price) !== null ? (
                                 <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                                    {formatCurrency(targetPlan.monthly_price, pc)}
-                                    <span className="text-sm font-normal text-gray-400 dark:text-gray-500">/month</span>
+                                    {formatCurrency(billingInterval === 'yearly' ? targetPlan.yearly_price : targetPlan.monthly_price, pc)}
+                                    <span className="text-sm font-normal text-gray-400 dark:text-gray-500">/{billingInterval}</span>
                                 </span>
                             ) : (
                                 <span className="text-sm text-gray-500 dark:text-gray-400">Contact sales</span>

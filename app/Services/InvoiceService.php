@@ -12,6 +12,11 @@ class InvoiceService
 {
     public function generateFromPaymentIntent(PaymentIntent $intent): Invoice
     {
+        $existing = Invoice::where('payment_intent_id', $intent->id)->first();
+        if ($existing) {
+            return $existing;
+        }
+
         $subscription = $intent->subscription ?? $intent->tenant?->subscription;
         $tenant = $intent->tenant;
 
@@ -23,8 +28,7 @@ class InvoiceService
 
         return DB::transaction(function () use ($intent, $subscription, $tenant) {
             $amount = (float) $intent->amount;
-            $tax = round($amount * 0.05, 2);
-            $total = $amount + $tax;
+            $total = $amount;
 
             $invoice = Invoice::create([
                 'tenant_id' => $tenant->id,
@@ -36,7 +40,7 @@ class InvoiceService
                 'billing_period_end' => $subscription->expires_at?->toDateString() ?? now()->endOfMonth()->toDateString(),
                 'amount' => $amount,
                 'subtotal' => $amount,
-                'tax' => $tax,
+                'tax' => 0,
                 'total' => $total,
                 'currency' => $intent->currency ?? 'MMK',
                 'status' => in_array($intent->status, ['paid', 'completed', 'approved'])
@@ -58,10 +62,9 @@ class InvoiceService
         $plan = $subscription->plan;
         $interval = $billingInterval ?? $subscription->billing_interval ?? 'monthly';
         $amount = $plan?->getPriceForInterval($interval) ?? 0;
-        $tax = round($amount * 0.05, 2);
-        $total = $amount + $tax;
+        $total = $amount;
 
-        return DB::transaction(function () use ($subscription, $tenant, $plan, $interval, $amount, $tax, $total) {
+        return DB::transaction(function () use ($subscription, $tenant, $plan, $interval, $amount, $total) {
             return Invoice::create([
                 'tenant_id' => $tenant->id,
                 'invoice_number' => Invoice::generateNumber(),
@@ -72,7 +75,7 @@ class InvoiceService
                 'billing_period_end' => $subscription->expires_at?->toDateString() ?? now()->endOfMonth()->toDateString(),
                 'amount' => $amount,
                 'subtotal' => $amount,
-                'tax' => $tax,
+                'tax' => 0,
                 'total' => $total,
                 'currency' => 'MMK',
                 'status' => Invoice::STATUS_UNPAID,
@@ -84,12 +87,6 @@ class InvoiceService
                         'unit_price' => $amount,
                         'amount' => $amount,
                     ],
-                    [
-                        'description' => 'Tax (5%)',
-                        'quantity' => 1,
-                        'unit_price' => $tax,
-                        'amount' => $tax,
-                    ],
                 ],
             ]);
         });
@@ -98,7 +95,6 @@ class InvoiceService
     public function buildLineItems(PaymentIntent $intent): array
     {
         $amount = (float) $intent->amount;
-        $tax = round($amount * 0.05, 2);
         $planName = $intent->plan?->name ?? 'Subscription';
         $cycle = ucfirst($intent->billing_cycle ?? 'Monthly');
 
@@ -108,12 +104,6 @@ class InvoiceService
                 'quantity' => 1,
                 'unit_price' => $amount,
                 'amount' => $amount,
-            ],
-            [
-                'description' => 'Tax (5%)',
-                'quantity' => 1,
-                'unit_price' => $tax,
-                'amount' => $tax,
             ],
         ];
     }
@@ -129,6 +119,7 @@ class InvoiceService
             'cancelled' => (clone $query)->where('status', Invoice::STATUS_CANCELLED)->count(),
             'total_amount' => (float) (clone $query)->sum('total'),
             'paid_amount' => (float) (clone $query)->where('status', Invoice::STATUS_PAID)->sum('total'),
+            'rejected' => (clone $query)->where('status', Invoice::STATUS_REJECTED)->count(),
         ];
     }
 

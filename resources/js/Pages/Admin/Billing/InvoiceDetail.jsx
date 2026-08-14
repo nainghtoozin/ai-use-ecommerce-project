@@ -4,6 +4,7 @@ import InvoiceBadge from '@/Components/Billing/InvoiceBadge';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { ArrowLeft, Download, CheckCircle, XCircle, FileText, CreditCard, Calendar, Clock, Building } from 'lucide-react';
+import { useTranslation } from '@/Utils/useTranslation';
 
 function DetailRow({ label, value }) {
     return (
@@ -16,6 +17,7 @@ function DetailRow({ label, value }) {
 
 export default function AdminBillingInvoiceDetail({ invoice }) {
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+    const { t } = useTranslation();
 
     function formatDate(dateStr) {
         if (!dateStr) return '—';
@@ -27,7 +29,7 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
         return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
-    const lineItems = invoice?.line_items || [];
+    const lineItems = (invoice?.line_items || []).filter((item) => !String(item.description || '').toLowerCase().startsWith('tax'));
 
     return (
         <AdminLayout>
@@ -51,14 +53,35 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Invoice details and download</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2">
                         <a
                             href={adminUrl(`/admin/billing/invoices/${invoice?.id}/download`)}
                             className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
                         >
                             <Download className="w-4 h-4" />
                             Download
-                        </a>
+                         </a>
+                                 {invoice?.status === 'paid' && invoice?.receipt && (
+                             <a
+                                 href={adminUrl(`/admin/billing/invoices/${invoice.id}/receipt`)}
+                                 className="px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                             >
+                                 {t('billing.download_receipt')}
+                             </a>
+                                 )}
+                         {invoice?.status === 'unpaid' && (
+                             <button
+                                 type="button"
+                                 onClick={() => {
+                                     if (window.confirm(`${t('billing.delete_pending_invoice')}\n\n${t('billing.delete_pending_invoice_warning')}`)) {
+                                         router.delete(adminUrl(`/admin/billing/invoices/${invoice.id}`));
+                                     }
+                                 }}
+                                 className="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors"
+                             >
+                                 {t('billing.delete_invoice')}
+                             </button>
+                         )}
                     </div>
                 </div>
 
@@ -78,11 +101,9 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                 </div>
                                 <DetailRow label="Plan" value={invoice?.plan?.name} />
                                 <DetailRow label="Billing Cycle" value={invoice?.billing_interval ? invoice.billing_interval.charAt(0).toUpperCase() + invoice.billing_interval.slice(1) : '—'} />
-                                <DetailRow
-                                    label="Billing Period"
-                                    value={`${formatDate(invoice?.billing_period_start)} — ${formatDate(invoice?.billing_period_end)}`}
-                                />
-                                <DetailRow label="Issued Date" value={formatDateTime(invoice?.issued_at)} />
+                                <DetailRow label="Invoice Date" value={formatDateTime(invoice?.issued_at)} />
+                                <DetailRow label="Subscription Start" value={formatDate(invoice?.billing_period_start)} />
+                                <DetailRow label="Subscription End" value={formatDate(invoice?.billing_period_end)} />
                                 <DetailRow label="Paid Date" value={formatDateTime(invoice?.paid_at)} />
                                 <DetailRow
                                     label="Payment Reference"
@@ -103,8 +124,7 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                     <thead className="bg-gray-50 dark:bg-gray-950">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Price</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billing Period</th>
                                             <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
                                         </tr>
                                     </thead>
@@ -112,27 +132,22 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
                                         {lineItems.length > 0 ? lineItems.map((item, i) => (
                                             <tr key={i}>
                                                 <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{item.description}</td>
-                                                <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{item.quantity}</td>
-                                                <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{formatCurrency(item.unit_price, pc)}</td>
+                                                <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{invoice?.billing_interval || 'Monthly'}</td>
                                                 <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">{formatCurrency(item.amount, pc)}</td>
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={4} className="px-6 py-4 text-sm text-gray-400 dark:text-gray-500 text-center">No line items</td>
+                                                <td colSpan={3} className="px-6 py-4 text-sm text-gray-400 dark:text-gray-500 text-center">No line items</td>
                                             </tr>
                                         )}
                                     </tbody>
                                     <tfoot className="bg-gray-50 dark:bg-gray-950">
-                                        <tr>
-                                            <td colSpan={3} className="px-6 py-3 text-sm text-right text-gray-500 dark:text-gray-400">Subtotal</td>
+                                <tr>
+                                    <td colSpan={2} className="px-6 py-3 text-sm text-right text-gray-500 dark:text-gray-400">Subtotal</td>
                                             <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">{formatCurrency(invoice?.subtotal, pc)}</td>
                                         </tr>
-                                        <tr>
-                                            <td colSpan={3} className="px-6 py-3 text-sm text-right text-gray-500 dark:text-gray-400">Tax</td>
-                                            <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{formatCurrency(invoice?.tax, pc)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan={3} className="px-6 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">Total</td>
+                                <tr>
+                                    <td colSpan={2} className="px-6 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">Total</td>
                                             <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">{formatCurrency(invoice?.total, pc)}</td>
                                         </tr>
                                     </tfoot>

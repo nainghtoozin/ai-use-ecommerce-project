@@ -5,6 +5,7 @@ import InvoiceBadge from '@/Components/Billing/InvoiceBadge';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { Search, X, Filter, FileText, CreditCard, Check, XCircle, AlertCircle, Eye, Download, ArrowUp } from 'lucide-react';
+import { useTranslation } from '@/Utils/useTranslation';
 
 function StatCard({ icon: Icon, label, value, color }) {
     return (
@@ -52,6 +53,7 @@ function Pagination({ links }) {
 
 export default function AdminBillingInvoices({ invoices, filters, plans, stats }) {
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
+    const { t } = useTranslation();
     const [showFilters, setShowFilters] = useState(false);
     const [searchValue, setSearchValue] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
@@ -113,8 +115,8 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                     <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                         <StatCard icon={FileText} label="Total Invoices" value={stats.total || 0} color={{ bg: 'bg-blue-100', text: 'text-blue-600' }} />
                         <StatCard icon={Check} label="Paid" value={stats.paid || 0} color={{ bg: 'bg-emerald-100', text: 'text-emerald-600' }} />
-                        <StatCard icon={AlertCircle} label="Unpaid" value={stats.unpaid || 0} color={{ bg: 'bg-amber-100', text: 'text-amber-600' }} />
-                        <StatCard icon={XCircle} label="Cancelled" value={stats.cancelled || 0} color={{ bg: 'bg-red-100', text: 'text-red-600' }} />
+                         <StatCard icon={AlertCircle} label="Pending" value={stats.unpaid || 0} color={{ bg: 'bg-amber-100', text: 'text-amber-600' }} />
+                         <StatCard icon={XCircle} label="Rejected / Cancelled" value={(stats.rejected || 0) + (stats.cancelled || 0)} color={{ bg: 'bg-red-100', text: 'text-red-600' }} />
                         <StatCard icon={CreditCard} label="Total Amount" value={formatCurrency(stats.total_amount || 0, pc)} color={{ bg: 'bg-gray-100', text: 'text-gray-600' }} />
                     </div>
                 )}
@@ -165,9 +167,10 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                                     >
                                         <option value="">All Statuses</option>
                                         <option value="draft">Draft</option>
-                                        <option value="unpaid">Unpaid</option>
+                                         <option value="unpaid">Pending</option>
                                         <option value="paid">Paid</option>
                                         <option value="cancelled">Cancelled</option>
+                                        <option value="rejected">Rejected</option>
                                         <option value="refunded">Refunded</option>
                                     </select>
                                 </div>
@@ -203,11 +206,9 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                                 <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoice</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Period</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Issued</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                                         <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
@@ -216,9 +217,6 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                                     {data.map((inv) => (
                                         <tr key={inv.id} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
                                             <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">{inv.invoice_number}</span>
-                                            </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
                                                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{inv.plan?.name || '—'}</span>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -226,9 +224,6 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(inv.total, pc)}</span>
-                                            </td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {formatDate(inv.issued_at)}
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <InvoiceBadge status={inv.status} size="sm" />
@@ -243,13 +238,34 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                                                         <Eye className="w-3.5 h-3.5" />
                                                         View
                                                     </button>
-                                                    <a
+                                                     <a
                                                         href={adminUrl(`/admin/billing/invoices/${inv.id}/download`)}
                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 rounded-lg hover:bg-gray-100 transition-colors"
                                                         aria-label={`Download invoice ${inv.invoice_number}`}
                                                     >
-                                                        <Download className="w-3.5 h-3.5" />
-                                                    </a>
+                                                         <Download className="w-3.5 h-3.5" />
+                                                     </a>
+                                                     {inv.status === 'paid' && (
+                                                         <a
+                                                             href={adminUrl(`/admin/billing/invoices/${inv.id}/receipt`)}
+                                                             className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+                                                         >
+                                                             {t('billing.receipt')}
+                                                         </a>
+                                                     )}
+                                                     {inv.status === 'unpaid' && (
+                                                         <button
+                                                             type="button"
+                                                             onClick={() => {
+                                                                 if (window.confirm(`${t('billing.delete_pending_invoice')}\n\n${t('billing.delete_pending_invoice_warning')}`)) {
+                                                                     router.delete(adminUrl(`/admin/billing/invoices/${inv.id}`));
+                                                                 }
+                                                             }}
+                                                             className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                                         >
+                                                             {t('billing.delete_invoice')}
+                                                         </button>
+                                                     )}
                                                 </div>
                                             </td>
                                         </tr>
