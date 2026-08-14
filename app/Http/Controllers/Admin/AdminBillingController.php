@@ -617,24 +617,10 @@ class AdminBillingController extends Controller
                 ->with('info', 'You are already on this plan.');
         }
 
-        $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
-        $currency = Currency::fromEnum($currencyCode);
-
         $billingCycle = $request->validate(['billing_cycle' => ['nullable', 'in:monthly,yearly']])['billing_cycle'] ?? 'monthly';
-        $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
-        $gateway = 'manual';
 
         try {
-            $checkout = app(CheckoutService::class);
-            $intent = $checkout->initiateCheckout(
-                tenant: $tenant,
-                plan: $plan,
-                billingCycle: $billingCycle,
-                amount: $amount,
-                currency: $currency,
-                gateway: $gateway,
-                metadata: ['source' => 'merchant_upgrade']
-            );
+            $intent = null;
 
             $allFeatureDefs = FeatureGate::getAllFeatureDefinitions();
             $featureKeys = array_column($allFeatureDefs, 'key');
@@ -685,16 +671,8 @@ class AdminBillingController extends Controller
                 ]);
 
             return Inertia::render('Admin/Billing/Checkout', [
-                'intent' => [
-                    'id' => $intent->id,
-                    'reference_number' => $intent->reference_number,
-                    'amount' => $intent->amount,
-                    'currency' => $intent->currency,
-                    'status' => $intent->status,
-                    'billing_cycle' => $intent->billing_cycle,
-                    'expires_at' => $intent->expires_at?->toDateTimeString(),
-                    'created_at' => $intent->created_at->toDateTimeString(),
-                ],
+                'intent' => null,
+                'billingCycle' => $billingCycle,
                 'selectedPlan' => [
                     'id' => $plan->id,
                     'name' => $plan->name,
@@ -861,7 +839,10 @@ class AdminBillingController extends Controller
         }
 
         $validated = $request->validate([
-            'intent_reference' => ['required', 'string'],
+            'intent_reference' => ['nullable', 'string'],
+            'plan_slug' => ['required_without:intent_reference', 'nullable', 'string'],
+            'billing_cycle' => ['required_without:intent_reference', 'nullable', 'in:monthly,yearly'],
+            'submission_key' => ['required', 'string', 'max:100'],
             'sender_name' => ['required', 'string', 'max:255'],
             'sender_account' => ['required', 'string', 'max:255'],
             'transaction_reference' => ['required', 'string', 'max:255'],
@@ -873,14 +854,70 @@ class AdminBillingController extends Controller
         ]);
 
         $intentService = app(PaymentIntentService::class);
-        $intent = $intentService->findByReferenceForTenant($tenant, $validated['intent_reference']);
+        $intent = null;
+
+        if (!empty($validated['intent_reference'])) {
+            $intent = $intentService->findByReferenceForTenant($tenant, $validated['intent_reference']);
+        } else {
+            $plan = Plan::active()->where('slug', $validated['plan_slug'])->first();
+            if (!$plan) {
+                return redirect()->back()->with('error', 'The selected plan is not available.');
+            }
+
+            $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
+            $currency = Currency::fromEnum($currencyCode);
+            $billingCycle = $validated['billing_cycle'];
+            $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
+
+            $intent = app(CheckoutService::class)->initiateCheckout(
+                tenant: $tenant,
+                plan: $plan,
+                billingCycle: $billingCycle,
+                amount: $amount,
+                currency: $currency,
+                gateway: 'manual',
+                metadata: [
+                    'source' => 'merchant_upgrade',
+                    'submission_key' => $validated['submission_key'],
+                ],
+            );
+        }
 
         if (!$intent) {
             return redirect()->back()->with('error', 'Payment intent not found.');
         }
 
         if ($intent->status !== 'waiting_payment') {
-            return redirect()->back()->with('error', 'This payment cannot be submitted in its current state.');
+            $sameSubmission = $intent->status === 'waiting_review'
+                && ($intent->metadata['submission_key'] ?? null) === $validated['submission_key']
+                && $intent->evidences()
+                    ->where('transaction_reference', $validated['transaction_reference'])
+                    ->exists();
+
+            if ($sameSubmission) {
+                return redirect()->route('storefront.admin.billing.payment', [
+                    'store_slug' => $tenant->slug,
+                    'intent' => $intent->reference_number,
+                    'submitted' => 'true',
+                ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
+            }
+
+            return redirect()->back()->with('error', 'This payment has already been submitted or cannot be submitted.');
+        }
+
+        $metadata = $intent->metadata ?? [];
+        $metadata['submission_key'] = $validated['submission_key'];
+        $intent->update(['metadata' => $metadata]);
+
+        if ($intent->evidences()->where('transaction_reference', $validated['transaction_reference'])->exists()) {
+            app(ManualPaymentService::class)->confirmPayment($intent);
+            app(\App\Services\InvoiceService::class)->generateFromPaymentIntent($intent->fresh());
+
+            return redirect()->route('storefront.admin.billing.payment', [
+                'store_slug' => $tenant->slug,
+                'intent' => $intent->reference_number,
+                'submitted' => 'true',
+            ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
         }
 
         try {

@@ -19,6 +19,7 @@ class SuperAdminBillingController extends Controller
     public function index(Request $request)
     {
         $query = PaymentIntent::withoutTenantScope()
+            ->whereNotIn('status', ['draft', 'pending', 'waiting_payment'])
             ->with(['tenant', 'plan', 'evidences', 'timelineEvents', 'comments', 'reviews']);
 
         if ($request->filled('status')) {

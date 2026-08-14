@@ -11,7 +11,7 @@ function today() {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan, subscription, allFeatureDefs, paymentMethods = [] }) {
+export default function AdminBillingCheckout({ intent, billingCycle, selectedPlan, currentPlan, subscription, allFeatureDefs, paymentMethods = [] }) {
     const { props } = usePage();
     const { t } = useTranslation();
     const pc = getPlatformCurrencyConfig(props.platform_setting);
@@ -25,12 +25,18 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [submissionKey] = useState(() => (
+        typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    ));
     const transferDate = today();
-    const amount = Number(intent?.amount ?? 0);
-    const interval = intent?.billing_cycle || 'monthly';
+    const interval = billingCycle || intent?.billing_cycle || 'monthly';
+    const amount = Number(intent?.amount ?? (interval === 'yearly' ? selectedPlan?.yearly_price : selectedPlan?.monthly_price) ?? 0);
 
     const submit = (event) => {
         event.preventDefault();
+        if (submitting) return;
         if (!termsAccepted || !selectedMethod || !senderName.trim() || !senderAccount.trim() || !transactionReference.trim() || !evidence) {
             setError(t('billing.checkout_complete_required'));
             return;
@@ -38,6 +44,9 @@ export default function AdminBillingCheckout({ intent, selectedPlan, currentPlan
 
         const form = new FormData();
         form.append('intent_reference', intent?.reference_number || '');
+        form.append('plan_slug', selectedPlan?.slug || '');
+        form.append('billing_cycle', interval);
+        form.append('submission_key', submissionKey);
         form.append('sender_name', senderName.trim());
         form.append('sender_account', senderAccount.trim());
         form.append('transaction_reference', transactionReference.trim());

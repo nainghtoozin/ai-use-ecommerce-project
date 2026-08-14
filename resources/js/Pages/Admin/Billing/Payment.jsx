@@ -198,6 +198,11 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
     const [evidenceFile, setEvidenceFile] = useState(null);
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [submissionKey] = useState(() => (
+        typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    ));
     const [uploadError, setUploadError] = useState(null);
 
     const isWaitingReview = intent?.status === 'waiting_review' || submitted;
@@ -220,6 +225,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (submitting) return;
         setUploadError(null);
 
         const errs = validateForm();
@@ -232,6 +238,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
         const formData = new FormData();
         formData.append('intent_reference', intent?.reference_number || '');
+        formData.append('submission_key', submissionKey);
         formData.append('sender_name', senderName.trim());
         formData.append('sender_account', senderAccount.trim());
         formData.append('transaction_reference', transactionReference.trim());
