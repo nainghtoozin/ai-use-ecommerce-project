@@ -11,8 +11,7 @@ class MarketplaceController extends Controller
     public function index(Request $request)
     {
         $query = Tenant::where('status', 'active')
-            ->whereNotNull('activated_at')
-            ->withCount('products');
+            ->whereNotNull('activated_at');
 
         // Search
         if ($search = $request->input('search')) {
@@ -46,7 +45,9 @@ class MarketplaceController extends Controller
 
         $stores = $query->select([
             'id', 'name', 'slug', 'logo', 'status',
-        ])->paginate(12)->withQueryString();
+        ])->withCount(['products' => function ($q) {
+            $q->withoutTenantScope()->where('status', \App\Models\Product::STATUS_ACTIVE);
+        }])->paginate(12)->withQueryString();
 
         // Add description from settings and product count
         $stores->getCollection()->transform(function ($store) {
@@ -57,7 +58,7 @@ class MarketplaceController extends Controller
                 'slug' => $store->slug,
                 'logo_url' => $store->logo_url,
                 'description' => $settings['description'] ?? '',
-                'products_count' => $store->products_count,
+                'products_count' => (int) ($store->products_count ?? 0),
                 'store_url' => '/store/' . $store->slug,
             ];
         });

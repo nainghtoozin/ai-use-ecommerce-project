@@ -45,4 +45,13 @@ return [
     'who_placed_orders' => 'အော်ဒါတင်သူများ',
     'awaiting_confirmation' => 'အတည်ပြုချက်စောင့်ဆိုင်းနေသည်',
     'total_orders_in_period' => 'သတ်မှတ်ကာလအတွင်း စုစုပေါင်းအော်ဒါ',
+    'subscription' => 'စာရင်းသွင်းမှု',
+    'subscription_days_left' => 'ရက် :days ကျန်ရှိသည်',
+    'subscription_no_expiry' => 'သက်တမ်းကုန်ဆုံးရက် မရှိပါ',
+    'subscription_expired_label' => 'သက်တမ်းကုန်ဆုံးပြီ',
+    'subscription_expiring_soon' => 'မကြာမီ သက်တမ်းကုန်ဆုံးမည်',
+    'subscription_expiry_reminder' => 'သင်၏ :plan စာရင်းသွင်းမှုသည် :days ရက်အတွင်း သက်တမ်းကုန်ဆုံးမည်။ စတိုးဆိုင် ဆက်လက်အသုံးပြုနိုင်ရန် သက်တမ်းတိုးပါ။',
+    'subscription_expired_reminder' => 'သင်၏စာရင်းသွင်းမှု သက်တမ်းကုန်ဆုံးပြီ။ ဆက်လက်အသုံးပြုရန် အစီအစဉ်ကို သက်တမ်းတိုးပါ။',
+    'view_billing' => 'ငွေတောင်းခံမှု ကြည့်ရန်',
+    'dismiss' => 'ပိတ်ရန်',
 ];

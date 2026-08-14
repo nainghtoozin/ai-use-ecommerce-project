@@ -45,4 +45,13 @@ return [
     'who_placed_orders' => 'Who placed orders',
     'awaiting_confirmation' => 'Awaiting confirmation',
     'total_orders_in_period' => 'Total orders in period',
+    'subscription' => 'Subscription',
+    'subscription_days_left' => ':days days left',
+    'subscription_no_expiry' => 'No expiry',
+    'subscription_expired_label' => 'Expired',
+    'subscription_expiring_soon' => 'Expiring soon',
+    'subscription_expiry_reminder' => 'Your :plan plan expires in :days days. Renew your subscription to keep your store active.',
+    'subscription_expired_reminder' => 'Your subscription has expired. Renew your plan to continue using your store.',
+    'view_billing' => 'View Billing',
+    'dismiss' => 'Dismiss',
 ];

@@ -6,6 +6,26 @@ import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 const LOW_STOCK_THRESHOLD = 10;
 
+function safeNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function getVariablePrice(product) {
+    const summaryPrice = safeNumber(product.display_price_summary?.min);
+    if (summaryPrice !== null) return summaryPrice;
+
+    const rangePrice = safeNumber(product.price_range?.[0]);
+    if (rangePrice !== null) return rangePrice;
+
+    const variantPrices = (product.variants || [])
+        .map((variant) => safeNumber(variant.price))
+        .filter((price) => price !== null);
+    if (variantPrices.length > 0) return Math.min(...variantPrices);
+
+    return safeNumber(product.price);
+}
+
 function getEffectiveStock(product) {
     return product.effective_stock ?? product.stock ?? 0;
 }
@@ -28,20 +48,10 @@ function getDisplayPrice(product) {
     }
 
     if (product.is_variable) {
-        const summary = product.display_price_summary;
-        if (summary) {
-            return { display: summary.display, label: summary.label };
-        }
-        const priceRange = product.price_range;
-        if (priceRange && priceRange.length >= 2) {
-            const min = Number(priceRange[0]).toLocaleString();
-            const max = Number(priceRange[1]).toLocaleString();
-            if (priceRange[0] === priceRange[1]) {
-                return { display: `${min}`, label: '' };
-            }
-            return { display: `${min}`, label: 'From' };
-        }
-        return { display: Number(product.price ?? 0).toLocaleString(), label: 'From' };
+        const price = getVariablePrice(product);
+        const maxPrice = safeNumber(product.price_range?.[1]);
+        const label = price !== null && maxPrice !== null && price !== maxPrice ? 'From' : '';
+        return { display: price, label };
     }
 
     if (product.is_combo) {
@@ -58,11 +68,7 @@ function getDisplayPrice(product) {
 
 function getBasePrice(product) {
     if (product.is_variable) {
-        const summary = product.display_price_summary;
-        if (summary) return summary.min ?? product.price ?? 0;
-        const range = product.price_range;
-        if (range && range.length >= 2) return range[0];
-        return product.price ?? 0;
+        return getVariablePrice(product);
     }
     if (product.is_combo) {
         const summary = product.display_price_summary;
@@ -106,6 +112,9 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
 
     if (product.is_variable) {
+        if (display === null || display === undefined || !Number.isFinite(Number(display))) {
+            return <div className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Price unavailable</div>;
+        }
         return (
             <div className="mt-1.5">
                 <div className="flex items-baseline gap-1 flex-wrap">
@@ -113,7 +122,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{label}</span>
                     )}
                     <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
-                        {formatCurrency(display || Number(product.price ?? 0), cc)}
+                        {formatCurrency(display, cc)}
                     </span>
                     <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
                 </div>

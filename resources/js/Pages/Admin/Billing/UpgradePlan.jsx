@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import StatusBadge from '@/Components/Billing/StatusBadge';
-import PlanFeatureMatrix from '@/Components/Billing/PlanFeatureMatrix';
 import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { X, Sparkles, TrendingUp, Lightbulb, Star, Zap, HelpCircle, ShieldCheck, Calendar } from 'lucide-react';
@@ -181,19 +180,6 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
         setDialogOpen(true);
     };
 
-    const handleLockedFeature = (featureKey, planSlug) => {
-        const plan = plans?.find(p => p.slug === planSlug);
-        if (plan && !plan.is_current) {
-            const upgradeHint = allFeatureDefs?.find(f => f.key === featureKey)?.upgradeHint;
-            const betterPlan = upgradeHint
-                ? plans?.find(p => p.name === upgradeHint)
-                : plans?.find(p => !p.is_current && p.slug !== 'free');
-            setDialogTarget(betterPlan || plan);
-            setDialogFeatureKey(featureKey);
-            setDialogOpen(true);
-        }
-    };
-
     const handleStartUpgrade = () => {
         setDialogOpen(false);
     };
@@ -304,21 +290,6 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                                 featureCategories={featureCategories}
                             />
                         ))}
-                    </div>
-                )}
-
-                {plans && plans.length > 1 && featureCategories && (
-                    <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Full Plan Comparison</h2>
-                            <span className="text-xs text-gray-400 dark:text-gray-500">See every feature across all plans</span>
-                        </div>
-                        <PlanFeatureMatrix
-                            plans={plans}
-                            featureCategories={featureCategories}
-                            allFeatureDefs={allFeatureDefs}
-                            onLockedFeatureClick={handleLockedFeature}
-                        />
                     </div>
                 )}
 

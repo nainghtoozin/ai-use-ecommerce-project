@@ -107,16 +107,18 @@ function ChecklistItem({ item, index }) {
 }
 
 export default function OnboardingChecklist({ onboarding }) {
-    const [expanded, setExpanded] = useState(true);
+    const [expanded, setExpanded] = useState(false);
     const [dismissing, setDismissing] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
 
-    if (!onboarding) return null;
+    if (!onboarding || dismissed) return null;
 
     const { items, percentage, merchant_name, store_name, subscription } = onboarding;
     const trialEndDate = formatDate(subscription?.trial_ends_at);
 
     const handleDismiss = () => {
         setDismissing(true);
+        setDismissed(true);
         router.post(adminUrl('/admin/onboarding/dismiss'), {}, {
             preserveState: true,
             onFinish: () => setDismissing(false),

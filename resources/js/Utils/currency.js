@@ -36,6 +36,7 @@ export function formatCurrency(amount, {
 } = {}) {
     if (amount === null || amount === undefined) return '\u2014';
     const num = Number(amount);
+    if (!Number.isFinite(num)) return '\u2014';
     const resolvedDecimals = decimals !== undefined ? decimals : (code === 'MMK' ? 0 : 2);
     const formatted = num.toLocaleString('en-US', {
         minimumFractionDigits: resolvedDecimals,

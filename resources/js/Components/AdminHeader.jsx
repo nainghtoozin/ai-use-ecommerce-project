@@ -1,10 +1,13 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import NotificationBell from '@/Components/NotificationBell';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import { adminUrl } from '@/Utils/adminUrl';
+import { useTranslation } from '@/Utils/useTranslation';
 
 export default function AdminHeader() {
     const { props, url } = usePage();
     const { auth, platform_setting } = props;
+    const { t } = useTranslation();
     const isImpersonating = auth?.user?.is_impersonating;
     const impersonatorName = auth?.user?.impersonator_name;
 
@@ -34,6 +37,27 @@ export default function AdminHeader() {
     };
 
     const isSuperAdmin = auth?.user?.is_superadmin;
+    const subscription = auth?.user?.subscription;
+    const showSubscriptionStatus = !isSuperAdmin && auth?.user?.is_owner && url?.includes('/dashboard') && subscription;
+    const subscriptionDays = Number(subscription?.days_until_expiry);
+    const subscriptionState = subscription?.status === 'expired'
+        ? 'expired'
+        : subscription?.expires_at === null || subscription?.expires_at === undefined
+            ? 'unlimited'
+            : !Number.isFinite(subscriptionDays) || subscriptionDays <= 0
+            ? 'expired'
+            : subscriptionDays <= 7 ? 'expiring' : 'healthy';
+    const subscriptionStatusClasses = {
+        healthy: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        expiring: 'bg-amber-50 text-amber-700 border-amber-200',
+        expired: 'bg-red-50 text-red-700 border-red-200',
+        unlimited: 'bg-gray-50 text-gray-600 border-gray-200',
+    };
+    const subscriptionDetail = subscriptionState === 'unlimited'
+        ? t('dashboard.subscription_no_expiry')
+        : subscriptionState === 'expired'
+            ? t('dashboard.subscription_expired_label')
+            : t('dashboard.subscription_days_left', { days: subscriptionDays });
     const subtitle = isSuperAdmin
         ? (platform_setting?.site_name ? `${platform_setting.site_name} — SuperAdmin` : 'SuperAdmin Panel')
         : 'Manage your store';
@@ -76,6 +100,18 @@ export default function AdminHeader() {
                         >
                             <i className="bi bi-eye"></i>
                             View Store
+                        </Link>
+                    )}
+                    {showSubscriptionStatus && (
+                        <Link
+                            href={adminUrl('/admin/billing')}
+                            className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${subscriptionStatusClasses[subscriptionState]}`}
+                            title={subscriptionState === 'expiring' ? t('dashboard.subscription_expiring_soon') : t('dashboard.subscription')}
+                        >
+                            <span className="hidden lg:inline">{t('dashboard.subscription')}:</span>
+                            <span>{subscription.plan_name || t('dashboard.subscription')}</span>
+                            <span>·</span>
+                            <span>{subscriptionDetail}</span>
                         </Link>
                     )}
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-950 rounded-lg">

@@ -143,7 +143,9 @@ export default function StoreDirectory() {
                                             </h3>
                                             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                                                 <Package className="w-3.5 h-3.5" />
-                                                <span>{t('landing.marketplace.products_count', { count: store.products_count })}</span>
+                                                <span>{t('landing.marketplace.products_count', {
+                                                    count: Number.isFinite(Number(store.products_count)) ? Number(store.products_count) : 0,
+                                                })}</span>
                                             </div>
                                         </div>
                                     </div>

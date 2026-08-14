@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Events\TenantCreated;
 use App\Models\Account;
-use App\Models\Brand;
-use App\Models\Category;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
@@ -13,7 +11,6 @@ use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
-use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WebsiteFaq;
@@ -76,7 +73,6 @@ class TenantBootstrapService
                 $this->createDefaultPaymentMethods($tenant);
                 $this->createDefaultWarehouse($tenant);
                 $this->seedDefaultFaqs($tenant);
-                $this->seedStarterMasterData($tenant);
 
                 TenantCreated::dispatch($tenant, $owner);
 
@@ -493,95 +489,6 @@ class TenantBootstrapService
                     'answer_en' => $faqData['answer_en'],
                     'answer_my' => $faqData['answer_my'],
                     'sort_order' => $faqData['sort_order'],
-                    'is_active' => true,
-                ]
-            );
-        }
-    }
-
-    /**
-     * Seed starter categories, brands, and units for a new tenant.
-     *
-     * Gives merchants a ready-to-use set of master data so they can
-     * start creating products immediately after store setup.
-     */
-    protected function seedStarterMasterData(Tenant $tenant): void
-    {
-        $this->seedStarterCategories($tenant);
-        $this->seedStarterBrands($tenant);
-        $this->seedStarterUnits($tenant);
-    }
-
-    protected function seedStarterCategories(Tenant $tenant): void
-    {
-        $categories = [
-            ['name' => 'Electronics', 'description' => 'Gadgets, devices, and electronic accessories'],
-            ['name' => 'Fashion', 'description' => 'Clothing, shoes, and accessories'],
-            ['name' => 'Beauty', 'description' => 'Skincare, makeup, and personal care products'],
-            ['name' => 'Grocery', 'description' => 'Food, beverages, and daily essentials'],
-            ['name' => 'Home & Living', 'description' => 'Furniture, decor, and household items'],
-            ['name' => 'Sports & Outdoors', 'description' => 'Sports gear, fitness equipment, and outdoor essentials'],
-            ['name' => 'Books & Stationery', 'description' => 'Books, notebooks, and office supplies'],
-            ['name' => 'Health & Personal Care', 'description' => 'Wellness, supplements, and hygiene products'],
-            ['name' => 'Baby & Kids', 'description' => 'Toys, clothing, and essentials for children'],
-            ['name' => 'Other', 'description' => 'Miscellaneous items'],
-        ];
-
-        foreach ($categories as $category) {
-            Category::withoutTenantScope()->firstOrCreate(
-                ['tenant_id' => $tenant->id, 'name' => $category['name']],
-                [
-                    'tenant_id' => $tenant->id,
-                    'description' => $category['description'],
-                ]
-            );
-        }
-    }
-
-    protected function seedStarterBrands(Tenant $tenant): void
-    {
-        $brands = [
-            ['name' => 'Generic', 'slug' => 'generic', 'description' => 'Generic or unbranded products'],
-            ['name' => 'No Brand', 'slug' => 'no-brand', 'description' => 'Products without a specific brand'],
-        ];
-
-        foreach ($brands as $brand) {
-            Brand::withoutTenantScope()->firstOrCreate(
-                ['tenant_id' => $tenant->id, 'name' => $brand['name']],
-                [
-                    'tenant_id' => $tenant->id,
-                    'slug' => $brand['slug'],
-                    'description' => $brand['description'],
-                    'is_active' => true,
-                ]
-            );
-        }
-    }
-
-    protected function seedStarterUnits(Tenant $tenant): void
-    {
-        $units = [
-            ['name' => 'Piece', 'short_name' => 'pc', 'description' => 'Single item'],
-            ['name' => 'Box', 'short_name' => 'box', 'description' => 'Packaged in a box'],
-            ['name' => 'Pack', 'short_name' => 'pk', 'description' => 'Packaged in a pack'],
-            ['name' => 'Bottle', 'short_name' => 'btl', 'description' => 'Bottled item'],
-            ['name' => 'Kg', 'short_name' => 'kg', 'description' => 'Kilogram'],
-            ['name' => 'Gram', 'short_name' => 'g', 'description' => 'Gram'],
-            ['name' => 'Liter', 'short_name' => 'L', 'description' => 'Liter'],
-            ['name' => 'Meter', 'short_name' => 'm', 'description' => 'Meter'],
-            ['name' => 'Pair', 'short_name' => 'pr', 'description' => 'A pair of items'],
-            ['name' => 'Set', 'short_name' => 'set', 'description' => 'A set of items'],
-            ['name' => 'Roll', 'short_name' => 'roll', 'description' => 'Rolled material'],
-            ['name' => 'Carton', 'short_name' => 'ctn', 'description' => 'Packaged in a carton'],
-        ];
-
-        foreach ($units as $unit) {
-            Unit::withoutTenantScope()->firstOrCreate(
-                ['tenant_id' => $tenant->id, 'name' => $unit['name']],
-                [
-                    'tenant_id' => $tenant->id,
-                    'short_name' => $unit['short_name'],
-                    'description' => $unit['description'],
                     'is_active' => true,
                 ]
             );
