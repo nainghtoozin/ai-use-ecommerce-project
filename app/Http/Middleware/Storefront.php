@@ -3,9 +3,13 @@
 namespace App\Http\Middleware;
 
 use App\Models\WebsiteInfo;
+use App\Models\Account;
+use App\Models\TenantMembership;
+use App\Models\User;
 use App\Services\StoreResolver;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class Storefront
 {
@@ -23,6 +27,24 @@ class Storefront
 
         if (!$tenant) {
             abort(404);
+        }
+
+        $authenticatable = Auth::guard('accounts')->check()
+            ? Auth::guard('accounts')->user()
+            : (Auth::guard('web')->check() ? Auth::guard('web')->user() : null);
+
+        if ($authenticatable && !$authenticatable->isSuperAdmin()) {
+            $hasAccess = $authenticatable instanceof Account
+                ? TenantMembership::where('account_id', $authenticatable->id)
+                    ->where('tenant_id', $tenant->id)
+                    ->where('status', 'active')
+                    ->exists()
+                : $authenticatable instanceof User
+                    && (int) $authenticatable->tenant_id === (int) $tenant->id;
+
+            if (!$hasAccess) {
+                abort(403, 'Your account does not have access to this store.');
+            }
         }
 
         app()->instance('current.tenant', $tenant);

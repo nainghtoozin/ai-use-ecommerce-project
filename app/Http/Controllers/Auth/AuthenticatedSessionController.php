@@ -101,6 +101,12 @@ class AuthenticatedSessionController extends Controller
             }
         }
 
+        $request->session()->forget([
+            'current_tenant_slug',
+            'current_tenant_id',
+            'current_tenant_membership_id',
+        ]);
+
         $request->authenticate();
 
         $guard = $useAccounts ? 'accounts' : 'web';
@@ -114,11 +120,22 @@ class AuthenticatedSessionController extends Controller
                 ->with('status', 'Please verify your email before continuing.');
         }
 
-        $request->session()->forget('current_tenant_slug');
+        $redirectResolver = app(LoginRedirectResolver::class);
+        $resolvedTenant = $redirectResolver->resolveTenant($authenticatable);
+
+        $request->session()->forget([
+            'current_tenant_slug',
+            'current_tenant_id',
+            'current_tenant_membership_id',
+        ]);
+
+        if ($resolvedTenant) {
+            $request->session()->put('current_tenant_slug', $resolvedTenant->slug);
+        }
 
         // Login activity is logged by UpdateAccountLastLogin listener
 
-        return redirect()->to(app(LoginRedirectResolver::class)->resolveLogin($authenticatable));
+        return redirect()->to($redirectResolver->resolveLogin($authenticatable, $resolvedTenant));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -157,6 +174,11 @@ class AuthenticatedSessionController extends Controller
         $context = $request->input('context');
 
         Auth::guard($guard)->logout();
+        $request->session()->forget([
+            'current_tenant_slug',
+            'current_tenant_id',
+            'current_tenant_membership_id',
+        ]);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

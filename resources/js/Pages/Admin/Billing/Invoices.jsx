@@ -7,15 +7,20 @@ import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { Search, X, Filter, FileText, CreditCard, Check, XCircle, AlertCircle, Eye, Download, ArrowUp } from 'lucide-react';
 import { useTranslation } from '@/Utils/useTranslation';
 
-function StatCard({ icon: Icon, label, value, color }) {
+function StatCard({ icon: Icon, label, value, color, singleLine = false }) {
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl ${color.bg} flex items-center justify-center flex-shrink-0`}>
+        <div className="min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 flex items-center gap-3 sm:gap-4 overflow-hidden">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${color.bg} flex items-center justify-center flex-shrink-0`}>
                 <Icon className={`w-6 h-6 ${color.text}`} />
             </div>
-            <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+            <div className="min-w-0 flex-1">
+                <p className={`leading-tight font-bold text-gray-900 dark:text-gray-100 tabular-nums ${singleLine
+                    ? 'whitespace-nowrap text-[clamp(0.75rem,3.5vw,1.5rem)]'
+                    : 'text-[clamp(1rem,4vw,1.5rem)] break-words [overflow-wrap:anywhere]'
+                }`}>
+                    {value}
+                </p>
+                <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{label}</p>
             </div>
         </div>
     );
@@ -117,7 +122,7 @@ export default function AdminBillingInvoices({ invoices, filters, plans, stats }
                         <StatCard icon={Check} label="Paid" value={stats.paid || 0} color={{ bg: 'bg-emerald-100', text: 'text-emerald-600' }} />
                          <StatCard icon={AlertCircle} label="Pending" value={stats.unpaid || 0} color={{ bg: 'bg-amber-100', text: 'text-amber-600' }} />
                          <StatCard icon={XCircle} label="Rejected / Cancelled" value={(stats.rejected || 0) + (stats.cancelled || 0)} color={{ bg: 'bg-red-100', text: 'text-red-600' }} />
-                        <StatCard icon={CreditCard} label="Total Amount" value={formatCurrency(stats.total_amount || 0, pc)} color={{ bg: 'bg-gray-100', text: 'text-gray-600' }} />
+                         <StatCard icon={CreditCard} label="Total Amount" value={formatCurrency(stats.total_amount || 0, pc)} singleLine color={{ bg: 'bg-gray-100', text: 'text-gray-600' }} />
                     </div>
                 )}
 

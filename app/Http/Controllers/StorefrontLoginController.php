@@ -6,6 +6,7 @@ use App\Auth\LoginRedirectResolver;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Account;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -70,6 +71,17 @@ class StorefrontLoginController extends Controller
                     ])->onlyInput('email');
                 }
 
+                $hasStoreAccess = TenantMembership::where('account_id', $account->id)
+                    ->where('tenant_id', $tenant->id)
+                    ->where('status', 'active')
+                    ->exists();
+
+                if (!$hasStoreAccess) {
+                    return back()->withErrors([
+                        'email' => "Your account does not have access to {$tenant->name}.",
+                    ])->onlyInput('email');
+                }
+
             }
         } else {
             $user = User::where('email', $request->email)->first();
@@ -129,6 +141,7 @@ class StorefrontLoginController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->put('current_tenant_slug', $tenant->slug);
 
         $authenticatable = Auth::guard($guard)->user();
 

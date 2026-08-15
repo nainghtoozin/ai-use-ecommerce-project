@@ -135,7 +135,7 @@ class LoginRedirectResolver
         return route('superadmin.dashboard');
     }
 
-    private function resolveTenant(User|Account $authenticatable): ?Tenant
+    public function resolveTenant(User|Account $authenticatable): ?Tenant
     {
         if ($authenticatable instanceof User && $authenticatable->tenant) {
             return $authenticatable->tenant;
