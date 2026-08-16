@@ -16,7 +16,7 @@ function formatRole(roleName) {
     return roleLabels[key] || roleName.charAt(0).toUpperCase() + roleName.slice(1);
 }
 
-export default function WorkspaceSwitcher({ collapsed = false }) {
+export default function WorkspaceSwitcher({ collapsed = false, light = false }) {
     const { auth } = usePage().props;
     const memberships = auth?.user?.memberships;
     const [open, setOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function WorkspaceSwitcher({ collapsed = false }) {
             <div className="relative">
                 <button
                     onClick={() => setOpen(!open)}
-                    className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white dark:bg-gray-900/[0.06] transition-colors"
+                    className={`w-full flex items-center justify-center px-2 py-2 rounded-lg transition-colors ${light ? 'text-slate-500 hover:text-blue-700 hover:bg-blue-50' : 'text-slate-400 hover:text-white hover:bg-white dark:bg-gray-900/[0.06]'}`}
                     title={`${current?.tenant_name} — ${formatRole(current?.role_name)}`}
                 >
                     <Building2 className="w-4 h-4" />
@@ -78,11 +78,11 @@ export default function WorkspaceSwitcher({ collapsed = false }) {
     }
 
     return (
-        <div className="border-t border-white/[0.06] pt-2 pb-1.5">
+        <div className={`border-t pt-2 pb-1.5 ${light ? 'border-slate-200' : 'border-white/[0.06]'}`}>
             <div className="relative px-2.5">
                 <button
                     onClick={() => setOpen(!open)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white dark:bg-gray-900/[0.06] transition-colors group"
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors group ${light ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-white dark:bg-gray-900/[0.06]'}`}
                 >
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
@@ -92,7 +92,7 @@ export default function WorkspaceSwitcher({ collapsed = false }) {
                         <div className="text-[13px] font-medium truncate leading-tight">{current?.tenant_name}</div>
                         <div className="text-[10px] text-slate-500 truncate leading-tight">Role: {formatRole(current?.role_name)}</div>
                     </div>
-                    <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 text-slate-500 group-hover:text-slate-300 transition-transform ${open ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${light ? 'text-slate-500 group-hover:text-blue-600' : 'text-slate-500 group-hover:text-slate-300'}`} />
                 </button>
                 {open && (
                     <>

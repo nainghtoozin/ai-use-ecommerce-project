@@ -22,14 +22,14 @@ const STORAGE_KEY = 'admin_sidebar_open_section';
 
 const SECTION_VIS_KEY = {
     'Overview': 'overview',
-    'Catalog': 'catalog',
+    'Products': 'catalog',
     'Inventory': 'inventory',
-    'Sales': 'sales',
+    'Orders & Payments': 'sales',
     'Marketing': 'marketing',
     'Billing': 'billing',
     'Analytics': 'analytics',
     'Locations': 'locations',
-    'Staff': 'staff',
+    'Team': 'staff',
     'Content': 'content',
     'Settings': 'settings',
 };
@@ -163,12 +163,14 @@ export default function AdminSidebar() {
         return [
             {
                 title: t('navigation.overview'),
+                visibilityKey: 'overview',
                 items: [
                     ...(can('dashboard.view') && isVis('overview') ? [{ label: t('navigation.dashboard'), href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
                 ]
             },
             {
-                title: t('navigation.catalog'),
+                title: t('navigation.products_section'),
+                visibilityKey: 'catalog',
                 items: [
                     ...(can('products.view') && isVis('catalog.products') ? [{ label: t('navigation.products'), href: '/admin/products', icon: 'Package' }] : []),
                     ...(can('categories.view') && isVis('catalog.categories') ? [{ label: t('navigation.categories'), href: '/admin/categories', icon: 'Tags' }] : []),
@@ -178,6 +180,7 @@ export default function AdminSidebar() {
             },
             ...(can('inventory.view') && hasFeature('inventory_management') ? [{
                 title: t('navigation.inventory'),
+                visibilityKey: 'inventory',
                 items: [
                     ...(isVis('inventory.dashboard') ? [{ label: t('navigation.dashboard'), href: '/admin/inventory/dashboard', icon: 'LayoutDashboard' }] : []),
                     ...(isVis('inventory.products') ? [{ label: 'Products Inventory', href: '/admin/inventory', icon: 'Archive' }] : []),
@@ -187,7 +190,8 @@ export default function AdminSidebar() {
                 ]
             }] : []),
             {
-                title: t('navigation.sales'),
+                title: t('navigation.orders_payments'),
+                visibilityKey: 'sales',
                 items: [
                     ...(can('orders.view') && isVis('sales.orders') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
                     ...(can('payments.view') && isVis('sales.payment_methods') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
@@ -195,6 +199,7 @@ export default function AdminSidebar() {
             },
             {
                 title: t('navigation.marketing'),
+                visibilityKey: 'marketing',
                 items: [
                     ...(can('coupons.view') && hasFeature('coupons') && isVis('marketing.coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
                     ...(can('promotions.view') && hasFeature('promotions') && isVis('marketing.promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
@@ -203,6 +208,7 @@ export default function AdminSidebar() {
             },
             ...(can('billing.view') ? [{
                 title: t('navigation.billing'),
+                visibilityKey: 'billing',
                 items: [
                     ...(isVis('billing.overview') ? [{ label: 'Overview', href: '/admin/billing', icon: 'CreditCard' }] : []),
                     ...(isVis('billing.subscription') ? [{ label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' }] : []),
@@ -214,6 +220,7 @@ export default function AdminSidebar() {
             }] : []),
             {
                 title: t('navigation.analytics'),
+                visibilityKey: 'analytics',
                 items: [
                     ...(can('reports.sales') && hasFeature('reports') && isVis('analytics.sales') ? [{ label: 'Sales', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
                     ...(can('reports.products') && hasFeature('reports') && isVis('analytics.products') ? [{ label: t('navigation.products'), href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
@@ -222,13 +229,15 @@ export default function AdminSidebar() {
             },
             {
                 title: t('navigation.locations'),
+                visibilityKey: 'locations',
                 items: [
                     ...(can('cities.view') && isVis('locations.cities') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
                     ...(can('townships.view') && isVis('locations.townships') ? [{ label: t('navigation.townships'), href: '/admin/townships', icon: 'MapPin' }] : []),
                 ]
             },
             {
-                title: t('navigation.staff'),
+                title: t('navigation.team'),
+                visibilityKey: 'staff',
                 items: [
                     ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'Users' }] : []),
                     ...((can('users.view') || auth?.user?.is_owner) && isVis('staff.staff') ? [{ label: t('navigation.staff'), href: '/admin/team', icon: 'UserPlus' }] : []),
@@ -239,13 +248,15 @@ export default function AdminSidebar() {
                 ]
             },
             {
-                title: 'Content',
+                title: t('navigation.content'),
+                visibilityKey: 'content',
                 items: [
                     ...(can('products.view') && isVis('content.faq') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
                 ]
             },
             {
                 title: t('navigation.settings'),
+                visibilityKey: 'settings',
                 items: [
                     ...(can('settings.website') && isVis('settings.website') ? [{ label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' }] : []),
                     ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
@@ -325,7 +336,12 @@ export default function AdminSidebar() {
         store_slug: storeSlug,
     });
 
-    const visibleSections = menuSections.filter(s => s.items.length > 0);
+    const visibleSections = menuSections.filter((section) => {
+        const visibilityKey = section.visibilityKey || SECTION_VIS_KEY[section.title];
+        return section.items.length > 0 && (!visibilityKey || isVis(visibilityKey));
+    });
+
+    const merchant = !isSuperAdmin;
 
     return (
         <>
@@ -337,11 +353,11 @@ export default function AdminSidebar() {
                     background: transparent;
                 }
                 .sidebar-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: ${merchant ? 'rgba(100, 116, 139, 0.28)' : 'rgba(255, 255, 255, 0.1)'};
                     border-radius: 9999px;
                 }
                 .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.18);
+                    background: ${merchant ? 'rgba(71, 85, 105, 0.4)' : 'rgba(255, 255, 255, 0.18)'};
                 }
                 .sidebar-collapse-content {
                     display: grid;
@@ -359,7 +375,7 @@ export default function AdminSidebar() {
             {/* Mobile toggle */}
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-slate-900 rounded-lg shadow-lg hover:bg-slate-800 transition-colors"
+                className={`lg:hidden fixed top-3 left-3 z-50 p-2 rounded-lg shadow-lg transition-colors ${merchant ? 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
                 aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
             >
                 {sidebarOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
@@ -371,12 +387,12 @@ export default function AdminSidebar() {
             )}
 
             <aside
-                className={`fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col bg-slate-900 text-white transition-all duration-300 ease-in-out ${
+                className={`fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col transition-all duration-300 ease-in-out ${merchant ? 'bg-slate-50 text-slate-800 border-r border-slate-200' : 'bg-slate-900 text-white'} ${
                     collapsed ? 'w-[72px]' : 'w-64'
                 } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
                 {/* Header */}
-                <div className={`h-16 flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} border-b border-white/[0.06] flex-shrink-0`}>
+                <div className={`h-16 flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} flex-shrink-0 ${merchant ? 'border-b border-slate-200' : 'border-b border-white/[0.06]'}`}>
                     {collapsed ? (
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                             <Store className="w-4 h-4 text-white" />
@@ -390,7 +406,7 @@ export default function AdminSidebar() {
                                     <Store className="w-4 h-4 text-white" />
                                 </div>
                             )}
-                            <span className="text-sm font-semibold truncate">{brandName}</span>
+                            <span className={`font-semibold truncate ${merchant ? 'text-base text-slate-900' : 'text-sm'}`}>{brandName}</span>
                         </div>
                     )}
                 </div>
@@ -399,7 +415,7 @@ export default function AdminSidebar() {
                 <div className="hidden lg:block absolute -right-3 top-20 z-50">
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="w-6 h-6 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center shadow-lg border border-slate-600/50 transition-colors"
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shadow-sm border transition-colors ${merchant ? 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600' : 'bg-slate-700 hover:bg-slate-600 border-slate-600/50'}`}
                         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     >
                         {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
@@ -419,17 +435,17 @@ export default function AdminSidebar() {
                                 {!collapsed && (
                                     <button
                                         onClick={() => toggleSection(section.title)}
-                                        className={`w-full flex items-center justify-between px-3 py-[7px] text-[13px] font-semibold uppercase tracking-[0.04em] transition-colors rounded-md ${
-                                            sectionHasActive
-                                                ? 'text-blue-400/90'
-                                                : 'text-gray-400 hover:text-gray-300'
+                                         className={`w-full flex items-center justify-between px-3 py-[7px] uppercase transition-colors rounded-md ${merchant ? 'text-[13px] font-medium tracking-[0.03em]' : 'text-[11px] font-semibold tracking-[0.08em]'} ${
+                                             sectionHasActive
+                                                 ? merchant ? 'text-blue-600' : 'text-blue-400/90'
+                                                 : merchant ? 'text-slate-600 hover:text-slate-800' : 'text-gray-400 hover:text-gray-300'
                                         }`}
                                     >
                                         <span>{section.title}</span>
                                         <ChevronDown
-                                            className={`w-3.5 h-3.5 transition-transform duration-250 ease-out ${
-                                                isOpen ? 'rotate-0' : '-rotate-90'
-                                            }`}
+                                             className={`w-3.5 h-3.5 transition-all duration-250 ease-out ${
+                                                 isOpen ? 'rotate-0' : '-rotate-90'
+                                             } ${merchant ? sectionHasActive ? 'text-blue-600' : 'text-slate-400' : ''}`}
                                         />
                                     </button>
                                 )}
@@ -447,10 +463,10 @@ export default function AdminSidebar() {
                                                         onClick={() => setSidebarOpen(false)}
                                                         className={`flex items-center gap-3 ${
                                                             collapsed ? 'justify-center px-2' : 'px-3'
-                                                        } py-[9px] rounded-md text-[15px] font-medium transition-all duration-150 group relative ${
+                                                         } py-[10px] rounded-lg text-[15px] font-medium transition-all duration-150 group relative ${
                                                             active
-                                                                ? 'text-white bg-white/[0.08]'
-                                                                : 'text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
+                                                                 ? merchant ? 'text-blue-700 bg-blue-50' : 'text-white bg-white/[0.08]'
+                                                                 : merchant ? 'text-slate-900 hover:text-slate-950 hover:bg-slate-100' : 'text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
                                                         }`}
                                                         title={collapsed ? item.label : undefined}
                                                     >
@@ -463,7 +479,7 @@ export default function AdminSidebar() {
                                                             className={`flex-shrink-0 ${
                                                                 active
                                                                     ? ''
-                                                                    : 'text-gray-400 group-hover:text-gray-300'
+                                                                     : merchant ? 'text-slate-500 group-hover:text-slate-700' : 'text-gray-400 group-hover:text-gray-300'
                                                             }`}
                                                             style={active ? { color: 'var(--theme-color, #3B82F6)' } : undefined}
                                                         />
@@ -482,10 +498,10 @@ export default function AdminSidebar() {
                 </nav>
 
                 {/* Workspace switcher */}
-                <WorkspaceSwitcher collapsed={collapsed} />
+                 <WorkspaceSwitcher collapsed={collapsed} light={merchant} />
 
                 {/* User section */}
-                <div className="p-2.5 border-t border-white/[0.06] flex-shrink-0">
+                <div className={`p-2.5 border-t flex-shrink-0 ${merchant ? 'border-slate-200 bg-slate-100/70' : 'border-white/[0.06]'}`}>
                     <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
                         <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -495,8 +511,8 @@ export default function AdminSidebar() {
                         </div>
                         {!collapsed && (
                             <div className="ml-2.5 flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{auth?.user?.name}</p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{auth?.user?.email}</p>
+                                 <p className={`font-semibold truncate ${merchant ? 'text-[15px] text-slate-900' : 'text-sm'}`}>{auth?.user?.name}</p>
+                                 <p className={`truncate ${merchant ? 'text-[13px] text-slate-500' : 'text-xs text-gray-400 dark:text-gray-500'}`}>{auth?.user?.email}</p>
                             </div>
                         )}
                     </div>
@@ -505,13 +521,13 @@ export default function AdminSidebar() {
                         <div className="mt-2.5 flex gap-1.5">
                             <Link
                                 href={adminUrl('/profile')}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-white/[0.08] hover:bg-white/[0.12] rounded-md text-slate-300 hover:text-white transition-colors"
+                                 className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${merchant ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900' : 'bg-white/[0.08] hover:bg-white/[0.12] text-slate-300 hover:text-white'}`}
                             >
                                 <User className="w-3 h-3" />{t('general.profile')}
                             </Link>
-                            <button
+                             <button
                                 onClick={logout}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-red-500/10 hover:bg-red-500/20 rounded-md text-red-400 transition-colors"
+                                 className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${merchant ? 'bg-red-50 hover:bg-red-100 text-red-600' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'}`}
                             >
                                 <LogOut className="w-3 h-3" />{t('general.logout')}
                             </button>
