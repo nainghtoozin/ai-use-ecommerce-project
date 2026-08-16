@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\OnboardingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Inertia\Inertia;
@@ -24,62 +24,65 @@ class AdminController extends Controller
         $period = $request->input('period', 'today');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $ttl = 300;
         $tz = config('app.timezone');
-        $tenantSuffix = '_' . (tenant()?->id ?? 'global');
-
-        // ── Recent orders (cached) ──
-        //     Only the last 10; with minimal columns + eager load.
-        //     Index on created_at DESC is critical once the table exceeds ~100k rows.
-        $orders = Cache::remember('dashboard_recent_orders_v2' . $tenantSuffix, $ttl, fn() =>
-            Order::with('user:id,name')
-                ->select('id', 'user_id', 'customer_name', 'first_name', 'last_name', 'total_amount', 'order_status', 'created_at')
-                ->orderByDesc('created_at')
-                ->take(10)
-                ->get()
-        );
-
-        // ── Inventory summary (cached) ──
-        //     Aggregates total + low-stock counts in a single table scan.
-        //     Low-stock / out-of-stock detail lists are separate but use
-        //     LIMIT 5 so they never scan more than a handful of rows.
-        $inventory = Cache::remember('dashboard_inventory_v2' . $tenantSuffix, $ttl, function () {
-            $counts = Product::selectRaw('COUNT(*) as total_products')
-                ->selectRaw("COALESCE(SUM(CASE WHEN stock > 0 AND stock < 10 THEN 1 ELSE 0 END), 0) as low_stock_count")
-                ->first();
-
-            return [
-                'totalProducts' => (int) $counts->total_products,
-                'lowStockCount' => (int) $counts->low_stock_count,
-                'lowStock' => [
-                    'data' => Product::select('id', 'name', 'stock', 'photo1')
-                        ->where('stock', '>', 0)->where('stock', '<', 10)
-                        ->orderBy('stock')->take(5)->get(),
-                ],
-                'outOfStock' => [
-                    'data' => Product::select('id', 'name', 'stock', 'photo1')
-                        ->where('stock', 0)->orderBy('name')->take(5)->get(),
-                ],
-            ];
-        });
-
-        // ── Date range ──
+        if ($period === 'custom') {
+            $request->validate([
+                'start_date' => ['required', 'date'],
+                'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            ]);
+        }
         $now = Carbon::now($tz);
         $range = $this->getDateRange($period, $startDate, $endDate, $now);
         $start = $range['start'];
         $end = $range['end'];
 
-        // ── Per-period stats (cached) ──
-        $suffix = $this->cacheSuffix($period, $startDate, $endDate);
+        $orders = Order::with('user:id,name')
+            ->select('id', 'user_id', 'customer_name', 'first_name', 'last_name', 'total_amount', 'paid_amount', 'payment_status', 'order_status', 'created_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->orderByDesc('created_at')
+            ->take(10)
+            ->get();
 
-        $filteredStats = Cache::remember("dashboard_stats{$suffix}{$tenantSuffix}", $ttl, fn() =>
-            $this->computeStats($start, $end)
-        );
+        $inventory = (function () {
+            $products = Product::query()
+                ->withSum(['variants as variant_total_stock' => function ($q) {
+                    $q->where('status', ProductVariant::STATUS_ACTIVE);
+                }], 'stock')
+                ->get(['id', 'name', 'stock', 'type', 'photo1']);
 
-        // ── Payment method breakdown (cached) ──
-        $paymentMethodSummary = Cache::remember("dashboard_pm{$suffix}{$tenantSuffix}", $ttl, fn() =>
-            $this->computePaymentSummary($start, $end)
-        );
+            $rows = $products->map(function (Product $product) {
+                $stock = $product->isVariable()
+                    ? (float) ($product->variant_total_stock ?? 0)
+                    : (float) $product->getEffectiveStock();
+
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'stock' => $stock,
+                    'photo1' => $product->photo1,
+                    'photo1_url' => $product->photo1_url,
+                ];
+            });
+
+            return [
+                'totalProducts' => $rows->count(),
+                'lowStockCount' => $rows->where('stock', '>', 0)->where('stock', '<', 10)->count(),
+                'lowStock' => [
+                    'data' => $rows->where('stock', '>', 0)->where('stock', '<', 10)
+                        ->sortBy('stock')->take(5)->values(),
+                ],
+                'outOfStock' => [
+                    'data' => $rows->where('stock', '<=', 0)
+                        ->sortBy('name')->take(5)->values(),
+                ],
+            ];
+        })();
+
+        // ── Per-period stats ──
+        $filteredStats = $this->computeStats($start, $end);
+
+        // ── Payment method breakdown ──
+        $paymentMethodSummary = $this->computePaymentSummary($start, $end);
 
         return Inertia::render('Admin/Dashboard', array_merge(
             $filteredStats,
@@ -147,9 +150,9 @@ class AdminController extends Controller
         $stats = DB::table('orders')
             ->when(tenant(), fn($q, $t) => $q->where('orders.tenant_id', $t->id))
             ->whereBetween('created_at', [$start, $end])
-            ->selectRaw('COUNT(*) as filtered_orders_count')
-            ->selectRaw("COALESCE(SUM(CASE WHEN payment_status = 'paid' OR order_status = 'confirmed' THEN total_amount ELSE 0 END), 0) as total_received_payments")
-            ->selectRaw("COALESCE(SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END), 0) as filtered_pending_orders")
+            ->selectRaw("COALESCE(SUM(CASE WHEN order_status IN ('confirmed', 'processing', 'shipped', 'delivered') THEN 1 ELSE 0 END), 0) as filtered_orders_count")
+            ->selectRaw("COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN COALESCE(paid_amount, total_amount) ELSE 0 END), 0) as total_received_payments")
+            ->selectRaw("COALESCE(SUM(CASE WHEN order_status != 'cancelled' AND (order_status = 'pending' OR payment_status = 'pending') THEN 1 ELSE 0 END), 0) as filtered_pending_orders")
             ->selectRaw('COUNT(DISTINCT user_id) as filtered_customers')
             ->first();
 
@@ -170,10 +173,11 @@ class AdminController extends Controller
         return DB::table('orders')
             ->join('payment_methods', 'orders.payment_method_id', '=', 'payment_methods.id')
             ->when(tenant(), fn($q, $t) => $q->where('orders.tenant_id', $t->id))
-            ->whereBetween('orders.created_at', [$start, $end])
-            ->whereNotNull('orders.payment_method_id')
+             ->whereBetween('orders.created_at', [$start, $end])
+             ->whereNotNull('orders.payment_method_id')
+             ->where('orders.payment_status', Order::PAYMENT_STATUS_PAID)
             ->select('payment_methods.name', 'payment_methods.bank_name')
-            ->selectRaw("COALESCE(SUM(CASE WHEN orders.payment_status = 'paid' OR orders.order_status = 'confirmed' THEN orders.total_amount ELSE 0 END), 0) as total")
+             ->selectRaw("COALESCE(SUM(CASE WHEN orders.payment_status = 'paid' THEN COALESCE(orders.paid_amount, orders.total_amount) ELSE 0 END), 0) as total")
             ->groupBy('orders.payment_method_id', 'payment_methods.name', 'payment_methods.bank_name')
             ->orderByDesc(DB::raw('total'))
             ->get();

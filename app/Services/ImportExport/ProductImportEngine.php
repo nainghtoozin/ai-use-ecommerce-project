@@ -293,7 +293,7 @@ class ProductImportEngine
                 }
 
                 if ($existingParent) {
-                    $existingType = strtolower($existingParent->type->value ?? '');
+                    $existingType = strtolower((string) $existingParent->type);
                     if ($existingType !== 'variable') {
                         $this->addError('Variants', $rowNum, 'parent_sku', $parentSku,
                             "Product SKU \"{$parentSku}\" is a Single Product and cannot have variants. Change the Product Type to Variable or remove this Variant row.");

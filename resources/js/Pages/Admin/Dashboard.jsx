@@ -50,6 +50,7 @@ export default function AdminDashboard({
     const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
     const [customStartDate, setCustomStartDate] = useState(startDate || '');
     const [customEndDate, setCustomEndDate] = useState(endDate || '');
+    const [customDateError, setCustomDateError] = useState('');
 
     const formatMoney = (amount) => formatCurrency(amount);
 
@@ -88,7 +89,15 @@ export default function AdminDashboard({
     };
 
     const handleCustomDateSubmit = () => {
-        if (!customStartDate || !customEndDate) return;
+        if (!customStartDate || !customEndDate) {
+            setCustomDateError(t('dashboard.invalid_date_range'));
+            return;
+        }
+        if (customStartDate > customEndDate) {
+            setCustomDateError(t('dashboard.end_date_after_start'));
+            return;
+        }
+        setCustomDateError('');
         router.get(adminUrl('/admin/dashboard'), {
             period: 'custom',
             start_date: customStartDate,
@@ -127,6 +136,7 @@ export default function AdminDashboard({
             icon: 'bi-cash-stack',
             color: 'emerald',
             subtitle: t('dashboard.verified_confirmed_payments'),
+            nowrap: true,
         },
         {
             label: t('dashboard.total_products'),
@@ -140,7 +150,7 @@ export default function AdminDashboard({
             value: lowStockCount || 0,
             icon: 'bi-exclamation-triangle',
             color: 'red',
-            subtitle: t('dashboard.less_than_10_items'),
+            subtitle: t('dashboard.low_stock_in_stock'),
         },
         {
             label: t('dashboard.customers'),
@@ -307,13 +317,13 @@ export default function AdminDashboard({
                 )}
 
                 {/* Period Filter */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {periods.map((period) => (
                             <button
                                 key={period.value}
                                 onClick={() => handlePeriodChange(period.value)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                                     selectedPeriod === period.value
                                         ? 'bg-blue-600 text-white shadow-md'
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -325,26 +335,25 @@ export default function AdminDashboard({
                     </div>
 
                     {showCustomDate && (
-                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                            <input
-                                type="date"
-                                value={customStartDate}
-                                onChange={(e) => setCustomStartDate(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <span className="text-gray-500 dark:text-gray-400 text-sm">{t('general.to') || 'to'}</span>
-                            <input
-                                type="date"
-                                value={customEndDate}
-                                onChange={(e) => setCustomEndDate(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <button
-                                onClick={handleCustomDateSubmit}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                            >
-                                {t('general.apply') || 'Apply'}
-                            </button>
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3">
+                                <label className="flex-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    {t('dashboard.from_date')}
+                                    <input type="date" value={customStartDate} max={customEndDate || undefined}
+                                        onChange={(e) => { setCustomStartDate(e.target.value); setCustomDateError(''); }}
+                                        className="mt-1 w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </label>
+                                <label className="flex-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    {t('dashboard.to_date')}
+                                    <input type="date" value={customEndDate} min={customStartDate || undefined}
+                                        onChange={(e) => { setCustomEndDate(e.target.value); setCustomDateError(''); }}
+                                        className="mt-1 w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </label>
+                                <button onClick={handleCustomDateSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap">
+                                    {t('dashboard.apply_date_range')}
+                                </button>
+                            </div>
+                            {customDateError && <p className="mt-2 text-xs font-medium text-red-600">{customDateError}</p>}
                         </div>
                     )}
 
@@ -394,9 +403,9 @@ export default function AdminDashboard({
                                         <div className={`p-2 lg:p-2.5 rounded-lg shrink-0 ${colors.bg}`}>
                                             <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 break-words">{stat.value}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{stat.label}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className={`font-bold text-gray-900 dark:text-gray-100 tabular-nums leading-tight ${stat.nowrap ? 'whitespace-nowrap text-[clamp(0.8rem,2.8vw,1.25rem)]' : 'text-lg sm:text-xl break-words'}`}>{stat.value}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{stat.label}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -479,6 +488,7 @@ export default function AdminDashboard({
                                             <th className="px-5 py-3 font-medium">{t('orders.order')}</th>
                                             <th className="px-5 py-3 font-medium">{t('orders.customer')}</th>
                                             <th className="px-5 py-3 font-medium">{t('orders.amount')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('dashboard.payment_status')}</th>
                                             <th className="px-5 py-3 font-medium">{t('orders.status')}</th>
                                             <th className="px-5 py-3 font-medium">{t('dashboard.time')}</th>
                                         </tr>
@@ -500,6 +510,11 @@ export default function AdminDashboard({
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatMoney(order.total_amount)}</span>
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : order.payment_status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {order.payment_status || 'pending'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
