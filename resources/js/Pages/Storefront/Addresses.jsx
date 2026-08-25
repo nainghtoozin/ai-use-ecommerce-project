@@ -13,6 +13,7 @@ export default function Addresses({ tenant, addresses, cities, customer }) {
     const storeSlug = tenant.slug;
     const { props } = usePage();
     const auth = props.auth;
+    const storefront = props.storefront;
     const flash = props.flash || {};
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -109,7 +110,7 @@ export default function Addresses({ tenant, addresses, cities, customer }) {
 
     return (
         <ShopLayout>
-            <Head title={`My Addresses - ${tenant.name}`} />
+            <Head title={`My Addresses - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex items-center justify-between mb-8">
@@ -127,7 +128,7 @@ export default function Addresses({ tenant, addresses, cities, customer }) {
                 )}
 
                 {!showForm && (
-                    <button onClick={openCreate} className="mb-6 inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-base font-medium transition-colors shadow-sm">
+                     <button onClick={openCreate} style={{ backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }} className="mb-6 inline-flex items-center gap-2 px-5 py-3 text-white text-base font-medium transition-colors shadow-sm">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         Add New Address
                     </button>
@@ -200,7 +201,7 @@ export default function Addresses({ tenant, addresses, cities, customer }) {
                                 </div>
                             </div>
                             <div className="flex gap-3 pt-2">
-                                <button type="submit" disabled={processing} className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 text-base font-medium transition-colors">
+                                 <button type="submit" disabled={processing} style={{ backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }} className="px-6 py-3 text-white disabled:opacity-50 text-base font-medium transition-colors">
                                     {processing ? 'Saving...' : (editingId ? 'Update Address' : 'Save Address')}
                                 </button>
                                 <button type="button" onClick={closeForm} className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 text-base font-medium transition-colors">

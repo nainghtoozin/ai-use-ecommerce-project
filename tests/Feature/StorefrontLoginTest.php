@@ -45,6 +45,7 @@ class StorefrontLoginTest extends TestCase
                 $table->string('email')->nullable();
                 $table->string('logo')->nullable();
                 $table->string('status')->default('active');
+                $table->timestamp('activated_at')->nullable();
                 $table->json('settings')->nullable();
                 $table->unsignedBigInteger('subscription_plan_id')->nullable();
                 $table->timestamp('expires_at')->nullable();

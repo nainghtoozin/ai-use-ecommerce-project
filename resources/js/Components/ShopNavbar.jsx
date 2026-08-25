@@ -6,7 +6,7 @@ import NotificationBell from '@/Components/NotificationBell';
 
 export default function ShopNavbar() {
     const { props, url } = usePage();
-    const { auth, website_info, cart: serverCart, tenant } = props;
+    const { auth, website_info, storefront, cart: serverCart, tenant } = props;
     const storeSlug = tenant?.slug;
 
     function storeUrl(path) {
@@ -31,8 +31,9 @@ export default function ShopNavbar() {
 
     const userMenuRef = useRef(null);
 
-    const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.site_name || 'My Store';
+    const logoSource = storefront?.identity?.logo_url || website_info?.logo;
+    const logoUrl = assetUrl(logoSource, false);
+    const siteName = storefront?.identity?.site_title || storefront?.identity?.name || tenant?.name || website_info?.site_name || 'My Store';
 
     useEffect(() => {
         const handleCartUpdate = (e) => {
@@ -51,11 +52,19 @@ export default function ShopNavbar() {
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                setMobileMenuOpen(false);
+                setUserMenuOpen(false);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
 
         return () => {
             window.removeEventListener('cart-updated', handleCartUpdate);
             window.removeEventListener('wishlist-updated', handleWishlistUpdate);
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEscape);
         };
     }, []);
 
@@ -76,30 +85,36 @@ export default function ShopNavbar() {
 
     const logout = () => router.post('/logout', { context: storeSlug ? 'storefront' : '', store_slug: storeSlug });
 
+    const configuredNavLinks = (storefront?.navigation?.items || []).map((item) => ({
+        label: item.label,
+        href: storeUrl(item.path),
+        icon: item.icon || 'bi-link-45deg',
+    }));
+
     const navLinks = storeSlug
-        ? [
+        ? (storefront?.navigation?.items?.length ? configuredNavLinks : [
             { label: 'Home', href: storeUrl('/'), icon: 'bi-house-door' },
             { label: 'Products', href: storeUrl('/products'), icon: 'bi-grid' },
             { label: 'My Orders', href: `/store/${storeSlug}/customer/orders`, icon: 'bi-receipt' },
-        ]
+        ])
         : [
             { label: 'Features', href: '/#features', icon: 'bi-star' },
             { label: 'How It Works', href: '/#how-it-works', icon: 'bi-gear' },
         ];
 
     return (
-        <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm">
+        <nav aria-label="Store navigation" style={{ backgroundColor: 'var(--storefront-color-surface, #FFFFFF)', borderColor: 'var(--storefront-color-border, #E5E7EB)', boxShadow: 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .1))' }} className="border-b sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
                 <div className="flex items-center justify-between h-14 lg:h-16 gap-2 lg:gap-4">
                     <Link href={storeUrl('/')} className="flex items-center gap-2 flex-shrink-0">
                         {logoUrl ? (
                             <img src={logoUrl} alt={siteName} className="h-8 w-auto lg:h-9" />
                         ) : (
-                            <div className="h-8 w-8 lg:h-9 lg:w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
-                                <i className="bi bi-shop text-white text-base lg:text-lg"></i>
+                            <div className="h-8 w-8 lg:h-9 lg:w-9 rounded-lg flex items-center justify-center text-white text-sm lg:text-base font-bold" style={{ backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}>
+                                {siteName.trim().charAt(0).toUpperCase() || 'S'}
                             </div>
                         )}
-                        <span className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 hidden lg:block">{siteName}</span>
+                        {storefront?.navigation?.show_store_name !== false && <span className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 hidden lg:block">{siteName}</span>}
                     </Link>
 
                     <div className="hidden md:flex items-center gap-1">
@@ -107,10 +122,11 @@ export default function ShopNavbar() {
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                aria-current={isActive(item.href) ? 'page' : undefined}
                                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                     isActive(item.href)
                                         ? 'text-white'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                        : 'text-[var(--storefront-color-text-muted,#64748B)] hover:bg-[var(--storefront-color-surface-muted,#F1F5F9)] hover:text-[var(--storefront-color-text,#111827)]'
                                 }`}
                                 style={isActive(item.href) ? { backgroundColor: 'var(--theme-color, #3B82F6)' } : {}}
                             >
@@ -121,11 +137,16 @@ export default function ShopNavbar() {
                     </div>
 
                     <div className="flex items-center gap-1">
+                        {storeSlug && storefront?.navigation?.show_search !== false && (
+                            <Link href={storeUrl('/products')} aria-label="Search products" className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors" title="Search products">
+                                <i className="bi bi-search text-lg"></i>
+                            </Link>
+                        )}
                         {storeSlug && website_info?.enable_wishlist !== false && (
                             <Link
                                 href="/wishlist"
                                 className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
-                                title="Wishlist"
+                                title="Wishlist" aria-label="Wishlist"
                             >
                                 <Heart className="w-5 h-5" />
                                 {wishlistCount > 0 && (
@@ -139,7 +160,7 @@ export default function ShopNavbar() {
                             <Link
                                 href={storeUrl('/cart')}
                                 className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
-                                title="Shopping Cart"
+                                title="Shopping Cart" aria-label="Shopping Cart"
                             >
                                 <i className="bi bi-cart3 text-xl"></i>
                                 {cartCount > 0 && (
@@ -161,7 +182,7 @@ export default function ShopNavbar() {
                                     <i className="bi bi-chat-dots text-xl"></i>
                                 </Link>
                                 <div ref={userMenuRef} className="relative">
-                                    <button
+                                    <button type="button" aria-expanded={userMenuOpen} aria-haspopup="menu" aria-label="Open account menu"
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                         className="flex items-center gap-2 px-1.5 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                                     >
@@ -188,7 +209,7 @@ export default function ShopNavbar() {
                                                         <i className="bi bi-receipt text-gray-400 dark:text-gray-500"></i>
                                                         My Orders
                                                     </Link>
-                                                    {storeSlug && auth?.user?.permissions?.includes('dashboard.view') && (
+                                                     {storeSlug && auth?.user?.is_admin && (
                                                         <>
                                                             <div className="border-t border-gray-100 dark:border-gray-800"></div>
                                                             <Link href={`/store/${storeSlug}/admin/dashboard`} className="flex items-center gap-3 px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors font-medium">
@@ -249,7 +270,7 @@ export default function ShopNavbar() {
                             </div>
                         )}
 
-                        <button
+                        <button type="button" aria-expanded={mobileMenuOpen} aria-controls="store-mobile-menu" aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                         >
@@ -260,15 +281,16 @@ export default function ShopNavbar() {
             </div>
 
             {mobileMenuOpen && (
-                <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+                <div id="store-mobile-menu" className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto">
                     <div className="px-4 py-3 space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                             {navLinks.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}
+                                    aria-current={isActive(item.href) ? 'page' : undefined}
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                     className={`flex min-w-0 items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-center break-words transition-colors ${
                                         isActive(item.href)
                                             ? 'text-white'
                                             : 'text-gray-600 hover:bg-gray-100'

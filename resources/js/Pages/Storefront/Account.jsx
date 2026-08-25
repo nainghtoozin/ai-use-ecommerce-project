@@ -618,13 +618,13 @@ function SecuritySection({ tenant, customer, status }) {
 }
 
 export default function Account({ tenant, customer, orderStats, recentOrders, mustVerifyEmail, status, defaultTab }) {
-    const { auth } = usePage().props;
+    const { auth, storefront } = usePage().props;
     const storeSlug = tenant.slug;
     const [activeTab, setActiveTab] = useState(defaultTab || 'dashboard');
 
     return (
         <ShopLayout>
-            <Head title={`My Account - ${tenant.name}`} />
+            <Head title={`My Account - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

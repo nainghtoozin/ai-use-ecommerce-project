@@ -1,11 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function VariantSelectModal({ product, onClose, onAddToCart }) {
-    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const { platform_setting, website_info, storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
+    const cc = getCurrencyConfig(platform_setting, website_info);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
     const [quantity, setQuantity] = useState(1);
+
+    useEffect(() => {
+        const closeOnEscape = (event) => event.key === 'Escape' && onClose();
+        document.addEventListener('keydown', closeOnEscape);
+        return () => document.removeEventListener('keydown', closeOnEscape);
+    }, [onClose]);
 
     const variants = useMemo(() => {
         return (product.variants || []).filter(v => v.status === 'active');
@@ -24,7 +32,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     }, [selectedVariant]);
 
     function getStatusLabel(stock, threshold) {
-        if (stock <= 0) return { label: 'Out of Stock', color: 'text-red-500' };
+        if (stock <= 0) return { label: labels.out_of_stock || 'Out of Stock', color: 'text-red-500' };
         if (stock <= threshold) return { label: 'Low Stock', color: 'text-orange-500' };
         return { label: 'In Stock', color: 'text-green-600' };
     }
@@ -55,17 +63,21 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            role="presentation"
             onClick={onClose}
         >
             <div
                 className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="variant-selector-title"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-2">
+                    <h2 id="variant-selector-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-2">
                         {product.name}
                     </h2>
-                    <button
+                    <button type="button" aria-label="Close variant selector"
                         onClick={onClose}
                         className="text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none p-1"
                     >
@@ -125,7 +137,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                             {v.price != null ? formatCurrency(v.price, cc) : '—'}
                                                         </span>
                                                         <span className={`text-[10px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
-                                                            {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'Low Stock' : 'In Stock') : 'Out of Stock'}
+                                                            {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'Low Stock' : 'In Stock') : (labels.out_of_stock || 'Out of Stock')}
                                                         </span>
                                                     </div>
                                                 </label>
@@ -186,7 +198,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                 disabled={!canAddToCart}
                                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Add to Cart
+                                {labels.add_to_cart || 'Add to Cart'}
                             </button>
                         </div>
                     ) : (

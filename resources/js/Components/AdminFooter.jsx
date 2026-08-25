@@ -1,9 +1,9 @@
 import { usePage } from '@inertiajs/react';
 
 export default function AdminFooter() {
-    const { website_info, platform_setting, auth } = usePage().props;
+    const { website_info, platform_setting, auth, tenant } = usePage().props;
     const isSuperAdmin = auth?.user?.is_superadmin;
-    const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (website_info?.site_name || 'My Store');
+    const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (tenant?.name || website_info?.site_name || 'My Store');
     const supportEmail = isSuperAdmin ? (platform_setting?.support_email || null) : null;
     const year = new Date().getFullYear();
 

@@ -78,12 +78,12 @@ function getBasePrice(product) {
     return product.price ?? 0;
 }
 
-const StockBadge = memo(function StockBadge({ status }) {
+const StockBadge = memo(function StockBadge({ status, labels = {} }) {
     if (status === 'out_of_stock') {
         return (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
                 <span className="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-full shadow-lg">
-                    Out of Stock
+                    {labels.out_of_stock || 'Out of Stock'}
                 </span>
             </div>
         );
@@ -202,9 +202,13 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     );
 });
 
-const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVariant, addingId = null }) {
+const ProductCard = memo(function ProductCard({ product, variant = null, onAddToCart, onSelectVariant, addingId = null }) {
     const { props } = usePage();
-    const { auth, website_info, wishlisted_ids = [], tenant } = props;
+    const { auth, website_info, storefront, wishlisted_ids = [], tenant } = props;
+    const labels = storefront?.content?.labels || {};
+    const tokens = storefront?.design || {};
+    const buttonStyle = tokens.buttons?.primary_style || 'solid';
+    const productVariant = variant || tokens.product_cards?.variant || 'standard';
     const cc = getCurrencyConfig(props.platform_setting, props.website_info);
     const wishlistEnabled = website_info?.enable_wishlist !== false;
     const { toggleWishlist } = useWishlist();
@@ -213,6 +217,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
         : `/client/product/${product.id}`;
 
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [wishlistAnim, setWishlistAnim] = useState(false);
     const [optimisticWishlisted, setOptimisticWishlisted] = useState(
@@ -266,21 +271,24 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
     };
 
     return (
-        <div className="group relative bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800/80 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col"
+        <div style={{ borderRadius: 'var(--storefront-radius-card, 0.75rem)', boxShadow: 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .1))' }} className="group relative min-w-0 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800/80 hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col"
              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; }}
              onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
         >
             <Link href={productUrl} className="block">
-                <div className="relative h-[140px] sm:h-[160px] lg:h-[180px] bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                    {product.photo1_url ? (
+                <div className={`relative ${productVariant === 'compact' ? 'h-[112px] sm:h-[136px] lg:h-[150px]' : productVariant === 'image-focused' ? 'h-[170px] sm:h-[200px] lg:h-[230px]' : 'h-[140px] sm:h-[160px] lg:h-[180px]'} bg-gray-100 dark:bg-gray-800 overflow-hidden`}>
+                    {product.photo1_url && !imageError ? (
                         <>
                             <img
                                 src={product.photo1_url}
                                 alt={product.name}
+                                width="360"
+                                height="360"
                                 className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
                                     imageLoaded ? 'opacity-100' : 'opacity-0'
                                 }`}
                                 onLoad={() => setImageLoaded(true)}
+                                onError={() => setImageError(true)}
                             />
                             {!imageLoaded && (
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -297,7 +305,7 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
                         </div>
                     )}
 
-                    <StockBadge status={stockStatus} />
+                    <StockBadge status={stockStatus} labels={labels} />
 
                     {!isOutOfStock && (
                         <ProductTypeBadge isVariable={product.is_variable} isCombo={product.is_combo} />
@@ -373,14 +381,14 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
                             className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
                         >
                             <i className="bi bi-x-circle text-xs"></i>
-                            Out of Stock
+                            {labels.out_of_stock || 'Out of Stock'}
                         </button>
                     ) : (
                         <button
                             onClick={handleAddToCart}
                             disabled={addingId === product.id || isAdding}
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-white rounded-lg text-sm font-semibold active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow"
-                            style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
+                            className={`w-full flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow ${buttonStyle === 'outline' || buttonStyle === 'ghost' ? '' : 'text-white'}`}
+                            style={{ backgroundColor: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'transparent' : 'var(--theme-color, #3B82F6)', color: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'var(--theme-color, #3B82F6)' : '#fff', border: buttonStyle === 'outline' ? '1px solid var(--theme-color, #3B82F6)' : '1px solid transparent', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}
                             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                         >
@@ -395,20 +403,20 @@ const ProductCard = memo(function ProductCard({ product, onAddToCart, onSelectVa
                             ) : (
                                 <>
                                     <i className="bi bi-cart-plus text-xs"></i>
-                                    Add to Cart
+                                    {labels.add_to_cart || 'Add to Cart'}
                                 </>
                             )}
                         </button>
                     )}
                     <Link
                         href={productUrl}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border rounded-lg text-xs font-semibold transition-all duration-200"
-                        style={{ borderColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)', color: 'var(--theme-color, #3B82F6)' }}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border text-xs font-semibold transition-all duration-200"
+                        style={{ borderColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)', color: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}
                         onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; e.currentTarget.style.backgroundColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.06)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)'; e.currentTarget.style.backgroundColor = ''; }}
                     >
                         <i className="bi bi-eye text-xs"></i>
-                        View Details
+                        {labels.view_product || 'View Product'}
                     </Link>
                 </div>
             </div>

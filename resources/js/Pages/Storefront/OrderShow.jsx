@@ -35,6 +35,7 @@ function getStatusIndex(status) {
 export default function OrderShow({ tenant, order }) {
     const storeSlug = tenant.slug;
     const { props } = usePage();
+    const storefront = props.storefront;
     const cc = getCurrencyConfig(props.platform_setting, props.website_info);
     const flash = props.flash || {};
     const { data, setData, post, processing, reset } = useForm({
@@ -62,7 +63,7 @@ export default function OrderShow({ tenant, order }) {
 
     return (
         <ShopLayout>
-            <Head title={`${order.invoice_number} - ${tenant.name}`} />
+            <Head title={`${order.invoice_number} - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {flash.success && (

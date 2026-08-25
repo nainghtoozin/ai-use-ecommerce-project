@@ -217,6 +217,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(IdentityProjection::class);
         $this->app->singleton(IdentityContext::class, fn() => IdentityContext::empty());
 
+        $this->app->singleton(\App\Services\StorefrontConfigurationResolver::class);
+        $this->app->singleton(\App\Services\StorefrontRevisionService::class);
+
         $this->app->singleton(\Inertia\ResponseFactory::class, function ($app) {
             return new \App\Inertia\InertiaResponseFactory;
         });

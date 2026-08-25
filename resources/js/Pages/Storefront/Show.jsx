@@ -5,6 +5,7 @@ import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
 import { useCart } from '@/Hooks/useCart';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { sanitizeStorefrontHtml } from '@/Utils/sanitizeStorefrontHtml';
 
 const OPTION_STYLES = [
     'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-400 hover:bg-blue-100',
@@ -21,6 +22,9 @@ function safeNum(val) {
 }
 
 export default function StoreShow({ tenant, product, promotion, detail }) {
+    const { storefront } = usePage().props;
+    const themeTokens = storefront?.design || {};
+    const labels = storefront?.content?.labels || {};
     const { addToCart, addingId } = useCart();
     const [selectedOptions, setSelectedOptions] = useState({});
     const [quantity, setQuantity] = useState(1);
@@ -102,7 +106,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
         if (isVariable && !selectedVariant && optionKeys.length > 0) {
             return (
                 <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full text-[11px] font-medium">
-                    Select options
+                    {labels.select_options || 'Select options'}
                 </span>
             );
         }
@@ -110,7 +114,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
             return (
                 <span className={`inline-flex items-center ${compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs'} bg-red-50 text-red-600 rounded-full font-medium`}>
                     <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Out of Stock
+                    {labels.out_of_stock || 'Out of Stock'}
                 </span>
             );
         }
@@ -159,16 +163,17 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                 } ${
                     !allOptionsSelected || availableStock <= 0
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm hover:shadow-md disabled:opacity-50'
+                        : 'text-white shadow-sm hover:shadow-md disabled:opacity-50'
                 }`}
+                style={{ backgroundColor: !allOptionsSelected || availableStock <= 0 ? undefined : 'var(--theme-color, #3B82F6)', borderRadius: `var(--storefront-radius-button, ${themeTokens.radius?.button || '0.5rem'})` }}
             >
                 {!allOptionsSelected ? (
                     <>
                         <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Select options
+                        {labels.select_options || 'Select options'}
                     </>
                 ) : availableStock <= 0 ? (
-                    'Out of Stock'
+                    labels.out_of_stock || 'Out of Stock'
                 ) : added ? (
                     <>
                         <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -182,7 +187,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                 ) : (
                     <>
                         <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" /></svg>
-                        Add to Cart
+                         {labels.add_to_cart || 'Add to Cart'}
                     </>
                 )}
             </button>
@@ -191,7 +196,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
 
     return (
         <ShopLayout>
-            <Head title={`${product.seo_title || product.name} - ${tenant.name}`}>
+            <Head title={`${product.seo_title || product.name} - ${storefront?.identity?.site_title || tenant.name}`}>
                 <meta name="description" content={product.seo_description || product.short_description || ''} />
                 {product.seo_keywords && <meta name="keywords" content={product.seo_keywords} />}
                 <meta property="og:title" content={`${product.seo_title || product.name} - ${tenant.name}`} />
@@ -303,7 +308,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                             <div className="flex items-center justify-between gap-3 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800">
                                 <div>
                                     {isVariable && !allOptionsSelected ? (
-                                        <span className="text-base text-gray-300 font-medium">Select options</span>
+                                        <span className="text-base text-gray-300 font-medium">{labels.select_options || 'Select options'}</span>
                                     ) : (
                                         <div className="flex items-baseline gap-2 flex-wrap">
                                             <span className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-gray-100">
@@ -328,7 +333,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
 
                         {/* Short Description */}
                         {(product.short_description || !product.description) && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: product.short_description || 'No short description available.' }} />
+                            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: sanitizeStorefrontHtml(product.short_description || 'No short description available.') }} />
                         )}
 
                         {/* Variant Options */}
@@ -353,9 +358,10 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                                         key={value}
                                                         onClick={() => handleOptionChange(key, value)}
                                                         disabled={!hasCombination}
-                                                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                                                        style={isSel ? { borderColor: 'var(--theme-color, #3B82F6)', backgroundColor: 'color-mix(in srgb, var(--theme-color, #3B82F6) 10%, transparent)', color: 'var(--theme-color, #3B82F6)' } : undefined}
+                                                        className={`px-3 py-1.5 border text-xs font-medium transition-all ${
                                                             isSel
-                                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200'
+                                                                ? 'ring-1 ring-[var(--theme-color,#3B82F6)]'
                                                                 : hasCombination
                                                                     ? OPTION_STYLES[(keyIdx + (optionValues[key] || []).indexOf(value)) % OPTION_STYLES.length]
                                                                     : 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
@@ -421,8 +427,8 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
 
                         {/* Description */}
                         <div className="mt-3">
-                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Product Description</h2>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed prose prose-xs max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: truncatedDescription }} />
+                            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">{labels.product_description || 'Product Description'}</h2>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed prose prose-xs max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeStorefrontHtml(truncatedDescription) }} />
                             {isLongDescription && (
                                 <button onClick={() => setShowDescriptionModal(true)} className="mt-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
                                     Read More
@@ -433,7 +439,7 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                         {/* Bundle Details (below purchase for combo) */}
                         {isCombo && detail?.combo_summary && (
                             <div className="mt-6 lg:mt-8">
-                                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Bundle Details</h2>
+                                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">{labels.bundle_details || 'Bundle Details'}</h2>
                                 <ComboViewDetail product={{
                                     ...product,
                                     combo_items: detail.combo_summary.items || [],
@@ -451,14 +457,14 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDescriptionModal(false)}>
                     <div className="relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-800">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Product Description</h3>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{labels.product_description || 'Product Description'}</h3>
                             <button onClick={() => setShowDescriptionModal(false)} className="p-1 hover:bg-gray-100 dark:bg-gray-800 rounded-md transition-colors">
                                 <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <div className="px-5 py-4 overflow-y-auto max-h-[75vh] text-xs text-gray-600 dark:text-gray-400 leading-relaxed prose prose-xs max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: product.description }} />
+                        <div className="px-5 py-4 overflow-y-auto max-h-[75vh] text-xs text-gray-600 dark:text-gray-400 leading-relaxed prose prose-xs max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeStorefrontHtml(product.description) }} />
                     </div>
                 </div>
             )}

@@ -23,6 +23,12 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\StorefrontSettingsController;
+use App\Http\Controllers\Admin\StorefrontMediaController;
+use App\Http\Controllers\Admin\StorefrontNavigationController;
+use App\Http\Controllers\Admin\StorefrontPromotionController;
+use App\Http\Controllers\Admin\StorefrontHomepageController;
+use App\Http\Controllers\Admin\StorefrontRevisionController;
 use App\Http\Controllers\Admin\WebsiteFaqController;
 use App\Http\Controllers\Admin\AdminNotificationSettingsController;
 use App\Http\Controllers\Admin\AdminReportController;
@@ -317,6 +323,31 @@ Route::prefix('store/{store_slug}/admin')
         // Website Info
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
         Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
+
+        // Storefront configuration
+        Route::get('/storefront', [StorefrontSettingsController::class, 'index'])->name('storefront.index');
+        Route::put('/storefront', [StorefrontSettingsController::class, 'update'])->name('storefront.update');
+        Route::get('/storefront/media', [StorefrontMediaController::class, 'index'])->name('storefront.media.index');
+        Route::post('/storefront/media', [StorefrontMediaController::class, 'store'])->name('storefront.media.store');
+        Route::patch('/storefront/media/{media}', [StorefrontMediaController::class, 'update'])->name('storefront.media.update')->whereNumber('media');
+        Route::delete('/storefront/media/{media}', [StorefrontMediaController::class, 'destroy'])->name('storefront.media.destroy')->whereNumber('media');
+        Route::post('/storefront/media/{media}/assign-hero', [StorefrontMediaController::class, 'assignHero'])->name('storefront.media.assign-hero')->whereNumber('media');
+        Route::post('/storefront/media/{media}/detach-hero', [StorefrontMediaController::class, 'detachHero'])->name('storefront.media.detach-hero')->whereNumber('media');
+        Route::post('/storefront/media/{media}/assign-logo', [StorefrontMediaController::class, 'assignLogo'])->name('storefront.media.assign-logo')->whereNumber('media');
+        Route::get('/storefront/navigation', [StorefrontNavigationController::class, 'index'])->name('storefront.navigation.index');
+        Route::put('/storefront/navigation', [StorefrontNavigationController::class, 'update'])->name('storefront.navigation.update');
+        Route::get('/storefront/homepage', [StorefrontHomepageController::class, 'index'])->name('storefront.homepage.index');
+        Route::put('/storefront/homepage', [StorefrontHomepageController::class, 'update'])->name('storefront.homepage.update');
+        Route::post('/storefront/publish', [StorefrontRevisionController::class, 'publish'])->name('storefront.publish');
+        Route::get('/storefront/revisions', [StorefrontRevisionController::class, 'index'])->name('storefront.revisions.index');
+        Route::post('/storefront/revisions/{revision}/restore', [StorefrontRevisionController::class, 'restore'])->name('storefront.revisions.restore')->whereNumber('revision');
+        Route::get('/storefront/revisions/compare', [StorefrontRevisionController::class, 'compare'])->name('storefront.revisions.compare');
+        Route::get('/storefront/promotions', [StorefrontPromotionController::class, 'index'])->name('storefront.promotions.index');
+        Route::post('/storefront/promotions', [StorefrontPromotionController::class, 'store'])->name('storefront.promotions.store');
+        Route::post('/storefront/promotions/reorder', [StorefrontPromotionController::class, 'reorder'])->name('storefront.promotions.reorder');
+        Route::post('/storefront/promotions/{promotion}', [StorefrontPromotionController::class, 'update'])->name('storefront.promotions.update')->whereNumber('promotion');
+        Route::delete('/storefront/promotions/{promotion}', [StorefrontPromotionController::class, 'destroy'])->name('storefront.promotions.destroy')->whereNumber('promotion');
+        Route::post('/storefront/promotions/{promotion}/toggle', [StorefrontPromotionController::class, 'toggle'])->name('storefront.promotions.toggle')->whereNumber('promotion');
 
         // Website FAQs
         Route::get('/faqs', [WebsiteFaqController::class, 'index'])->name('faqs.index');

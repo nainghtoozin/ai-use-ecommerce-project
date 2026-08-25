@@ -33,6 +33,11 @@
 
 /* ─── Theme Component Classes ─── */
 @layer components {
+    .storefront-root :focus-visible {
+        outline: 3px solid var(--storefront-color-primary, var(--theme-color, #3B82F6));
+        outline-offset: 2px;
+    }
+
     .btn-theme {
         background-color: var(--theme-color);
         color: white;
@@ -101,6 +106,14 @@
     .text-muted-foreground {
         color: var(--color-muted-foreground);
     }
+}
+
+.storefront-root :is(h1, h2, h3, h4) {
+    font-weight: var(--storefront-heading-weight, 700);
+}
+
+.storefront-root {
+    line-height: var(--storefront-line-height, 1.5);
 }
 
 @keyframes fade-in {

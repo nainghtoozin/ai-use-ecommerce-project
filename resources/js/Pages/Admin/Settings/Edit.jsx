@@ -27,7 +27,6 @@ const TABS = [
   { id: 'social', label: 'Social Media', icon: 'bi-share' },
   { id: 'seo', label: 'SEO', icon: 'bi-search' },
   { id: 'policies', label: 'Policies', icon: 'bi-file-text' },
-  { id: 'homepage', label: 'Homepage', icon: 'bi-house' },
   { id: 'footer', label: 'Footer', icon: 'bi-layout-text-window-reverse' },
   { id: 'faq', label: 'FAQ', icon: 'bi-question-circle', href: '/admin/faqs', external: true },
   { id: 'system', label: 'System', icon: 'bi-sliders' },
@@ -326,7 +325,7 @@ export default function SettingsEdit({ settings = {} }) {
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">General Settings</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField('site_name', 'Site Name')}
+                    {renderField('site_name', 'Website Title (optional)')}
                     {renderField('site_tagline', 'Site Tagline')}
                     <div className="col-span-1 md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site Description</label>

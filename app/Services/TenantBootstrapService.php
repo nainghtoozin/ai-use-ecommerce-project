@@ -19,6 +19,7 @@ use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TenantBootstrapService
 {
@@ -73,6 +74,10 @@ class TenantBootstrapService
                 $this->createDefaultPaymentMethods($tenant);
                 $this->createDefaultWarehouse($tenant);
                 $this->seedDefaultFaqs($tenant);
+
+                if (Schema::hasTable('storefronts')) {
+                    app(StorefrontConfigurationResolver::class)->provision($tenant);
+                }
 
                 TenantCreated::dispatch($tenant, $owner);
 

@@ -3,8 +3,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 
 export default function StorefrontRegister() {
-    const { tenant } = usePage().props;
-    const { errors } = usePage().props;
+    const { tenant, storefront, errors } = usePage().props;
     const { data, setData, post, processing, reset } = useForm({
         name: '',
         email: '',
@@ -25,7 +24,7 @@ export default function StorefrontRegister() {
 
     return (
         <GuestLayout>
-            <Head title={`Register - ${tenant.name}`} />
+            <Head title={`Register - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="mb-6 text-center">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">

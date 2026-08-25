@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { ChevronDown, Search } from 'lucide-react';
+import { sanitizeStorefrontHtml } from '@/Utils/sanitizeStorefrontHtml';
 
 function FaqItem({ faq, isOpen, toggle }) {
     return (
@@ -11,6 +12,7 @@ function FaqItem({ faq, isOpen, toggle }) {
                 onClick={toggle}
                 className="w-full flex items-center justify-between py-4 px-5 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 aria-expanded={isOpen}
+                aria-controls={`faq-answer-${faq.id}`}
             >
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100 pr-4">{faq.question}</span>
                 <ChevronDown
@@ -18,10 +20,10 @@ function FaqItem({ faq, isOpen, toggle }) {
                 />
             </button>
             {isOpen && (
-                <div className="px-5 pb-4">
+                 <div id={`faq-answer-${faq.id}`} className="px-5 pb-4">
                     <div
                         className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: faq.answer }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeStorefrontHtml(faq.answer) }}
                     />
                 </div>
             )}
@@ -30,6 +32,7 @@ function FaqItem({ faq, isOpen, toggle }) {
 }
 
 export default function StoreFaq({ tenant, faqs = [], categories = {} }) {
+    const { storefront } = usePage().props;
     const [openIndex, setOpenIndex] = useState(null);
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
@@ -72,7 +75,7 @@ export default function StoreFaq({ tenant, faqs = [], categories = {} }) {
 
     return (
         <ShopLayout>
-            <Head title={`FAQ - ${tenant?.name || 'Store'}`} />
+            <Head title={`FAQ - ${storefront?.identity?.site_title || tenant?.name || 'Store'}`} />
 
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="text-center mb-10">

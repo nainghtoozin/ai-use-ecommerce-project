@@ -1,3 +1,5 @@
+import { sanitizeStorefrontHtml } from '@/Utils/sanitizeStorefrontHtml';
+
 export default function RichContent({ content, className = '' }) {
     if (!content) {
         return (
@@ -26,7 +28,7 @@ export default function RichContent({ content, className = '' }) {
                 prose-td:px-4 prose-td:py-3 prose-td:text-sm
                 prose-hr:border-gray-200 dark:prose-hr:border-gray-700
                 ${className}`}
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeStorefrontHtml(content) }}
         />
     );
 }

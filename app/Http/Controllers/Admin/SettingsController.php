@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateWebsiteSettingsRequest;
 use App\Models\WebsiteInfo;
+use App\Models\Storefront;
 use App\Services\ImageService;
+use App\Services\StorefrontRevisionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -13,7 +15,8 @@ use Inertia\Inertia;
 class SettingsController extends Controller
 {
     public function __construct(
-        private readonly ImageService $imageService
+        private readonly ImageService $imageService,
+        private readonly StorefrontRevisionService $revisionService,
     ) {}
 
     public function edit(): \Inertia\Response
@@ -36,6 +39,10 @@ class SettingsController extends Controller
         }
 
         $info = WebsiteInfo::firstWhere('tenant_id', tenant()->id);
+        $storefront = Storefront::first();
+        if ($storefront) {
+            $this->revisionService->prepareDraft($storefront);
+        }
         if (!$info) {
             $info = new WebsiteInfo();
             $info->tenant_id = tenant()->id;
@@ -155,6 +162,9 @@ class SettingsController extends Controller
         $info->address_info = $addressInfo;
         $info->footer_settings = $footerSettings;
         $info->save();
+        if ($storefront) {
+            $this->revisionService->syncDraft($storefront);
+        }
 
         WebsiteInfo::clearCache();
         Cache::forget('categories');

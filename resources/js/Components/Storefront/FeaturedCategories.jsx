@@ -1,34 +1,39 @@
 import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 
-export default function FeaturedCategories({ categories }) {
-    const { tenant } = usePage().props;
+export default function FeaturedCategories({ categories, title = 'Categories', description = '', variant = null }) {
+    const { tenant, storefront } = usePage().props;
 
     if (!categories?.length) return null;
 
+    const layout = variant || storefront?.design?.variants?.categories || 'grid';
     return (
         <section id="categories-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
             <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Categories</h2>
+                <div><h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{title}</h2>{description && <p className="text-sm text-gray-500 mt-1">{description}</p>}</div>
                 <Link
                     href={tenant ? `/store/${tenant.slug}/products` : '/?categories=all'}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+                    className="text-sm font-medium transition-colors"
+                    style={{ color: 'var(--theme-color, #3B82F6)' }}
                 >
-                    View All &rarr;
+                    {storefront?.content?.labels?.view_all_products || 'View All'} &rarr;
                 </Link>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+            <div className={layout === 'horizontal' ? 'flex gap-2 overflow-x-auto snap-x pb-2' : `grid ${layout === 'compact' ? 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-8' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'} gap-2 sm:gap-3`}>
                 {categories.slice(0, 6).map((category) => (
                     <Link
                         key={category.id}
                         href={tenant ? `/store/${tenant.slug}/products?category=${category.id}` : `/?category=${category.id}`}
-                        className="group flex flex-col items-center gap-2 p-4 sm:p-5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
+                        style={{ borderRadius: 'var(--storefront-radius-card, 0.75rem)', borderColor: 'var(--storefront-color-border, #E5E7EB)' }}
+                        className={`group flex flex-col items-center gap-2 ${layout === 'horizontal' ? 'min-w-[8rem] snap-start' : ''} ${layout === 'compact' ? 'p-2' : 'p-4 sm:p-5'} bg-white dark:bg-gray-900 hover:shadow-md transition-all duration-200`}
                     >
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-gray-950 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--storefront-color-surface-muted,#F9FAFB)] flex items-center justify-center transition-colors">
                             {category.image ? (
                                 <img
                                     src={assetUrl(category.image)}
                                     alt={category.name}
+                                    width="40"
+                                    height="40"
                                     className="w-8 h-8 sm:w-10 sm:h-10 object-contain group-hover:scale-110 transition-transform duration-300"
                                     loading="lazy"
                                 />

@@ -15,7 +15,9 @@ export default function BackToTopButton() {
 
     return (
         <button
+            type="button"
             onClick={scrollToTop}
+            tabIndex={visible ? 0 : -1}
             className={`fixed bottom-6 right-6 z-50 flex items-center justify-center w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 ${
                 visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
             }`}

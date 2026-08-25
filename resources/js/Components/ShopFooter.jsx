@@ -4,21 +4,27 @@ import { assetUrl } from '@/Utils/helpers';
 import ContactDrawer from '@/Components/ContactDrawer';
 
 function InfoModal({ open, onClose, title, children }) {
+    useEffect(() => {
+        if (!open) return undefined;
+        const closeOnEscape = (event) => event.key === 'Escape' && onClose();
+        document.addEventListener('keydown', closeOnEscape);
+        return () => document.removeEventListener('keydown', closeOnEscape);
+    }, [open, onClose]);
     if (!open) return null;
     return (
         <>
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="fixed inset-x-4 bottom-0 z-50 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[480px] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[70vh] sm:max-h-[60vh] flex flex-col animate-slide-up">
+            <div role="dialog" aria-modal="true" aria-labelledby="store-info-modal-title" className="fixed inset-x-4 bottom-0 z-50 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[480px] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[70vh] sm:max-h-[60vh] flex flex-col animate-slide-up">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-                    <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                     <h3 id="store-info-modal-title" className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+                     <button type="button" aria-label="Close dialog" onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                         <i className="bi bi-x-lg text-xs"></i>
                     </button>
                 </div>
                 <div className="flex-1 overflow-y-auto px-5 py-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
-                    {children}
-                </div>
-            </div>
+                     {children}
+                 </div>
+             </div>
         </>
     );
 }
@@ -46,7 +52,7 @@ function BackToTop() {
 }
 
 export default function ShopFooter() {
-    const { website_info, tenant } = usePage().props;
+    const { website_info, storefront, tenant } = usePage().props;
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [infoModal, setInfoModal] = useState(null);
 
@@ -54,8 +60,9 @@ export default function ShopFooter() {
     const storeUrl = (path) => `/store/${storeSlug}${path}`;
 
     const fs = website_info?.footer_settings || {};
-    const logoUrl = assetUrl(website_info?.footer_logo_url || website_info?.logo);
-    const siteName = website_info?.site_name || tenant?.name || 'Store';
+    const logoSource = website_info?.footer_logo_url || storefront?.identity?.logo_url || website_info?.logo;
+    const logoUrl = assetUrl(logoSource, false);
+    const siteName = storefront?.identity?.site_title || storefront?.identity?.name || tenant?.name || website_info?.site_name || 'Store';
     const themeColor = 'var(--theme-color, #3B82F6)';
 
     const ci = website_info?.contact_info || {};
@@ -89,7 +96,6 @@ export default function ShopFooter() {
         { label: 'Products', href: storeUrl('/products') },
         { label: 'Categories', href: storeUrl('/products') },
         { label: 'New Arrivals', href: storeUrl('/products?sort=latest') },
-        { label: 'Best Sellers', href: storeUrl('/products?sort=best_sellers') },
     ];
 
     const customerServiceLinks = [
@@ -98,12 +104,12 @@ export default function ShopFooter() {
     ];
 
     const policyLinks = [
-        { label: 'Privacy Policy', href: storeUrl('/privacy-policy') },
-        { label: 'Terms & Conditions', href: storeUrl('/terms-and-conditions') },
-        { label: 'Shipping Policy', href: storeUrl('/shipping-policy') },
-        { label: 'Return Policy', href: storeUrl('/return-policy') },
-        { label: 'Refund Policy', href: storeUrl('/refund-policy') },
-    ];
+        { label: 'Privacy Policy', href: storeUrl('/privacy-policy'), field: 'privacy_policy' },
+        { label: 'Terms & Conditions', href: storeUrl('/terms-and-conditions'), field: 'terms_conditions' },
+        { label: 'Shipping Policy', href: storeUrl('/shipping-policy'), field: 'shipping_policy' },
+        { label: 'Return Policy', href: storeUrl('/return-policy'), field: 'return_policy' },
+        { label: 'Refund Policy', href: storeUrl('/refund-policy'), field: 'refund_policy' },
+    ].filter((link) => website_info?.[link.field]);
 
     return (
         <>
@@ -124,25 +130,23 @@ export default function ShopFooter() {
             </InfoModal>
             <BackToTop />
 
-            <footer className="bg-slate-900 text-white">
+            <footer style={{ backgroundColor: 'var(--storefront-color-text, #0F172A)' }} className="text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="py-8 lg:py-10 border-b border-slate-800">
+                    <div style={{ borderColor: 'color-mix(in srgb, var(--storefront-color-surface, #FFFFFF) 12%, transparent)' }} className="py-8 lg:py-10 border-b">
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 lg:gap-8">
                             {/* Brand */}
                             <div className="col-span-2 md:col-span-1 lg:col-span-1.5">
                                 <Link href={storeUrl('/')} className="flex items-center gap-2.5 mb-3">
                                     {logoUrl ? (
                                         <img src={logoUrl} alt={siteName} className="h-8 w-auto" />
-                                    ) : (
-                                        <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: themeColor }}>
-                                            <i className="bi bi-shop text-white text-base"></i>
+                                     ) : (
+                                        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: themeColor }}>
+                                            {siteName.trim().charAt(0).toUpperCase() || 'S'}
                                         </div>
                                     )}
                                     <span className="text-lg font-bold">{siteName}</span>
                                 </Link>
-                                <p className="text-slate-400 text-xs leading-relaxed">
-                                    {descPreview}
-                                </p>
+                                {descPreview && <p className="text-slate-400 text-xs leading-relaxed">{descPreview}</p>}
                                 {(descTruncated || extraText) && (
                                     <div className="flex items-center gap-2 mt-2">
                                         {descTruncated && (
@@ -212,7 +216,7 @@ export default function ShopFooter() {
                             </div>
 
                             {/* Policies */}
-                            <div>
+                            {policyLinks.length > 0 && <div>
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Policies</h4>
                                 <ul className="space-y-2">
                                     {policyLinks.map((link) => (
@@ -223,13 +227,12 @@ export default function ShopFooter() {
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
+                            </div>}
 
                             {/* Contact */}
-                            <div className="col-span-2 md:col-span-1">
+                             {hasMiniContact && <div className="col-span-2 md:col-span-1">
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Contact</h4>
-                                {hasMiniContact ? (
-                                    <div className="space-y-2 mb-3">
+                                 <div className="space-y-2 mb-3">
                                         {phone && (
                                             <a href={`tel:${phone}`} className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition-colors">
                                                 <i className="bi bi-telephone" style={{ color: themeColor, fontSize: '0.7rem' }}></i>
@@ -242,10 +245,7 @@ export default function ShopFooter() {
                                                 <span className="truncate">{supportEmail || contactEmail}</span>
                                             </a>
                                         )}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs text-slate-500 mb-3">No contact info</p>
-                                )}
+                                 </div>
                                 <button
                                     onClick={() => setDrawerOpen(true)}
                                     className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 hover:opacity-90"
@@ -255,14 +255,14 @@ export default function ShopFooter() {
                                     Contact Details
                                     <i className="bi bi-chevron-right" style={{ fontSize: '0.6rem' }}></i>
                                 </button>
-                            </div>
-                        </div>
+                             </div>}
+                         </div>
                     </div>
 
                     <div className="py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs">
+                        <div className="flex min-w-0 items-center gap-2 text-slate-500 text-xs">
                             <i className="bi bi-copyright"></i>
-                            <span>{footerCopyright}</span>
+                            <span className="min-w-0 break-words">{footerCopyright}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs">
                             <span className="text-slate-500">Powered by</span>

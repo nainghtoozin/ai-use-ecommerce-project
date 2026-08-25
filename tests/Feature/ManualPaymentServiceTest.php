@@ -281,6 +281,7 @@ class ManualPaymentServiceTest extends TestCase
             $table->id(); $table->string('slug')->unique();
             $table->string('name'); $table->string('email')->nullable();
             $table->string('status')->default('active');
+            $table->timestamp('activated_at')->nullable();
             $table->unsignedBigInteger('plan_id')->nullable();
             $table->json('settings')->nullable();
             $table->string('logo')->nullable();

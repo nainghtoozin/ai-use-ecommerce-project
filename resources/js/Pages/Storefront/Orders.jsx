@@ -21,6 +21,7 @@ const paymentColors = {
 };
 
 export default function Orders({ tenant, orders, filters = {} }) {
+    const { storefront } = usePage().props;
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const storeSlug = tenant.slug;
 
@@ -64,7 +65,7 @@ export default function Orders({ tenant, orders, filters = {} }) {
 
     return (
         <ShopLayout>
-            <Head title={`My Orders - ${tenant.name}`} />
+            <Head title={`My Orders - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex items-center justify-between mb-6">

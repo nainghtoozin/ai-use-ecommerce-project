@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
@@ -12,13 +12,12 @@ import {
     Users, UserCog, ShieldCheck, History,
     Bell, Globe, BellRing, Send, Settings,
     Store, User, LogOut, Menu, X,
-    ChevronLeft, ChevronRight, ChevronDown,
+    ChevronLeft, ChevronRight,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
     UserCircle, UserPlus, Activity, Shield, Archive,
     Rocket, HelpCircle,
+    LayoutTemplate, Images, LayoutList,
 } from 'lucide-react';
-
-const STORAGE_KEY = 'admin_sidebar_open_section';
 
 const SECTION_VIS_KEY = {
     'Overview': 'overview',
@@ -84,6 +83,7 @@ const iconMap = {
     Bell, Globe, BellRing, Send, Settings,
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
     UserCircle, UserPlus, Activity, Shield, Archive, Rocket, HelpCircle,
+    LayoutTemplate, Images, LayoutList,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -108,7 +108,7 @@ export default function AdminSidebar() {
     const [collapsed, setCollapsed] = useState(false);
 
     const brandLogo = isSuperAdmin ? platform_setting?.site_logo : website_info?.logo;
-    const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (website_info?.site_name || 'My Store');
+    const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (tenant?.name || website_info?.site_name || 'My Store');
     const logoUrl = assetUrl(brandLogo);
 
     const menuSections = useMemo(() => {
@@ -166,6 +166,33 @@ export default function AdminSidebar() {
                 visibilityKey: 'overview',
                 items: [
                     ...(can('dashboard.view') && isVis('overview') ? [{ label: t('navigation.dashboard'), href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
+                ]
+            },
+            {
+                title: 'Store',
+                items: [
+                    ...(can('settings.website') && isVis('settings.website') ? [
+                        { label: 'Storefront', href: '/admin/storefront', icon: 'LayoutTemplate' },
+                        { label: 'Homepage', href: '/admin/storefront/homepage', icon: 'LayoutList' },
+                    ] : []),
+                ]
+            },
+            {
+                title: 'Content',
+                items: [
+                    ...(can('settings.website') && isVis('settings.website') ? [
+                        { label: 'Header & Navigation', href: '/admin/storefront/navigation', icon: 'Menu' },
+                        { label: 'Promotions', href: '/admin/storefront/promotions', icon: 'Megaphone' },
+                        { label: 'Media', href: '/admin/storefront/media', icon: 'Images' },
+                    ] : []),
+                    ...(can('products.view') && isVis('content.faq') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
+                ]
+            },
+            {
+                title: 'Website',
+                items: [
+                    ...(can('settings.website') && isVis('settings.website') ? [{ label: 'Website Settings', href: '/admin/website-info/edit', icon: 'Globe' }] : []),
+                    ...(isOwner && isVis('settings.menu_visibility') ? [{ label: 'Menu Visibility', href: '/admin/settings/menu-visibility', icon: 'Layers' }] : []),
                 ]
             },
             {
@@ -248,22 +275,13 @@ export default function AdminSidebar() {
                 ]
             },
             {
-                title: t('navigation.content'),
-                visibilityKey: 'content',
-                items: [
-                    ...(can('products.view') && isVis('content.faq') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
-                ]
-            },
-            {
                 title: t('navigation.settings'),
                 visibilityKey: 'settings',
                 items: [
-                    ...(can('settings.website') && isVis('settings.website') ? [{ label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' }] : []),
                     ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
                     ...(can('settings.telegram') && isVis('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
                     ...(isOwner && isVis('settings.setup_guide') ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),
                     ...(can('settings.view') && isVis('settings.general') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
-                    ...(isOwner && isVis('settings.menu_visibility') ? [{ label: 'Menu Visibility', href: '/admin/settings/menu-visibility', icon: 'Layers' }] : []),
                 ]
             }
         ];
@@ -298,38 +316,6 @@ export default function AdminSidebar() {
         return matchPath(href) > 0;
     }
 
-    // Single-open accordion: only one section open at a time
-    const [openSection, setOpenSection] = useState(() => {
-        try {
-            return localStorage.getItem(STORAGE_KEY) || 'Overview';
-        } catch {
-            return 'Overview';
-        }
-    });
-
-    // Auto-expand the section containing the active link
-    useEffect(() => {
-        for (const section of menuSections) {
-            if (section.items.some(item => isActive(item.href))) {
-                setOpenSection(prev => {
-                    if (prev !== section.title) {
-                        try { localStorage.setItem(STORAGE_KEY, section.title); } catch {}
-                    }
-                    return section.title;
-                });
-                return;
-            }
-        }
-    }, [url, menuSections]);
-
-    const toggleSection = useCallback((title) => {
-        setOpenSection(prev => {
-            const next = prev === title ? '' : title;
-            try { localStorage.setItem(STORAGE_KEY, next); } catch {}
-            return next;
-        });
-    }, []);
-
     const storeSlug = tenant?.slug;
     const logout = () => router.post('/logout', {
         context: isSuperAdmin ? 'superadmin' : 'admin',
@@ -358,17 +344,6 @@ export default function AdminSidebar() {
                 }
                 .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: ${merchant ? 'rgba(71, 85, 105, 0.4)' : 'rgba(255, 255, 255, 0.18)'};
-                }
-                .sidebar-collapse-content {
-                    display: grid;
-                    grid-template-rows: 0fr;
-                    transition: grid-template-rows 250ms cubic-bezier(0.16, 1, 0.3, 1);
-                }
-                .sidebar-collapse-content.open {
-                    grid-template-rows: 1fr;
-                }
-                .sidebar-collapse-content > div {
-                    overflow: hidden;
                 }
             `}</style>
 
@@ -425,72 +400,69 @@ export default function AdminSidebar() {
                 {/* Navigation */}
                 <nav className="flex-1 px-3 py-3 overflow-y-auto overflow-x-hidden sidebar-scrollbar">
                     {visibleSections.map((section, sectionIdx) => {
-                        const isOpen = openSection === section.title;
                         const sectionHasActive = section.items.some(item => isActive(item.href));
                         const activeItem = findActiveItem(section.items);
 
                         return (
-                            <div key={section.title} className={sectionIdx > 0 ? 'mt-2' : ''}>
-                                {/* Section header */}
+                            <div key={section.title} className={sectionIdx > 0 ? 'mt-4' : ''}>
+                                {/* Section label */}
                                 {!collapsed && (
-                                    <button
-                                        onClick={() => toggleSection(section.title)}
-                                         className={`w-full flex items-center justify-between px-3 py-[7px] uppercase transition-colors rounded-md ${merchant ? 'text-[13px] font-medium tracking-[0.03em]' : 'text-[11px] font-semibold tracking-[0.08em]'} ${
-                                             sectionHasActive
-                                                 ? merchant ? 'text-blue-600' : 'text-blue-400/90'
-                                                 : merchant ? 'text-slate-600 hover:text-slate-800' : 'text-gray-400 hover:text-gray-300'
+                                    <p
+                                        className={`px-3 pb-1.5 uppercase select-none ${
+                                            sectionIdx === 0 ? 'pt-1' : 'pt-0'
+                                        } text-[11px] leading-none font-semibold tracking-[0.09em] ${
+                                            merchant
+                                                ? sectionHasActive ? 'text-slate-700' : 'text-slate-400'
+                                                : sectionHasActive ? 'text-white/90' : 'text-gray-500'
                                         }`}
                                     >
-                                        <span>{section.title}</span>
-                                        <ChevronDown
-                                             className={`w-3.5 h-3.5 transition-all duration-250 ease-out ${
-                                                 isOpen ? 'rotate-0' : '-rotate-90'
-                                             } ${merchant ? sectionHasActive ? 'text-blue-600' : 'text-slate-400' : ''}`}
-                                        />
-                                    </button>
+                                        {section.title}
+                                    </p>
                                 )}
 
-                                {/* Collapsible items */}
-                                <div className={`sidebar-collapse-content ${isOpen ? 'open' : ''}`}>
-                                    <div>
-                                        <div className={`${collapsed ? 'space-y-1' : 'space-y-0.5'} ${!collapsed ? 'mt-1 pb-1' : ''}`}>
-                                            {section.items.map((item) => {
-                                                const active = activeItem?.href === item.href;
-                                                return (
-                                                    <Link
-                                                        key={item.href}
-                                                        href={adminUrl(item.href)}
-                                                        onClick={() => setSidebarOpen(false)}
-                                                        className={`flex items-center gap-3 ${
-                                                            collapsed ? 'justify-center px-2' : 'px-3'
-                                                         } py-[10px] rounded-lg text-[15px] font-medium transition-all duration-150 group relative ${
-                                                            active
-                                                                 ? merchant ? 'text-blue-700 bg-blue-50' : 'text-white bg-white/[0.08]'
-                                                                 : merchant ? 'text-slate-900 hover:text-slate-950 hover:bg-slate-100' : 'text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
-                                                        }`}
-                                                        title={collapsed ? item.label : undefined}
-                                                    >
-                                                        {/* Active accent border */}
-                                                        {active && (
-                                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }} />
-                                                        )}
-                                                        <Icon
-                                                            name={item.icon}
-                                                            className={`flex-shrink-0 ${
-                                                                active
-                                                                    ? ''
-                                                                     : merchant ? 'text-slate-500 group-hover:text-slate-700' : 'text-gray-400 group-hover:text-gray-300'
-                                                            }`}
-                                                            style={active ? { color: 'var(--theme-color, #3B82F6)' } : undefined}
-                                                        />
-                                                        {!collapsed && (
-                                                            <span className="truncate">{item.label}</span>
-                                                        )}
-                                                    </Link>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+                                {/* Items */}
+                                <div className="space-y-0.5">
+                                    {section.items.map((item) => {
+                                        const active = activeItem?.href === item.href;
+                                        const accentColor = 'var(--theme-color, #3B82F6)';
+                                        return (
+                                            <Link
+                                                key={item.href}
+                                                href={adminUrl(item.href)}
+                                                onClick={() => setSidebarOpen(false)}
+                                                style={active && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 11%, #ffffff)` } : undefined}
+                                                className={`flex items-center gap-2.5 ${
+                                                    collapsed ? 'justify-center px-2' : 'px-3'
+                                                } h-9 rounded-lg text-sm transition-colors duration-150 group relative ${
+                                                    active
+                                                        ? merchant ? 'font-semibold' : 'text-white bg-white/[0.08] font-semibold'
+                                                        : merchant ? 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
+                                                }`}
+                                                title={collapsed ? item.label : undefined}
+                                            >
+                                                {/* Active accent indicator */}
+                                                {active && (
+                                                    <span
+                                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                                                        style={{ backgroundColor: accentColor }}
+                                                    />
+                                                )}
+                                                <Icon
+                                                    name={item.icon}
+                                                    strokeWidth={active ? 2.4 : 2}
+                                                    className={`flex-shrink-0 ${
+                                                        active
+                                                            ? ''
+                                                            : merchant ? 'text-slate-400 group-hover:text-slate-600' : 'text-gray-400 group-hover:text-gray-300'
+                                                    }`}
+                                                    {...(active ? { style: { color: accentColor } } : {})}
+                                                />
+                                                {!collapsed && (
+                                                    <span className="truncate" style={active && merchant ? { color: accentColor } : undefined}>{item.label}</span>
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );

@@ -45,7 +45,7 @@ const availableLocales = [
 ];
 
 export default function CustomerProfile({ tenant, customer, mustVerifyEmail, status }) {
-    const { auth } = usePage().props;
+    const { auth, storefront } = usePage().props;
     const { theme, switchTheme } = useTheme();
     const { locale } = useTranslation();
     const fileInputRef = useRef(null);
@@ -112,7 +112,7 @@ export default function CustomerProfile({ tenant, customer, mustVerifyEmail, sta
 
     return (
         <ShopLayout>
-            <Head title={`Profile - ${tenant.name}`} />
+            <Head title={`Profile - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 {/* Back Link */}

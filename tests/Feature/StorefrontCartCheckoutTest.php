@@ -47,6 +47,7 @@ class StorefrontCartCheckoutTest extends TestCase
                 $table->string('email')->nullable();
                 $table->string('logo')->nullable();
                 $table->string('status')->default('active');
+                $table->timestamp('activated_at')->nullable();
                 $table->json('settings')->nullable();
                 $table->unsignedBigInteger('subscription_plan_id')->nullable();
                 $table->timestamp('expires_at')->nullable();
@@ -196,6 +197,8 @@ class StorefrontCartCheckoutTest extends TestCase
             'activity_logs' => function ($table) {
                 $table->id();
                 $table->string('log_name')->nullable();
+                $table->string('category')->nullable();
+                $table->string('severity')->nullable();
                 $table->text('description');
                 $table->string('subject_type')->nullable();
                 $table->unsignedBigInteger('subject_id')->nullable();

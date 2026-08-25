@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
+import { usePage } from '@inertiajs/react';
 
-function CategoryList({ categories, selectedCategory, onCategoryClick }) {
+function CategoryList({ categories, selectedCategory, onCategoryClick, labels }) {
     return (
         <div className="space-y-0.5">
             <button
@@ -15,7 +16,7 @@ function CategoryList({ categories, selectedCategory, onCategoryClick }) {
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                All Categories
+                {labels.all_categories || 'All Categories'}
             </button>
 
             {categories.map((cat) => (
@@ -44,6 +45,8 @@ function CategoryList({ categories, selectedCategory, onCategoryClick }) {
 }
 
 export default function Sidebar({ categories, selectedCategory, onCategoryChange, isOpen, onClose }) {
+    const { storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
     const handleCategoryClick = useCallback((id) => {
         onCategoryChange(id);
         if (onClose) onClose();
@@ -54,6 +57,7 @@ export default function Sidebar({ categories, selectedCategory, onCategoryChange
             categories={categories}
             selectedCategory={selectedCategory}
             onCategoryClick={handleCategoryClick}
+            labels={labels}
         />
     );
 
@@ -69,7 +73,7 @@ export default function Sidebar({ categories, selectedCategory, onCategoryChange
                 }`}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Categories</h3>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{labels.categories || 'Categories'}</h3>
                     <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:bg-gray-800">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -85,7 +89,7 @@ export default function Sidebar({ categories, selectedCategory, onCategoryChange
                 <div className="sticky top-20">
                     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">
-                            Categories
+                            {labels.categories || 'Categories'}
                         </h3>
                         {list}
                     </div>

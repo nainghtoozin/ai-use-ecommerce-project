@@ -6,8 +6,10 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Tenant;
+use App\Models\StorefrontRevision;
 use App\Services\ProductService;
 use App\Services\WebsiteFaqService;
+use App\Services\StorefrontConfigurationResolver;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,9 +18,39 @@ class StorefrontController extends Controller
     public function __construct(
         private readonly ProductService $productService,
         private readonly WebsiteFaqService $faqService,
+        private readonly StorefrontConfigurationResolver $resolver,
     ) {}
 
     public function index(Request $request)
+    {
+        return $this->renderIndex($request);
+    }
+
+    public function preview(Request $request, ?StorefrontRevision $revision = null)
+    {
+        abort_unless($request->user()?->can('settings.website'), 403);
+        $tenant = Tenant::getCurrent();
+        abort_unless($tenant, 404);
+
+        // Remember that this admin session is previewing the draft so follow-up
+        // storefront pages (products, product detail) keep resolving the draft
+        // configuration until they return to the admin area.
+        $request->session()->put('storefront_preview_draft', (int) $tenant->id);
+
+        $configuration = $revision ? $this->resolver->resolveRevision($revision) : null;
+        return $this->renderIndex($request, 'draft', $configuration, $revision);
+    }
+
+    private function draftPreviewActive(Request $request): bool
+    {
+        $tenant = Tenant::getCurrent();
+
+        return $tenant
+            && (int) $request->session()->get('storefront_preview_draft') === (int) $tenant->id
+            && (bool) $request->user()?->can('settings.website');
+    }
+
+    private function renderIndex(Request $request, string $context = 'published', ?array $configuration = null, ?StorefrontRevision $previewRevision = null)
     {
         $tenant = Tenant::getCurrent();
         if (!$tenant) {
@@ -29,32 +61,6 @@ class StorefrontController extends Controller
             return $this->renderLocked($tenant);
         }
 
-        $query = $request->input('query', '');
-        $categoryId = $request->input('category', '');
-        $sort = $request->input('sort', 'latest');
-
-        $products = Product::active()
-            ->with(['category', 'brand'])
-            ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
-
-        if ($query) {
-            $products->where('name', 'LIKE', "%{$query}%");
-        }
-
-        if ($categoryId) {
-            $products->where('category_id', $categoryId);
-        }
-
-        $this->applySorting($products, $sort);
-
-        $promotions = Promotion::valid()->automatic()
-            ->with(['products', 'categories'])
-            ->orderBy('priority', 'desc')
-            ->get();
-
-        $hasProducts = Product::active()->exists();
-        $categories = Category::orderBy('name')->get(['id', 'name']);
-
         return Inertia::render('Storefront/Index', [
             'tenant' => [
                 'id' => $tenant->id,
@@ -64,16 +70,12 @@ class StorefrontController extends Controller
                 'logo' => $tenant->logo,
                 'status' => $tenant->status,
             ],
-            'products' => Inertia::scroll(fn () => $products->paginate(8)->through(function ($product) use ($promotions) {
-                return $this->enrichProductWithPromotion($product, $promotions);
-            })),
-            'hasProducts' => $hasProducts,
-            'categories' => $categories,
-            'searchQuery' => $query,
-            'filters' => [
-                'category_id' => $categoryId,
-                'sort' => $sort,
-            ],
+            'storefront' => $configuration ?? $this->resolver->resolve($tenant, $context),
+            'previewMode' => $context === 'draft' ? [
+                'mode' => in_array($request->query('viewport'), ['mobile', 'desktop'], true) ? $request->query('viewport') : 'desktop',
+                'revision_number' => $previewRevision?->revision_number,
+                'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
+            ] : null,
         ]);
     }
 
@@ -137,6 +139,10 @@ class StorefrontController extends Controller
                 'sort' => $sort,
                 'in_stock' => $inStock,
             ],
+            'previewMode' => $this->draftPreviewActive($request) ? [
+                'mode' => 'desktop',
+                'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
+            ] : null,
         ]);
     }
 
@@ -183,6 +189,10 @@ class StorefrontController extends Controller
             'product' => $product,
             'promotion' => $promotion,
             'detail' => $detail,
+            'previewMode' => $this->draftPreviewActive($request) ? [
+                'mode' => 'desktop',
+                'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
+            ] : null,
         ]);
     }
 

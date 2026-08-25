@@ -5,7 +5,9 @@ import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymentMethods, cities, errors, appliedPromotion: initialAppliedPromotion, discountAmount: initialDiscountAmount, autoPromotions, addresses = [], defaultAddress = null }) {
-    const { auth, platform_setting, website_info } = usePage().props;
+    const { auth, platform_setting, website_info, storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
+    const primaryActionStyle = { backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' };
     const cc = getCurrencyConfig(platform_setting, website_info);
     const [localAppliedPromotion, setLocalAppliedPromotion] = useState(initialAppliedPromotion || null);
     const [localDiscount, setLocalDiscount] = useState(initialDiscountAmount || 0);
@@ -266,7 +268,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                 <div className="max-w-7xl mx-auto px-4 py-16 text-center">
                     <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100">Your cart is empty</h2>
                     <Link href={`/store/${tenant.slug}/cart`} className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        View Cart
+                        {labels.view_cart || 'View Cart'}
                     </Link>
                 </div>
             </ShopLayout>
@@ -305,7 +307,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                         &larr; Back to Cart
                     </Link>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 sm:mb-8">Checkout - {tenant.name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 sm:mb-8">{labels.checkout || 'Checkout'} - {tenant.name}</h1>
 
                 {Object.values(formErrors).filter(Boolean).map((err, i) => (
                     <div key={i} className="mb-4 sm:mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -429,7 +431,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                                 <textarea value={form.notes} onChange={(e) => updateField('notes', e.target.value)} rows="2" className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Special instructions..." />
                             </div>
                             <div className="flex justify-end pt-4 border-t">
-                                <button type="button" onClick={() => setStep(2)} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Continue to Payment →</button>
+                                 <button type="button" onClick={() => setStep(2)} style={primaryActionStyle} className="px-6 py-2 text-white">Continue to Payment →</button>
                             </div>
                         </div>
                     )}
@@ -583,7 +585,8 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                             <div className="flex justify-between pt-2">
                                 <button type="button" onClick={() => setStep(1)} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 dark:text-gray-100 font-medium transition-colors">← Back</button>
                                 <button type="button" onClick={() => setStep(3)} disabled={!form.payment_method_id}
-                                    className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                    style={primaryActionStyle}
+                                    className="px-6 py-2.5 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                                     Review Order →
                                 </button>
                             </div>
@@ -725,7 +728,8 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                                                                 </p>
                                                             </div>
                                                             <button type="button" onClick={() => applyPromotion(ap.code)} disabled={promoLoading}
-                                                                className="ml-3 px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0 shadow-sm">
+                                                                 style={primaryActionStyle}
+                                                                 className="ml-3 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 transition-colors shrink-0 shadow-sm">
                                                                 Apply
                                                             </button>
                                                         </div>
@@ -743,7 +747,8 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                                                         className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                         onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyPromotion(promotionCode))} />
                                                     <button type="button" onClick={() => applyPromotion(promotionCode)} disabled={promoLoading || !promotionCode.trim()}
-                                                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                                         style={primaryActionStyle}
+                                                         className="px-4 py-2 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                                                         {promoLoading ? (
                                                             <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -809,7 +814,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                                                     Placing Order...
                                                 </>
                                             ) : (
-                                                `Place Order — ${formatCurrency(total, cc)}`
+                                                `${labels.place_order || 'Place Order'} — ${formatCurrency(total, cc)}`
                                             )}
                                         </button>
                                         {uploading && (

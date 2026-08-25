@@ -1,4 +1,5 @@
 import { Package, Layers, AlertTriangle, ArrowDown, TrendingDown } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 import { formatCurrency } from '@/Utils/currency';
 
 function safeNum(val) {
@@ -10,8 +11,8 @@ function formatPrice(price) {
     return formatCurrency(safeNum(price));
 }
 
-function getStockStatus(stock) {
-    if (stock <= 0) return { label: 'Out of Stock', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-600/20', dot: 'bg-red-500' };
+function getStockStatus(stock, labels = {}) {
+    if (stock <= 0) return { label: labels.out_of_stock || 'Out of Stock', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-600/20', dot: 'bg-red-500' };
     if (stock <= 5) return { label: 'Low Stock', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-600/20', dot: 'bg-amber-500' };
     return { label: 'In Stock', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-600/20', dot: 'bg-emerald-500' };
 }
@@ -58,9 +59,9 @@ function resolveComboItem(rawItem) {
     };
 }
 
-function ComboItemRow({ item, isBottleneck, index }) {
+function ComboItemRow({ item, isBottleneck, index, labels = {} }) {
     const stock = safeNum(item.stock_available);
-    const status = getStockStatus(stock);
+    const status = getStockStatus(stock, labels);
     const qty = Math.max(1, safeNum(item.quantity));
     const possibleCombos = Math.floor(stock / qty);
     const photoUrl = item.photo_url || null;
@@ -146,6 +147,9 @@ function ComboItemRow({ item, isBottleneck, index }) {
 export default function ComboViewDetail({ product }) {
     if (!product) return null;
 
+    const { storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
+
     const rawComboItems = Array.isArray(product.combo_items) ? product.combo_items : [];
     const comboAvailability = product.combo_availability || null;
     const comboSummary = product.combo_summary || null;
@@ -183,7 +187,7 @@ export default function ComboViewDetail({ product }) {
     const bottleneck = comboAvailability?.bottleneck;
     const outOfStockItems = Array.isArray(comboAvailability?.out_of_stock_items) ? comboAvailability.out_of_stock_items : [];
     const lowStockItems = Array.isArray(comboAvailability?.low_stock_items) ? comboAvailability.low_stock_items : [];
-    const stockStatus = getStockStatus(availableStock);
+    const stockStatus = getStockStatus(availableStock, labels);
 
     return (
         <>
@@ -312,6 +316,7 @@ export default function ComboViewDetail({ product }) {
                                 item={item}
                                 isBottleneck={!!isBottleneck}
                                 index={index}
+                                labels={labels}
                             />
                         );
                     })}

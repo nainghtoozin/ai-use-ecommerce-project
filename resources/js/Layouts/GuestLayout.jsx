@@ -2,9 +2,9 @@ import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 
 export default function GuestLayout({ children }) {
-    const { website_info } = usePage().props;
+    const { website_info, tenant } = usePage().props;
     const logoUrl = assetUrl(website_info?.logo);
-    const siteName = website_info?.site_name || website_info?.name || 'My Store';
+    const siteName = tenant?.name || website_info?.site_name || website_info?.name || 'My Store';
 
     return (
         <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-50 dark:bg-gray-950">

@@ -6,6 +6,9 @@ import axios from 'axios';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 export default function StorefrontCart({ tenant, cartItems: initialCartItems, subtotal: initialSubtotal, appliedPromotion: initialPromotion, appliedCoupon: initialCoupon, totalDiscount: initialDiscount }) {
+    const { storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
+    const primaryActionStyle = { backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' };
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const { updateQuantity, removeItem } = useCart();
     const [cartItems, setCartItems] = useState(initialCartItems || []);
@@ -194,7 +197,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                             disabled={updating === 'clear'}
                             className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
                         >
-                            Clear Cart
+                            {labels.clear_cart || 'Clear Cart'}
                         </button>
                     )}
                 </div>
@@ -206,9 +209,10 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                         <p className="mt-2 text-gray-500 dark:text-gray-400">Browse products from {tenant.name} and add items to your cart.</p>
                         <Link
                             href={`/store/${tenant.slug}`}
-                            className="mt-6 inline-block px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            style={primaryActionStyle}
+                            className="mt-6 inline-block px-6 py-2.5 text-white transition-colors"
                         >
-                            Continue Shopping
+                            {labels.continue_shopping || 'Continue Shopping'}
                         </Link>
                     </div>
                 ) : (
@@ -256,7 +260,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                                 className="px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-50 transition-colors">
                                                                 <i className="bi bi-dash"></i>
                                                             </button>
-                                                            <input type="text" inputMode="numeric"
+                                                             <input aria-label={`Quantity for ${item.name}`} type="text" inputMode="numeric"
                                                                 value={quantityDrafts[item.cart_key] ?? item.quantity}
                                                                 onChange={(e) => handleDraftChange(item.cart_key, e.target.value)}
                                                                 onBlur={() => commitDraft(item.cart_key)}
@@ -308,7 +312,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                         className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-50 transition-colors">
                                                         <i className="bi bi-dash"></i>
                                                     </button>
-                                                    <input type="text" inputMode="numeric"
+                                                     <input aria-label={`Quantity for ${item.name}`} type="text" inputMode="numeric"
                                                         value={quantityDrafts[item.cart_key] ?? item.quantity}
                                                         onChange={(e) => handleDraftChange(item.cart_key, e.target.value)}
                                                         onBlur={() => commitDraft(item.cart_key)}
@@ -380,7 +384,8 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyPromotion(promoCode))} />
                                                 <button type="button" onClick={() => applyPromotion(promoCode)}
                                                     disabled={promoLoading || !promoCode.trim()}
-                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                                    style={primaryActionStyle}
+                                                    className="px-4 py-2 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                                                     {promoLoading ? (
                                                         <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -428,13 +433,14 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                 </div>
 
                                 <Link href={`/store/${tenant.slug}/checkout`}
-                                    className="mt-5 w-full block text-center py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                                    Proceed to Checkout
+                                    style={primaryActionStyle}
+                                    className="mt-5 w-full block text-center py-3 text-white font-medium transition-colors">
+                                     {labels.checkout || 'Proceed to Checkout'}
                                 </Link>
 
                                 <Link href={`/store/${tenant.slug}`}
-                                    className="mt-3 w-full block text-center py-2 text-blue-600 hover:text-blue-800 font-medium text-sm">
-                                    &larr; Continue Shopping
+                                    className="mt-3 w-full block text-center py-2 text-[var(--theme-color,#3B82F6)] hover:opacity-80 font-medium text-sm">
+                                     &larr; {labels.continue_shopping || 'Continue Shopping'}
                                 </Link>
                             </div>
                         </div>

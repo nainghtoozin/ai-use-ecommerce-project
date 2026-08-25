@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { InfiniteScroll } from '@inertiajs/react';
+import { InfiniteScroll, usePage } from '@inertiajs/react';
 import ProductCard from '@/Components/ProductCard';
 
 const SkeletonCard = () => (
@@ -23,12 +23,12 @@ const SkeletonGrid = () => (
     </div>
 );
 
-const EmptyState = ({ onClearFilters }) => (
+const EmptyState = ({ onClearFilters, labels }) => (
     <div className="text-center py-12 sm:py-16 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
         <svg className="mx-auto w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
-        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No products found</h3>
+        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">{labels.no_products_found || 'No products found'}</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-md mx-auto">
             Try adjusting your search or filter criteria to find what you are looking for.
         </p>
@@ -37,7 +37,7 @@ const EmptyState = ({ onClearFilters }) => (
                 onClick={onClearFilters}
                 className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
-                View all products
+                {labels.view_all_products || 'View all products'}
             </button>
         )}
     </div>
@@ -52,6 +52,8 @@ export default function ProductGrid({
     addingId,
     onClearFilters,
 }) {
+    const { storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
     const handleAddToCart = useCallback(async (productId) => {
         if (onAddToCart) {
             await onAddToCart(productId);
@@ -63,7 +65,7 @@ export default function ProductGrid({
     }
 
     if (!products?.data?.length) {
-        return <EmptyState onClearFilters={onClearFilters} />;
+        return <EmptyState onClearFilters={onClearFilters} labels={labels} />;
     }
 
     return (

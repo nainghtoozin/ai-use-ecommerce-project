@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { usePage } from '@inertiajs/react';
 import CmsPage from '@/Components/Storefront/CmsPage';
 import { ChevronDown, Search } from 'lucide-react';
+import { sanitizeStorefrontHtml } from '@/Utils/sanitizeStorefrontHtml';
 
 function FaqItem({ faq, isOpen, toggle }) {
     return (
@@ -11,6 +12,7 @@ function FaqItem({ faq, isOpen, toggle }) {
                 onClick={toggle}
                 className="w-full flex items-center justify-between py-4 px-5 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 aria-expanded={isOpen}
+                aria-controls={`cms-faq-answer-${faq.id}`}
             >
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100 pr-4">{faq.question}</span>
                 <ChevronDown
@@ -18,10 +20,10 @@ function FaqItem({ faq, isOpen, toggle }) {
                 />
             </button>
             {isOpen && (
-                <div className="px-5 pb-4">
+                 <div id={`cms-faq-answer-${faq.id}`} className="px-5 pb-4">
                     <div
                         className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: faq.answer }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeStorefrontHtml(faq.answer) }}
                     />
                 </div>
             )}

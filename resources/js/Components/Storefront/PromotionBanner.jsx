@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
 export default function PromotionBanner({ banners }) {
-    const { tenant } = usePage().props;
+    const { tenant, storefront } = usePage().props;
+    const labels = storefront?.content?.labels || {};
     const [current, setCurrent] = useState(0);
 
     useEffect(() => {
@@ -15,7 +16,7 @@ export default function PromotionBanner({ banners }) {
 
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 shadow-xl">
+            <div style={{ background: 'linear-gradient(135deg, var(--storefront-color-primary, #3B82F6), var(--storefront-color-secondary, #1D4ED8))', borderRadius: 'var(--storefront-radius-card, 0.75rem)', boxShadow: 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .1))' }} className="relative overflow-hidden">
                 <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${current * 100}%)` }}>
                     {banners.map((banner) => (
                         <a
@@ -35,7 +36,7 @@ export default function PromotionBanner({ banners }) {
                                     </p>
                                 )}
                                 <span className="mt-4 sm:mt-5 inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-900/20 backdrop-blur-sm text-white text-sm font-semibold rounded-full hover:bg-white dark:bg-gray-900/30 transition-colors">
-                                    Shop Now
+                                    {labels.shop_now || 'Shop Now'}
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                     </svg>

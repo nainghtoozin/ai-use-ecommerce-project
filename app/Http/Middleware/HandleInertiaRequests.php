@@ -83,7 +83,38 @@ class HandleInertiaRequests extends Middleware
         }
 
         $settingsModel = !$isSuperAdmin && $tenant ? \App\Models\WebsiteInfo::first() : null;
-        $websiteSettings = $settingsModel ? $settingsModel->toArray() : [];
+        $routeName = $request->route()?->getName() ?? '';
+        $isPublicStorefront = $request->route('store_slug') && !str_starts_with($routeName, 'storefront.admin.');
+        $websiteSettings = $settingsModel
+            ? ($isPublicStorefront ? $this->publicWebsiteSettings($settingsModel) : $settingsModel->toArray())
+            : [];
+        $platformSettings = PlatformSetting::current()->toArray();
+        $publicPlatformSettings = array_intersect_key($platformSettings, array_flip([
+            'platform_currency_code', 'platform_currency_symbol', 'platform_currency_position', 'platform_decimal_places',
+        ]));
+        $publicIdentity = $isPublicStorefront && $projection ? array_intersect_key($projection, array_flip([
+            'id', 'display_name', 'name', 'first_name', 'last_name', 'email', 'avatar', 'profile_image',
+            'profile_image_url', 'status', 'is_admin', 'is_owner', 'email_verified_at',
+        ])) : $projection;
+
+        // Returning to any admin area ends draft-preview mode.
+        if ($routeName && str_starts_with($routeName, 'storefront.admin.')) {
+            $request->session()->forget('storefront_preview_draft');
+        }
+
+        $storefrontConfiguration = null;
+        if (!$isSuperAdmin && $tenant && $request->route('store_slug')) {
+            // Draft preview follows the admin session across storefront pages so
+            // products/detail pages resolve the same draft labels/configuration.
+            $draftPreview = (int) $request->session()->get('storefront_preview_draft') === (int) $tenant->id
+                && $authenticatable
+                && $authenticatable->can('settings.website');
+            $storefrontConfiguration = app(\App\Services\StorefrontConfigurationResolver::class)->resolve(
+                $tenant,
+                $draftPreview ? 'draft' : 'published',
+                false,
+            );
+        }
 
         $wishlistEnabled = !$isSuperAdmin && $settingsModel && ($settingsModel->enable_wishlist ?? true);
 
@@ -98,9 +129,15 @@ class HandleInertiaRequests extends Middleware
             'theme' => $this->resolveTheme($request),
             'translations' => $this->getTranslations(),
             'auth' => [
-                'user' => $projection,
+                'user' => $publicIdentity,
             ],
-            'tenant' => $tenant ? [
+            'tenant' => $tenant ? ($isPublicStorefront ? [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'logo' => $tenant->logo,
+                'status' => $tenant->status,
+            ] : [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
@@ -109,7 +146,7 @@ class HandleInertiaRequests extends Middleware
                 'status' => $tenant->status,
                 'locked_at' => $tenant->locked_at?->toDateTimeString(),
                 'subscription_expired' => $subscriptionExpired,
-            ] : null,
+            ]) : null,
             'cart' => $isSuperAdmin ? ['count' => 0, 'total' => 0, 'items' => []] : $cart,
             'wishlist_count' => !$isSuperAdmin && $wishlistEnabled && $authenticatable ? (int) $this->getWishlistCount($authenticatable) : 0,
             'wishlisted_ids' => !$isSuperAdmin && $wishlistEnabled && $authenticatable ? $this->getWishlistedIds($authenticatable) : [],
@@ -125,15 +162,16 @@ class HandleInertiaRequests extends Middleware
             'app' => [
                 'name' => $websiteSettings['site_name'] ?? config('app.name', 'My E-Commerce Store'),
             ],
-            'platform_setting' => PlatformSetting::current()->toArray(),
+            'platform_setting' => $isPublicStorefront ? $publicPlatformSettings : $platformSettings,
             'website_info' => $websiteSettings,
             'websiteSettings' => $websiteSettings,
+            'storefront' => $storefrontConfiguration,
             'categories' => $isSuperAdmin ? [] : cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),
-            'featureStatus' => $isSuperAdmin ? [] : FeatureGate::forUser()->getAllFeaturesStatus(),
-            'subscription_limits' => $isSuperAdmin ? [] : ($authenticatable ? SubscriptionLimitService::for()->getAllLimits() : []),
-            'menuVisibility' => $menuVisibility,
+            'featureStatus' => $isSuperAdmin || $isPublicStorefront ? [] : FeatureGate::forUser()->getAllFeaturesStatus(),
+            'subscription_limits' => $isSuperAdmin || $isPublicStorefront ? [] : ($authenticatable ? SubscriptionLimitService::for()->getAllLimits() : []),
+            'menuVisibility' => $isPublicStorefront ? [] : $menuVisibility,
         ]);
     }
 
@@ -180,6 +218,24 @@ class HandleInertiaRequests extends Middleware
             'total' => (float) $total,
             'items' => $items,
         ];
+    }
+
+    private function publicWebsiteSettings(\App\Models\WebsiteInfo $settings): array
+    {
+        $data = $settings->toArray();
+        $allowed = [
+            'site_name', 'site_tagline', 'site_description', 'theme_color', 'currency_code', 'currency_symbol',
+            'currency_position', 'decimal_places', 'logo', 'logo_url', 'favicon', 'favicon_url', 'footer_logo',
+            'footer_logo_url', 'footer_description', 'footer_copyright', 'footer_settings', 'contact_info',
+            'address_info', 'phone', 'contact_email', 'support_email', 'whatsapp_number', 'facebook_url',
+            'instagram_url', 'twitter_url', 'linkedin_url', 'youtube_url', 'hero_images_urls', 'hero_title',
+            'hero_subtitle', 'hero_button_text', 'hero_button_link', 'about_description', 'enable_wishlist',
+            'allow_registration', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'robots_meta',
+            'og_image_url', 'maintenance_mode', 'maintenance_message',
+            'privacy_policy', 'terms_conditions', 'shipping_policy', 'return_policy', 'refund_policy',
+        ];
+
+        return array_intersect_key($data, array_flip($allowed));
     }
 
     private function getUnreadCount(Request $request): int

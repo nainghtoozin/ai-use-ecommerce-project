@@ -4,16 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PromotionBanner;
+use App\Models\Storefront;
 use App\Services\FeatureGate;
 use App\Services\ImageService;
 use App\Services\SubscriptionLimitService;
+use App\Services\StorefrontRevisionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class AdminPromotionBannerController extends Controller
 {
     public function __construct(
-        private readonly ImageService $imageService
+        private readonly ImageService $imageService,
+        private readonly StorefrontRevisionService $revisionService,
     ) {}
 
     public function index()
@@ -49,6 +53,9 @@ class AdminPromotionBannerController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $storefront = $this->draftStorefront();
+        if ($storefront) $this->revisionService->prepareDraft($storefront);
+
         $limitService = SubscriptionLimitService::for();
         if (!$limitService->checkLimit('flash_sale_limit')) {
             return redirect()->back()->with('error',
@@ -68,6 +75,7 @@ class AdminPromotionBannerController extends Controller
         }
 
         $promotion = PromotionBanner::create($data);
+        if ($storefront) $this->revisionService->syncDraft($storefront);
 
         return admin_redirect('admin.banners.index')
             ->with('success', 'Banner created successfully!');
@@ -91,6 +99,9 @@ class AdminPromotionBannerController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $storefront = $this->draftStorefront();
+        if ($storefront) $this->revisionService->prepareDraft($storefront);
+
         $data = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -105,6 +116,7 @@ class AdminPromotionBannerController extends Controller
         }
 
         $promotion->update($data);
+        if ($storefront) $this->revisionService->syncDraft($storefront);
 
         return admin_redirect('admin.banners.index')
             ->with('success', 'Banner updated successfully.');
@@ -123,8 +135,12 @@ class AdminPromotionBannerController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $storefront = $this->draftStorefront();
+        if ($storefront) $this->revisionService->prepareDraft($storefront);
+
         $this->imageService->delete($promotion->image);
         $promotion->delete();
+        if ($storefront) $this->revisionService->syncDraft($storefront);
 
         return admin_redirect('admin.banners.index')
             ->with('success', 'Banner deleted successfully.');
@@ -192,5 +208,10 @@ class AdminPromotionBannerController extends Controller
             'promotions' => $promotions,
             'query' => $query,
         ]);
+    }
+
+    private function draftStorefront(): ?Storefront
+    {
+        return Schema::hasTable('storefronts') ? Storefront::first() : null;
     }
 }

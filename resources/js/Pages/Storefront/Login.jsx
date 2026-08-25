@@ -3,7 +3,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 
 export default function StorefrontLogin({ status, tenant }) {
-    const { errors } = usePage().props;
+    const { errors, storefront } = usePage().props;
     const { data, setData, post, processing, reset } = useForm({
         email: '',
         password: '',
@@ -19,7 +19,7 @@ export default function StorefrontLogin({ status, tenant }) {
 
     return (
         <GuestLayout>
-            <Head title={`Log in - ${tenant.name}`} />
+            <Head title={`Log in - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="mb-6 text-center">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">

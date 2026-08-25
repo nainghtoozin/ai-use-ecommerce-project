@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import FilterBar from '@/Components/FilterBar';
 import Sidebar from '@/Components/Sidebar';
@@ -8,6 +8,7 @@ import BackToTopButton from '@/Components/BackToTopButton';
 import { useCart } from '@/Hooks/useCart';
 
 export default function StoreProducts({ tenant, products, categories, searchQuery, filters: initFilters = {} }) {
+    const { storefront } = usePage().props;
     const { addToCart, addingId } = useCart();
     const [query, setQuery] = useState(searchQuery || '');
     const [selectedCategory, setSelectedCategory] = useState(initFilters.category_id || '');
@@ -95,7 +96,7 @@ export default function StoreProducts({ tenant, products, categories, searchQuer
 
     return (
         <ShopLayout>
-            <Head title={`Products - ${tenant.name}`} />
+            <Head title={`Products - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <FilterBar
                 query={query}
