@@ -15,7 +15,7 @@ export default function AdminLayout({ children, header = null }) {
                     --admin-theme-rgb: var(--theme-color-rgb, 59, 130, 246);
                 }
             `}</style>
-            <div className="min-h-screen flex bg-gray-100 dark:bg-gray-800">
+            <div className="min-h-screen flex bg-[#F1F5F9] dark:bg-gray-800">
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0">
                     <AdminHeader />

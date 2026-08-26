@@ -165,7 +165,7 @@ export default function AdminDashboard({
         blue: { bg: 'bg-blue-50', icon: 'text-blue-600', ring: 'ring-blue-100' },
         amber: { bg: 'bg-amber-50', icon: 'text-amber-600', ring: 'ring-amber-100' },
         emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', ring: 'ring-emerald-100' },
-        slate: { bg: 'bg-slate-50', icon: 'text-slate-600', ring: 'ring-slate-100' },
+        slate: { bg: 'bg-slate-100', icon: 'text-slate-600', ring: 'ring-slate-200' },
         red: { bg: 'bg-red-50', icon: 'text-red-600', ring: 'ring-red-100' },
         violet: { bg: 'bg-violet-50', icon: 'text-violet-600', ring: 'ring-violet-100' },
     };
@@ -232,7 +232,7 @@ export default function AdminDashboard({
         <AdminLayout>
             <Head title={t('navigation.dashboard')} />
 
-            <div className="p-6 lg:p-8 space-y-6">
+            <div className="p-6 lg:p-8 xl:p-10 space-y-6 lg:space-y-8">
                 {onboarding && <OnboardingChecklist onboarding={onboarding} />}
 
                 {showBanner && (
@@ -282,12 +282,12 @@ export default function AdminDashboard({
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('navigation.dashboard')}</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <h1 className="text-3xl lg:text-[40px] font-bold text-gray-900 dark:text-gray-100 tracking-tight">{t('navigation.dashboard')}</h1>
+                        <p className="text-base lg:text-lg text-gray-500 dark:text-gray-400 mt-1.5">
                             {periods.find(p => p.value === selectedPeriod)?.label || t('dashboard.custom')} {t('general.overview') || 'overview'}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-base text-gray-500 dark:text-gray-400">
                         <i className="bi bi-calendar3"></i>
                         <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
@@ -317,13 +317,13 @@ export default function AdminDashboard({
                 )}
 
                 {/* Period Filter */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                         {periods.map((period) => (
                             <button
                                 key={period.value}
                                 onClick={() => handlePeriodChange(period.value)}
-                                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[15px] font-medium transition-all duration-200 ${
                                     selectedPeriod === period.value
                                         ? 'bg-blue-600 text-white shadow-md'
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -391,21 +391,21 @@ export default function AdminDashboard({
 
                 {/* Stats Cards */}
                 {visibleStatCards.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 lg:gap-5">
                         {visibleStatCards.map((stat, idx) => {
                             const colors = colorMap[stat.color];
                             return (
                                 <div
                                     key={idx}
-                                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
+                                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 lg:p-6 hover:shadow-md transition-shadow duration-200"
                                 >
                                     <div className="flex items-center gap-3 lg:gap-4">
-                                        <div className={`p-2 lg:p-2.5 rounded-lg shrink-0 ${colors.bg}`}>
-                                            <i className={`bi ${stat.icon} text-base lg:text-lg ${colors.icon}`}></i>
+                                        <div className={`p-2.5 lg:p-3 rounded-xl shrink-0 ${colors.bg}`}>
+                                            <i className={`bi ${stat.icon} text-lg lg:text-xl ${colors.icon}`}></i>
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className={`font-bold text-gray-900 dark:text-gray-100 tabular-nums leading-tight ${stat.nowrap ? 'whitespace-nowrap text-[clamp(0.8rem,2.8vw,1.25rem)]' : 'text-lg sm:text-xl break-words'}`}>{stat.value}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{stat.label}</p>
+                                            <p className={`font-bold text-gray-900 dark:text-gray-100 tabular-nums leading-tight ${stat.nowrap ? 'whitespace-nowrap text-[clamp(1rem,2.8vw,1.5rem)]' : 'text-xl sm:text-2xl break-words'}`}>{stat.value}</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{stat.label}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -417,10 +417,10 @@ export default function AdminDashboard({
                 {/* Payment Methods Breakdown */}
                 {canViewPayments && paymentMethodSummary?.length > 0 && (
                     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.payment_methods_breakdown')}</h2>
+                        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
+                            <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.payment_methods_breakdown')}</h2>
                         </div>
-                        <div className="p-5">
+                        <div className="p-6">
                             {(() => {
                                 const maxTotal = Math.max(...paymentMethodSummary.map(p => Number(p.total)));
                                 return (
@@ -436,16 +436,16 @@ export default function AdminDashboard({
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between gap-2">
-                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                            <span className="text-[15px] font-medium text-gray-900 dark:text-gray-100 truncate">
                                                                 {pm.name}
                                                             </span>
-                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
+                                                            <span className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
                                                                 {formatCurrency(total, cc)}
                                                             </span>
                                                         </div>
-                                                        <div className="mt-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+                                                        <div className="mt-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5">
                                                             <div
-                                                                className="h-2 rounded-full transition-all duration-500"
+                                                                className="h-2.5 rounded-full transition-all duration-500"
                                                                 style={{
                                                                     width: `${Math.max(pct, 4)}%`,
                                                                     backgroundColor: i === 0 ? '#2563eb' : i === 1 ? '#0891b2' : i === 2 ? '#059669' : '#6b7280',
@@ -485,12 +485,12 @@ export default function AdminDashboard({
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            <th className="px-5 py-3 font-medium">{t('orders.order')}</th>
-                                            <th className="px-5 py-3 font-medium">{t('orders.customer')}</th>
-                                            <th className="px-5 py-3 font-medium">{t('orders.amount')}</th>
-                                            <th className="px-5 py-3 font-medium">{t('dashboard.payment_status')}</th>
-                                            <th className="px-5 py-3 font-medium">{t('orders.status')}</th>
-                                            <th className="px-5 py-3 font-medium">{t('dashboard.time')}</th>
+                                            <th className="px-5 py-3.5 font-medium">{t('orders.order')}</th>
+                                            <th className="px-5 py-3.5 font-medium">{t('orders.customer')}</th>
+                                            <th className="px-5 py-3.5 font-medium">{t('orders.amount')}</th>
+                                            <th className="px-5 py-3.5 font-medium">{t('dashboard.payment_status')}</th>
+                                            <th className="px-5 py-3.5 font-medium">{t('orders.status')}</th>
+                                            <th className="px-5 py-3.5 font-medium">{t('dashboard.time')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -544,7 +544,7 @@ export default function AdminDashboard({
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-semibold text-red-900">{t('dashboard.out_of_stock')}</h3>
-                                        <p className="text-xs text-red-600">{outOfStock.data.length} {t('navigation.products').toLowerCase()}</p>
+                                        <p className="text-xs text-red-600 mt-0.5">{outOfStock.data.length} {t('navigation.products').toLowerCase()}</p>
                                     </div>
                                 </div>
                                 <div className="p-4 space-y-3">
@@ -581,7 +581,7 @@ export default function AdminDashboard({
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-semibold text-amber-900">{t('dashboard.low_stock')}</h3>
-                                        <p className="text-xs text-amber-600">{lowStock.data.length} {t('navigation.products').toLowerCase()}</p>
+                                        <p className="text-xs text-amber-600 mt-0.5">{lowStock.data.length} {t('navigation.products').toLowerCase()}</p>
                                     </div>
                                 </div>
                                 <div className="p-4 space-y-3">

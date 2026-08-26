@@ -83,13 +83,13 @@ export default function AdminHeader() {
                     </button>
                 </div>
             )}
-            <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-14 lg:h-16 flex items-center px-4 lg:px-6 sticky top-0 z-20 shadow-sm">
+            <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-14 lg:h-[72px] flex items-center px-4 lg:px-6 sticky top-0 z-20 shadow-sm">
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                     <div className="lg:hidden w-10"></div>
                     <div>
-                        <h1 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">{getPageTitle()}</h1>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 hidden lg:block">{subtitle}</p>
+                        <h1 className="text-lg lg:text-xl font-semibold text-gray-900 dark:text-gray-100">{getPageTitle()}</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 hidden lg:block">{subtitle}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-3">

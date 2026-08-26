@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
@@ -17,6 +17,7 @@ import {
     UserCircle, UserPlus, Activity, Shield, Archive,
     Rocket, HelpCircle,
     LayoutTemplate, Images, LayoutList,
+    ChevronDown,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -84,12 +85,48 @@ const iconMap = {
     FileText, Ruler, Layers, Zap, ArrowUp, Clock,
     UserCircle, UserPlus, Activity, Shield, Archive, Rocket, HelpCircle,
     LayoutTemplate, Images, LayoutList,
+    ChevronDown,
 };
 
 function Icon({ name, className = '', ...props }) {
     const LucideIcon = iconMap[name];
     if (!LucideIcon) return null;
     return <LucideIcon className={`w-[18px] h-[18px] ${className}`} {...props} />;
+}
+
+function SubmenuHeight({ open, children }) {
+    const ref = useRef(null);
+    const [height, setHeight] = useState(0);
+
+    useEffect(() => {
+        if (!ref.current) return;
+        if (open) {
+            const el = ref.current;
+            setHeight(el.scrollHeight);
+            const timer = setTimeout(() => setHeight('auto'), 200);
+            return () => clearTimeout(timer);
+        } else {
+            const el = ref.current;
+            setHeight(el.scrollHeight);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => setHeight(0));
+            });
+        }
+    }, [open]);
+
+    return (
+        <div
+            ref={ref}
+            style={{
+                height: height === 'auto' ? 'auto' : `${height}px`,
+                overflow: 'hidden',
+                transition: 'height 180ms ease',
+            }}
+            aria-hidden={!open}
+        >
+            {children}
+        </div>
+    );
 }
 
 export default function AdminSidebar() {
@@ -106,6 +143,8 @@ export default function AdminSidebar() {
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
+    const [openGroup, setOpenGroup] = useState(null);
+    const userToggledRef = useRef(false);
 
     const brandLogo = isSuperAdmin ? platform_setting?.site_logo : website_info?.logo;
     const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (tenant?.name || website_info?.site_name || 'My Store');
@@ -316,6 +355,10 @@ export default function AdminSidebar() {
         return matchPath(href) > 0;
     }
 
+    function sectionHasActiveItem(section) {
+        return section.items.some(item => isActive(item.href));
+    }
+
     const storeSlug = tenant?.slug;
     const logout = () => router.post('/logout', {
         context: isSuperAdmin ? 'superadmin' : 'admin',
@@ -328,6 +371,26 @@ export default function AdminSidebar() {
     });
 
     const merchant = !isSuperAdmin;
+
+    useEffect(() => {
+        if (collapsed) return;
+        if (userToggledRef.current) return;
+        const activeSection = visibleSections.find(s => sectionHasActiveItem(s));
+        if (activeSection) {
+            setOpenGroup(activeSection.title);
+        }
+    }, [url, collapsed, visibleSections]);
+
+    useEffect(() => {
+        if (collapsed) {
+            setOpenGroup(null);
+        }
+    }, [collapsed]);
+
+    const handleToggleGroup = useCallback((title) => {
+        userToggledRef.current = true;
+        setOpenGroup(prev => prev === title ? null : title);
+    }, []);
 
     return (
         <>
@@ -400,70 +463,81 @@ export default function AdminSidebar() {
                 {/* Navigation */}
                 <nav className="flex-1 px-3 py-3 overflow-y-auto overflow-x-hidden sidebar-scrollbar">
                     {visibleSections.map((section, sectionIdx) => {
-                        const sectionHasActive = section.items.some(item => isActive(item.href));
+                        const sectionHasActive = sectionHasActiveItem(section);
                         const activeItem = findActiveItem(section.items);
+                        const isGroupOpen = collapsed || openGroup === section.title;
 
                         return (
                             <div key={section.title} className={sectionIdx > 0 ? 'mt-4' : ''}>
-                                {/* Section label */}
+                                {/* Group header button (accordion trigger) */}
                                 {!collapsed && (
-                                    <p
-                                        className={`px-3 pb-1.5 uppercase select-none ${
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleGroup(section.title)}
+                                        aria-expanded={isGroupOpen}
+                                        className={`w-full flex items-center gap-1.5 px-3 pb-1.5 uppercase select-none text-[11px] leading-none font-semibold tracking-[0.09em] transition-colors ${
                                             sectionIdx === 0 ? 'pt-1' : 'pt-0'
-                                        } text-[11px] leading-none font-semibold tracking-[0.09em] ${
+                                        } ${
                                             merchant
-                                                ? sectionHasActive ? 'text-slate-700' : 'text-slate-400'
-                                                : sectionHasActive ? 'text-white/90' : 'text-gray-500'
+                                                ? sectionHasActive ? 'text-slate-700 hover:text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                                                : sectionHasActive ? 'text-white/90 hover:text-white' : 'text-gray-500 hover:text-gray-400'
                                         }`}
                                     >
-                                        {section.title}
-                                    </p>
+                                        <ChevronDown
+                                            className={`w-3 h-3 flex-shrink-0 transition-transform duration-150 ${
+                                                isGroupOpen ? 'rotate-0' : '-rotate-90'
+                                            }`}
+                                        />
+                                        <span className="truncate">{section.title}</span>
+                                    </button>
                                 )}
 
                                 {/* Items */}
-                                <div className="space-y-0.5">
-                                    {section.items.map((item) => {
-                                        const active = activeItem?.href === item.href;
-                                        const accentColor = 'var(--theme-color, #3B82F6)';
-                                        return (
-                                            <Link
-                                                key={item.href}
-                                                href={adminUrl(item.href)}
-                                                onClick={() => setSidebarOpen(false)}
-                                                style={active && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 11%, #ffffff)` } : undefined}
-                                                className={`flex items-center gap-2.5 ${
-                                                    collapsed ? 'justify-center px-2' : 'px-3'
-                                                } h-9 rounded-lg text-sm transition-colors duration-150 group relative ${
-                                                    active
-                                                        ? merchant ? 'font-semibold' : 'text-white bg-white/[0.08] font-semibold'
-                                                        : merchant ? 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
-                                                }`}
-                                                title={collapsed ? item.label : undefined}
-                                            >
-                                                {/* Active accent indicator */}
-                                                {active && (
-                                                    <span
-                                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                                                        style={{ backgroundColor: accentColor }}
-                                                    />
-                                                )}
-                                                <Icon
-                                                    name={item.icon}
-                                                    strokeWidth={active ? 2.4 : 2}
-                                                    className={`flex-shrink-0 ${
+                                <SubmenuHeight open={isGroupOpen}>
+                                    <div className="space-y-0.5">
+                                        {section.items.map((item) => {
+                                            const active = activeItem?.href === item.href;
+                                            const accentColor = 'var(--theme-color, #3B82F6)';
+                                            return (
+                                                <Link
+                                                    key={item.href}
+                                                    href={adminUrl(item.href)}
+                                                    onClick={() => setSidebarOpen(false)}
+                                                    style={active && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 11%, #ffffff)` } : undefined}
+                                                    className={`flex items-center gap-2.5 ${
+                                                        collapsed ? 'justify-center px-2' : 'px-3'
+                                                    } h-9 rounded-lg text-sm transition-colors duration-150 group relative ${
                                                         active
-                                                            ? ''
-                                                            : merchant ? 'text-slate-400 group-hover:text-slate-600' : 'text-gray-400 group-hover:text-gray-300'
+                                                            ? merchant ? 'font-semibold' : 'text-white bg-white/[0.08] font-semibold'
+                                                            : merchant ? 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
                                                     }`}
-                                                    {...(active ? { style: { color: accentColor } } : {})}
-                                                />
-                                                {!collapsed && (
-                                                    <span className="truncate" style={active && merchant ? { color: accentColor } : undefined}>{item.label}</span>
-                                                )}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
+                                                    title={collapsed ? item.label : undefined}
+                                                >
+                                                    {/* Active accent indicator */}
+                                                    {active && (
+                                                        <span
+                                                            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                                                            style={{ backgroundColor: accentColor }}
+                                                        />
+                                                    )}
+                                                    <Icon
+                                                        name={item.icon}
+                                                        strokeWidth={active ? 2.4 : 2}
+                                                        className={`flex-shrink-0 ${
+                                                            active
+                                                                ? ''
+                                                                : merchant ? 'text-slate-400 group-hover:text-slate-600' : 'text-gray-400 group-hover:text-gray-300'
+                                                        }`}
+                                                        {...(active ? { style: { color: accentColor } } : {})}
+                                                    />
+                                                    {!collapsed && (
+                                                        <span className="truncate" style={active && merchant ? { color: accentColor } : undefined}>{item.label}</span>
+                                                    )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </SubmenuHeight>
                             </div>
                         );
                     })}
