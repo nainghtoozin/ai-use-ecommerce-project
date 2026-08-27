@@ -225,14 +225,13 @@ export default function AdminDashboard({
     const canViewOrders = can('orders.view');
     const canViewPayments = can('payments.view');
     const canViewProducts = can('products.view');
-    const ordersColSpan = canViewOrders && !canViewProducts ? 'lg:col-span-3' : 'lg:col-span-2';
     const hasAnyWidgets = visibleStatCards.length > 0 || canViewOrders || canViewPayments || canViewProducts;
 
     return (
         <AdminLayout>
             <Head title={t('navigation.dashboard')} />
 
-            <div className="p-6 lg:p-8 xl:p-10 space-y-6 lg:space-y-8">
+            <div className="p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
                 {onboarding && <OnboardingChecklist onboarding={onboarding} />}
 
                 {showBanner && (
@@ -282,12 +281,12 @@ export default function AdminDashboard({
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl lg:text-[40px] font-bold text-gray-900 dark:text-gray-100 tracking-tight">{t('navigation.dashboard')}</h1>
-                        <p className="text-base lg:text-lg text-gray-500 dark:text-gray-400 mt-1.5">
+                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{t('navigation.dashboard')}</h1>
+                        <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 mt-1">
                             {periods.find(p => p.value === selectedPeriod)?.label || t('dashboard.custom')} {t('general.overview') || 'overview'}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 text-base text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <i className="bi bi-calendar3"></i>
                         <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
@@ -317,13 +316,13 @@ export default function AdminDashboard({
                 )}
 
                 {/* Period Filter */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {periods.map((period) => (
                             <button
                                 key={period.value}
                                 onClick={() => handlePeriodChange(period.value)}
-                                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[15px] font-medium transition-all duration-200 ${
+                                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                                     selectedPeriod === period.value
                                         ? 'bg-blue-600 text-white shadow-md'
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -391,21 +390,21 @@ export default function AdminDashboard({
 
                 {/* Stats Cards */}
                 {visibleStatCards.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 lg:gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 sm:gap-4">
                         {visibleStatCards.map((stat, idx) => {
                             const colors = colorMap[stat.color];
                             return (
                                 <div
                                     key={idx}
-                                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 lg:p-6 hover:shadow-md transition-shadow duration-200"
+                                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 lg:p-5 hover:shadow-md transition-shadow duration-200"
                                 >
-                                    <div className="flex items-center gap-3 lg:gap-4">
-                                        <div className={`p-2.5 lg:p-3 rounded-xl shrink-0 ${colors.bg}`}>
-                                            <i className={`bi ${stat.icon} text-lg lg:text-xl ${colors.icon}`}></i>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2.5 rounded-xl shrink-0 ${colors.bg}`}>
+                                            <i className={`bi ${stat.icon} text-lg ${colors.icon}`}></i>
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className={`font-bold text-gray-900 dark:text-gray-100 tabular-nums leading-tight ${stat.nowrap ? 'whitespace-nowrap text-[clamp(1rem,2.8vw,1.5rem)]' : 'text-xl sm:text-2xl break-words'}`}>{stat.value}</p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{stat.label}</p>
+                                            <p className={`font-bold text-gray-900 dark:text-gray-100 tabular-nums leading-tight ${stat.nowrap ? 'whitespace-nowrap text-xl lg:text-2xl' : 'text-xl lg:text-2xl break-words'}`}>{stat.value}</p>
+                                            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{stat.label}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -417,10 +416,10 @@ export default function AdminDashboard({
                 {/* Payment Methods Breakdown */}
                 {canViewPayments && paymentMethodSummary?.length > 0 && (
                     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-                        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
-                            <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.payment_methods_breakdown')}</h2>
+                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('dashboard.payment_methods_breakdown')}</h2>
                         </div>
-                        <div className="p-6">
+                        <div className="p-5">
                             {(() => {
                                 const maxTotal = Math.max(...paymentMethodSummary.map(p => Number(p.total)));
                                 return (
@@ -436,16 +435,16 @@ export default function AdminDashboard({
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between gap-2">
-                                                            <span className="text-[15px] font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                                {pm.name}
-                                                            </span>
-                                                            <span className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
-                                                                {formatCurrency(total, cc)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="mt-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5">
-                                                            <div
-                                                                className="h-2.5 rounded-full transition-all duration-500"
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                                 {pm.name}
+                                                             </span>
+                                                             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">
+                                                                 {formatCurrency(total, cc)}
+                                                             </span>
+                                                         </div>
+                                                         <div className="mt-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+                                                             <div
+                                                                 className="h-2 rounded-full transition-all duration-500"
                                                                 style={{
                                                                     width: `${Math.max(pct, 4)}%`,
                                                                     backgroundColor: i === 0 ? '#2563eb' : i === 1 ? '#0891b2' : i === 2 ? '#059669' : '#6b7280',
@@ -464,10 +463,158 @@ export default function AdminDashboard({
                 )}
 
                 {/* Recent Orders + Stock Alerts */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Recent Orders */}
-                    {canViewOrders && (
-                    <div className={`${ordersColSpan} bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800`}>
+                {canViewOrders && canViewProducts ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+                        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('dashboard.recent_orders')}</h2>
+                                <Link href={adminUrl('/admin/orders')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                    {t('dashboard.view_all')} <i className="bi bi-arrow-right ml-1"></i>
+                                </Link>
+                            </div>
+
+                            {!orders?.length ? (
+                                <div className="text-center py-12">
+                                    <i className="bi bi-bag text-4xl text-gray-300"></i>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.no_orders_yet')}</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                <th className="px-5 py-3 font-medium">{t('orders.order')}</th>
+                                                <th className="px-5 py-3 font-medium">{t('orders.customer')}</th>
+                                                <th className="px-5 py-3 font-medium">{t('orders.amount')}</th>
+                                                <th className="px-5 py-3 font-medium">{t('dashboard.payment_status')}</th>
+                                                <th className="px-5 py-3 font-medium">{t('orders.status')}</th>
+                                                <th className="px-5 py-3 font-medium">{t('dashboard.time')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {orders.slice(0, 8).map((order) => (
+                                                <tr
+                                                    key={order.id}
+                                                    className="hover:bg-gray-50 dark:bg-gray-950 transition-colors cursor-pointer"
+                                                    onClick={() => router.visit(adminUrl(`/admin/orders/${order.id}`))}
+                                                >
+                                                    <td className="px-5 py-4">
+                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">#{order.id}</span>
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                            {order.user?.name || order.customer_name || (order.first_name ? `${order.first_name} ${order.last_name}` : 'N/A')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatMoney(order.total_amount)}</span>
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : order.payment_status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                            {order.payment_status || 'pending'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
+                                                            {order.order_status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-4">
+                                                        <span className="text-sm text-gray-500 dark:text-gray-400">{timeAgo(order.created_at)}</span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-6">
+                            {outOfStock?.data?.length > 0 && (
+                                <div className="bg-white dark:bg-gray-900 rounded-xl border border-red-200">
+                                    <div className="flex items-center gap-3 p-4 border-b border-red-100">
+                                        <div className="p-2 bg-red-100 rounded-lg">
+                                            <i className="bi bi-exclamation-triangle text-red-600"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-red-900">{t('dashboard.out_of_stock')}</h3>
+                                            <p className="text-xs text-red-600 mt-0.5">{outOfStock.data.length} {t('navigation.products').toLowerCase()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        {outOfStock.data.slice(0, 4).map((product) => (
+                                            <div key={product.id} className="flex items-center gap-3">
+                                                {product.photo1_url ? (
+                                                    <img src={product.photo1_url} alt={product.name} className="w-8 h-8 object-cover rounded-lg" />
+                                                ) : (
+                                                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
+                                                        <i className="bi bi-box"></i>
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
+                                                    <p className="text-xs text-red-600">{t('inventory.out_of_stock')}</p>
+                                                </div>
+                                                <Link
+                                                    href={adminUrl(`/admin/products/${product.id}/edit`)}
+                                                    className="text-xs text-red-600 hover:text-red-700 font-medium"
+                                                >
+                                                    {t('dashboard.restock')}
+                                                </Link>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {lowStock?.data?.length > 0 && (
+                                <div className="bg-white dark:bg-gray-900 rounded-xl border border-amber-200">
+                                    <div className="flex items-center gap-3 p-4 border-b border-amber-100">
+                                        <div className="p-2 bg-amber-100 rounded-lg">
+                                            <i className="bi bi-exclamation-circle text-amber-600"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-amber-900">{t('dashboard.low_stock')}</h3>
+                                            <p className="text-xs text-amber-600 mt-0.5">{lowStock.data.length} {t('navigation.products').toLowerCase()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        {lowStock.data.slice(0, 4).map((product) => (
+                                            <div key={product.id} className="flex items-center gap-3">
+                                                {product.photo1_url ? (
+                                                    <img src={product.photo1_url} alt={product.name} className="w-8 h-8 object-cover rounded-lg" />
+                                                ) : (
+                                                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
+                                                        <i className="bi bi-box"></i>
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
+                                                    <p className="text-xs text-amber-600">Only {product.stock} left</p>
+                                                </div>
+                                                <Link
+                                                    href={adminUrl(`/admin/products/${product.id}/edit`)}
+                                                    className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+                                                >
+                                                    {t('dashboard.update')}
+                                                </Link>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {(!outOfStock?.data?.length && !lowStock?.data?.length) && (
+                                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
+                                    <i className="bi bi-check-circle text-3xl text-emerald-400"></i>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.all_products_in_stock')}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : canViewOrders ? (
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
                         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('dashboard.recent_orders')}</h2>
                             <Link href={adminUrl('/admin/orders')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
@@ -485,12 +632,12 @@ export default function AdminDashboard({
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            <th className="px-5 py-3.5 font-medium">{t('orders.order')}</th>
-                                            <th className="px-5 py-3.5 font-medium">{t('orders.customer')}</th>
-                                            <th className="px-5 py-3.5 font-medium">{t('orders.amount')}</th>
-                                            <th className="px-5 py-3.5 font-medium">{t('dashboard.payment_status')}</th>
-                                            <th className="px-5 py-3.5 font-medium">{t('orders.status')}</th>
-                                            <th className="px-5 py-3.5 font-medium">{t('dashboard.time')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.order')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.customer')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.amount')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('dashboard.payment_status')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('orders.status')}</th>
+                                            <th className="px-5 py-3 font-medium">{t('dashboard.time')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -531,94 +678,7 @@ export default function AdminDashboard({
                             </div>
                         )}
                     </div>
-                    )}
-
-                    {/* Stock Alerts */}
-                    {canViewProducts && (
-                    <div className="space-y-6">
-                        {outOfStock?.data?.length > 0 && (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-red-200">
-                                <div className="flex items-center gap-3 p-4 border-b border-red-100">
-                                    <div className="p-2 bg-red-100 rounded-lg">
-                                        <i className="bi bi-exclamation-triangle text-red-600"></i>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-red-900">{t('dashboard.out_of_stock')}</h3>
-                                        <p className="text-xs text-red-600 mt-0.5">{outOfStock.data.length} {t('navigation.products').toLowerCase()}</p>
-                                    </div>
-                                </div>
-                                <div className="p-4 space-y-3">
-                                    {outOfStock.data.slice(0, 4).map((product) => (
-                                        <div key={product.id} className="flex items-center gap-3">
-                                            {product.photo1_url ? (
-                                                <img src={product.photo1_url} alt={product.name} className="w-8 h-8 object-cover rounded-lg" />
-                                            ) : (
-                                                <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
-                                                    <i className="bi bi-box"></i>
-                                                </div>
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
-                                                <p className="text-xs text-red-600">{t('inventory.out_of_stock')}</p>
-                                            </div>
-                                            <Link
-                                                href={adminUrl(`/admin/products/${product.id}/edit`)}
-                                                className="text-xs text-red-600 hover:text-red-700 font-medium"
-                                            >
-                                                {t('dashboard.restock')}
-                                            </Link>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {lowStock?.data?.length > 0 && (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-amber-200">
-                                <div className="flex items-center gap-3 p-4 border-b border-amber-100">
-                                    <div className="p-2 bg-amber-100 rounded-lg">
-                                        <i className="bi bi-exclamation-circle text-amber-600"></i>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-amber-900">{t('dashboard.low_stock')}</h3>
-                                        <p className="text-xs text-amber-600 mt-0.5">{lowStock.data.length} {t('navigation.products').toLowerCase()}</p>
-                                    </div>
-                                </div>
-                                <div className="p-4 space-y-3">
-                                    {lowStock.data.slice(0, 4).map((product) => (
-                                        <div key={product.id} className="flex items-center gap-3">
-                                            {product.photo1_url ? (
-                                                <img src={product.photo1_url} alt={product.name} className="w-8 h-8 object-cover rounded-lg" />
-                                            ) : (
-                                                <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
-                                                    <i className="bi bi-box"></i>
-                                                </div>
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{product.name}</p>
-                                                <p className="text-xs text-amber-600">Only {product.stock} left</p>
-                                            </div>
-                                            <Link
-                                                href={adminUrl(`/admin/products/${product.id}/edit`)}
-                                                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
-                                            >
-                                                {t('dashboard.update')}
-                                            </Link>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {(!outOfStock?.data?.length && !lowStock?.data?.length) && (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 text-center">
-                                <i className="bi bi-check-circle text-3xl text-emerald-400"></i>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.all_products_in_stock')}</p>
-                            </div>
-                        )}
-                    </div>
-                    )}
-                </div>
+                ) : null}
             </div>
         </AdminLayout>
     );
