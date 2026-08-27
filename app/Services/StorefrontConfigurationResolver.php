@@ -322,7 +322,7 @@ class StorefrontConfigurationResolver
 
             if ($target && $target->id !== $section->id) {
                 $target->update([
-                    'enabled' => $target->enabled || $section->enabled,
+                    'enabled' => $target->enabled && $section->enabled,
                     'desktop_visible' => $target->desktop_visible && $section->desktop_visible,
                     'mobile_visible' => $target->mobile_visible && $section->mobile_visible,
                     'position' => min($target->position, $section->position),
@@ -349,7 +349,7 @@ class StorefrontConfigurationResolver
             $canonical = $group->first();
             foreach ($group->slice(1) as $duplicate) {
                 $canonical->update([
-                    'enabled' => $canonical->enabled || $duplicate->enabled,
+                    'enabled' => $canonical->enabled && $duplicate->enabled,
                     'desktop_visible' => $canonical->desktop_visible && $duplicate->desktop_visible,
                     'mobile_visible' => $canonical->mobile_visible && $duplicate->mobile_visible,
                     'position' => min($canonical->position, $duplicate->position),
@@ -478,6 +478,9 @@ class StorefrontConfigurationResolver
             return $sections;
         }
 
+        // Legacy fallback: only used when no homepage sections exist in the DB
+        // at all (e.g. pre-provisioned tenants). The hero is enabled by default
+        // for new stores, but MUST be explicitly enabled — never forced on.
         return [
             [
                 'id' => null,
@@ -494,6 +497,7 @@ class StorefrontConfigurationResolver
                     'button_link' => $legacy->hero_button_link,
                     'images' => $legacy->hero_images_urls,
                 ],
+                'data' => [],
             ],
         ];
     }
