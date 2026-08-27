@@ -9,70 +9,32 @@ import {
     BarChart3, ShoppingBag, Receipt,
     ShoppingCart, CreditCard,
     Building2, MapPin,
-    Users, UserCog, ShieldCheck, History,
+    Users, ShieldCheck,
     Bell, Globe, BellRing, Send, Settings,
     Store, User, LogOut, Menu, X,
     ChevronLeft, ChevronRight,
-    FileText, Ruler, Layers, Zap, ArrowUp, Clock,
-    UserCircle, UserPlus, Activity, Shield, Archive,
+    FileText, Ruler, Layers, Zap,
     Rocket, HelpCircle,
     LayoutTemplate, Images, LayoutList,
-    ChevronDown,
+    ChevronDown, Navigation, Archive, Clock,
+    Activity, Shield, UserPlus, ArrowUp,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
     'Overview': 'overview',
-    'Products': 'catalog',
-    'Inventory': 'inventory',
+    'Catalog': 'catalog',
+    'Sales': 'sales',
+    'Store': 'store',
+    'Website': 'website',
+    'Business': 'business',
+    'Billing': 'billing',
+    'Settings': 'settings',
+    'Analytics': 'analytics',
     'Orders & Payments': 'sales',
     'Marketing': 'marketing',
-    'Billing': 'billing',
-    'Analytics': 'analytics',
     'Locations': 'locations',
     'Team': 'staff',
     'Content': 'content',
-    'Settings': 'settings',
-};
-
-const ITEM_VIS_KEY = {
-    '/admin/products': 'catalog.products',
-    '/admin/categories': 'catalog.categories',
-    '/admin/brands': 'catalog.brands',
-    '/admin/units': 'catalog.units',
-    '/admin/inventory/dashboard': 'inventory.dashboard',
-    '/admin/inventory': 'inventory.products',
-    '/admin/inventory/stock-history': 'inventory.stock_history',
-    '/admin/inventory/movements': 'inventory.movements',
-    '/admin/inventory/adjustments': 'inventory.adjustments',
-    '/admin/orders': 'sales.orders',
-    '/admin/payment-methods': 'sales.payment_methods',
-    '/admin/coupons': 'marketing.coupons',
-    '/admin/promotions': 'marketing.promotions',
-    '/admin/flash-sales': 'marketing.flash_sales',
-    '/admin/billing': 'billing.overview',
-    '/admin/billing/subscription': 'billing.subscription',
-    '/admin/billing/upgrade': 'billing.upgrade',
-    '/admin/billing/invoices': 'billing.invoices',
-    '/admin/billing/payment-history': 'billing.history',
-    '/admin/billing/settings': 'billing.settings',
-    '/admin/reports/sales': 'analytics.sales',
-    '/admin/reports/product-sales': 'analytics.products',
-    '/admin/reports/payments': 'analytics.payments',
-    '/admin/cities': 'locations.cities',
-    '/admin/townships': 'locations.townships',
-    '/admin/users': 'staff.members',
-    '/admin/team': 'staff.staff',
-    '/admin/roles': 'staff.roles',
-    '/admin/activity-logs': 'staff.activity',
-    '/admin/audit-logs': 'staff.audit',
-    '/admin/notifications': 'staff.notifications',
-    '/admin/faqs': 'content.faq',
-    '/admin/website-info/edit': 'settings.website',
-    '/admin/settings/notifications': 'settings.notifications',
-    '/admin/settings/telegram-integration': 'settings.telegram',
-    '/admin/settings/onboarding': 'settings.setup_guide',
-    '/admin/settings': 'settings.general',
-    '/admin/settings/menu-visibility': 'settings.menu_visibility',
 };
 
 const iconMap = {
@@ -80,12 +42,13 @@ const iconMap = {
     BarChart3, ShoppingBag, Receipt,
     ShoppingCart, CreditCard,
     Building2, MapPin,
-    Users, UserCog, ShieldCheck, History,
+    Users, ShieldCheck,
     Bell, Globe, BellRing, Send, Settings,
-    FileText, Ruler, Layers, Zap, ArrowUp, Clock,
-    UserCircle, UserPlus, Activity, Shield, Archive, Rocket, HelpCircle,
+    FileText, Ruler, Layers, Zap,
+    Rocket, HelpCircle,
     LayoutTemplate, Images, LayoutList,
-    ChevronDown,
+    ChevronDown, Navigation, Archive, Clock,
+    Activity, Shield, UserPlus, ArrowUp,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -103,7 +66,7 @@ function SubmenuHeight({ open, children }) {
         if (open) {
             const el = ref.current;
             setHeight(el.scrollHeight);
-            const timer = setTimeout(() => setHeight('auto'), 200);
+            const timer = setTimeout(() => setHeight('auto'), 150);
             return () => clearTimeout(timer);
         } else {
             const el = ref.current;
@@ -120,7 +83,7 @@ function SubmenuHeight({ open, children }) {
             style={{
                 height: height === 'auto' ? 'auto' : `${height}px`,
                 overflow: 'hidden',
-                transition: 'height 180ms ease',
+                transition: 'height 150ms ease',
             }}
             aria-hidden={!open}
         >
@@ -202,9 +165,28 @@ export default function AdminSidebar() {
         return [
             {
                 title: t('navigation.overview'),
-                visibilityKey: 'overview',
                 items: [
                     ...(can('dashboard.view') && isVis('overview') ? [{ label: t('navigation.dashboard'), href: '/admin/dashboard', icon: 'LayoutDashboard' }] : []),
+                ]
+            },
+            {
+                title: 'Catalog',
+                items: [
+                    ...(can('products.view') && isVis('catalog.products') ? [{ label: t('navigation.products'), href: '/admin/products', icon: 'Package' }] : []),
+                    ...(can('categories.view') && isVis('catalog.categories') ? [{ label: t('navigation.categories'), href: '/admin/categories', icon: 'Tags' }] : []),
+                    ...(can('brands.view') && isVis('catalog.brands') ? [{ label: t('navigation.brands'), href: '/admin/brands', icon: 'Layers' }] : []),
+                    ...(can('units.view') && isVis('catalog.units') ? [{ label: t('navigation.units'), href: '/admin/units', icon: 'Ruler' }] : []),
+                    ...(can('inventory.view') && hasFeature('inventory_management') && isVis('inventory.dashboard') ? [{ label: t('navigation.inventory'), href: '/admin/inventory/dashboard', icon: 'Archive' }] : []),
+                ]
+            },
+            {
+                title: 'Sales',
+                items: [
+                    ...(can('orders.view') && isVis('sales.orders') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
+                    ...(can('payments.view') && isVis('sales.payment_methods') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
+                    ...(can('coupons.view') && hasFeature('coupons') && isVis('marketing.coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
+                    ...(can('promotions.view') && hasFeature('promotions') && isVis('marketing.promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
+                    ...(hasFeature('flash_sales') && isVis('marketing.flash_sales') ? [{ label: t('navigation.flash_sales'), href: '/admin/flash-sales', icon: 'Zap' }] : []),
                 ]
             },
             {
@@ -213,14 +195,7 @@ export default function AdminSidebar() {
                     ...(can('settings.website') && isVis('settings.website') ? [
                         { label: 'Storefront', href: '/admin/storefront', icon: 'LayoutTemplate' },
                         { label: 'Homepage', href: '/admin/storefront/homepage', icon: 'LayoutList' },
-                    ] : []),
-                ]
-            },
-            {
-                title: 'Content',
-                items: [
-                    ...(can('settings.website') && isVis('settings.website') ? [
-                        { label: 'Header & Navigation', href: '/admin/storefront/navigation', icon: 'Menu' },
+                        { label: 'Header & Navigation', href: '/admin/storefront/navigation', icon: 'Navigation' },
                         { label: 'Promotions', href: '/admin/storefront/promotions', icon: 'Megaphone' },
                         { label: 'Media', href: '/admin/storefront/media', icon: 'Images' },
                     ] : []),
@@ -235,92 +210,47 @@ export default function AdminSidebar() {
                 ]
             },
             {
-                title: t('navigation.products_section'),
-                visibilityKey: 'catalog',
-                items: [
-                    ...(can('products.view') && isVis('catalog.products') ? [{ label: t('navigation.products'), href: '/admin/products', icon: 'Package' }] : []),
-                    ...(can('categories.view') && isVis('catalog.categories') ? [{ label: t('navigation.categories'), href: '/admin/categories', icon: 'Tags' }] : []),
-                    ...(can('brands.view') && isVis('catalog.brands') ? [{ label: t('navigation.brands'), href: '/admin/brands', icon: 'Layers' }] : []),
-                    ...(can('units.view') && isVis('catalog.units') ? [{ label: t('navigation.units'), href: '/admin/units', icon: 'Ruler' }] : []),
-                ]
-            },
-            ...(can('inventory.view') && hasFeature('inventory_management') ? [{
-                title: t('navigation.inventory'),
-                visibilityKey: 'inventory',
-                items: [
-                    ...(isVis('inventory.dashboard') ? [{ label: t('navigation.dashboard'), href: '/admin/inventory/dashboard', icon: 'LayoutDashboard' }] : []),
-                    ...(isVis('inventory.products') ? [{ label: 'Products Inventory', href: '/admin/inventory', icon: 'Archive' }] : []),
-                    ...(isVis('inventory.stock_history') ? [{ label: 'Stock History', href: '/admin/inventory/stock-history', icon: 'Clock' }] : []),
-                    ...(isVis('inventory.movements') ? [{ label: 'Stock Movements', href: '/admin/inventory/movements', icon: 'Activity' }] : []),
-                    ...(isVis('inventory.adjustments') ? [{ label: 'Stock Adjustments', href: '/admin/inventory/adjustments', icon: 'Settings' }] : []),
-                ]
-            }] : []),
-            {
-                title: t('navigation.orders_payments'),
-                visibilityKey: 'sales',
-                items: [
-                    ...(can('orders.view') && isVis('sales.orders') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
-                    ...(can('payments.view') && isVis('sales.payment_methods') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
-                ]
-            },
-            {
-                title: t('navigation.marketing'),
-                visibilityKey: 'marketing',
-                items: [
-                    ...(can('coupons.view') && hasFeature('coupons') && isVis('marketing.coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
-                    ...(can('promotions.view') && hasFeature('promotions') && isVis('marketing.promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
-                    ...(hasFeature('flash_sales') && isVis('marketing.flash_sales') ? [{ label: t('navigation.flash_sales'), href: '/admin/flash-sales', icon: 'Zap' }] : []),
-                ]
-            },
-            ...(can('billing.view') ? [{
-                title: t('navigation.billing'),
-                visibilityKey: 'billing',
-                items: [
-                    ...(isVis('billing.overview') ? [{ label: 'Overview', href: '/admin/billing', icon: 'CreditCard' }] : []),
-                    ...(isVis('billing.subscription') ? [{ label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' }] : []),
-                    ...(isVis('billing.upgrade') ? [{ label: 'Upgrade', href: '/admin/billing/upgrade', icon: 'ArrowUp' }] : []),
-                    ...(isVis('billing.invoices') ? [{ label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' }] : []),
-                    ...(isVis('billing.history') ? [{ label: 'History', href: '/admin/billing/payment-history', icon: 'Clock' }] : []),
-                    ...(isVis('billing.settings') ? [{ label: t('navigation.settings'), href: '/admin/billing/settings', icon: 'Settings' }] : []),
-                ]
-            }] : []),
-            {
-                title: t('navigation.analytics'),
-                visibilityKey: 'analytics',
-                items: [
-                    ...(can('reports.sales') && hasFeature('reports') && isVis('analytics.sales') ? [{ label: 'Sales', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
-                    ...(can('reports.products') && hasFeature('reports') && isVis('analytics.products') ? [{ label: t('navigation.products'), href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
-                    ...(can('reports.payments') && hasFeature('reports') && isVis('analytics.payments') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
-                ]
-            },
-            {
-                title: t('navigation.locations'),
-                visibilityKey: 'locations',
+                title: 'Locations',
                 items: [
                     ...(can('cities.view') && isVis('locations.cities') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
                     ...(can('townships.view') && isVis('locations.townships') ? [{ label: t('navigation.townships'), href: '/admin/townships', icon: 'MapPin' }] : []),
                 ]
             },
             {
-                title: t('navigation.team'),
-                visibilityKey: 'staff',
+                title: 'Business',
                 items: [
-                    ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'Users' }] : []),
-                    ...((can('users.view') || auth?.user?.is_owner) && isVis('staff.staff') ? [{ label: t('navigation.staff'), href: '/admin/team', icon: 'UserPlus' }] : []),
-                    ...(can('roles.view') && isVis('staff.roles') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'Shield' }] : []),
-                    ...(can('activity.view') && isVis('staff.activity') ? [{ label: 'Activity', href: '/admin/activity-logs', icon: 'Activity' }] : []),
-                    ...(can('audit.view') && isVis('staff.audit') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
-                    ...(isVis('staff.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/notifications', icon: 'Bell' }] : []),
+                    ...((can('users.view') || auth?.user?.is_owner) && isVis('staff.staff') ? [{ label: 'Team', href: '/admin/team', icon: 'Users' }] : []),
+                    ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'UserPlus' }] : []),
                 ]
             },
+            ...(can('billing.view') ? [{
+                title: 'Billing',
+                items: [
+                    ...(isVis('billing.overview') ? [{ label: 'Overview', href: '/admin/billing', icon: 'CreditCard' }] : []),
+                    ...(isVis('billing.subscription') ? [{ label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' }] : []),
+                    ...(isVis('billing.upgrade') ? [{ label: 'Upgrade', href: '/admin/billing/upgrade', icon: 'ArrowUp' }] : []),
+                    ...(isVis('billing.invoices') ? [{ label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' }] : []),
+                    ...(isVis('billing.history') ? [{ label: 'Payment History', href: '/admin/billing/payment-history', icon: 'Clock' }] : []),
+                    ...(isVis('billing.settings') ? [{ label: t('navigation.settings'), href: '/admin/billing/settings', icon: 'Settings' }] : []),
+                ]
+            }] : []),
+            ...(can('reports.sales') && hasFeature('reports') ? [{
+                title: 'Analytics',
+                items: [
+                    ...(isVis('analytics.sales') ? [{ label: 'Sales', href: '/admin/reports/sales', icon: 'BarChart3' }] : []),
+                    ...(isVis('analytics.products') ? [{ label: t('navigation.products'), href: '/admin/reports/product-sales', icon: 'ShoppingBag' }] : []),
+                    ...(isVis('analytics.payments') ? [{ label: 'Payments', href: '/admin/reports/payments', icon: 'Receipt' }] : []),
+                ]
+            }] : []),
             {
                 title: t('navigation.settings'),
-                visibilityKey: 'settings',
                 items: [
+                    ...(can('settings.view') && isVis('settings.general') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
                     ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
                     ...(can('settings.telegram') && isVis('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
                     ...(isOwner && isVis('settings.setup_guide') ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),
-                    ...(can('settings.view') && isVis('settings.general') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
+                    ...(can('activity.view') && isVis('staff.activity') ? [{ label: 'Activity Log', href: '/admin/activity-logs', icon: 'Activity' }] : []),
+                    ...(can('audit.view') && isVis('staff.audit') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
                 ]
             }
         ];
@@ -402,11 +332,11 @@ export default function AdminSidebar() {
                     background: transparent;
                 }
                 .sidebar-scrollbar::-webkit-scrollbar-thumb {
-                    background: ${merchant ? 'rgba(100, 116, 139, 0.28)' : 'rgba(255, 255, 255, 0.1)'};
+                    background: ${merchant ? 'rgba(100, 116, 139, 0.18)' : 'rgba(255, 255, 255, 0.1)'};
                     border-radius: 9999px;
                 }
                 .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: ${merchant ? 'rgba(71, 85, 105, 0.4)' : 'rgba(255, 255, 255, 0.18)'};
+                    background: ${merchant ? 'rgba(71, 85, 105, 0.3)' : 'rgba(255, 255, 255, 0.18)'};
                 }
             `}</style>
 
@@ -425,12 +355,10 @@ export default function AdminSidebar() {
             )}
 
             <aside
-                className={`fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col transition-all duration-300 ease-in-out ${merchant ? 'bg-slate-50 text-slate-800 border-r border-slate-200' : 'bg-slate-900 text-white'} ${
-                    collapsed ? 'w-[72px]' : 'w-64'
-                } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+                className={`fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col transition-all duration-300 ease-in-out ${merchant ? 'bg-[#F8FAFC] text-slate-800 border-r border-slate-200' : 'bg-slate-900 text-white'} ${collapsed ? 'w-[72px]' : 'w-[260px]'} ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
                 {/* Header */}
-                <div className={`h-16 flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} flex-shrink-0 ${merchant ? 'border-b border-slate-200' : 'border-b border-white/[0.06]'}`}>
+                <div className={`h-14 flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} flex-shrink-0 ${merchant ? 'border-b border-slate-200' : 'border-b border-white/[0.06]'}`}>
                     {collapsed ? (
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                             <Store className="w-4 h-4 text-white" />
@@ -444,7 +372,7 @@ export default function AdminSidebar() {
                                     <Store className="w-4 h-4 text-white" />
                                 </div>
                             )}
-                            <span className={`font-semibold truncate ${merchant ? 'text-base text-slate-900' : 'text-sm'}`}>{brandName}</span>
+                            <span className={`font-semibold truncate ${merchant ? 'text-[15px] text-slate-900' : 'text-sm'}`}>{brandName}</span>
                         </div>
                     )}
                 </div>
@@ -453,7 +381,7 @@ export default function AdminSidebar() {
                 <div className="hidden lg:block absolute -right-3 top-20 z-50">
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center shadow-sm border transition-colors ${merchant ? 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600' : 'bg-slate-700 hover:bg-slate-600 border-slate-600/50'}`}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center shadow-sm border transition-colors ${merchant ? 'bg-white hover:bg-slate-50 border-slate-200 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 border-slate-600/50'}`}
                         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     >
                         {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
@@ -461,30 +389,28 @@ export default function AdminSidebar() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-3 overflow-y-auto overflow-x-hidden sidebar-scrollbar">
+                <nav className="flex-1 px-2.5 py-2 overflow-y-auto overflow-x-hidden sidebar-scrollbar">
                     {visibleSections.map((section, sectionIdx) => {
                         const sectionHasActive = sectionHasActiveItem(section);
                         const activeItem = findActiveItem(section.items);
                         const isGroupOpen = collapsed || openGroup === section.title;
 
                         return (
-                            <div key={section.title} className={sectionIdx > 0 ? 'mt-4' : ''}>
+                            <div key={section.title} className={sectionIdx > 0 ? 'mt-3' : ''}>
                                 {/* Group header button (accordion trigger) */}
                                 {!collapsed && (
                                     <button
                                         type="button"
                                         onClick={() => handleToggleGroup(section.title)}
                                         aria-expanded={isGroupOpen}
-                                        className={`w-full flex items-center gap-1.5 px-3 pb-1.5 uppercase select-none text-[11px] leading-none font-semibold tracking-[0.09em] transition-colors ${
-                                            sectionIdx === 0 ? 'pt-1' : 'pt-0'
-                                        } ${
+                                        className={`w-full flex items-center gap-1.5 px-3 py-1.5 uppercase select-none text-[12px] font-semibold tracking-wider rounded-md transition-colors ${
                                             merchant
-                                                ? sectionHasActive ? 'text-slate-700 hover:text-slate-800' : 'text-slate-400 hover:text-slate-600'
-                                                : sectionHasActive ? 'text-white/90 hover:text-white' : 'text-gray-500 hover:text-gray-400'
+                                                ? sectionHasActive ? 'text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                                                : sectionHasActive ? 'text-white/90' : 'text-gray-500 hover:text-gray-400'
                                         }`}
                                     >
                                         <ChevronDown
-                                            className={`w-3 h-3 flex-shrink-0 transition-transform duration-150 ${
+                                            className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-150 ${
                                                 isGroupOpen ? 'rotate-0' : '-rotate-90'
                                             }`}
                                         />
@@ -503,30 +429,28 @@ export default function AdminSidebar() {
                                                     key={item.href}
                                                     href={adminUrl(item.href)}
                                                     onClick={() => setSidebarOpen(false)}
-                                                    style={active && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 11%, #ffffff)` } : undefined}
-                                                    className={`flex items-center gap-2.5 ${
-                                                        collapsed ? 'justify-center px-2' : 'px-3'
-                                                    } h-9 rounded-lg text-sm transition-colors duration-150 group relative ${
+                                                    style={active && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 10%, transparent)` } : undefined}
+                                                    className={`flex items-center gap-2.5 ${collapsed ? 'justify-center px-2' : 'px-3 pl-4'} h-[38px] rounded-lg text-[14px] transition-colors duration-150 group relative ${
                                                         active
                                                             ? merchant ? 'font-semibold' : 'text-white bg-white/[0.08] font-semibold'
-                                                            : merchant ? 'font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
+                                                            : merchant ? 'font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100/60' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
                                                     }`}
                                                     title={collapsed ? item.label : undefined}
                                                 >
                                                     {/* Active accent indicator */}
                                                     {active && (
                                                         <span
-                                                            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                                                            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
                                                             style={{ backgroundColor: accentColor }}
                                                         />
                                                     )}
                                                     <Icon
                                                         name={item.icon}
-                                                        strokeWidth={active ? 2.4 : 2}
+                                                        strokeWidth={active ? 2.2 : 1.8}
                                                         className={`flex-shrink-0 ${
                                                             active
                                                                 ? ''
-                                                                : merchant ? 'text-slate-400 group-hover:text-slate-600' : 'text-gray-400 group-hover:text-gray-300'
+                                                                : merchant ? 'text-slate-500 group-hover:text-slate-700' : 'text-gray-400 group-hover:text-gray-300'
                                                         }`}
                                                         {...(active ? { style: { color: accentColor } } : {})}
                                                     />
@@ -547,7 +471,7 @@ export default function AdminSidebar() {
                  <WorkspaceSwitcher collapsed={collapsed} light={merchant} />
 
                 {/* User section */}
-                <div className={`p-2.5 border-t flex-shrink-0 ${merchant ? 'border-slate-200 bg-slate-100/70' : 'border-white/[0.06]'}`}>
+                <div className={`p-2.5 border-t flex-shrink-0 ${merchant ? 'border-slate-200 bg-white' : 'border-white/[0.06]'}`}>
                     <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
                         <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -557,25 +481,25 @@ export default function AdminSidebar() {
                         </div>
                         {!collapsed && (
                             <div className="ml-2.5 flex-1 min-w-0">
-                                 <p className={`font-semibold truncate ${merchant ? 'text-[15px] text-slate-900' : 'text-sm'}`}>{auth?.user?.name}</p>
-                                 <p className={`truncate ${merchant ? 'text-[13px] text-slate-500' : 'text-xs text-gray-400 dark:text-gray-500'}`}>{auth?.user?.email}</p>
+                                 <p className={`font-semibold truncate ${merchant ? 'text-[14px] text-slate-900' : 'text-sm'}`}>{auth?.user?.name}</p>
+                                 <p className={`truncate ${merchant ? 'text-[12px] text-slate-500' : 'text-xs text-gray-400 dark:text-gray-500'}`}>{auth?.user?.email}</p>
                             </div>
                         )}
                     </div>
 
                     {!collapsed && (
-                        <div className="mt-2.5 flex gap-1.5">
+                        <div className="mt-2 flex gap-1.5">
                             <Link
                                 href={adminUrl('/profile')}
-                                 className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${merchant ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900' : 'bg-white/[0.08] hover:bg-white/[0.12] text-slate-300 hover:text-white'}`}
+                                 className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium rounded-md transition-colors ${merchant ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900' : 'bg-white/[0.08] hover:bg-white/[0.12] text-slate-300 hover:text-white'}`}
                             >
-                                <User className="w-3 h-3" />{t('general.profile')}
+                                <User className="w-3.5 h-3.5" />{t('general.profile')}
                             </Link>
                              <button
                                 onClick={logout}
-                                 className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${merchant ? 'bg-red-50 hover:bg-red-100 text-red-600' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'}`}
+                                 className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium rounded-md transition-colors ${merchant ? 'bg-red-50 hover:bg-red-100 text-red-600' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'}`}
                             >
-                                <LogOut className="w-3 h-3" />{t('general.logout')}
+                                <LogOut className="w-3.5 h-3.5" />{t('general.logout')}
                             </button>
                         </div>
                     )}
