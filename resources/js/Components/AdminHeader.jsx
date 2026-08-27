@@ -3,6 +3,8 @@ import NotificationBell from '@/Components/NotificationBell';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { adminUrl } from '@/Utils/adminUrl';
 import { useTranslation } from '@/Utils/useTranslation';
+import { Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function AdminHeader() {
     const { props, url } = usePage();
@@ -10,6 +12,17 @@ export default function AdminHeader() {
     const { t } = useTranslation();
     const isImpersonating = auth?.user?.is_impersonating;
     const impersonatorName = auth?.user?.impersonator_name;
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        const handler = (e) => setMobileSidebarOpen(e.detail === 'open');
+        window.addEventListener('admin-sidebar-toggle', handler);
+        return () => window.removeEventListener('admin-sidebar-toggle', handler);
+    }, []);
+
+    const toggleMobileSidebar = () => {
+        window.dispatchEvent(new CustomEvent('admin-sidebar-toggle'));
+    };
 
     const storeSlug = url?.match(/^\/store\/([^/]+)\//)?.[1] ?? null;
 
@@ -83,10 +96,16 @@ export default function AdminHeader() {
                     </button>
                 </div>
             )}
-            <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-14 lg:h-[72px] flex items-center px-4 lg:px-6 sticky top-0 z-20 shadow-sm">
+            <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-14 lg:h-[72px] flex items-center px-4 lg:px-6 sticky top-0 z-50 shadow-sm">
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
-                    <div className="lg:hidden w-10"></div>
+                    <button
+                        onClick={toggleMobileSidebar}
+                        className="lg:hidden flex items-center justify-center w-10 h-10 -ml-1 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+                        aria-label={mobileSidebarOpen ? 'Close menu' : 'Open menu'}
+                    >
+                        {mobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
                     <div>
                         <h1 className="text-lg lg:text-xl font-semibold text-gray-900 dark:text-gray-100">{getPageTitle()}</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 hidden lg:block">{subtitle}</p>

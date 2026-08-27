@@ -322,6 +322,16 @@ export default function AdminSidebar() {
         setOpenGroup(prev => prev === title ? null : title);
     }, []);
 
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.detail === 'open') setSidebarOpen(true);
+            else if (e.detail === 'close') setSidebarOpen(false);
+            else setSidebarOpen(prev => !prev);
+        };
+        window.addEventListener('admin-sidebar-toggle', handler);
+        return () => window.removeEventListener('admin-sidebar-toggle', handler);
+    }, []);
+
     return (
         <>
             <style>{`
@@ -340,25 +350,16 @@ export default function AdminSidebar() {
                 }
             `}</style>
 
-            {/* Mobile toggle */}
-            <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`lg:hidden fixed top-3 left-3 z-50 p-2 rounded-lg shadow-lg transition-colors ${merchant ? 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-                aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
-            >
-                {sidebarOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
-            </button>
-
             {/* Mobile overlay */}
             {sidebarOpen && (
                 <div className="lg:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
             )}
 
             <aside
-                className={`fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col transition-all duration-300 ease-in-out ${merchant ? 'bg-[#F8FAFC] text-slate-800 border-r border-slate-200' : 'bg-slate-900 text-white'} ${collapsed ? 'w-[72px]' : 'w-[260px]'} ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+                className={`fixed lg:sticky lg:top-0 top-14 left-0 z-40 h-[calc(100vh-3.5rem)] lg:h-screen flex flex-col transition-all duration-300 ease-in-out ${merchant ? 'bg-[#F8FAFC] text-slate-800 border-r border-slate-200' : 'bg-slate-900 text-white'} ${collapsed ? 'w-[72px]' : 'w-[260px]'} ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
                 {/* Header */}
-                <div className={`h-14 flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} flex-shrink-0 ${merchant ? 'border-b border-slate-200' : 'border-b border-white/[0.06]'}`}>
+                <div className={`h-14 flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} flex-shrink-0 ${merchant ? 'border-b border-slate-200' : 'border-b border-white/[0.06]'} hidden lg:flex`}>
                     {collapsed ? (
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}>
                             <Store className="w-4 h-4 text-white" />
