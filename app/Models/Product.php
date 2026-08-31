@@ -23,13 +23,17 @@ class Product extends Model
 
     protected $fillable = [
         'name', 'slug', 'sku', 'barcode', 'short_description', 'description',
-        'price', 'base_price', 'cost_price', 'category_id', 'brand_id', 'unit_id',
+        'price', 'sale_price', 'base_price', 'cost_price', 'category_id', 'brand_id', 'unit_id',
         'stock', 'low_stock_alert', 'photo1', 'photo2', 'gallery_images', 'seo_title', 'seo_description', 'seo_keywords', 'seo_image', 'status', 'type',
+        'featured', 'sort_order',
     ];
 
     protected $casts = [
         'price' => 'float',
+        'sale_price' => 'float',
         'gallery_images' => 'array',
+        'featured' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     protected $attributes = [
@@ -77,6 +81,16 @@ class Product extends Model
         return $query->active()
             ->where('type', '!=', ProductType::COMBO)
             ->orderBy('name');
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('featured', true);
+    }
+
+    public function scopeSorted($query)
+    {
+        return $query->orderBy('featured', 'desc')->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc');
     }
 
     /* ── Type helper methods ── */
@@ -242,6 +256,9 @@ class Product extends Model
      */
     public function getEffectivePrice(): float
     {
+        if ($this->sale_price !== null && $this->sale_price > 0) {
+            return (float) $this->sale_price;
+        }
         return (float) ($this->price ?? 0);
     }
 
@@ -404,8 +421,10 @@ class Product extends Model
 
         return [
             'type' => 'single',
-            'price' => (float) ($this->price ?? 0),
-            'display' => number_format((float) ($this->price ?? 0)) . ' MMK',
+            'price' => $this->getEffectivePrice(),
+            'regular_price' => (float) ($this->price ?? 0),
+            'sale_price' => $this->sale_price,
+            'display' => number_format($this->getEffectivePrice()) . ' MMK',
         ];
     }
 
@@ -797,7 +816,7 @@ class Product extends Model
     {
         $images = $this->gallery_images ?? [];
 
-        return array_map(fn($path) => $path ? ImageService::url($path) : null, $images);
+        return array_values(array_filter(array_map(fn($path) => $path ? ImageService::url($path) : null, $images)));
     }
 
     public function getSeoImageUrlAttribute(): ?string

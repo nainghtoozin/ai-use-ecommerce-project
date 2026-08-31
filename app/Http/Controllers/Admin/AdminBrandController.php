@@ -19,13 +19,14 @@ class AdminBrandController extends Controller
         private readonly ImageService $imageService,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->can('brands.view')) {
             abort(403, 'Unauthorized');
         }
 
-        $brands = $this->brandService->list();
+        $filters = $request->only(['search', 'filter_active', 'filter_featured']);
+        $brands = $this->brandService->list($filters);
 
         return Inertia::render('Admin/Brands/Index', [
             'brands' => $brands,
@@ -53,6 +54,10 @@ class AdminBrandController extends Controller
             $data['logo'] = $this->imageService->upload($request->file('logo'), 'brands');
         }
 
+        if ($request->hasFile('banner')) {
+            $data['banner'] = $this->imageService->upload($request->file('banner'), 'brands/banners');
+        }
+
         $this->brandService->create($data);
 
         return admin_redirect('admin.brands.index')
@@ -64,6 +69,8 @@ class AdminBrandController extends Controller
         if (!auth()->user()->can('brands.update')) {
             abort(403, 'Unauthorized');
         }
+
+        $brand->append(['logo_url', 'banner_url']);
 
         return Inertia::render('Admin/Brands/Edit', [
             'brand' => $brand,
@@ -83,6 +90,21 @@ class AdminBrandController extends Controller
             $data['logo'] = $this->imageService->upload($request->file('logo'), 'brands');
         }
 
+        if ($request->hasFile('banner')) {
+            $this->imageService->delete($brand->banner);
+            $data['banner'] = $this->imageService->upload($request->file('banner'), 'brands/banners');
+        }
+
+        if ($request->boolean('remove_logo') && !$request->hasFile('logo')) {
+            $this->imageService->delete($brand->logo);
+            $data['logo'] = null;
+        }
+
+        if ($request->boolean('remove_banner') && !$request->hasFile('banner')) {
+            $this->imageService->delete($brand->banner);
+            $data['banner'] = null;
+        }
+
         $this->brandService->update($brand, $data);
 
         return admin_redirect('admin.brands.index')
@@ -96,6 +118,7 @@ class AdminBrandController extends Controller
         }
 
         $this->imageService->delete($brand->logo);
+        $this->imageService->delete($brand->banner);
         $this->brandService->delete($brand);
 
         return admin_redirect('admin.brands.index')
@@ -108,13 +131,12 @@ class AdminBrandController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $query = $request->input('query');
-        $brands = $this->brandService->search($query);
-        $brands->appends(['query' => $query]);
+        $search = $request->input('search');
+        $brands = $this->brandService->list(['search' => $search]);
+        $brands->appends(['search' => $search]);
 
         return Inertia::render('Admin/Brands/Index', [
             'brands' => $brands,
-            'query' => $query,
         ]);
     }
 

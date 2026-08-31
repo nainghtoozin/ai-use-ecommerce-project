@@ -3,22 +3,69 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Services\ActivityLogger;
+use App\Services\ImageService;
 use App\Services\MasterDataImportService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use App\Models\Category;
 use Inertia\Inertia;
 
 class AdminCategoryController extends Controller
 {
-    public function index()
+    public function __construct(
+        private readonly ImageService $imageService,
+    ) {}
+
+    public function index(Request $request)
     {
         if (!auth()->user()->can('categories.view')) {
             abort(403, 'Unauthorized');
         }
 
-        $categories = Category::forCurrentTenant()->latest()->paginate(10);
+        $query = Category::forCurrentTenant()
+            ->with(['parent', 'products'])
+            ->sorted();
+
+        if ($request->has('filter_active')) {
+            $filter = $request->input('filter_active');
+            if ($filter === 'active') {
+                $query->where('is_active', true);
+            } elseif ($filter === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        if ($request->has('filter_featured')) {
+            $filter = $request->input('filter_featured');
+            if ($filter === 'featured') {
+                $query->where('featured', true);
+            } elseif ($filter === 'not_featured') {
+                $query->where('featured', false);
+            }
+        }
+
+        if ($request->has('filter_parent')) {
+            $filter = $request->input('filter_parent');
+            if ($filter === 'root') {
+                $query->whereNull('parent_id');
+            } elseif ($filter === 'child') {
+                $query->whereNotNull('parent_id');
+            }
+        }
+
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $search = $request->input('search');
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $categories = $query->paginate(15);
+
+        $categories->each(function ($category) {
+            $category->append('image_url');
+            $category->products_count = $category->products()->count();
+        });
 
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $categories,
@@ -31,21 +78,29 @@ class AdminCategoryController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        return Inertia::render('Admin/Categories/Create');
+        $parentCategories = Category::forCurrentTenant()
+            ->whereNull('parent_id')
+            ->sorted()
+            ->get(['id', 'name']);
+
+        return Inertia::render('Admin/Categories/Create', [
+            'parentCategories' => $parentCategories,
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
         if (!auth()->user()->can('categories.create')) {
             abort(403, 'Unauthorized');
         }
 
-        $request->validate([
-            'name' => ['required', 'max:255', Rule::unique('categories', 'name')->where('tenant_id', tenant()?->id)],
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
-        $category = Category::create($request->only(['name', 'description']));
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->imageService->upload($request->file('image'), 'categories');
+        }
+
+        $category = Category::create($data);
 
         ActivityLogger::log("Category '{$category->name}' created", 'category_created', $category);
 
@@ -59,23 +114,39 @@ class AdminCategoryController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $category->append('image_url');
+
+        $parentCategories = Category::forCurrentTenant()
+            ->whereNull('parent_id')
+            ->where('id', '!=', $category->id)
+            ->sorted()
+            ->get(['id', 'name']);
+
         return Inertia::render('Admin/Categories/Edit', [
             'category' => $category,
+            'parentCategories' => $parentCategories,
         ]);
     }
 
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
         if (!auth()->user()->can('categories.update')) {
             abort(403, 'Unauthorized');
         }
 
-        $request->validate([
-            'name' => ['required', 'max:255', Rule::unique('categories', 'name')->where('tenant_id', tenant()?->id)->ignore($category->id)],
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
-        $category->update($request->only(['name', 'description']));
+        if ($request->hasFile('image')) {
+            $this->imageService->delete($category->image);
+            $data['image'] = $this->imageService->upload($request->file('image'), 'categories');
+        }
+
+        if ($request->boolean('remove_image') && !$request->hasFile('image')) {
+            $this->imageService->delete($category->image);
+            $data['image'] = null;
+        }
+
+        $category->update($data);
 
         ActivityLogger::log("Category '{$category->name}' updated", 'category_updated', $category);
 
@@ -88,6 +159,8 @@ class AdminCategoryController extends Controller
         if (!auth()->user()->can('categories.delete')) {
             abort(403, 'Unauthorized');
         }
+
+        $this->imageService->delete($category->image);
 
         ActivityLogger::log("Category '{$category->name}' deleted", 'category_deleted', $category);
 
@@ -102,18 +175,23 @@ class AdminCategoryController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $query = $request->input('query');
+        $search = $request->input('search');
 
         $categories = Category::forCurrentTenant()
-            ->where('name', 'like', "%{$query}%")
-            ->latest()
-            ->paginate(10);
+            ->with(['parent'])
+            ->where('name', 'like', "%{$search}%")
+            ->sorted()
+            ->paginate(15);
 
-        $categories->appends(['query' => $query]);
+        $categories->each(function ($category) {
+            $category->append('image_url');
+            $category->products_count = $category->products()->count();
+        });
+
+        $categories->appends(['search' => $search]);
 
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $categories,
-            'query' => $query,
         ]);
     }
 

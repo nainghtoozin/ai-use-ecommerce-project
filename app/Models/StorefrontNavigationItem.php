@@ -10,7 +10,7 @@ class StorefrontNavigationItem extends Model
     use TenantAware;
 
     protected $fillable = [
-        'tenant_id', 'navigation_id', 'key', 'label', 'path', 'icon', 'enabled', 'position',
+        'tenant_id', 'navigation_id', 'key', 'label', 'path', 'icon', 'enabled', 'position', 'group',
     ];
 
     protected $casts = ['enabled' => 'boolean', 'position' => 'integer'];

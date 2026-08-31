@@ -152,8 +152,9 @@ class StorefrontRevisionService
             throw ValidationException::withMessages(['storefront' => 'The draft does not have a valid theme.']);
         }
 
+        $allowedPaths = \App\Http\Requests\UpdateStorefrontNavigationRequest::allowedPaths();
         foreach ($configuration['navigation']['items'] ?? [] as $item) {
-            if (!in_array($item['path'] ?? null, ['/', '/products', '/contact', '/customer/orders'], true)) {
+            if (!in_array($item['path'] ?? null, $allowedPaths, true)) {
                 throw ValidationException::withMessages(['storefront' => 'The draft contains an unsupported navigation destination.']);
             }
         }

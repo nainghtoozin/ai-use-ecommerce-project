@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Gift, Package, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Gift, Package, AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import ComboSelector from './ComboSelector';
 import ComboItemCard from './ComboItemCard';
 import ComboSummary from './ComboSummary';
@@ -40,6 +40,41 @@ export default function ComboBuilder({
     useEffect(() => {
         setItems(localItems);
     }, [localItems, setItems]);
+
+    const availability = useMemo(() => {
+        if (localItems.length === 0) {
+            return { maxCombos: 0, bottleneck: null, outOfStock: [], lowStock: [] };
+        }
+
+        let maxCombos = Infinity;
+        let bottleneck = null;
+        const outOfStock = [];
+        const lowStock = [];
+
+        localItems.forEach((item) => {
+            const required = item.quantity || 1;
+            const available = item.stock_available || 0;
+            const canMake = Math.floor(available / required);
+
+            if (canMake <= 0) {
+                outOfStock.push(item);
+            } else if (canMake < 5) {
+                lowStock.push(item);
+            }
+
+            if (canMake < maxCombos) {
+                maxCombos = canMake;
+                bottleneck = item;
+            }
+        });
+
+        return {
+            maxCombos: maxCombos === Infinity ? 0 : maxCombos,
+            bottleneck,
+            outOfStock,
+            lowStock,
+        };
+    }, [localItems]);
 
     function handleSelect(product, variant) {
         const existingKey = variant
@@ -87,6 +122,8 @@ export default function ComboBuilder({
     const itemsWithSubtotals = localItems.map((item) => ({
         ...item,
         subtotal: getSubtotal(item),
+        isBottleneck: availability.bottleneck?.id === item.id,
+        maxCombos: availability.maxCombos,
     }));
 
     const excludedIds = localItems
@@ -130,6 +167,84 @@ export default function ComboBuilder({
                         </div>
                     )}
 
+                    {/* Availability Summary */}
+                    {localItems.length > 0 && (
+                        <div className={`rounded-xl p-4 border-2 ${
+                            availability.maxCombos === 0
+                                ? 'bg-red-50 border-red-200'
+                                : availability.maxCombos < 5
+                                    ? 'bg-amber-50 border-amber-200'
+                                    : 'bg-emerald-50 border-emerald-200'
+                        }`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    {availability.maxCombos === 0 ? (
+                                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                                    ) : availability.maxCombos < 5 ? (
+                                        <AlertCircle className="w-5 h-5 text-amber-600" />
+                                    ) : (
+                                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                    )}
+                                    <div>
+                                        <p className={`text-sm font-semibold ${
+                                            availability.maxCombos === 0
+                                                ? 'text-red-700'
+                                                : availability.maxCombos < 5
+                                                    ? 'text-amber-700'
+                                                    : 'text-emerald-700'
+                                        }`}>
+                                            {availability.maxCombos === 0
+                                                ? 'Out of Stock'
+                                                : availability.maxCombos < 5
+                                                    ? `Limited Availability (${availability.maxCombos} bundles)`
+                                                    : `${availability.maxCombos} bundles available`
+                                            }
+                                        </p>
+                                        {availability.bottleneck && (
+                                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                                Limited by: <span className="font-medium">{availability.bottleneck.product_name}</span>
+                                                {availability.bottleneck.variant_label && ` (${availability.bottleneck.variant_label})`}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                        {availability.maxCombos}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">max bundles</p>
+                                </div>
+                            </div>
+
+                            {/* Component status list */}
+                            {localItems.length > 1 && (
+                                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                                        {itemsWithSubtotals.map((item) => {
+                                            const required = item.quantity || 1;
+                                            const available = item.stock_available || 0;
+                                            const canMake = Math.floor(available / required);
+                                            const status = canMake <= 0 ? 'out' : canMake < 5 ? 'low' : 'ok';
+
+                                            return (
+                                                <div key={item.id} className={`flex items-center gap-2 px-2 py-1 rounded ${
+                                                    status === 'out' ? 'bg-red-100 text-red-700' :
+                                                    status === 'low' ? 'bg-amber-100 text-amber-700' :
+                                                    'bg-emerald-100 text-emerald-700'
+                                                }`}>
+                                                    <span className="truncate flex-1">{item.product_name}</span>
+                                                    <span className="font-medium whitespace-nowrap">
+                                                        {available}/{required} = {canMake}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Items list */}
                     {localItems.length > 0 && (
                         <div className="space-y-2">
@@ -145,6 +260,8 @@ export default function ComboBuilder({
                                     index={index}
                                     onRemove={handleRemove}
                                     onQuantityChange={handleQuantityChange}
+                                    isBottleneck={availability.bottleneck?.id === item.id}
+                                    maxCombos={availability.maxCombos}
                                 />
                             ))}
                         </div>

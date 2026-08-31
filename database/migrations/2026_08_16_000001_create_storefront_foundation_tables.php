@@ -71,7 +71,7 @@ return new class extends Migration
             $table->unsignedInteger('position')->default(0);
             $table->json('configuration')->nullable();
             $table->timestamps();
-            $table->index(['tenant_id', 'storefront_id', 'enabled', 'position']);
+            $table->index(['tenant_id', 'storefront_id', 'enabled', 'position'], 'shs_tenant_store_enabled_pos_idx');
             });
         }
 

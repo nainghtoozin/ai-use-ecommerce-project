@@ -41,6 +41,8 @@ export default function useProductForm({ product = null, productType = 'single' 
         gallery_images_url: product?.gallery_images_url || [],
         existing_combo_items: product?.combo_items || [],
         warehouse_id: product?.warehouse_id || '',
+        featured: product?.featured ?? false,
+        sort_order: product?.sort_order ?? 0,
     });
 
     const [variants, setVariants] = useState(
@@ -117,6 +119,8 @@ export default function useProductForm({ product = null, productType = 'single' 
         form.append('unit_id', formData.unit_id || '');
         form.append('status', formData.status);
         form.append('type', formData.product_type || 'single');
+        form.append('featured', formData.featured ? '1' : '0');
+        form.append('sort_order', formData.sort_order ?? 0);
 
         if (formData.product_type === 'variable') {
             const sanitizedVariants = variants.map((v, index) => {

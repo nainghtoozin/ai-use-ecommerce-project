@@ -29,7 +29,7 @@ function InfoModal({ open, onClose, title, children }) {
     );
 }
 
-function BackToTop() {
+function BackToTop({ label = 'Back to top' }) {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
@@ -44,7 +44,7 @@ function BackToTop() {
         <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="fixed bottom-6 right-6 z-40 w-10 h-10 rounded-full bg-slate-800 dark:bg-gray-100 text-white dark:text-gray-900 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center"
-            aria-label="Back to top"
+            aria-label={label}
         >
             <i className="bi bi-chevron-up text-sm"></i>
         </button>
@@ -56,6 +56,7 @@ export default function ShopFooter() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [infoModal, setInfoModal] = useState(null);
 
+    const labels = storefront?.content?.labels || {};
     const storeSlug = tenant?.slug;
     const storeUrl = (path) => `/store/${storeSlug}${path}`;
 
@@ -75,7 +76,7 @@ export default function ShopFooter() {
     const descTruncated = descStripped.length > 120;
     const descPreview = descTruncated ? descStripped.substring(0, 120) + '...' : descStripped;
 
-    const footerCopyright = website_info?.footer_copyright || `\u00A9 ${new Date().getFullYear()} ${siteName}. All rights reserved.`;
+    const footerCopyright = website_info?.footer_copyright || `\u00A9 ${new Date().getFullYear()} ${siteName}. ${labels.footer_copyright || 'All rights reserved.'}`;
 
     const phone = ci.primary_phone || website_info?.phone;
     const supportEmail = ci.support_email || website_info?.support_email;
@@ -91,16 +92,21 @@ export default function ShopFooter() {
         { key: 'linkedin', icon: 'bi-linkedin', link: website_info?.linkedin_url },
     ].filter(s => s.link);
 
-    const quickLinks = [
-        { label: 'Home', href: storeUrl('/') },
-        { label: 'Products', href: storeUrl('/products') },
-        { label: 'Categories', href: storeUrl('/products') },
-        { label: 'New Arrivals', href: storeUrl('/products?sort=latest') },
-    ];
+    const footerNavItems = storefront?.navigation?.footer_items || [];
+    const hasFooterNav = footerNavItems.length > 0;
+
+    const quickLinks = hasFooterNav
+        ? footerNavItems.map((item) => ({ label: item.label, href: storeUrl(item.path) }))
+        : [
+            { label: labels.home || 'Home', href: storeUrl('/') },
+            { label: labels.products || 'Products', href: storeUrl('/products') },
+            { label: labels.categories || 'Categories', href: storeUrl('/products') },
+            { label: labels.new_arrivals || 'New Arrivals', href: storeUrl('/products?sort=newest') },
+        ];
 
     const customerServiceLinks = [
-        { label: 'Contact Us', href: storeUrl('/contact') },
-        { label: 'FAQ', href: storeUrl('/faq') },
+        { label: labels.contact_us || 'Contact Us', href: storeUrl('/contact') },
+        { label: labels.faq || 'FAQ', href: storeUrl('/faq') },
     ];
 
     const policyLinks = [
@@ -128,7 +134,7 @@ export default function ShopFooter() {
             >
                 <span dangerouslySetInnerHTML={{ __html: extraText }} />
             </InfoModal>
-            <BackToTop />
+            <BackToTop label={labels.back_to_top || 'Back to top'} />
 
             <footer style={{ backgroundColor: 'var(--storefront-color-text, #0F172A)' }} className="text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,7 +161,7 @@ export default function ShopFooter() {
                                                 className="text-xs font-medium transition-colors"
                                                 style={{ color: themeColor }}
                                             >
-                                                Read More →
+                                                {labels.read_more || 'Read More'} &rarr;
                                             </button>
                                         )}
                                         {extraText && (
@@ -164,7 +170,7 @@ export default function ShopFooter() {
                                                 className="text-xs font-medium transition-colors"
                                                 style={{ color: themeColor }}
                                             >
-                                                About Our Store →
+                                                {labels.about_our_store || 'About Our Store'} &rarr;
                                             </button>
                                         )}
                                     </div>
@@ -189,7 +195,7 @@ export default function ShopFooter() {
 
                             {/* Quick Links */}
                             <div>
-                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Quick Links</h4>
+                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">{labels.quick_links || 'Quick Links'}</h4>
                                 <ul className="space-y-2">
                                     {quickLinks.map((link) => (
                                         <li key={link.href + link.label}>
@@ -203,7 +209,7 @@ export default function ShopFooter() {
 
                             {/* Customer Service */}
                             <div>
-                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Customer Service</h4>
+                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">{labels.customer_service || 'Customer Service'}</h4>
                                 <ul className="space-y-2">
                                     {customerServiceLinks.map((link) => (
                                         <li key={link.href + link.label}>
@@ -217,7 +223,7 @@ export default function ShopFooter() {
 
                             {/* Policies */}
                             {policyLinks.length > 0 && <div>
-                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Policies</h4>
+                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">{labels.policies || 'Policies'}</h4>
                                 <ul className="space-y-2">
                                     {policyLinks.map((link) => (
                                         <li key={link.href + link.label}>
@@ -231,7 +237,7 @@ export default function ShopFooter() {
 
                             {/* Contact */}
                              {hasMiniContact && <div className="col-span-2 md:col-span-1">
-                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Contact</h4>
+                                <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">{labels.contact || 'Contact'}</h4>
                                  <div className="space-y-2 mb-3">
                                         {phone && (
                                             <a href={`tel:${phone}`} className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition-colors">
@@ -252,7 +258,7 @@ export default function ShopFooter() {
                                     style={{ backgroundColor: themeColor, color: '#fff' }}
                                 >
                                     <i className="bi bi-info-circle" style={{ fontSize: '0.7rem' }}></i>
-                                    Contact Details
+                                    {labels.contact_details || 'Contact Details'}
                                     <i className="bi bi-chevron-right" style={{ fontSize: '0.6rem' }}></i>
                                 </button>
                              </div>}
@@ -265,7 +271,7 @@ export default function ShopFooter() {
                             <span className="min-w-0 break-words">{footerCopyright}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs">
-                            <span className="text-slate-500">Powered by</span>
+                            <span className="text-slate-500">{labels.powered_by || 'Powered by'}</span>
                             <span className="font-semibold text-white">{siteName}</span>
                         </div>
                     </div>

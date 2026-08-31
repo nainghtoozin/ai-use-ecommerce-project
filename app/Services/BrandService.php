@@ -8,20 +8,42 @@ use Illuminate\Validation\Rule;
 
 class BrandService
 {
-    public function list()
+    public function list(array $filters = [])
     {
-        return Brand::forCurrentTenant()->latest()->paginate(10);
+        $query = Brand::forCurrentTenant()->withCount('products');
+
+        if (!empty($filters['filter_active'])) {
+            if ($filters['filter_active'] === 'active') {
+                $query->where('is_active', true);
+            } elseif ($filters['filter_active'] === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        if (!empty($filters['filter_featured'])) {
+            if ($filters['filter_featured'] === 'featured') {
+                $query->where('featured', true);
+            } elseif ($filters['filter_featured'] === 'not_featured') {
+                $query->where('featured', false);
+            }
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        $brands = $query->sorted()->paginate(15);
+
+        return $brands;
     }
 
     public function search(string $query)
     {
-        return Brand::forCurrentTenant()
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('slug', 'like', "%{$query}%");
-            })
-            ->latest()
-            ->paginate(10);
+        return $this->list(['search' => $query]);
     }
 
     public function create(array $data): Brand
@@ -68,6 +90,9 @@ class BrandService
             ],
             'description' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'featured' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ];
     }

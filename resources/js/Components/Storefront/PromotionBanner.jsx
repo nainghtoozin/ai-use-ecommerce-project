@@ -5,6 +5,7 @@ export default function PromotionBanner({ banners }) {
     const { tenant, storefront } = usePage().props;
     const labels = storefront?.content?.labels || {};
     const [current, setCurrent] = useState(0);
+    const [failedImages, setFailedImages] = useState({});
 
     useEffect(() => {
         if (!banners?.length || banners.length < 2) return;
@@ -13,6 +14,8 @@ export default function PromotionBanner({ banners }) {
     }, [banners?.length]);
 
     if (!banners?.length) return null;
+
+    const handleImageError = (id) => setFailedImages((prev) => ({ ...prev, [id]: true }));
 
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -42,13 +45,14 @@ export default function PromotionBanner({ banners }) {
                                     </svg>
                                 </span>
                             </div>
-                            {banner.image && (
+                            {banner.image && !failedImages[banner.id] && (
                                 <div className="hidden sm:block w-40 lg:w-56 flex-shrink-0">
                                     <img
                                         src={banner.image_url}
                                         alt={banner.title}
                                         className="w-full h-28 lg:h-36 object-cover rounded-xl shadow-lg"
                                         loading="lazy"
+                                        onError={() => handleImageError(banner.id)}
                                     />
                                 </div>
                             )}

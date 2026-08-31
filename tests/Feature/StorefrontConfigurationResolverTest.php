@@ -323,7 +323,7 @@ class StorefrontConfigurationResolverTest extends TestCase
             'tenant_id' => $tenant->id,
             'storefront_id' => $storefront->id,
             'type' => 'hero',
-            'variant' => 'auto',
+            'variant' => 'default',
             'enabled' => true,
             'desktop_visible' => true,
             'mobile_visible' => true,
@@ -419,14 +419,14 @@ class StorefrontConfigurationResolverTest extends TestCase
         $theme = Theme::firstOrFail();
         $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
         $storefrontB = Storefront::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $sectionA = StorefrontHomepageSection::create(['tenant_id' => $tenantA->id, 'storefront_id' => $storefrontA->id, 'type' => 'hero', 'variant' => 'auto', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
-        $sectionB = StorefrontHomepageSection::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => $storefrontB->id, 'type' => 'hero', 'variant' => 'auto', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+        $sectionA = StorefrontHomepageSection::create(['tenant_id' => $tenantA->id, 'storefront_id' => $storefrontA->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+        $sectionB = StorefrontHomepageSection::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => $storefrontB->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
 
         $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
         $request->shouldReceive('validated')->andReturn([
             'site_name' => 'Store A', 'theme_id' => $theme->id, 'tokens' => [],
-            'homepage_sections' => [['id' => $sectionB->id, 'enabled' => false, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'auto']],
-            'hero' => ['variant' => 'auto'], 'hero_remove_image' => false, 'labels' => [],
+            'homepage_sections' => [['id' => $sectionB->id, 'enabled' => false, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'default']],
+            'hero' => ['variant' => 'default'], 'hero_remove_image' => false, 'labels' => [],
         ]);
         $request->shouldReceive('hasFile')->andReturn(false);
 
@@ -612,7 +612,7 @@ class StorefrontConfigurationResolverTest extends TestCase
             'tenant_id' => $tenant->id,
             'storefront_id' => $storefront->id,
             'type' => 'hero',
-            'variant' => 'auto',
+            'variant' => 'default',
             'enabled' => true,
             'desktop_visible' => true,
             'mobile_visible' => true,
@@ -717,5 +717,270 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertSame('#AA0000', app(StorefrontConfigurationResolver::class)->resolveBase()['design']['color']['primary']);
         app()->instance('current.tenant', $tenantB);
         $this->assertSame('#00AA00', app(StorefrontConfigurationResolver::class)->resolveBase()['design']['color']['primary']);
+    }
+
+    public function test_hero_variants_are_canonical_and_normalizable(): void
+    {
+        $this->assertSame(['default', 'split', 'centered', 'text-only', 'minimal'], StorefrontConfigurationResolver::heroVariants());
+        $this->assertSame('default', StorefrontConfigurationResolver::HERO_DEFAULT_VARIANT);
+
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant(null));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant(''));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('auto'));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('image'));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('product'));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('garbage'));
+        $this->assertSame('split', StorefrontConfigurationResolver::normalizeHeroVariant('split'));
+        $this->assertSame('text-only', StorefrontConfigurationResolver::normalizeHeroVariant('text-only'));
+        $this->assertSame('minimal', StorefrontConfigurationResolver::normalizeHeroVariant('minimal'));
+        $this->assertSame('centered', StorefrontConfigurationResolver::normalizeHeroVariant('CENTERED'));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant(' default '));
+    }
+
+    public function test_valid_hero_variant_can_be_saved(): void
+    {
+        $tenant = Tenant::create(['name' => 'Save Hero', 'slug' => 'save-hero', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Save Hero', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+
+        $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
+        $request->shouldReceive('validated')->andReturn([
+            'site_name' => 'Save Hero', 'theme_id' => $theme->id, 'tokens' => [],
+            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'split']],
+            'hero' => ['variant' => 'split', 'title' => 'Hello', 'subtitle' => 'World', 'button_text' => 'Go', 'button_link' => '/products'],
+            'hero_remove_image' => false, 'labels' => [],
+        ]);
+        $request->shouldReceive('hasFile')->andReturn(false);
+
+        app(StorefrontSettingsController::class)->update($request);
+
+        $hero->refresh();
+        $this->assertSame('split', $hero->variant);
+        $this->assertSame('Hello', $hero->configuration['title']);
+        $this->assertSame('World', $hero->configuration['subtitle']);
+        $this->assertSame('Go', $hero->configuration['button_text']);
+        $this->assertSame('/products', $hero->configuration['button_link']);
+    }
+
+    public function test_invalid_hero_variant_is_normalized_not_rejected(): void
+    {
+        $tenant = Tenant::create(['name' => 'Bad Variant', 'slug' => 'bad-variant', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Bad Variant', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+
+        $rules = (new UpdateStorefrontConfigurationRequest())->rules();
+        $invalid = Validator::make([
+            'theme_id' => $theme->id,
+            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'garbage']],
+            'hero' => ['variant' => 'garbage'],
+        ], $rules);
+        $this->assertTrue($invalid->fails(), 'Invalid hero.variant must be rejected by validation.');
+        $this->assertArrayHasKey('hero.variant', $invalid->errors()->toArray());
+    }
+
+    public function test_legacy_invalid_hero_variant_is_normalized_on_save(): void
+    {
+        $tenant = Tenant::create(['name' => 'Legacy Variant', 'slug' => 'legacy-variant', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Legacy Variant', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+
+        $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
+        $request->shouldReceive('validated')->andReturn([
+            'site_name' => 'Legacy Variant', 'theme_id' => $theme->id, 'tokens' => [],
+            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'auto']],
+            'hero' => ['variant' => 'auto', 'title' => 'X'],
+            'hero_remove_image' => false, 'labels' => [],
+        ]);
+        $request->shouldReceive('hasFile')->andReturn(false);
+
+        app(StorefrontSettingsController::class)->update($request);
+        $hero->refresh();
+        $this->assertSame('default', $hero->variant, 'Legacy "auto" must be normalized to "default".');
+    }
+
+    public function test_hero_can_be_disabled_and_enabled(): void
+    {
+        $tenant = Tenant::create(['name' => 'Toggle Hero', 'slug' => 'toggle-hero', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Toggle Hero', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'split', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+        $service->prepareDraft($storefront);
+        $hero->update(['enabled' => false]);
+        $service->syncDraft($storefront);
+
+        $draft = app(StorefrontConfigurationResolver::class)->resolve(null, 'draft')['homepage']['sections'];
+        $draftHero = collect($draft)->firstWhere('type', 'hero');
+        $this->assertFalse($draftHero['enabled']);
+
+        $service->publish($storefront->fresh());
+        $published = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedHero = collect($published)->firstWhere('type', 'hero');
+        $this->assertFalse($publishedHero['enabled']);
+
+        $service->prepareDraft($storefront->fresh());
+        $hero->fresh()->update(['enabled' => true]);
+        $service->syncDraft($storefront->fresh());
+        $service->publish($storefront->fresh());
+
+        $published2 = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedHero2 = collect($published2)->firstWhere('type', 'hero');
+        $this->assertTrue($publishedHero2['enabled']);
+    }
+
+    public function test_ensure_sections_creates_hero_with_valid_default_variant(): void
+    {
+        $tenant = Tenant::create(['name' => 'Provision', 'slug' => 'provision', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Provision', 'theme_color' => '#3B82F6']);
+
+        $storefront = app(StorefrontConfigurationResolver::class)->provision($tenant);
+        $this->assertNotNull($storefront);
+
+        $hero = StorefrontHomepageSection::withoutTenantScope()
+            ->where('storefront_id', $storefront->id)
+            ->where('type', 'hero')
+            ->first();
+        $this->assertNotNull($hero);
+        $this->assertContains($hero->variant, StorefrontConfigurationResolver::heroVariants());
+        $this->assertSame(StorefrontConfigurationResolver::HERO_DEFAULT_VARIANT, $hero->variant);
+    }
+
+    public function test_ensure_sections_normalizes_legacy_invalid_hero_variant(): void
+    {
+        $tenant = Tenant::create(['name' => 'Legacy Hero', 'slug' => 'legacy-hero', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Legacy Hero', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        StorefrontHomepageSection::create([
+            'tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero',
+            'variant' => 'auto', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true,
+            'position' => 0, 'configuration' => [],
+        ]);
+
+        app(StorefrontConfigurationResolver::class)->ensureHomepageSections($storefront->fresh());
+
+        $hero = StorefrontHomepageSection::withoutTenantScope()
+            ->where('storefront_id', $storefront->id)
+            ->where('type', 'hero')
+            ->first();
+        $this->assertSame('default', $hero->variant);
+    }
+
+    public function test_hero_variants_isolated_between_tenants(): void
+    {
+        $tenantA = Tenant::create(['name' => 'A', 'slug' => 'hero-iso-a', 'status' => 'active']);
+        $tenantB = Tenant::create(['name' => 'B', 'slug' => 'hero-iso-b', 'status' => 'active']);
+        WebsiteInfo::create(['tenant_id' => $tenantA->id, 'site_name' => 'A', 'theme_color' => '#3B82F6']);
+        WebsiteInfo::create(['tenant_id' => $tenantB->id, 'site_name' => 'B', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $storefrontB = Storefront::create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        app()->instance('current.tenant', $tenantA);
+        $heroA = StorefrontHomepageSection::create(['tenant_id' => $tenantA->id, 'storefront_id' => $storefrontA->id, 'type' => 'hero', 'variant' => 'split', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => ['title' => 'A Hero']]);
+
+        app()->instance('current.tenant', $tenantB);
+        $heroB = StorefrontHomepageSection::create(['tenant_id' => $tenantB->id, 'storefront_id' => $storefrontB->id, 'type' => 'hero', 'variant' => 'centered', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => ['title' => 'B Hero']]);
+
+        app()->instance('current.tenant', $tenantA);
+        $contractA = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $sectionA = collect($contractA)->firstWhere('type', 'hero');
+        $this->assertSame('split', $sectionA['variant']);
+        $this->assertSame('A Hero', $sectionA['configuration']['title']);
+
+        app()->instance('current.tenant', $tenantB);
+        $contractB = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $sectionB = collect($contractB)->firstWhere('type', 'hero');
+        $this->assertSame('centered', $sectionB['variant']);
+        $this->assertSame('B Hero', $sectionB['configuration']['title']);
+    }
+
+    public function test_draft_preview_uses_draft_hero_configuration(): void
+    {
+        $tenant = Tenant::create(['name' => 'Draft Hero', 'slug' => 'draft-hero', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Draft Hero', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'split', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => ['title' => 'Published Hero']]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+        $service->prepareDraft($storefront);
+        $service->syncDraft($storefront);
+        $service->publish($storefront->fresh());
+        $service->prepareDraft($storefront->fresh());
+
+        $hero->update(['configuration' => array_merge($hero->configuration ?? [], ['title' => 'Draft Hero Title']), 'variant' => 'minimal']);
+        $service->syncDraft($storefront->fresh());
+
+        $draft = app(StorefrontConfigurationResolver::class)->resolve(null, 'draft')['homepage']['sections'];
+        $draftHero = collect($draft)->firstWhere('type', 'hero');
+        $this->assertSame('minimal', $draftHero['variant']);
+        $this->assertSame('Draft Hero Title', $draftHero['configuration']['title']);
+
+        $published = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedHero = collect($published)->firstWhere('type', 'hero');
+        $this->assertSame('split', $publishedHero['variant']);
+        $this->assertSame('Published Hero', $publishedHero['configuration']['title']);
+    }
+
+    public function test_disabled_hero_configuration_persists_with_disabled_state(): void
+    {
+        $tenant = Tenant::create(['name' => 'Disabled Hero', 'slug' => 'disabled-hero', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Disabled Hero', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'split', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => ['title' => 'Hero']]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+        $service->prepareDraft($storefront);
+        $hero->update(['enabled' => false]);
+        $service->syncDraft($storefront);
+        $service->publish($storefront->fresh());
+
+        $hero->refresh();
+        $this->assertFalse($hero->enabled);
+        $this->assertSame('split', $hero->variant);
+        $this->assertSame('Hero', $hero->configuration['title']);
+    }
+
+    public function test_storefront_settings_save_with_default_hero_variant_succeeds(): void
+    {
+        $tenant = Tenant::create(['name' => 'Default Hero Save', 'slug' => 'default-hero-save', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Default Hero Save', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+
+        $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
+        $request->shouldReceive('validated')->andReturn([
+            'site_name' => 'Default Hero Save', 'theme_id' => $theme->id, 'tokens' => [],
+            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'default']],
+            'hero' => ['variant' => 'default', 'title' => 'Welcome', 'subtitle' => 'Sub', 'button_text' => 'Buy', 'button_link' => '/products'],
+            'hero_remove_image' => false, 'labels' => [],
+        ]);
+        $request->shouldReceive('hasFile')->andReturn(false);
+
+        app(StorefrontSettingsController::class)->update($request);
+        $hero->refresh();
+        $this->assertSame('default', $hero->variant);
+        $this->assertSame('Welcome', $hero->configuration['title']);
     }
 }

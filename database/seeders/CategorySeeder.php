@@ -36,6 +36,7 @@ class CategorySeeder extends Seeder
                     ['tenant_id' => $tenant->id, 'name' => $category['name']],
                     [
                         'description' => $category['description'],
+                        'is_active' => true,
                     ]
                 );
             }

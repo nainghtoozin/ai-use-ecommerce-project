@@ -1,14 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import BackToTopButton from '@/Components/BackToTopButton';
 import StorefrontHero from '@/Components/Storefront/StorefrontHero';
 import FeaturedCategories from '@/Components/Storefront/FeaturedCategories';
+import FeaturedBrands from '@/Components/Storefront/FeaturedBrands';
 import FeaturedProducts from '@/Components/Storefront/FeaturedProducts';
 import PromotionSection from '@/Components/Storefront/PromotionSection';
 import StoreHighlights from '@/Components/Storefront/StoreHighlights';
 import BrandStorySection from '@/Components/Storefront/BrandStorySection';
 import CtaSection from '@/Components/Storefront/CtaSection';
+import EmptyStoreState from '@/Components/Storefront/EmptyStoreState';
 import VariantSelectModal from '@/Components/VariantSelectModal';
 import { useCart } from '@/Hooks/useCart';
 
@@ -34,6 +36,40 @@ export default function StoreIndex({ tenant, previewMode = null }) {
         setVariableProduct(null);
     }, [variableProduct, addToCart]);
 
+    const sortedSections = useMemo(
+        () => sections.slice().sort((a, b) => a.position - b.position),
+        [sections]
+    );
+
+    const hasAnyVisibleSection = useMemo(() => {
+        return sortedSections.some((section) => {
+            if (section.enabled === false || section.enabled === 0) return false;
+            if (section.desktop_visible === false && section.mobile_visible === false) return false;
+            const data = section.data || {};
+            switch (section.type) {
+                case 'hero':
+                    return true;
+                case 'promotion':
+                    return data.promotions?.some((promotion) => hasText(promotion.title));
+                case 'featured_categories':
+                    return data.categories?.some((category) => hasText(category.name));
+                case 'featured_brands':
+                    return data.brands?.some((brand) => hasText(brand.name));
+                case 'featured_products':
+                case 'product_showcase':
+                    return (data.products?.length ?? 0) > 0;
+                case 'store_highlights':
+                    return data.items?.some((item) => hasText(item.title) || hasText(item.description));
+                case 'brand_story':
+                    return hasText(data.description);
+                case 'cta':
+                    return hasText(data.title);
+                default:
+                    return false;
+            }
+        });
+    }, [sortedSections]);
+
     const renderSection = (section) => {
         if (section.enabled === false || section.enabled === 0) return null;
 
@@ -57,6 +93,8 @@ export default function StoreIndex({ tenant, previewMode = null }) {
                 return data.promotions?.some((promotion) => hasText(promotion.title)) ? wrap(<PromotionSection promotions={data.promotions} />) : null;
             case 'featured_categories':
                 return data.categories?.some((category) => hasText(category.name)) ? wrap(<FeaturedCategories categories={data.categories} variant={section.variant !== 'default' ? section.variant : null} title={config.title || 'Categories'} description={config.description || ''} />) : null;
+            case 'featured_brands':
+                return data.brands?.some((brand) => hasText(brand.name)) ? wrap(<FeaturedBrands brands={data.brands} variant={section.variant !== 'default' ? section.variant : null} title={config.title || 'Featured Brands'} description={config.description || ''} />) : null;
             case 'featured_products':
                 return data.products?.length ? wrap(<FeaturedProducts products={data.products} variant={section.variant !== 'default' ? section.variant : null} title={config.title || 'Featured Products'} subtitle={config.description || ''} onAddToCart={handleAddToCart} onSelectVariant={handleSelectVariant} addingId={addingId} />) : null;
             case 'product_showcase':
@@ -75,7 +113,8 @@ export default function StoreIndex({ tenant, previewMode = null }) {
     return (
         <ShopLayout previewMode={previewMode}>
             <Head title={storefront?.identity?.site_title || storefront?.identity?.name || tenant.name} />
-            {sections.slice().sort((a, b) => a.position - b.position).map(renderSection)}
+            {sortedSections.map(renderSection)}
+            {!hasAnyVisibleSection && <EmptyStoreState storeName={storefront?.identity?.site_title || tenant.name} />}
             {variableProduct && (
                 <VariantSelectModal
                     product={variableProduct}

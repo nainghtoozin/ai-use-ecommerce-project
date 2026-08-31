@@ -1,7 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import ProductCard from '@/Components/ProductCard';
 
-export default function FeaturedProducts({ products, title, subtitle, variant = null, onAddToCart, addingId }) {
+export default function FeaturedProducts({ products, title, subtitle, variant = null, onAddToCart, onSelectVariant, addingId }) {
     const { storefront } = usePage().props;
     if (!products?.length) return null;
     const layout = variant || storefront?.design?.variants?.products || 'grid';
@@ -20,6 +20,7 @@ export default function FeaturedProducts({ products, title, subtitle, variant = 
                         product={product}
                         variant={productVariant}
                         onAddToCart={onAddToCart}
+                        onSelectVariant={onSelectVariant}
                         addingId={addingId}
                     />
                 ))}

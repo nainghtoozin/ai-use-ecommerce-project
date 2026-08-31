@@ -140,6 +140,8 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/', [\App\Http\Controllers\StorefrontController::class, 'index'])->name('index');
     Route::get('/preview/{revision?}', [\App\Http\Controllers\StorefrontController::class, 'preview'])->name('preview')->middleware(['auth:web,accounts', 'role:admin', 'tenant.access'])->whereNumber('revision');
     Route::get('/products', [\App\Http\Controllers\StorefrontController::class, 'products'])->name('products');
+    Route::get('/brands', [\App\Http\Controllers\StorefrontController::class, 'brands'])->name('brands');
+    Route::get('/brands/{brand}', [\App\Http\Controllers\StorefrontController::class, 'brand'])->name('brands.show');
     Route::get('/products/{product}', [\App\Http\Controllers\StorefrontController::class, 'show'])->name('products.show');
 
     // Store CMS pages (public, tenant-aware)

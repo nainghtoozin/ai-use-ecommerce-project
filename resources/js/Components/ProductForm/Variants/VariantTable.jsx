@@ -1,57 +1,26 @@
 import { useState } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, X, Camera } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, X, Camera, AlertTriangle } from 'lucide-react';
 
-export default function VariantTable({ options, variants, setVariants, errors = {} }) {
+export default function VariantTable({
+    options,
+    variants,
+    setVariants,
+    errors = {},
+    onGenerateRequest,
+    onClearAll,
+    totalCombinations = 0,
+    maxCombinations = 100,
+    hasExistingVariants = false,
+}) {
     const [expandedId, setExpandedId] = useState(null);
-
-    const generateCombinations = () => {
-        if (options.length === 0) {
-            return [];
-        }
-
-        const combos = [];
-        const generate = (index, current) => {
-            if (index === options.length) {
-                combos.push([...current]);
-                return;
-            }
-            for (const value of options[index].values) {
-                current.push(value);
-                generate(index + 1, current);
-                current.pop();
-            }
-        };
-        generate(0, []);
-
-        return combos.map((combo) => {
-            const existing = variants.find((v) => {
-                return combo.every((val, i) => v[`option${i + 1}`] === val);
-            });
-
-            return {
-                id: existing?.id || `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                sku: existing?.sku || '',
-                price: existing?.price || '',
-                compare_price: existing?.compare_price || '',
-                stock: existing?.stock ?? 0,
-                options: combo,
-                imageFile: existing?.imageFile || null,
-                existingImage: existing?.existingImage || null,
-                existingImageUrl: existing?.existingImageUrl || null,
-                imageRemoved: existing?.imageRemoved || false,
-            };
-        });
-    };
+    const [showWarning, setShowWarning] = useState(false);
 
     const handleGenerate = () => {
-        const combos = generateCombinations();
-        setVariants(combos);
-    };
-
-    const handleVariantChange = (index, field, value) => {
-        const updated = [...variants];
-        updated[index] = { ...updated[index], [field]: value };
-        setVariants(updated);
+        if (totalCombinations > maxCombinations) {
+            setShowWarning(true);
+            return;
+        }
+        onGenerateRequest?.();
     };
 
     const handleBulkFill = (field, value) => {
@@ -60,10 +29,21 @@ export default function VariantTable({ options, variants, setVariants, errors = 
     };
 
     const handleRemoveVariant = (index) => {
+        const variant = variants[index];
+        if (variant.id && !String(variant.id).startsWith('temp_')) {
+            if (!window.confirm('This variant already exists. Are you sure you want to remove it?')) {
+                return;
+            }
+        }
         setVariants(variants.filter((_, i) => i !== index));
     };
 
     const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0);
+    const totalValue = variants.reduce((sum, v) => {
+        const price = parseFloat(v.price) || 0;
+        const stock = parseInt(v.stock) || 0;
+        return sum + (price * stock);
+    }, 0);
 
     return (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -86,33 +66,96 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                 )}
                             </h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Total stock: {totalStock} units
+                                {totalCombinations > 0 && totalCombinations <= maxCombinations && (
+                                    <>Will generate {totalCombinations} combination{totalCombinations !== 1 ? 's' : ''}</>
+                                )}
+                                {totalCombinations > maxCombinations && (
+                                    <span className="text-amber-600 dark:text-amber-400">
+                                        {totalCombinations} combinations exceeds limit of {maxCombinations}
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {options.length > 0 && variants.length === 0 && (
-                            <button
-                                type="button"
-                                onClick={handleGenerate}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors"
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                Generate Variants
-                            </button>
-                        )}
-                        {variants.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => setVariants([])}
-                                className="text-xs text-red-600 hover:text-red-700 font-medium"
-                            >
-                                Clear all
-                            </button>
+                        {options.length > 0 && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handleGenerate}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={totalCombinations === 0}
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    {hasExistingVariants ? 'Regenerate' : 'Generate'} Variants
+                                </button>
+                                {variants.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={onClearAll}
+                                        className="text-xs text-red-600 hover:text-red-700 font-medium"
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Warning Banner */}
+            {showWarning && (
+                <div className="mx-5 mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                            Too Many Combinations
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                            Generating {totalCombinations} variants at once may cause performance issues.
+                            Consider using fewer options or values.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowWarning(false)}
+                        className="text-amber-400 hover:text-amber-600"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
+            {/* Summary Stats */}
+            {variants.length > 0 && (
+                <div className="px-5 py-3 bg-gray-50 dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex flex-wrap gap-6 text-xs">
+                        <div>
+                            <span className="text-gray-500 dark:text-gray-400">Total Stock:</span>
+                            <span className="ml-1.5 font-medium text-gray-900 dark:text-gray-200">{totalStock.toLocaleString()} units</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-500 dark:text-gray-400">Total Value:</span>
+                            <span className="ml-1.5 font-medium text-gray-900 dark:text-gray-200">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-500 dark:text-gray-400">Active:</span>
+                            <span className="ml-1.5 font-medium text-green-600 dark:text-green-400">
+                                {variants.filter(v => v.status === 'active').length}
+                            </span>
+                        </div>
+                        {variants.some(v => v.stock === 0) && (
+                            <div>
+                                <span className="text-gray-500 dark:text-gray-400">Out of Stock:</span>
+                                <span className="ml-1.5 font-medium text-red-600 dark:text-red-400">
+                                    {variants.filter(v => v.stock === 0).length}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {variants.length === 0 ? (
                 <div className="px-5 py-12 text-center">
@@ -139,43 +182,55 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                         SKU
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                                     <div className="flex items-center gap-1">
                                         Price
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 const val = prompt('Set price for all variants:');
-                                                if (val !== null) handleBulkFill('price', val);
+                                                if (val !== null && val !== '') handleBulkFill('price', val);
                                             }}
                                             className="text-gray-400 dark:text-gray-500 hover:text-violet-500"
-                                            title="Bulk fill"
+                                            title="Bulk fill price"
                                         >
                                             <Plus className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                                     <div className="flex items-center gap-1">
-                                        Compare Price
+                                        Cost
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const val = prompt('Set cost for all variants:');
+                                                if (val !== null && val !== '') handleBulkFill('cost_price', val);
+                                            }}
+                                            className="text-gray-400 dark:text-gray-500 hover:text-violet-500"
+                                            title="Bulk fill cost"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                        </button>
                                     </div>
                                 </th>
-                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
                                     <div className="flex items-center gap-1">
                                         Stock
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 const val = prompt('Set stock for all variants:');
-                                                if (val !== null) handleBulkFill('stock', val);
+                                                if (val !== null && val !== '') handleBulkFill('stock', val);
                                             }}
                                             className="text-gray-400 dark:text-gray-500 hover:text-violet-500"
-                                            title="Bulk fill"
+                                            title="Bulk fill stock"
                                         >
                                             <Plus className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </th>
+                                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">Status</th>
                                 <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Actions</th>
                             </tr>
                         </thead>
@@ -184,13 +239,14 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                 const isExpanded = expandedId === variant.id;
                                 const stockVal = parseInt(variant.stock) || 0;
                                 const stockColor = stockVal === 0
-                                    ? 'text-red-600 bg-red-50'
+                                    ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
                                     : stockVal <= 5
-                                        ? 'text-amber-600 bg-amber-50'
-                                        : 'text-green-600 bg-green-50';
+                                        ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
+                                        : 'text-green-600 bg-green-50 dark:bg-green-900/20';
+                                const isExisting = variant.id && !String(variant.id).startsWith('temp_');
 
                                 return (
-                                    <tr key={variant.id} className={`hover:bg-gray-50 dark:bg-gray-950/50 ${isExpanded ? 'bg-violet-50/30' : ''}`}>
+                                    <tr key={variant.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${isExpanded ? 'bg-violet-50/30 dark:bg-violet-900/10' : ''}`}>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
                                                 <button
@@ -214,6 +270,11 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                         </span>
                                                     ))}
                                                 </div>
+                                                {isExisting && (
+                                                    <span className="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                                                        Saved
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
 
@@ -241,7 +302,7 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                                 <label
                                                     htmlFor={`variant-image-${variant.id}`}
                                                     className={`block w-10 h-10 rounded-md border-2 border-dashed cursor-pointer overflow-hidden ${
-                                                        variant.imageFile || variant.existingImageUrl
+                                                        variant.imageFile || (variant.existingImageUrl && !variant.imageRemoved)
                                                             ? 'border-transparent'
                                                             : 'border-gray-300 hover:border-violet-400'
                                                     }`}
@@ -288,8 +349,12 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                             <input
                                                 type="text"
                                                 value={variant.sku || ''}
-                                                onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                                                placeholder="Auto-generated"
+                                                onChange={(e) => {
+                                                    const updated = [...variants];
+                                                    updated[index] = { ...updated[index], sku: e.target.value };
+                                                    setVariants(updated);
+                                                }}
+                                                placeholder="Auto"
                                                 className="w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
                                             />
                                         </td>
@@ -297,7 +362,11 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                             <input
                                                 type="number"
                                                 value={variant.price}
-                                                onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                                                onChange={(e) => {
+                                                    const updated = [...variants];
+                                                    updated[index] = { ...updated[index], price: e.target.value };
+                                                    setVariants(updated);
+                                                }}
                                                 placeholder="0.00"
                                                 step="0.01"
                                                 min="0"
@@ -307,8 +376,12 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                         <td className="px-3 py-3">
                                             <input
                                                 type="number"
-                                                value={variant.compare_price}
-                                                onChange={(e) => handleVariantChange(index, 'compare_price', e.target.value)}
+                                                value={variant.cost_price || ''}
+                                                onChange={(e) => {
+                                                    const updated = [...variants];
+                                                    updated[index] = { ...updated[index], cost_price: e.target.value };
+                                                    setVariants(updated);
+                                                }}
                                                 placeholder="0.00"
                                                 step="0.01"
                                                 min="0"
@@ -319,11 +392,30 @@ export default function VariantTable({ options, variants, setVariants, errors = 
                                             <input
                                                 type="number"
                                                 value={variant.stock}
-                                                onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                                                onChange={(e) => {
+                                                    const updated = [...variants];
+                                                    updated[index] = { ...updated[index], stock: e.target.value };
+                                                    setVariants(updated);
+                                                }}
                                                 placeholder="0"
                                                 min="0"
                                                 className={`w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 ${stockColor}`}
                                             />
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <select
+                                                value={variant.status || 'active'}
+                                                onChange={(e) => {
+                                                    const updated = [...variants];
+                                                    updated[index] = { ...updated[index], status: e.target.value };
+                                                    setVariants(updated);
+                                                }}
+                                                className="w-full rounded border-gray-200 dark:border-gray-800 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                                            >
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                                <option value="draft">Draft</option>
+                                            </select>
                                         </td>
                                         <td className="px-3 py-3 text-right">
                                             <button

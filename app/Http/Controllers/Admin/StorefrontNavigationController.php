@@ -34,8 +34,10 @@ class StorefrontNavigationController extends Controller
                     'icon' => $item->icon,
                     'enabled' => $item->enabled,
                     'position' => $item->position,
+                    'group' => $item->group ?? 'header',
                 ])->values()->all(),
             ],
+            'allowedPaths' => UpdateStorefrontNavigationRequest::allowedPaths(),
         ]);
     }
 
@@ -53,7 +55,12 @@ class StorefrontNavigationController extends Controller
             ],
         ]);
 
-        foreach ($validated['items'] as $position => $itemData) {
+        $allItems = array_merge(
+            $validated['items'] ?? [],
+            $validated['footer_items'] ?? [],
+        );
+
+        foreach ($allItems as $position => $itemData) {
             $item = StorefrontNavigationItem::where('navigation_id', $navigation->id)
                 ->findOrFail($itemData['id']);
             $item->update([

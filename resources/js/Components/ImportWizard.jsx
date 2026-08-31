@@ -205,6 +205,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
         fetch(adminUrl(validateEndpoint), {
             method: 'POST',
             body: formData,
+            credentials: 'include',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 'Accept': 'application/json',
@@ -240,6 +241,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
         fetch(adminUrl(importEndpoint), {
             method: 'POST',
             body: formData,
+            credentials: 'include',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 'Accept': 'application/json',

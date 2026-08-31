@@ -42,6 +42,7 @@ class StorefrontHomepageController extends Controller
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'products' => Product::active()->orderBy('name')->limit(100)->get(['id', 'name', 'price'])->map(fn ($product) => ['id' => $product->id, 'name' => $product->name, 'price' => $product->price])->values()->all(),
             'media' => StorefrontMedia::where('storefront_id', $storefront->id)->latest()->get(['id', 'alt_text'])->append('url'),
+            'heroVariants' => \App\Services\StorefrontConfigurationResolver::heroVariants(),
         ]);
     }
 
@@ -130,13 +131,16 @@ class StorefrontHomepageController extends Controller
     private function sectionVariant(string $type, ?string $variant): string
     {
         $allowed = [
-            'hero' => ['default', 'auto', 'split', 'centered', 'text-only', 'minimal'],
+            'hero' => \App\Services\StorefrontConfigurationResolver::HERO_VARIANTS,
             'featured_categories' => ['default', 'grid', 'horizontal', 'compact'],
             'featured_products' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
             'product_showcase' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
             'brand_story' => ['default', 'split', 'text-only'],
             'cta' => ['default', 'centered', 'full-width'],
         ];
+        if ($type === 'hero') {
+            return \App\Services\StorefrontConfigurationResolver::normalizeHeroVariant($variant);
+        }
         return in_array($variant, $allowed[$type] ?? ['default'], true) ? $variant : 'default';
     }
 

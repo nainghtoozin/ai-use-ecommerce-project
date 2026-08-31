@@ -27,6 +27,9 @@ class StoreBrandRequest extends FormRequest
             ],
             'description' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'featured' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ];
     }

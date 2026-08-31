@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\StorefrontConfigurationResolver;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStorefrontConfigurationRequest extends FormRequest
@@ -42,8 +43,8 @@ class UpdateStorefrontConfigurationRequest extends FormRequest
             'homepage_sections.*.desktop_visible' => ['required', 'boolean'],
             'homepage_sections.*.mobile_visible' => ['required', 'boolean'],
             'homepage_sections.*.position' => ['required', 'integer', 'min:0'],
-            'homepage_sections.*.variant' => ['nullable', 'string', 'max:50'],
-            'hero.variant' => ['nullable', 'in:auto,image,split,text-only,minimal,product'],
+            'homepage_sections.*.variant' => ['nullable', 'string', 'max:50', 'in:' . implode(',', StorefrontConfigurationResolver::HERO_VARIANTS)],
+            'hero.variant' => ['nullable', 'string', 'in:' . implode(',', StorefrontConfigurationResolver::HERO_VARIANTS)],
             'hero.title' => ['nullable', 'string', 'max:255'],
             'hero.subtitle' => ['nullable', 'string', 'max:1000'],
             'hero.button_text' => ['nullable', 'string', 'max:100'],

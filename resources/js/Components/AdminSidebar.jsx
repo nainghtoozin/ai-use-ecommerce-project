@@ -192,13 +192,11 @@ export default function AdminSidebar() {
             {
                 title: 'Store',
                 items: [
-                    ...(can('settings.website') && isVis('settings.website') ? [
-                        { label: 'Storefront', href: '/admin/storefront', icon: 'LayoutTemplate' },
-                        { label: 'Homepage', href: '/admin/storefront/homepage', icon: 'LayoutList' },
-                        { label: 'Header & Navigation', href: '/admin/storefront/navigation', icon: 'Navigation' },
-                        { label: 'Promotions', href: '/admin/storefront/promotions', icon: 'Megaphone' },
-                        { label: 'Media', href: '/admin/storefront/media', icon: 'Images' },
-                    ] : []),
+                    ...(can('settings.website') && isVis('storefront.overview') ? [{ label: 'Storefront', href: '/admin/storefront', icon: 'LayoutTemplate' }] : []),
+                    ...(can('settings.website') && isVis('storefront.homepage') ? [{ label: 'Homepage', href: '/admin/storefront/homepage', icon: 'LayoutList' }] : []),
+                    ...(can('settings.website') && isVis('storefront.navigation') ? [{ label: 'Header & Navigation', href: '/admin/storefront/navigation', icon: 'Navigation' }] : []),
+                    ...(can('settings.website') && isVis('storefront.promotions') ? [{ label: 'Promotions', href: '/admin/storefront/promotions', icon: 'Megaphone' }] : []),
+                    ...(can('settings.website') && isVis('storefront.media') ? [{ label: 'Media', href: '/admin/storefront/media', icon: 'Images' }] : []),
                     ...(can('products.view') && isVis('content.faq') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
                 ]
             },

@@ -180,8 +180,9 @@ class AdminProductController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $featureGate = \App\Services\FeatureGate::forUser();
         $categories = Category::all();
-        $productType = $request->input('type', ProductType::SINGLE);
+        $productType = $request->input('type');
 
         $selectableProducts = null;
         if ($productType === ProductType::COMBO) {
@@ -219,6 +220,9 @@ class AdminProductController extends Controller
             'productType' => $productType,
             'selectableProducts' => $selectableProducts,
             'warehouses' => $warehouses,
+            'availableTypes' => ProductType::availableTypes(),
+            'allTypes' => ProductType::all(),
+            'featureStatus' => $featureGate->getAllFeaturesStatus(),
         ]);
     }
 
@@ -521,7 +525,24 @@ class AdminProductController extends Controller
             $this->validateComboItems($comboItemsPayload);
         }
 
-        DB::transaction(function () use ($data, $request, $product, $variantsPayload, $variantImages, $comboItemsPayload, $effectiveType) {
+        $oldPhoto1 = $request->hasFile('photo1') ? $product->photo1 : null;
+        $oldPhoto2 = $request->hasFile('photo2') ? $product->photo2 : null;
+        $oldSeoImage = ($request->hasFile('seo_image') || $request->input('remove_seo_image')) ? $product->seo_image : null;
+        $oldVariantImages = [];
+
+        if ($product->isVariable() && is_array($variantsPayload)) {
+            foreach ($variantsPayload as $index => $variantData) {
+                if ((isset($variantImages[$index]) || !empty($variantData['image_removed'])) && !empty($variantData['id'])) {
+                    $oldVariant = $product->variants()->find($variantData['id']);
+                    if ($oldVariant && $oldVariant->image) {
+                        $oldVariantImages[$variantData['id']] = $oldVariant->image;
+                    }
+                }
+            }
+        }
+
+        DB::transaction(function () use ($data, $request, $product, $variantsPayload, $variantImages, $comboItemsPayload, $effectiveType, &$oldGalleryToDelete, $oldVariantImages) {
+            $oldGalleryToDelete = [];
             // Save old variant stock values before sync (for stock delta calculation)
             $oldVariantStocks = $product->variants()->pluck('stock', 'id')->toArray();
 
@@ -536,23 +557,21 @@ class AdminProductController extends Controller
             }
 
             if ($request->hasFile('photo1')) {
-                $this->imageService->delete($product->photo1);
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
             }
 
             if ($request->hasFile('photo2')) {
-                $this->imageService->delete($product->photo2);
                 $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
             }
 
-            // Handle gallery images
+            // Handle gallery images - safe replacement: build new list first, delete removed after commit
             $galleryPaths = json_decode($request->input('existing_gallery_images', '[]'), true) ?? [];
 
-            // Delete removed images from storage
+            // Track removed images to delete after transaction
             $oldGallery = $product->gallery_images ?? [];
             foreach ($oldGallery as $oldPath) {
                 if (!in_array($oldPath, $galleryPaths)) {
-                    $this->imageService->delete($oldPath);
+                    $oldGalleryToDelete[] = $oldPath;
                 }
             }
 
@@ -566,10 +585,8 @@ class AdminProductController extends Controller
             $data['gallery_images'] = $galleryPaths;
 
             if ($request->hasFile('seo_image')) {
-                $this->imageService->delete($product->seo_image);
                 $data['seo_image'] = $this->imageService->upload($request->file('seo_image'), 'products');
             } elseif ($request->input('remove_seo_image')) {
-                $this->imageService->delete($product->seo_image);
                 $data['seo_image'] = null;
             }
 
@@ -588,28 +605,20 @@ class AdminProductController extends Controller
                 // null means no variant data was sent, leave variants unchanged
                 if (is_array($variantsPayload)) {
                     if (!empty($variantsPayload)) {
-                        // Process variant images
+                        // Process variant images - safe replacement: upload new first, delete old after commit
                         foreach ($variantsPayload as $index => &$variantData) {
-                            // Delete old image if removed
+                            // Delete old image if removed (track for deletion after transaction)
                             if (!empty($variantData['image_removed'])) {
-                                if (!empty($variantData['id'])) {
-                                    $oldVariant = $product->variants()->find($variantData['id']);
-                                    if ($oldVariant && $oldVariant->image) {
-                                        $this->imageService->delete($oldVariant->image);
-                                    }
+                                if (!empty($variantData['id']) && isset($oldVariantImages[$variantData['id']])) {
+                                    // Old image tracked in $oldVariantImages, will delete after transaction
                                 }
                                 $variantData['image'] = null;
                             }
                             // Upload new image
                             elseif (isset($variantImages[$index])) {
-                                // Delete old image first if variant exists
-                                if (!empty($variantData['id'])) {
-                                    $oldVariant = $product->variants()->find($variantData['id']);
-                                    if ($oldVariant && $oldVariant->image) {
-                                        $this->imageService->delete($oldVariant->image);
-                                    }
-                                }
+                                // Upload new image first
                                 $variantData['image'] = $this->imageService->upload($variantImages[$index], 'products');
+                                // Old image tracked in $oldVariantImages, will delete after transaction
                             }
                             // Keep existing image
                             elseif (!empty($variantData['existing_image'])) {
@@ -656,6 +665,27 @@ class AdminProductController extends Controller
 
             $this->inventoryService->handleProductUpdated($product, $data, $oldVariantStocks, $newVariantStocks);
         });
+
+        // Safe image cleanup: delete old files only after DB transaction succeeds
+        if ($oldPhoto1) {
+            $this->imageService->delete($oldPhoto1);
+        }
+        if ($oldPhoto2) {
+            $this->imageService->delete($oldPhoto2);
+        }
+        if ($oldSeoImage) {
+            $this->imageService->delete($oldSeoImage);
+        }
+        if (!empty($oldVariantImages)) {
+            foreach ($oldVariantImages as $variantId => $oldPath) {
+                $this->imageService->delete($oldPath);
+            }
+        }
+        if (!empty($oldGalleryToDelete)) {
+            foreach ($oldGalleryToDelete as $oldPath) {
+                $this->imageService->delete($oldPath);
+            }
+        }
 
         ActivityLogger::log("Product '{$product->name}' updated", 'product_updated', $product);
 

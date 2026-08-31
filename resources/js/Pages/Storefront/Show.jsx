@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
+import RelatedProducts from '@/Components/Storefront/RelatedProducts';
 import { useCart } from '@/Hooks/useCart';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
@@ -21,7 +22,7 @@ function safeNum(val) {
     return Number.isFinite(n) ? n : 0;
 }
 
-export default function StoreShow({ tenant, product, promotion, detail }) {
+export default function StoreShow({ tenant, product, promotion, detail, relatedProducts = [] }) {
     const { storefront } = usePage().props;
     const themeTokens = storefront?.design || {};
     const labels = storefront?.content?.labels || {};
@@ -268,7 +269,12 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                                 : 'border-transparent hover:border-gray-300 opacity-60 hover:opacity-100'
                                         }`}
                                     >
-                                        <img src={assetUrl(img)} alt="" className="w-full h-full object-cover" />
+                                        <img
+                                            src={assetUrl(img)}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
                                     </button>
                                 ))}
                             </div>
@@ -288,7 +294,16 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                                     {product.category?.name || 'Uncategorized'}
                                 </span>
                                 <span className="text-gray-300">&middot;</span>
-                                <span>{product.brand?.name || 'Generic Brand'}</span>
+                                {product.brand ? (
+                                    <Link
+                                        href={`/store/${tenant.slug}/brands/${product.brand.id}`}
+                                        className="hover:text-indigo-600 transition-colors"
+                                    >
+                                        {product.brand.name}
+                                    </Link>
+                                ) : (
+                                    <span>Generic Brand</span>
+                                )}
                                 <span className="text-gray-300">&middot;</span>
                                 <span>{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
                                 {!isVariable && product.sku && (
@@ -485,6 +500,9 @@ export default function StoreShow({ tenant, product, promotion, detail }) {
                     </div>
                 </div>
             </div>
+
+            {/* Related Products */}
+            <RelatedProducts products={relatedProducts} title={labels.related_products || 'Related Products'} />
         </ShopLayout>
     );
 }

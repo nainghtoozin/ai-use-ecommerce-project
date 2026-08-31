@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Tenant;
 use App\Models\StorefrontRevision;
+use App\Models\WebsiteInfo;
 use App\Services\ProductService;
 use App\Services\WebsiteFaqService;
 use App\Services\StorefrontConfigurationResolver;
@@ -90,21 +92,47 @@ class StorefrontController extends Controller
             return $this->renderLocked($tenant);
         }
 
-        $query = $request->input('query', '');
-        $categoryId = $request->input('category', '');
-        $sort = $request->input('sort', 'latest');
+        $query = (string) $request->input('query', '');
+        $categoryId = $this->normalizeId($request->input('category'));
+        $brandId = $this->normalizeId($request->input('brand'));
+        $type = $this->normalizeType($request->input('type'));
+        [$minPrice, $maxPrice, $priceApplied] = $this->normalizePriceRange(
+            $request->input('min_price'),
+            $request->input('max_price')
+        );
+        $sort = $this->normalizeSort($request->input('sort'));
         $inStock = $request->boolean('in_stock');
 
         $products = Product::active()
             ->with(['category', 'brand'])
             ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
-        if ($query) {
-            $products->where('name', 'LIKE', "%{$query}%");
+        if ($query !== '') {
+            $products->where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhere('sku', 'LIKE', "%{$query}%")
+                  ->orWhereHas('brand', fn($bq) => $bq->where('name', 'LIKE', "%{$query}%"))
+                  ->orWhereHas('category', fn($cq) => $cq->where('name', 'LIKE', "%{$query}%"));
+            });
         }
 
-        if ($categoryId) {
+        if ($categoryId !== null) {
             $products->where('category_id', $categoryId);
+        }
+
+        if ($brandId !== null) {
+            $products->where('brand_id', $brandId);
+        }
+
+        if ($type !== null) {
+            $products->where('type', $type);
+        }
+
+        if ($priceApplied && $minPrice !== null) {
+            $products->where('price', '>=', $minPrice);
+        }
+        if ($priceApplied && $maxPrice !== null) {
+            $products->where('price', '<=', $maxPrice);
         }
 
         if ($inStock) {
@@ -118,7 +146,11 @@ class StorefrontController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
-        $categories = Category::orderBy('name')->get(['id', 'name']);
+        $categories = Category::active()->orderBy('name')->get(['id', 'name', 'slug', 'image']);
+        $brands = Brand::active()->orderBy('name')->get(['id', 'name', 'slug', 'logo']);
+
+        $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
+        $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
 
         return Inertia::render('Storefront/Products', [
             'tenant' => [
@@ -129,13 +161,196 @@ class StorefrontController extends Controller
                 'logo' => $tenant->logo,
                 'status' => $tenant->status,
             ],
-            'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions) {
-                return $this->enrichProductWithPromotion($product, $promotions);
+            'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions, $currencySymbol) {
+                return $this->enrichProductWithPromotion($product, $promotions, $currencySymbol);
             })),
             'categories' => $categories,
+            'brands' => $brands,
             'searchQuery' => $query,
             'filters' => [
-                'category_id' => $categoryId,
+                'category_id' => $categoryId !== null ? (string) $categoryId : '',
+                'brand_id' => $brandId !== null ? (string) $brandId : '',
+                'type' => $type ?? '',
+                'min_price' => $minPrice,
+                'max_price' => $maxPrice,
+                'sort' => $sort,
+                'in_stock' => $inStock,
+            ],
+            'previewMode' => $this->draftPreviewActive($request) ? [
+                'mode' => 'desktop',
+                'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
+            ] : null,
+        ]);
+    }
+
+    private function normalizeId(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (!is_numeric($value)) {
+            return null;
+        }
+        $int = (int) $value;
+        return $int > 0 ? $int : null;
+    }
+
+    private function normalizeType(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $value = (string) $value;
+        $allowed = [Product::TYPE_SINGLE, Product::TYPE_VARIABLE, Product::TYPE_COMBO];
+        return in_array($value, $allowed, true) ? $value : null;
+    }
+
+    private function normalizePriceRange(mixed $rawMin, mixed $rawMax): array
+    {
+        $min = null;
+        $max = null;
+        $applied = false;
+
+        if ($rawMin !== null && $rawMin !== '' && is_numeric($rawMin) && (float) $rawMin >= 0) {
+            $min = (float) $rawMin;
+            $applied = true;
+        }
+        if ($rawMax !== null && $rawMax !== '' && is_numeric($rawMax) && (float) $rawMax >= 0) {
+            $max = (float) $rawMax;
+            $applied = true;
+        }
+
+        if ($min !== null && $max !== null && $min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+
+        return [$min, $max, $applied];
+    }
+
+    private function normalizeSort(mixed $value): string
+    {
+        $allowed = ['recommended', 'newest', 'price_asc', 'price_desc', 'name_asc', 'name_desc', 'name'];
+        $value = is_string($value) ? $value : '';
+        if (!in_array($value, $allowed, true)) {
+            return 'recommended';
+        }
+        if ($value === 'name') {
+            return 'name_asc';
+        }
+        return $value;
+    }
+
+    public function brands(Request $request)
+    {
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(404);
+        }
+
+        if ($tenant->isLocked()) {
+            return $this->renderLocked($tenant);
+        }
+
+        $featured = $request->boolean('featured');
+
+        $brands = Brand::active()
+            ->when($featured, fn($q) => $q->featured())
+            ->sorted()
+            ->withCount(['products as products_count' => fn($q) => $q->active()])
+            ->get(['id', 'name', 'slug', 'logo', 'banner', 'description']);
+
+        return Inertia::render('Storefront/Brands', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'store_url' => $tenant->store_url,
+                'logo' => $tenant->logo,
+                'status' => $tenant->status,
+            ],
+            'brands' => $brands,
+            'filters' => [
+                'featured' => $featured,
+            ],
+            'previewMode' => $this->draftPreviewActive($request) ? [
+                'mode' => 'desktop',
+                'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
+            ] : null,
+        ]);
+    }
+
+    public function brand(Request $request, Brand $brand)
+    {
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(404);
+        }
+
+        if ($tenant->isLocked()) {
+            return $this->renderLocked($tenant);
+        }
+
+        if ($brand->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        if (!$brand->is_active) {
+            abort(404);
+        }
+
+        $sort = $this->normalizeSort($request->input('sort'));
+        $inStock = $request->boolean('in_stock');
+
+        $products = Product::active()
+            ->where('brand_id', $brand->id)
+            ->with(['category', 'variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
+
+        if ($inStock) {
+            $this->applyInStockFilter($products);
+        }
+
+        $this->applySorting($products, $sort);
+
+        $promotions = Promotion::valid()->automatic()
+            ->with(['products', 'categories'])
+            ->orderBy('priority', 'desc')
+            ->get();
+
+        $categories = Category::active()->orderBy('name')->get(['id', 'name', 'slug', 'image']);
+        $brands = Brand::active()->orderBy('name')->get(['id', 'name', 'slug', 'logo']);
+
+        $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
+        $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
+
+        return Inertia::render('Storefront/BrandProducts', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'store_url' => $tenant->store_url,
+                'logo' => $tenant->logo,
+                'status' => $tenant->status,
+            ],
+            'brand' => [
+                'id' => $brand->id,
+                'name' => $brand->name,
+                'slug' => $brand->slug,
+                'description' => $brand->description,
+                'logo_url' => $brand->logo_url,
+                'banner_url' => $brand->banner_url,
+            ],
+            'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions, $currencySymbol) {
+                return $this->enrichProductWithPromotion($product, $promotions, $currencySymbol);
+            })),
+            'categories' => $categories,
+            'brands' => $brands,
+            'searchQuery' => '',
+            'filters' => [
+                'category_id' => '',
+                'brand_id' => (string) $brand->id,
+                'type' => '',
+                'min_price' => null,
+                'max_price' => null,
                 'sort' => $sort,
                 'in_stock' => $inStock,
             ],
@@ -177,6 +392,32 @@ class StorefrontController extends Controller
         $promotion = $this->findBestPromotionForProduct($product, $promotions);
         $detail = $this->productService->resolveForDetail($product);
 
+        $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
+        $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
+
+        $relatedProducts = collect();
+        if ($product->category_id) {
+            $relatedProducts = Product::active()
+                ->where('category_id', $product->category_id)
+                ->where('id', '!=', $product->id)
+                ->with(['category', 'brand'])
+                ->limit(6)
+                ->get();
+        }
+        if ($relatedProducts->count() < 4 && $product->brand_id) {
+            $excludeIds = $relatedProducts->pluck('id')->toArray();
+            $excludeIds[] = $product->id;
+            $brandProducts = Product::active()
+                ->where('brand_id', $product->brand_id)
+                ->whereNotIn('id', $excludeIds)
+                ->with(['category', 'brand'])
+                ->limit(6 - $relatedProducts->count())
+                ->get();
+            $relatedProducts = $relatedProducts->merge($brandProducts);
+        }
+
+        $relatedProducts = $relatedProducts->map(fn ($rp) => $this->enrichProductWithPromotion($rp, $promotions, $currencySymbol))->values();
+
         return Inertia::render('Storefront/Show', [
             'tenant' => [
                 'id' => $tenant->id,
@@ -189,6 +430,7 @@ class StorefrontController extends Controller
             'product' => $product,
             'promotion' => $promotion,
             'detail' => $detail,
+            'relatedProducts' => $relatedProducts->values(),
             'previewMode' => $this->draftPreviewActive($request) ? [
                 'mode' => 'desktop',
                 'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
@@ -232,15 +474,19 @@ class StorefrontController extends Controller
         ]);
     }
 
-    private function enrichProductWithPromotion($product, $promotions)
+    private function enrichProductWithPromotion($product, $promotions, string $currencySymbol = 'K')
     {
         $bestPromotion = $this->findBestPromotionForProduct($product, $promotions);
         if ($bestPromotion) {
-            $product->promotion_badge = $this->formatPromotionBadge($bestPromotion);
-            $product->promotion_discount = $bestPromotion->discount_value;
-            $product->promotion_price = $bestPromotion->promotion_type === 'percentage'
-                ? $product->price - ($product->price * $bestPromotion->discount_value / 100)
-                : $product->price - $bestPromotion->discount_value;
+            $product->promotion_badge = $this->formatPromotionBadge($bestPromotion, $currencySymbol);
+            $product->promotion_discount = (float) $bestPromotion->value;
+            $discount = $bestPromotion->type === Promotion::TYPE_PERCENTAGE
+                ? $product->price * (float) $bestPromotion->value / 100
+                : (float) $bestPromotion->value;
+            if ($bestPromotion->max_discount_amount !== null) {
+                $discount = min($discount, (float) $bestPromotion->max_discount_amount);
+            }
+            $product->promotion_price = max(0, round($product->price - $discount, 2));
         }
         return $product;
     }
@@ -251,20 +497,28 @@ class StorefrontController extends Controller
         $maxDiscount = 0;
 
         foreach ($promotions as $promotion) {
-            $applies = $promotion->applies_to === 'all';
+            if (!$promotion->isCurrentlyActive()) {
+                continue;
+            }
 
-            if (!$applies && $promotion->applies_to === 'products') {
+            $applies = $promotion->applies_to === Promotion::APPLIES_ALL;
+
+            if (!$applies && $promotion->applies_to === Promotion::APPLIES_PRODUCTS) {
                 $applies = $promotion->products->contains($product->id);
             }
 
-            if (!$applies && $promotion->applies_to === 'categories') {
+            if (!$applies && $promotion->applies_to === Promotion::APPLIES_CATEGORIES) {
                 $applies = $product->category && $promotion->categories->contains($product->category->id);
             }
 
             if ($applies) {
-                $discount = $promotion->promotion_type === 'percentage'
-                    ? ($product->price * $promotion->discount_value / 100)
-                    : $promotion->discount_value;
+                $discount = $promotion->type === Promotion::TYPE_PERCENTAGE
+                    ? ($product->price * (float) $promotion->value / 100)
+                    : (float) $promotion->value;
+
+                if ($promotion->max_discount_amount !== null) {
+                    $discount = min($discount, (float) $promotion->max_discount_amount);
+                }
 
                 if ($discount > $maxDiscount) {
                     $maxDiscount = $discount;
@@ -276,12 +530,12 @@ class StorefrontController extends Controller
         return $bestPromotion;
     }
 
-    private function formatPromotionBadge($promotion): string
+    private function formatPromotionBadge($promotion, string $currencySymbol = 'K'): string
     {
-        return match ($promotion->promotion_type) {
-            'percentage' => "-{$promotion->discount_value}%",
-            'fixed_amount' => "-{$promotion->discount_value} MMK",
-            'free_shipping' => 'Free Shipping',
+        return match ($promotion->type) {
+            Promotion::TYPE_PERCENTAGE => "-{$promotion->value}%",
+            Promotion::TYPE_FIXED => "-" . number_format((float) $promotion->value, 0) . ' ' . $currencySymbol,
+            Promotion::TYPE_FREE_SHIPPING => 'Free Shipping',
             default => 'Sale',
         };
     }
@@ -291,8 +545,11 @@ class StorefrontController extends Controller
         match ($sort) {
             'price_asc' => $query->orderBy('price', 'asc'),
             'price_desc' => $query->orderBy('price', 'desc'),
-            'name' => $query->orderBy('name', 'asc'),
-            default => $query->latest(),
+            'name_asc' => $query->orderBy('name', 'asc'),
+            'name_desc' => $query->orderBy('name', 'desc'),
+            'newest' => $query->orderBy('created_at', 'desc'),
+            'recommended' => $query->sorted(),
+            default => $query->sorted(),
         };
     }
 
@@ -307,7 +564,10 @@ class StorefrontController extends Controller
                     ->whereHas('variants', fn($v) => $v->selectRaw('SUM(stock) > 0'));
             })->orWhere(function ($sq) {
                 $sq->where('type', Product::TYPE_COMBO)
-                    ->whereHas('comboItems.comboProduct', fn($c) => $c->where('stock', '>', 0));
+                    ->whereHas('comboItems')
+                    ->whereDoesntHave('comboItems', function ($ci) {
+                        $ci->whereHas('comboProduct', fn($c) => $c->where('stock', '<=', 0));
+                    });
             });
         });
     }

@@ -26,6 +26,7 @@ class StoreProductRequest extends FormRequest
             'barcode'         => 'nullable|string|max:100',
             'short_description' => 'nullable|string',
             'description'     => 'nullable|string',
+            'sale_price'     => 'nullable|numeric|min:0',
             'cost_price'      => 'nullable|numeric|min:0',
             'stock'           => 'nullable|integer|min:0',
             'low_stock_alert' => 'nullable|integer|min:0',
@@ -47,6 +48,8 @@ class StoreProductRequest extends FormRequest
             'seo_image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'variant_images'  => 'nullable|array',
             'variant_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'featured'        => 'boolean',
+            'sort_order'      => 'nullable|integer|min:0',
         ];
 
         if ($type === 'variable' || $type === 'combo') {

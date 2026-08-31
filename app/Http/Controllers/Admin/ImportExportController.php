@@ -473,7 +473,7 @@ class ImportExportController extends Controller
 
             if (!empty($allErrors)) {
                 $errorReportPath = "import-errors/{$tenantId}/errors_{$history->id}.xlsx";
-                Storage::put($errorReportPath, Excel::raw(new ErrorReportExport($allErrors), ExcelFormat::XLSX));
+                Storage::disk('local')->put($errorReportPath, Excel::raw(new ErrorReportExport($allErrors), ExcelFormat::XLSX));
             }
 
             $history->update([
@@ -640,7 +640,7 @@ class ImportExportController extends Controller
 
             if (!empty($allErrors)) {
                 $errorReportPath = "import-errors/{$tenantId}/errors_{$history->id}.xlsx";
-                Storage::put($errorReportPath, Excel::raw(new ErrorReportExport($allErrors), ExcelFormat::XLSX));
+                Storage::disk('local')->put($errorReportPath, Excel::raw(new ErrorReportExport($allErrors), ExcelFormat::XLSX));
             }
 
             $history->update([
@@ -779,12 +779,12 @@ class ImportExportController extends Controller
             abort(404, 'No error report available.');
         }
 
-        if (!Storage::exists($importHistory->error_report_path)) {
+        if (!Storage::disk('local')->exists($importHistory->error_report_path)) {
             abort(404, 'Error report file not found.');
         }
 
         return response()->download(
-            Storage::path($importHistory->error_report_path),
+            Storage::disk('local')->path($importHistory->error_report_path),
             'product-import-errors.xlsx'
         );
     }

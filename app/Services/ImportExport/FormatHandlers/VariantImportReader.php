@@ -23,7 +23,13 @@ class VariantImportReader
             $rowData = [];
             foreach ($cellIterator as $cell) {
                 $value = $cell->getValue();
-                $rowData[] = is_null($value) ? '' : (string) $value;
+                if (is_null($value)) {
+                    $rowData[] = '';
+                } elseif (is_scalar($value)) {
+                    $rowData[] = (string) $value;
+                } else {
+                    $rowData[] = '';
+                }
             }
             $rows[] = $rowData;
         }
@@ -43,7 +49,7 @@ class VariantImportReader
             }
             $row = array_slice($row, 0, count($headers));
             $mapped = array_combine($headers, $row);
-            if ($this->isEmptyRow($mapped)) {
+            if ($mapped === false || $this->isEmptyRow($mapped)) {
                 continue;
             }
             $dataRows[] = $mapped;
@@ -66,6 +72,10 @@ class VariantImportReader
 
     private function normalizeHeader(string $header): string
     {
+        $header = trim($header);
+        if (strlen($header) >= 3 && ord($header[0]) === 0xEF && ord($header[1]) === 0xBB && ord($header[2]) === 0xBF) {
+            $header = substr($header, 3);
+        }
         $header = strtolower(trim($header));
         $header = preg_replace('/[^a-z0-9_]/', '_', $header);
         $header = preg_replace('/_+/', '_', $header);

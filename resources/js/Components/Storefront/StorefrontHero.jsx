@@ -23,7 +23,7 @@ export default function StorefrontHero({ store, websiteInfo, storefront }) {
     const hasImages = availableImages.length > 0;
     const imageCount = availableImages.length;
 
-    const requestedVariant = section?.variant && !['auto', 'default'].includes(section.variant)
+    const requestedVariant = section?.variant && !['default'].includes(section.variant)
         ? section.variant
         : (storefront?.design?.variants?.hero || 'split');
     const variant = hasImages && !['text-only', 'minimal'].includes(requestedVariant) ? requestedVariant : 'text-only';

@@ -13,16 +13,18 @@ export default function MediaSection({
     setGalleryFiles,
     removedGalleryImages,
     setRemovedGalleryImages,
+    onGalleryOrderChange,
 }) {
     const [dragOverIndex, setDragOverIndex] = useState(null);
-    const dragItemRef = useRef(null);
+    const [dragSource, setDragSource] = useState(null);
+    const dragIndexRef = useRef(null);
 
     const MAX_IMAGES = 10;
 
-    const existingCount = existingGalleryImages.filter(
-        (_, idx) => !removedGalleryImages.includes(existingGalleryImages[idx])
-    ).length;
-
+    const visibleExistingImages = existingGalleryImages.filter(
+        (path) => !removedGalleryImages.includes(path)
+    );
+    const existingCount = visibleExistingImages.length;
     const totalImages = existingCount + galleryFiles.length;
 
     const handleGalleryAdd = useCallback((files) => {
@@ -33,18 +35,29 @@ export default function MediaSection({
         setGalleryFiles((prev) => prev.filter((_, i) => i !== index));
     }, [setGalleryFiles]);
 
-    const handleExistingRemove = useCallback((index) => {
-        const path = existingGalleryImages[index];
+    const handleExistingRemove = useCallback((path) => {
+        const newOrder = visibleExistingImages.filter((p) => p !== path);
         setRemovedGalleryImages((prev) => [...prev, path]);
-    }, [existingGalleryImages, setRemovedGalleryImages]);
+        onGalleryOrderChange?.(newOrder);
+    }, [visibleExistingImages, setRemovedGalleryImages, onGalleryOrderChange]);
 
-    const handleDragStart = (index) => {
-        dragItemRef.current = index;
+    const handleExistingDragStart = (e, index) => {
+        dragIndexRef.current = index;
+        setDragSource('existing');
+        e.dataTransfer.effectAllowed = 'move';
     };
 
-    const handleDragOver = (e, index) => {
+    const handleExistingDragOver = (e, index) => {
         e.preventDefault();
-        if (dragItemRef.current === null || dragItemRef.current === index) return;
+        if (dragIndexRef.current === null || dragSource !== 'existing') return;
+        if (dragIndexRef.current === index) return;
+        setDragOverIndex(index);
+    };
+
+    const handleNewDragOver = (e, index) => {
+        e.preventDefault();
+        if (dragIndexRef.current === null || dragSource !== 'new') return;
+        if (dragIndexRef.current === index) return;
         setDragOverIndex(index);
     };
 
@@ -52,19 +65,49 @@ export default function MediaSection({
         setDragOverIndex(null);
     };
 
-    const handleDrop = (dropIndex) => {
-        const dragIndex = dragItemRef.current;
-        if (dragIndex === null || dragIndex === dropIndex) {
-            setDragOverIndex(null);
+    const handleExistingDrop = (dropIndex) => {
+        const dragIndex = dragIndexRef.current;
+        if (dragIndex === null || dragSource !== 'existing') {
+            handleDragEnd();
             return;
         }
+        if (dragIndex === dropIndex) {
+            handleDragEnd();
+            return;
+        }
+
+        const newOrder = [...visibleExistingImages];
+        const [dragged] = newOrder.splice(dragIndex, 1);
+        newOrder.splice(dropIndex, 0, dragged);
+        onGalleryOrderChange?.(newOrder);
+
+        handleDragEnd();
+    };
+
+    const handleNewDrop = (dropIndex) => {
+        const dragIndex = dragIndexRef.current;
+        if (dragIndex === null || dragSource !== 'new') {
+            handleDragEnd();
+            return;
+        }
+        if (dragIndex === dropIndex) {
+            handleDragEnd();
+            return;
+        }
+
         setGalleryFiles((prev) => {
             const next = [...prev];
             const [dragged] = next.splice(dragIndex, 1);
             next.splice(dropIndex, 0, dragged);
             return next;
         });
-        dragItemRef.current = null;
+
+        handleDragEnd();
+    };
+
+    const handleDragEnd = () => {
+        dragIndexRef.current = null;
+        setDragSource(null);
         setDragOverIndex(null);
     };
 
@@ -97,17 +140,22 @@ export default function MediaSection({
             </div>
 
             {/* Existing Gallery Images */}
-            {existingGalleryImages.length > 0 && (
+            {visibleExistingImages.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-                    {existingGalleryImages.map((path, index) => {
-                        const isRemoved = removedGalleryImages.includes(path);
+                    {visibleExistingImages.map((path, index) => {
                         return (
                             <div
-                                key={index}
-                                className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-150 ${
-                                    isRemoved
-                                        ? 'border-red-300 opacity-50'
-                                        : 'border-gray-200'
+                                key={path}
+                                draggable
+                                onDragStart={(e) => handleExistingDragStart(e, index)}
+                                onDragOver={(e) => handleExistingDragOver(e, index)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={() => handleExistingDrop(index)}
+                                onDragEnd={handleDragEnd}
+                                className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-150 cursor-grab active:cursor-grabbing ${
+                                    dragOverIndex === index && dragSource === 'existing'
+                                        ? 'border-blue-500 scale-95 opacity-50'
+                                        : 'border-gray-200 hover:border-gray-300'
                                 }`}
                             >
                                 <img
@@ -115,25 +163,23 @@ export default function MediaSection({
                                     alt={`Gallery ${index + 1}`}
                                     className="w-full h-full object-cover"
                                 />
-                                {!isRemoved && (
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleExistingRemove(index)}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-gray-900/90 hover:bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors shadow-sm"
-                                            title="Remove image"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                )}
-                                {isRemoved && (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-xs font-medium text-red-600 bg-white dark:bg-gray-900/90 px-2 py-1 rounded-md">Removed</span>
-                                    </div>
-                                )}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExistingRemove(path)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-gray-900/90 hover:bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors shadow-sm"
+                                        title="Remove image"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="absolute top-1.5 left-1.5">
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[10px] font-medium">
+                                        {index + 1}
+                                    </span>
+                                </div>
                             </div>
                         );
                     })}
@@ -145,13 +191,18 @@ export default function MediaSection({
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
                     {galleryFiles.map((file, index) => (
                         <div
-                            key={index}
+                            key={`new-${index}`}
                             draggable
-                            onDragStart={() => handleDragStart(index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDragStart={(e) => {
+                                dragIndexRef.current = index;
+                                setDragSource('new');
+                                e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragOver={(e) => handleNewDragOver(e, index)}
                             onDragLeave={handleDragLeave}
-                            onDrop={() => handleDrop(index)}
-                            className={`transition-all duration-150 ${dragOverIndex === index ? 'scale-95 opacity-50' : ''}`}
+                            onDrop={() => handleNewDrop(index)}
+                            onDragEnd={handleDragEnd}
+                            className={`transition-all duration-150 ${dragOverIndex === index && dragSource === 'new' ? 'scale-95 opacity-50' : ''}`}
                         >
                             <ImageThumbnail
                                 file={file}

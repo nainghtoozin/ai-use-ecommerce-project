@@ -156,6 +156,12 @@ class ProductImportEngine
             if (!empty($stock) && !is_numeric($stock)) {
                 $this->addError('Variants', $rowNum, 'stock', $stock, 'Stock must be a number.');
             }
+
+            $variantImage = trim((string)($row['variant_image'] ?? ''));
+            if ($variantImage !== '' && !$this->sanitizeImageUrl($variantImage)) {
+                $this->addWarning('Variants', $rowNum, 'variant_image', $variantImage,
+                    'Variant image URL is not a valid HTTP/HTTPS URL and will be ignored.');
+            }
         }
 
         $variantErrors = collect($this->errors)->where('sheet', 'Variants')->count();
@@ -239,6 +245,14 @@ class ProductImportEngine
             $status = strtolower(trim((string)($row['status'] ?? 'active')));
             if (!in_array($status, ['active', 'inactive', 'draft'])) {
                 $this->addError('Products', $rowNum, 'status', $row['status'] ?? '', 'Status must be active, inactive, or draft.');
+            }
+
+            foreach (['photo1', 'photo2', 'photo3'] as $imgCol) {
+                $imgVal = trim((string)($row[$imgCol] ?? ''));
+                if ($imgVal !== '' && !$this->sanitizeImageUrl($imgVal)) {
+                    $this->addWarning('Products', $rowNum, $imgCol, $imgVal,
+                        'Image URL is not a valid HTTP/HTTPS URL and will be ignored.');
+                }
             }
         }
     }
@@ -336,6 +350,12 @@ class ProductImportEngine
             $stock = $row['stock'] ?? '';
             if (!empty($stock) && !is_numeric($stock)) {
                 $this->addError('Variants', $rowNum, 'stock', $stock, 'Stock must be a number.');
+            }
+
+            $variantImage = trim((string)($row['variant_image'] ?? ''));
+            if ($variantImage !== '' && !$this->sanitizeImageUrl($variantImage)) {
+                $this->addWarning('Variants', $rowNum, 'variant_image', $variantImage,
+                    'Variant image URL is not a valid HTTP/HTTPS URL and will be ignored.');
             }
         }
     }
@@ -441,6 +461,8 @@ class ProductImportEngine
 
                 $attributes = $this->buildAttributes($row);
 
+                $variantImage = $this->sanitizeImageUrl($row['variant_image'] ?? null);
+
                 $variantData = [
                     'product_id' => $parent->id,
                     'sku' => $variantSku,
@@ -450,6 +472,7 @@ class ProductImportEngine
                     'stock' => (int)($row['stock'] ?? 0),
                     'low_stock_threshold' => 5,
                     'attributes' => $attributes,
+                    'image' => $variantImage,
                     'status' => 'active',
                 ];
 
@@ -582,6 +605,8 @@ class ProductImportEngine
 
                 $attributes = $this->buildAttributes($row);
 
+                $variantImage = $this->sanitizeImageUrl($row['variant_image'] ?? null);
+
                 $variantData = [
                     'product_id' => $parent->id,
                     'sku' => $variantSku,
@@ -591,6 +616,7 @@ class ProductImportEngine
                     'stock' => (int)($row['stock'] ?? 0),
                     'low_stock_threshold' => 5,
                     'attributes' => $attributes,
+                    'image' => $variantImage,
                     'status' => strtolower(trim((string)($row['status'] ?? 'active'))) === 'inactive' ? 'inactive' : 'active',
                 ];
 
@@ -626,6 +652,9 @@ class ProductImportEngine
 
         $name = trim((string)($row['product_name'] ?? ''));
 
+        $photo1 = $this->sanitizeImageUrl($row['photo1'] ?? null);
+        $photo2 = $this->sanitizeImageUrl($row['photo2'] ?? null);
+
         $data = [
             'tenant_id' => $tenantId,
             'name' => $name,
@@ -644,6 +673,8 @@ class ProductImportEngine
             'unit_id' => $unit?->id,
             'status' => strtolower(trim((string)($row['status'] ?? 'active'))) === 'inactive' ? 'inactive' : 'active',
             'type' => $type === 'variable' ? ProductType::VARIABLE : ProductType::SINGLE,
+            'photo1' => $photo1,
+            'photo2' => $photo2,
         ];
 
         return $data;
@@ -684,5 +715,22 @@ class ProductImportEngine
             'value' => $value,
             'warning' => $message,
         ];
+    }
+
+    private function sanitizeImageUrl(?string $value): ?string
+    {
+        $value = trim((string)($value ?? ''));
+        if ($value === '') {
+            return null;
+        }
+
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            $parsed = parse_url($value);
+            if (isset($parsed['host'])) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 }

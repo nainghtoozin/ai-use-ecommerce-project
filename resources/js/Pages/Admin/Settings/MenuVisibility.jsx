@@ -83,6 +83,16 @@ const MENU_GROUPS = [
         ],
     },
     {
+        key: 'storefront',
+        children: [
+            { key: 'storefront.overview' },
+            { key: 'storefront.homepage' },
+            { key: 'storefront.navigation' },
+            { key: 'storefront.media' },
+            { key: 'storefront.promotions' },
+        ],
+    },
+    {
         key: 'settings',
         children: [
             { key: 'settings.website' },
@@ -128,6 +138,11 @@ const ITEM_KEYS = {
     'staff.audit': 'audit_log',
     'staff.notifications': 'notifications',
     'content.faq': 'faq',
+    'storefront.overview': 'storefront_overview',
+    'storefront.homepage': 'storefront_homepage',
+    'storefront.navigation': 'storefront_navigation',
+    'storefront.media': 'storefront_media',
+    'storefront.promotions': 'storefront_promotions',
     'settings.website': 'website_settings',
     'settings.notifications': 'notification_settings',
     'settings.telegram': 'telegram_integration',

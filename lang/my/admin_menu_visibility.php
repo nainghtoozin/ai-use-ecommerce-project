@@ -20,6 +20,7 @@ return [
         'locations' => 'တည်နေရာများ',
         'staff' => 'အဖွဲ့',
         'content' => 'အကြောင်းအရာ',
+        'storefront' => 'Storefront',
         'settings' => 'စနစ်အပြင်အဆင်',
     ],
 
@@ -33,6 +34,7 @@ return [
         'locations' => 'မြို့များနှင့် မြို့နယ်များ',
         'staff' => 'အဖွဲ့ဝင်များ၊ အခန်းကဏ္ဍများနှင့် လုပ်ဆောင်မှုမှတ်တမ်း',
         'content' => 'FAQ နှင့် အကြောင်းအရာ စီမံခန့်ခွဲမှု',
+        'storefront' => 'Storefront ဒီဇိုင်း၊ ပင်မစာမျက်နှာ၊ လမ်းညွှန်မှု၊ မီဒီယာနှင့် ပရိုမိုးရှင်းများ',
         'settings' => 'ဝဘ်ဆိုဒ်၊ အသိပေးချက်များနှင့် အထွေထွေ စနစ်အပြင်အဆင်',
     ],
 
@@ -69,6 +71,11 @@ return [
         'audit_log' => 'စစ်ဆေးမှုမှတ်တမ်း',
         'notifications' => 'အသိပေးချက်များ',
         'faq' => 'FAQ',
+        'storefront_overview' => 'Storefront',
+        'storefront_homepage' => 'ပင်မစာမျက်နှာ',
+        'storefront_navigation' => 'ခေါင်းစီးနှင့် လမ်းညွှန်မှု',
+        'storefront_media' => 'မီဒီယာ',
+        'storefront_promotions' => 'ပရိုမိုးရှင်းများ',
         'website_settings' => 'ဝဘ်ဆိုဒ်စနစ်အပြင်အဆင်',
         'notification_settings' => 'အသိပေးချက်စနစ်အပြင်အဆင်',
         'telegram_integration' => 'တယ်လီဂရမ် ပေါင်းစည်းခြင်း',

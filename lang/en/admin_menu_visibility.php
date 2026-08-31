@@ -20,6 +20,7 @@ return [
         'locations' => 'Locations',
         'staff' => 'Team',
         'content' => 'Content',
+        'storefront' => 'Storefront',
         'settings' => 'Settings',
     ],
 
@@ -33,6 +34,7 @@ return [
         'locations' => 'Cities and townships',
         'staff' => 'Team members, roles, and activity',
         'content' => 'FAQ and content management',
+        'storefront' => 'Storefront design, homepage, navigation, media, and promotions',
         'settings' => 'Website, notifications, and general settings',
     ],
 
@@ -69,6 +71,11 @@ return [
         'audit_log' => 'Audit Log',
         'notifications' => 'Notifications',
         'faq' => 'FAQ',
+        'storefront_overview' => 'Storefront',
+        'storefront_homepage' => 'Homepage',
+        'storefront_navigation' => 'Header & Navigation',
+        'storefront_media' => 'Media',
+        'storefront_promotions' => 'Promotions',
         'website_settings' => 'Website Settings',
         'notification_settings' => 'Notification Settings',
         'telegram_integration' => 'Telegram Integration',

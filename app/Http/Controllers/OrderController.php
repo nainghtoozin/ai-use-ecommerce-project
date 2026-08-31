@@ -134,7 +134,6 @@ class OrderController extends Controller
             $itemData = [
                 'product_id' => $productId,
                 'quantity' => (int) ($item['quantity'] ?? 1),
-                'price' => (float) ($item['price'] ?? 0),
             ];
 
             if (!empty($item['variant_id'])) {
@@ -148,6 +147,8 @@ class OrderController extends Controller
         if (!empty($stockErrors)) {
             return back()->with('error', implode(' ', $stockErrors));
         }
+
+        $this->hydratePricesFromDatabase($items);
 
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
 
@@ -344,5 +345,27 @@ class OrderController extends Controller
         }
 
         return $errors;
+    }
+
+    private function hydratePricesFromDatabase(array &$items): void
+    {
+        $productIds = array_unique(array_column($items, 'product_id'));
+        $variantIds = array_values(array_unique(array_filter(array_column($items, 'variant_id'))));
+
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $variants = !empty($variantIds)
+            ? ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id')
+            : collect();
+
+        foreach ($items as &$item) {
+            if (!empty($item['variant_id'])) {
+                $variant = $variants->get($item['variant_id']);
+                $item['price'] = $variant ? (float) $variant->price : 0;
+            } else {
+                $product = $products->get($item['product_id']);
+                $item['price'] = $product ? (float) $product->getEffectivePrice() : 0;
+            }
+        }
+        unset($item);
     }
 }

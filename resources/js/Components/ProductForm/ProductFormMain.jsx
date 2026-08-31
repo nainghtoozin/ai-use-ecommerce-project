@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import CollapseCard from '@/Components/CollapseCard';
 import BasicInfoSection from './sections/BasicInfoSection';
 import InventorySection from './sections/InventorySection';
@@ -35,7 +35,6 @@ export default function ProductFormMain({
     selectableProducts = [],
     isEdit = false,
 }) {
-    const [mediaOpen, setMediaOpen] = useState(false);
     const [descOpen, setDescOpen] = useState(false);
     const [seoOpen, setSeoOpen] = useState(false);
 
@@ -51,6 +50,41 @@ export default function ProductFormMain({
     const descCharCount = (data.description || '').length;
     const hasSeoData = data.seo_title || data.seo_description || data.seo_keywords;
 
+    const comboAvailability = useMemo(() => {
+        if (comboItems.length === 0) {
+            return { maxCombos: 0, bottleneck: null, outOfStock: [], lowStock: [] };
+        }
+
+        let maxCombos = Infinity;
+        let bottleneck = null;
+        const outOfStock = [];
+        const lowStock = [];
+
+        comboItems.forEach((item) => {
+            const required = item.quantity || 1;
+            const available = item.stock_available || 0;
+            const canMake = Math.floor(available / required);
+
+            if (canMake <= 0) {
+                outOfStock.push(item);
+            } else if (canMake < 5) {
+                lowStock.push(item);
+            }
+
+            if (canMake < maxCombos) {
+                maxCombos = canMake;
+                bottleneck = item;
+            }
+        });
+
+        return {
+            maxCombos: maxCombos === Infinity ? 0 : maxCombos,
+            bottleneck,
+            outOfStock,
+            lowStock,
+        };
+    }, [comboItems]);
+
     return (
         <div className="space-y-6">
             <BasicInfoSection
@@ -60,6 +94,9 @@ export default function ProductFormMain({
                 photo1File={photo1File}
                 setPhoto1File={setPhoto1File}
                 existingPhoto1Url={existingPhoto1Url}
+                photo2File={photo2File}
+                setPhoto2File={setPhoto2File}
+                existingPhoto2Url={existingPhoto2Url}
             />
 
             <InventorySection
@@ -91,6 +128,7 @@ export default function ProductFormMain({
                 <ComboSummary
                     items={comboItemsWithSubtotals}
                     comboPrice={parseFloat(data.price) || 0}
+                    availability={comboAvailability}
                 />
             )}
 
@@ -103,23 +141,18 @@ export default function ProductFormMain({
                 />
             )}
 
-            <CollapseCard
-                title="Additional Media"
-                isOpen={mediaOpen}
-                onToggle={() => setMediaOpen(!mediaOpen)}
-            >
-                <MediaSection
-                    errors={errors}
-                    photo1File={photo1File}
-                    setPhoto1File={setPhoto1File}
-                    existingPhoto1Url={existingPhoto1Url}
-                    existingGalleryImages={data.gallery_images || []}
-                    galleryFiles={galleryFiles}
-                    setGalleryFiles={setGalleryFiles}
-                    removedGalleryImages={removedGalleryImages}
-                    setRemovedGalleryImages={setRemovedGalleryImages}
-                />
-            </CollapseCard>
+            <MediaSection
+                errors={errors}
+                photo1File={photo1File}
+                setPhoto1File={setPhoto1File}
+                existingPhoto1Url={existingPhoto1Url}
+                existingGalleryImages={data.gallery_images || []}
+                galleryFiles={galleryFiles}
+                setGalleryFiles={setGalleryFiles}
+                removedGalleryImages={removedGalleryImages}
+                setRemovedGalleryImages={setRemovedGalleryImages}
+                onGalleryOrderChange={(orderedPaths) => setData('gallery_images', orderedPaths)}
+            />
 
             {!isCombo && (
                 <CollapseCard

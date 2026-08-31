@@ -29,7 +29,7 @@ class EnsureTenantIsActive
                 $tenant = Tenant::where('slug', $storeSlug)->first();
             }
             if (! $tenant) {
-                abort(403, 'Store not found.');
+                abort(404, 'Store not found.');
             }
         }
 

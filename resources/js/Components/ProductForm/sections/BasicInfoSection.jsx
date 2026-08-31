@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import FormInput from '../FormInput';
-import ImageUpload from '@/Components/ImageUpload';
 import RichTextEditor from '@/Components/editor/RichTextEditor';
 import { usePage } from '@inertiajs/react';
+import { Image, Upload, X } from 'lucide-react';
+import getImagePreviewUrl from '@/Utils/getImagePreviewUrl';
 
 function slugify(text) {
     return text
@@ -12,7 +13,65 @@ function slugify(text) {
         .replace(/^-+|-+$/g, '');
 }
 
-export default function BasicInfoSection({ data, setData, errors, photo1File, setPhoto1File, existingPhoto1Url }) {
+function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg,image/png,image/webp', maxSize = 2 }) {
+    const [preview, setPreview] = useState(null);
+    const inputRef = useRef(null);
+
+    const existingUrl = typeof value === 'string' && value ? value : null;
+    const previewUrl = preview || getImagePreviewUrl(existingUrl);
+
+    const handleFile = (file) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) return;
+        const maxBytes = maxSize * 1024 * 1024;
+        if (file.size > maxBytes) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => setPreview(ev.target.result);
+        reader.readAsDataURL(file);
+        if (onChange) onChange(file);
+    };
+
+    const handleInputChange = (e) => {
+        const file = e.target.files?.[0];
+        handleFile(file);
+    };
+
+    const handleRemove = () => {
+        if (inputRef.current) inputRef.current.value = '';
+        setPreview(null);
+        if (onChange) onChange(null);
+    };
+
+    return (
+        <div className="flex items-center gap-4">
+            <div className="w-[120px] h-[120px] rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-950 flex-shrink-0">
+                {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                    <Image className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+                )}
+            </div>
+            <div className="flex flex-col gap-2">
+                <label className="cursor-pointer">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
+                        <Upload className="w-4 h-4" />
+                        {existingUrl || preview ? 'Change Image' : 'Upload Image'}
+                    </span>
+                    <input ref={inputRef} type="file" name={name} accept={accept} onChange={handleInputChange} className="hidden" />
+                </label>
+                {(existingUrl || preview) && (
+                    <button type="button" onClick={handleRemove} className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-800">
+                        <X className="w-3 h-3" /> Remove
+                    </button>
+                )}
+                <p className="text-xs text-gray-400">PNG, JPG, WebP, max {maxSize}MB</p>
+                {error && <p className="text-xs text-red-600">{error}</p>}
+            </div>
+        </div>
+    );
+}
+
+export default function BasicInfoSection({ data, setData, errors, photo1File, setPhoto1File, existingPhoto1Url, photo2File, setPhoto2File, existingPhoto2Url }) {
     const { units = [], categories = [], brands = [], featureStatus = {} } = usePage().props;
     const inventoryEnabled = featureStatus.inventory_management?.enabled !== false;
     const [status, setStatus] = useState(data.status || 'active');
@@ -182,12 +241,22 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                 {/* Primary Product Image (all product types) */}
                 <div>
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Primary Product Image <span className="text-red-500">*</span></h4>
-                    <ImageUpload
+                    <CompactImageUpload
                         name="photo1"
-                        label=""
                         value={photo1File || existingPhoto1Url}
                         onChange={setPhoto1File}
                         error={errors.photo1}
+                    />
+                </div>
+
+                {/* Secondary Product Image */}
+                <div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Secondary Product Image</h4>
+                    <CompactImageUpload
+                        name="photo2"
+                        value={photo2File || existingPhoto2Url}
+                        onChange={setPhoto2File}
+                        error={errors.photo2}
                     />
                 </div>
 
@@ -199,7 +268,7 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         {/* Pricing row */}
                         <div>
                             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Pricing</h4>
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <FormInput
                                     label="Sales Price"
                                     name="price"
@@ -223,18 +292,6 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                                     step="0.01"
                                     min="0"
                                     helpText="Original price before discount"
-                                />
-                                <FormInput
-                                    label="Cost Per Item"
-                                    name="cost_price"
-                                    type="number"
-                                    value={data.cost_price || ''}
-                                    onChange={(e) => setData('cost_price', e.target.value)}
-                                    placeholder="0.00"
-                                    error={errors.cost_price}
-                                    step="0.01"
-                                    min="0"
-                                    helpText="Customers won't see this price"
                                 />
                             </div>
                         </div>
@@ -296,6 +353,34 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         ))}
                     </div>
                     {errors.status && <p className="mt-1 text-xs text-red-600">{errors.status}</p>}
+                </div>
+
+                {/* Featured */}
+                <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Featured & Visibility</h4>
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={data.featured ?? false}
+                                onChange={(e) => setData('featured', e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Featured product</span>
+                        </label>
+                        <div>
+                            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Sort Order</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={data.sort_order ?? 0}
+                                onChange={(e) => setData('sort_order', parseInt(e.target.value) || 0)}
+                                className="w-24 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm"
+                            />
+                        </div>
+                    </div>
+                    {errors.featured && <p className="mt-1 text-xs text-red-600">{errors.featured}</p>}
+                    {errors.sort_order && <p className="mt-1 text-xs text-red-600">{errors.sort_order}</p>}
                 </div>
             </div>
         </div>

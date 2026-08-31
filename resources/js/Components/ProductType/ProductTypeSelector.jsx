@@ -49,8 +49,10 @@ export default function ProductTypeSelector({
     allTypes = ['single', 'variable', 'combo'],
     featureStatus = {},
     allPlans = [],
+    inline = false,
+    initialType = null,
 }) {
-    const [selectedType, setSelectedType] = useState(null);
+    const [selectedType, setSelectedType] = useState(initialType);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [lockedType, setLockedType] = useState(null);
 
@@ -80,6 +82,9 @@ export default function ProductTypeSelector({
             return;
         }
         setSelectedType(type.id);
+        if (inline) {
+            onSelect(type.id);
+        }
     };
 
     const handleContinue = () => {
@@ -87,6 +92,43 @@ export default function ProductTypeSelector({
             onSelect(selectedType);
         }
     };
+
+    if (inline) {
+        return (
+            <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Product Type
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {types.map((type) => {
+                        const info = getFeatureInfo(type.id);
+                        return (
+                            <ProductTypeCard
+                                key={type.id}
+                                icon={type.icon}
+                                title={type.title}
+                                description={type.description}
+                                features={type.features}
+                                locked={info.isLocked}
+                                upgradeHint={info.upgradeHint}
+                                selected={selectedType === type.id}
+                                onClick={() => handleTypeClick(type)}
+                                compact
+                            />
+                        );
+                    })}
+                </div>
+
+                <UpgradeModal
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    featureName={lockedType?.title}
+                    upgradeHint={lockedType?.upgradeHint}
+                    plans={allPlans}
+                />
+            </div>
+        );
+    }
 
     return (
         <>

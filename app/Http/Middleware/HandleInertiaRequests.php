@@ -166,6 +166,7 @@ class HandleInertiaRequests extends Middleware
             'website_info' => $websiteSettings,
             'websiteSettings' => $websiteSettings,
             'storefront' => $storefrontConfiguration,
+            'storefrontVariants' => $isPublicStorefront ? [] : \App\Services\StorefrontConfigurationResolver::heroVariants(),
             'categories' => $isSuperAdmin ? [] : cache()->remember('categories_' . ($tenant?->id ?? 'default'), 3600, function() {
                 return Category::orderBy('name')->get(['id', 'name']);
             }),

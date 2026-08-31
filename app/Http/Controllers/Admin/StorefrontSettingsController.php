@@ -39,6 +39,7 @@ class StorefrontSettingsController extends Controller
             'media' => StorefrontMedia::where('storefront_id', $storefront->id)
                 ->orderByDesc('created_at')->get(['id', 'key', 'path', 'original_name', 'mime_type', 'size', 'alt_text', 'is_visible'])->append('url'),
             'revision' => $this->revisionService->status($storefront),
+            'heroVariants' => \App\Services\StorefrontConfigurationResolver::heroVariants(),
         ]);
     }
 
@@ -55,12 +56,13 @@ class StorefrontSettingsController extends Controller
             $this->updateIdentity($validated);
 
             $storefront->update(['theme_id' => $theme->id, 'status' => 'active']);
+            $heroVariant = StorefrontConfigurationResolver::normalizeHeroVariant($validated['hero']['variant'] ?? null);
             StorefrontThemeConfig::withoutTenantScope()->updateOrCreate(
                 ['storefront_id' => $storefront->id],
                 [
                     'tenant_id' => tenant()->id,
                     'theme_id' => $theme->id,
-                    'configuration' => ['hero_variant' => $validated['hero']['variant'] ?? 'auto'],
+                    'configuration' => ['hero_variant' => $heroVariant],
                 ],
             );
 
@@ -121,12 +123,16 @@ class StorefrontSettingsController extends Controller
                 continue;
             }
 
+            $variant = $sectionData['variant'] ?? $section->variant;
+            if ($section->type === 'hero') {
+                $variant = StorefrontConfigurationResolver::normalizeHeroVariant($variant);
+            }
             $section->update([
                 'enabled' => (bool) $sectionData['enabled'],
                 'desktop_visible' => (bool) $sectionData['desktop_visible'],
                 'mobile_visible' => (bool) $sectionData['mobile_visible'],
                 'position' => $position,
-                'variant' => $sectionData['variant'] ?? $section->variant,
+                'variant' => $variant,
             ]);
 
             if ($section->type === 'hero') {
@@ -173,7 +179,7 @@ class StorefrontSettingsController extends Controller
 
         unset($hero['variant']);
         $heroSection->update([
-            'variant' => $validated['hero']['variant'] ?? $heroSection->variant,
+            'variant' => StorefrontConfigurationResolver::normalizeHeroVariant($validated['hero']['variant'] ?? $heroSection->variant),
             'configuration' => array_filter([
                 'title' => $hero['title'] ?? null,
                 'subtitle' => $hero['subtitle'] ?? null,

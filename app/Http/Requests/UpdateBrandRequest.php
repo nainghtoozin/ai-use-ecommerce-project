@@ -33,6 +33,11 @@ class UpdateBrandRequest extends FormRequest
             ],
             'description' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'remove_logo' => 'boolean',
+            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_banner' => 'boolean',
+            'featured' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ];
     }

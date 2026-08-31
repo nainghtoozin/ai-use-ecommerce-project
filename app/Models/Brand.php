@@ -18,15 +18,21 @@ class Brand extends Model
         'slug',
         'description',
         'logo',
+        'banner',
+        'featured',
+        'sort_order',
         'is_active',
     ];
 
     protected $appends = [
         'logo_url',
+        'banner_url',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'featured' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     public function getLogoUrlAttribute(): ?string
@@ -34,13 +40,55 @@ class Brand extends Model
         return ImageService::url($this->logo);
     }
 
+    public function getBannerUrlAttribute(): ?string
+    {
+        return ImageService::url($this->banner);
+    }
+
     protected static function booted()
     {
         static::creating(function ($brand) {
             if (empty($brand->slug)) {
-                $brand->slug = Str::slug($brand->name);
+                $brand->slug = static::generateUniqueSlug($brand->tenant_id, $brand->name, $brand->id);
             }
         });
+
+        static::updating(function ($brand) {
+            if ($brand->isDirty('slug') && empty($brand->slug)) {
+                $brand->slug = static::generateUniqueSlug($brand->tenant_id, $brand->name, $brand->id);
+            }
+        });
+    }
+
+    private static function generateUniqueSlug(?int $tenantId, string $name, ?int $excludeId = null): string
+    {
+        $baseSlug = \Illuminate\Support\Str::slug($name);
+        if (empty($baseSlug)) {
+            $baseSlug = 'brand';
+        }
+
+        $slug = $baseSlug;
+        $counter = 1;
+
+        $query = static::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->where('tenant_id', $tenantId)
+            ->where('slug', $slug);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        while ($query->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+            $query = static::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                ->where('tenant_id', $tenantId)
+                ->where('slug', $slug);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
+        }
+
+        return $slug;
     }
 
     public function products()
@@ -51,5 +99,15 @@ class Brand extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('featured', true);
+    }
+
+    public function scopeSorted($query)
+    {
+        return $query->orderBy('sort_order', 'asc')->orderBy('name', 'asc');
     }
 }

@@ -33,6 +33,7 @@ export default function ShopNavbar() {
 
     const logoSource = storefront?.identity?.logo_url || website_info?.logo;
     const logoUrl = assetUrl(logoSource, false);
+    const labels = storefront?.content?.labels || {};
     const siteName = storefront?.identity?.site_title || storefront?.identity?.name || tenant?.name || website_info?.site_name || 'My Store';
 
     useEffect(() => {
@@ -138,7 +139,7 @@ export default function ShopNavbar() {
 
                     <div className="flex items-center gap-1">
                         {storeSlug && storefront?.navigation?.show_search !== false && (
-                            <Link href={storeUrl('/products')} aria-label="Search products" className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors" title="Search products">
+                            <Link href={storeUrl('/products')} aria-label={labels.search_products || 'Search products'} className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors" title={labels.search_products || 'Search products'}>
                                 <i className="bi bi-search text-lg"></i>
                             </Link>
                         )}
@@ -146,7 +147,7 @@ export default function ShopNavbar() {
                             <Link
                                 href="/wishlist"
                                 className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
-                                title="Wishlist" aria-label="Wishlist"
+                                title={labels.wishlist || 'Wishlist'} aria-label={labels.wishlist || 'Wishlist'}
                             >
                                 <Heart className="w-5 h-5" />
                                 {wishlistCount > 0 && (
@@ -160,7 +161,7 @@ export default function ShopNavbar() {
                             <Link
                                 href={storeUrl('/cart')}
                                 className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
-                                title="Shopping Cart" aria-label="Shopping Cart"
+                                title={labels.cart || 'Shopping Cart'} aria-label={labels.cart || 'Shopping Cart'}
                             >
                                 <i className="bi bi-cart3 text-xl"></i>
                                 {cartCount > 0 && (
@@ -203,11 +204,11 @@ export default function ShopNavbar() {
                                                 <div className="py-1">
                                                     <Link href={storeUrl('/customer/account')} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <i className="bi bi-grid text-gray-400 dark:text-gray-500"></i>
-                                                        My Account
+                                                        {labels.my_account || 'My Account'}
                                                     </Link>
                                                     <Link href={storeUrl('/customer/orders')} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <i className="bi bi-receipt text-gray-400 dark:text-gray-500"></i>
-                                                        My Orders
+                                                        {labels.my_orders || 'My Orders'}
                                                     </Link>
                                                      {storeSlug && auth?.user?.is_admin && (
                                                         <>
@@ -239,7 +240,7 @@ export default function ShopNavbar() {
                                     onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
                                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--theme-color, #3B82F6)'}
                                 >
-                                    Login
+                                    {labels.login || 'Login'}
                                 </Link>
         {website_info?.allow_registration !== false && (
             <Link
@@ -249,7 +250,7 @@ export default function ShopNavbar() {
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
-                Register
+                {labels.register || 'Register'}
             </Link>
         )}
         </div>
@@ -339,7 +340,7 @@ export default function ShopNavbar() {
                                     href={storeUrl('/login')}
                                     className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:bg-gray-950"
                                 >
-                                    Login
+                                    {labels.login || 'Login'}
                                 </Link>
                                 {website_info?.allow_registration !== false && (
                                     <Link
@@ -347,7 +348,7 @@ export default function ShopNavbar() {
                                         className="flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white rounded-lg"
                                         style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                     >
-                                        Register
+                                        {labels.register || 'Register'}
                                     </Link>
                                 )}
                             </div>

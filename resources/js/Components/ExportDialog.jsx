@@ -47,6 +47,7 @@ export default function ExportDialog({ isOpen, onClose, type = 'products', filte
             fetch(adminUrl(`/admin/${type}/export/google-sheets`), {
                 method: 'POST',
                 body: JSON.stringify(params),
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',

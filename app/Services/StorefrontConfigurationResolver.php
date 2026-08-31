@@ -13,6 +13,7 @@ use App\Models\Tenant;
 use App\Models\Theme;
 use App\Models\WebsiteInfo;
 use App\Models\Category;
+use App\Models\Brand;
 use App\Models\Product;
 use App\Models\PromotionBanner;
 use App\Models\StorefrontRevision;
@@ -41,12 +42,35 @@ class StorefrontConfigurationResolver
         'search_products' => 'Search products...',
         'all_categories' => 'All Categories',
         'categories' => 'Categories',
+        'login' => 'Login',
+        'register' => 'Register',
+        'my_account' => 'My Account',
+        'my_orders' => 'My Orders',
+        'cart' => 'Cart',
+        'wishlist' => 'Wishlist',
+        'quick_links' => 'Quick Links',
+        'customer_service' => 'Customer Service',
+        'contact_us' => 'Contact Us',
+        'policies' => 'Policies',
+        'footer_copyright' => 'All rights reserved.',
+        'powered_by' => 'Powered by',
+        'home' => 'Home',
+        'products' => 'Products',
+        'brands' => 'Brands',
+        'about' => 'About',
+        'faq' => 'FAQ',
+        'new_arrivals' => 'New Arrivals',
+        'read_more' => 'Read More',
+        'about_our_store' => 'About Our Store',
+        'contact_details' => 'Contact Details',
+        'back_to_top' => 'Back to top',
     ];
 
     public const HOMEPAGE_SECTION_TYPES = [
         'hero',
         'promotion',
         'featured_categories',
+        'featured_brands',
         'featured_products',
         'product_showcase',
         'store_highlights',
@@ -57,6 +81,30 @@ class StorefrontConfigurationResolver
     public const LEGACY_SECTION_TYPE_MAP = [
         'product_discovery' => 'featured_products',
     ];
+
+    public const HERO_VARIANTS = [
+        'default',
+        'split',
+        'centered',
+        'text-only',
+        'minimal',
+    ];
+
+    public const HERO_DEFAULT_VARIANT = 'default';
+
+    public static function normalizeHeroVariant(?string $variant): string
+    {
+        $variant = is_string($variant) ? strtolower(trim($variant)) : null;
+        if ($variant === null || $variant === '') {
+            return self::HERO_DEFAULT_VARIANT;
+        }
+        return in_array($variant, self::HERO_VARIANTS, true) ? $variant : self::HERO_DEFAULT_VARIANT;
+    }
+
+    public static function heroVariants(): array
+    {
+        return self::HERO_VARIANTS;
+    }
 
     public function resolve(?Tenant $tenant = null, string $context = 'published', bool $includeHomepage = true): array
     {
@@ -273,6 +321,7 @@ class StorefrontConfigurationResolver
         }
 
         $this->normalizeHomepageSections($storefront);
+        $this->normalizeHeroVariants($storefront);
 
         $existing = StorefrontHomepageSection::withoutTenantScope()
             ->where('storefront_id', $storefront->id)
@@ -292,13 +341,29 @@ class StorefrontConfigurationResolver
                 'tenant_id' => $storefront->tenant_id,
                 'storefront_id' => $storefront->id,
                 'type' => $type,
-                'variant' => 'default',
+                'variant' => $type === 'hero' ? self::HERO_DEFAULT_VARIANT : 'default',
                 'enabled' => true,
                 'desktop_visible' => true,
                 'mobile_visible' => $type !== 'brand_story',
                 'position' => $position++,
                 'configuration' => [],
             ]);
+        }
+    }
+
+    private function normalizeHeroVariants(Storefront $storefront): void
+    {
+        $rows = StorefrontHomepageSection::withoutTenantScope()
+            ->where('storefront_id', $storefront->id)
+            ->where('type', 'hero')
+            ->get();
+
+        foreach ($rows as $row) {
+            $normalized = self::normalizeHeroVariant($row->variant);
+            if ($normalized !== $row->variant) {
+                $row->variant = $normalized;
+                $row->save();
+            }
         }
     }
 
@@ -384,10 +449,24 @@ class StorefrontConfigurationResolver
         );
 
         foreach ([
-            ['key' => 'home', 'label' => 'Home', 'path' => '/', 'icon' => 'bi-house-door'],
-            ['key' => 'products', 'label' => 'Products', 'path' => '/products', 'icon' => 'bi-grid'],
-            ['key' => 'contact', 'label' => 'Contact', 'path' => '/contact', 'icon' => 'bi-envelope'],
-            ['key' => 'orders', 'label' => 'My Orders', 'path' => '/customer/orders', 'icon' => 'bi-receipt'],
+            ['key' => 'home', 'label' => 'Home', 'path' => '/', 'icon' => 'bi-house-door', 'group' => 'header'],
+            ['key' => 'products', 'label' => 'Products', 'path' => '/products', 'icon' => 'bi-grid', 'group' => 'header'],
+            ['key' => 'contact', 'label' => 'Contact', 'path' => '/contact', 'icon' => 'bi-envelope', 'group' => 'header'],
+            ['key' => 'orders', 'label' => 'My Orders', 'path' => '/customer/orders', 'icon' => 'bi-receipt', 'group' => 'header'],
+        ] as $position => $item) {
+            StorefrontNavigationItem::withoutTenantScope()->firstOrCreate(
+                ['navigation_id' => $navigation->id, 'key' => $item['key']],
+                ['tenant_id' => $tenant->id, ...$item, 'enabled' => true, 'position' => $position],
+            );
+        }
+
+        foreach ([
+            ['key' => 'footer_home', 'label' => 'Home', 'path' => '/', 'icon' => null, 'group' => 'footer'],
+            ['key' => 'footer_products', 'label' => 'Products', 'path' => '/products', 'icon' => null, 'group' => 'footer'],
+            ['key' => 'footer_contact', 'label' => 'Contact Us', 'path' => '/contact', 'icon' => null, 'group' => 'footer'],
+            ['key' => 'footer_faq', 'label' => 'FAQ', 'path' => '/faq', 'icon' => null, 'group' => 'footer'],
+            ['key' => 'footer_privacy', 'label' => 'Privacy Policy', 'path' => '/privacy-policy', 'icon' => null, 'group' => 'footer'],
+            ['key' => 'footer_terms', 'label' => 'Terms & Conditions', 'path' => '/terms-and-conditions', 'icon' => null, 'group' => 'footer'],
         ] as $position => $item) {
             StorefrontNavigationItem::withoutTenantScope()->firstOrCreate(
                 ['navigation_id' => $navigation->id, 'key' => $item['key']],
@@ -406,6 +485,7 @@ class StorefrontConfigurationResolver
                     ['key' => 'home', 'label' => 'Home', 'path' => '/', 'icon' => 'bi-house-door', 'position' => 0],
                     ['key' => 'products', 'label' => 'Products', 'path' => '/products', 'icon' => 'bi-grid', 'position' => 1],
                 ],
+                'footer_items' => [],
             ];
         }
 
@@ -418,11 +498,26 @@ class StorefrontConfigurationResolver
                     ['key' => 'home', 'label' => 'Home', 'path' => '/', 'icon' => 'bi-house-door', 'position' => 0],
                     ['key' => 'products', 'label' => 'Products', 'path' => '/products', 'icon' => 'bi-grid', 'position' => 1],
                 ],
+                'footer_items' => [],
             ];
         }
 
-        $items = collect($navigation?->items ?? [])
+        $headerItems = collect($navigation?->items ?? [])
             ->where('enabled', true)
+            ->where('group', 'header')
+            ->sortBy('position')
+            ->map(fn ($item) => [
+                'key' => $item->key,
+                'label' => $item->label,
+                'path' => $item->path,
+                'icon' => $item->icon,
+                'position' => $item->position,
+            ])->values()->all();
+
+        $footerItems = collect($navigation?->items ?? [])
+            ->where('enabled', true)
+            ->where('group', 'footer')
+            ->sortBy('position')
             ->map(fn ($item) => [
                 'key' => $item->key,
                 'label' => $item->label,
@@ -434,7 +529,8 @@ class StorefrontConfigurationResolver
         return [
             'show_store_name' => (bool) ($navigation?->settings['show_store_name'] ?? true),
             'show_search' => (bool) ($navigation?->settings['show_search'] ?? true),
-            'items' => $items,
+            'items' => $headerItems,
+            'footer_items' => $footerItems,
         ];
     }
 
@@ -485,7 +581,7 @@ class StorefrontConfigurationResolver
             [
                 'id' => null,
                 'type' => 'hero',
-                'variant' => !empty($legacy->hero_images_urls) ? 'image' : 'text-only',
+                'variant' => 'text-only',
                 'enabled' => true,
                 'desktop_visible' => true,
                 'mobile_visible' => true,
@@ -507,6 +603,7 @@ class StorefrontConfigurationResolver
         return match ($type) {
             'promotion' => $this->promotionData($configuration, $tenantId, $forRevision),
             'featured_categories' => $this->categoryData($configuration, $tenantId),
+            'featured_brands' => $this->brandData($configuration, $tenantId),
             'featured_products', 'product_showcase' => $this->productData($configuration, $tenantId),
             'store_highlights' => ['items' => array_values(array_filter($configuration['items'] ?? [], fn ($item) => !empty($item['title'])))] ,
             'brand_story', 'cta' => $this->contentSectionData($type, $configuration, $media, $legacy),
@@ -563,25 +660,123 @@ class StorefrontConfigurationResolver
     private function categoryData(array $configuration, int $tenantId): array
     {
         $ids = array_values(array_filter(array_map('intval', $configuration['category_ids'] ?? [])));
-        if (!$ids) return ['categories' => []];
-        $categories = Category::withoutTenantScope()->where('tenant_id', $tenantId)->whereIn('id', $ids)
-            ->withCount(['products as products_count' => fn ($query) => $query->withoutGlobalScopes()->where('products.tenant_id', $tenantId)])
-            ->get()->sortBy(fn ($category) => array_search($category->id, $ids, true))->values();
-        return ['categories' => $categories->map(fn ($category) => ['id' => $category->id, 'name' => $category->name, 'products_count' => $category->products_count])->all()];
+        $limit = (int) ($configuration['limit'] ?? 8);
+
+        if ($ids) {
+            $categories = Category::withoutTenantScope()
+                ->where('tenant_id', $tenantId)
+                ->active()
+                ->whereIn('id', $ids)
+                ->withCount(['products as products_count' => fn ($query) => $query->withoutGlobalScopes()->where('products.tenant_id', $tenantId)->where('products.status', Product::STATUS_ACTIVE)])
+                ->get()
+                ->sortBy(fn ($category) => array_search($category->id, $ids, true))
+                ->values();
+            return ['categories' => $this->mapCategories($categories)->all()];
+        }
+
+        $categories = Category::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->active()
+            ->featured()
+            ->sorted()
+            ->withCount(['products as products_count' => fn ($query) => $query->withoutGlobalScopes()->where('products.tenant_id', $tenantId)->where('products.status', Product::STATUS_ACTIVE)])
+            ->limit($limit)
+            ->get();
+
+        return ['categories' => $this->mapCategories($categories)->all()];
+    }
+
+    private function mapCategories($categories): \Illuminate\Support\Collection
+    {
+        return $categories->map(fn ($category) => [
+            'id' => $category->id,
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'image' => $category->image,
+            'image_url' => $category->image_url,
+            'products_count' => $category->products_count,
+            'featured' => $category->featured,
+        ]);
+    }
+
+    private function brandData(array $configuration, int $tenantId): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $configuration['brand_ids'] ?? [])));
+        $limit = (int) ($configuration['limit'] ?? 8);
+
+        if ($ids) {
+            $brands = Brand::withoutTenantScope()
+                ->where('tenant_id', $tenantId)
+                ->active()
+                ->whereIn('id', $ids)
+                ->withCount(['products as products_count' => fn ($query) => $query->withoutGlobalScopes()->where('products.tenant_id', $tenantId)->where('products.status', Product::STATUS_ACTIVE)])
+                ->get()
+                ->sortBy(fn ($brand) => array_search($brand->id, $ids, true))
+                ->values();
+            return ['brands' => $this->mapBrands($brands)->all()];
+        }
+
+        $brands = Brand::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->active()
+            ->featured()
+            ->sorted()
+            ->withCount(['products as products_count' => fn ($query) => $query->withoutGlobalScopes()->where('products.tenant_id', $tenantId)->where('products.status', Product::STATUS_ACTIVE)])
+            ->limit($limit)
+            ->get();
+
+        return ['brands' => $this->mapBrands($brands)->all()];
+    }
+
+    private function mapBrands($brands): \Illuminate\Support\Collection
+    {
+        return $brands->map(fn ($brand) => [
+            'id' => $brand->id,
+            'name' => $brand->name,
+            'slug' => $brand->slug,
+            'logo' => $brand->logo,
+            'logo_url' => $brand->logo_url,
+            'banner' => $brand->banner,
+            'banner_url' => $brand->banner_url,
+            'products_count' => $brand->products_count,
+            'featured' => $brand->featured,
+        ]);
     }
 
     private function productData(array $configuration, int $tenantId): array
     {
         $ids = array_values(array_filter(array_map('intval', $configuration['product_ids'] ?? [])));
-        if (!$ids) return ['products' => []];
         $limit = min(max((int) ($configuration['limit'] ?? 8), 1), 24);
-        $products = Product::withoutTenantScope()->where('tenant_id', $tenantId)->active()->whereIn('id', $ids)
+
+        if ($ids) {
+            $products = Product::withoutTenantScope()
+                ->where('tenant_id', $tenantId)
+                ->active()
+                ->whereIn('id', $ids)
+                ->with([
+                    'category' => fn ($query) => $query->withoutGlobalScopes()->where('categories.tenant_id', $tenantId),
+                    'brand' => fn ($query) => $query->withoutGlobalScopes()->where('brands.tenant_id', $tenantId),
+                    'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant',
+                ])->get()
+                ->sortBy(fn ($product) => array_search($product->id, $ids, true))
+                ->values()
+                ->take($limit);
+            return ['products' => $products->values()->all()];
+        }
+
+        $products = Product::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->active()
+            ->featured()
+            ->orderByDesc('created_at')
             ->with([
                 'category' => fn ($query) => $query->withoutGlobalScopes()->where('categories.tenant_id', $tenantId),
                 'brand' => fn ($query) => $query->withoutGlobalScopes()->where('brands.tenant_id', $tenantId),
                 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant',
-            ])->get()
-            ->sortBy(fn ($product) => array_search($product->id, $ids, true))->values()->take($limit);
+            ])
+            ->limit($limit)
+            ->get();
+
         return ['products' => $products->values()->all()];
     }
 
@@ -649,7 +844,7 @@ class StorefrontConfigurationResolver
             'identity' => ['name' => 'My Store', 'store_name' => 'My Store', 'site_title' => 'My Store', 'tagline' => null, 'description' => null, 'logo_url' => null, 'favicon_url' => null],
             'theme' => ['id' => null, 'slug' => 'commerce-default', 'name' => 'Commerce Default', 'version' => '1.0.0', 'configuration' => []],
             'design' => $this->defaultTokens(),
-            'navigation' => ['show_store_name' => true, 'show_search' => true, 'items' => []],
+            'navigation' => ['show_store_name' => true, 'show_search' => true, 'items' => [], 'footer_items' => []],
             'homepage' => ['sections' => []],
             'media' => ['logo' => null, 'favicon' => null, 'og_image' => null, 'hero' => []],
             'content' => ['labels' => self::DEFAULT_LABELS],
