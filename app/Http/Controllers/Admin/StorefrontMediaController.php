@@ -12,6 +12,7 @@ use App\Models\WebsiteInfo;
 use App\Services\ImageService;
 use App\Services\StorefrontConfigurationResolver;
 use App\Services\StorefrontRevisionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -54,7 +55,7 @@ class StorefrontMediaController extends Controller
         $file = $request->file('file');
         $path = $this->imageService->upload($file, 'storefront-media');
 
-        StorefrontMedia::create([
+        $media = StorefrontMedia::create([
             'tenant_id' => tenant()->id,
             'storefront_id' => $storefront->id,
             'key' => 'library',
@@ -69,6 +70,35 @@ class StorefrontMediaController extends Controller
         $this->revisionService->syncDraft($storefront);
 
         return back()->with('success', 'Media uploaded successfully.');
+    }
+
+    public function uploadHeroImage(StorefrontMediaUploadRequest $request): JsonResponse
+    {
+        $storefront = $this->storefront();
+        $file = $request->file('file');
+        $path = $this->imageService->upload($file, 'storefront-media');
+
+        $media = StorefrontMedia::create([
+            'tenant_id' => tenant()->id,
+            'storefront_id' => $storefront->id,
+            'key' => 'hero',
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'alt_text' => $request->input('alt_text') ?: pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'metadata' => ['width' => null, 'height' => null],
+            'is_visible' => true,
+        ]);
+        $this->revisionService->syncDraft($storefront);
+
+        $media->append('url');
+
+        return response()->json([
+            'id' => $media->id,
+            'url' => $media->url,
+            'alt_text' => $media->alt_text,
+        ]);
     }
 
     public function update(StorefrontMedia $media): RedirectResponse

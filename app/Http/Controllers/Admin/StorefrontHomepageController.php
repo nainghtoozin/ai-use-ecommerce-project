@@ -71,6 +71,25 @@ class StorefrontHomepageController extends Controller
 
     private function sanitizeConfiguration(string $type, array $configuration, Storefront $storefront): array
     {
+        if ($type === 'hero') {
+            $mediaIds = array_values(array_map('intval', array_filter(
+                $configuration['media_ids'] ?? [],
+                fn ($id) => is_numeric($id) && (int) $id > 0
+            )));
+            $validMediaIds = StorefrontMedia::where('storefront_id', $storefront->id)
+                ->whereIn('id', $mediaIds)
+                ->pluck('id')
+                ->values()
+                ->all();
+            return [
+                'title' => $this->text($configuration['title'] ?? null, 255),
+                'subtitle' => $this->text($configuration['subtitle'] ?? null, 1000),
+                'button_text' => $this->text($configuration['button_text'] ?? null, 100),
+                'button_link' => $this->safePath($configuration['button_link'] ?? null),
+                'media_ids' => array_slice($validMediaIds, 0, 5),
+            ];
+        }
+
         if ($type === 'promotion') {
             return ['limit' => min(max((int) ($configuration['limit'] ?? 6), 1), 12)];
         }

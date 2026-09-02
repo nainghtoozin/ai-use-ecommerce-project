@@ -83,17 +83,17 @@ class StorefrontConfigurationResolver
     ];
 
     public const HERO_VARIANTS = [
-        'default',
-        'split',
-        'centered',
+        'modern-split',
+        'full-background',
+        'centered-minimal',
+        'image-carousel',
         'text-only',
-        'minimal',
     ];
 
-    public const HERO_DEFAULT_VARIANT = 'default';
+    public const HERO_DEFAULT_VARIANT = 'modern-split';
 
     public const SECTION_VARIANTS = [
-        'hero' => ['default', 'split', 'centered', 'text-only', 'minimal'],
+        'hero' => ['modern-split', 'full-background', 'centered-minimal', 'image-carousel', 'text-only'],
         'featured_categories' => ['default', 'grid', 'horizontal', 'compact'],
         'featured_brands' => ['default', 'grid', 'horizontal', 'compact'],
         'featured_products' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
