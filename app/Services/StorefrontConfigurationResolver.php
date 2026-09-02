@@ -92,13 +92,32 @@ class StorefrontConfigurationResolver
 
     public const HERO_DEFAULT_VARIANT = 'default';
 
+    public const SECTION_VARIANTS = [
+        'hero' => ['default', 'split', 'centered', 'text-only', 'minimal'],
+        'featured_categories' => ['default', 'grid', 'horizontal', 'compact'],
+        'featured_brands' => ['default', 'grid', 'horizontal', 'compact'],
+        'featured_products' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
+        'product_showcase' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
+        'brand_story' => ['default', 'split', 'text-only'],
+        'cta' => ['default', 'centered', 'full-width'],
+    ];
+
     public static function normalizeHeroVariant(?string $variant): string
     {
+        return self::normalizeSectionVariant('hero', $variant);
+    }
+
+    public static function normalizeSectionVariant(string $type, ?string $variant): string
+    {
+        $allowed = self::SECTION_VARIANTS[$type] ?? null;
+        if ($allowed === null) {
+            return 'default';
+        }
         $variant = is_string($variant) ? strtolower(trim($variant)) : null;
         if ($variant === null || $variant === '') {
-            return self::HERO_DEFAULT_VARIANT;
+            return 'default';
         }
-        return in_array($variant, self::HERO_VARIANTS, true) ? $variant : self::HERO_DEFAULT_VARIANT;
+        return in_array($variant, $allowed, true) ? $variant : 'default';
     }
 
     public static function heroVariants(): array
@@ -119,12 +138,29 @@ class StorefrontConfigurationResolver
                     ->where('tenant_id', $tenant->id)->whereKey($revisionId)->first();
                 if ($revision?->configuration) {
                     $configuration = $this->filterRevisionConfiguration($revision->configuration, $tenant->name);
+                    $configuration = $this->refreshSectionData($configuration, (int) $tenant->id);
                     return $includeHomepage ? $configuration : $this->withoutHomepageData($configuration);
                 }
             }
         }
 
         return $this->resolveBase($tenant, false, $includeHomepage);
+    }
+
+    private function refreshSectionData(array $configuration, int $tenantId): array
+    {
+        foreach ($configuration['homepage']['sections'] ?? [] as &$section) {
+            if (!($section['enabled'] ?? false)) {
+                continue;
+            }
+            $type = $section['type'] ?? '';
+            if (in_array($type, ['featured_categories', 'featured_brands', 'featured_products', 'product_showcase', 'store_highlights'], true)) {
+                $section['data'] = $this->sectionData($type, $section['configuration'] ?? [], collect(), $tenantId, false, null);
+            }
+        }
+        unset($section);
+
+        return $configuration;
     }
 
     public function resolveBase(?Tenant $tenant = null, bool $forRevision = false, bool $includeHomepage = true): array
@@ -660,7 +696,7 @@ class StorefrontConfigurationResolver
     private function categoryData(array $configuration, int $tenantId): array
     {
         $ids = array_values(array_filter(array_map('intval', $configuration['category_ids'] ?? [])));
-        $limit = (int) ($configuration['limit'] ?? 8);
+        $limit = min(max((int) ($configuration['limit'] ?? 8), 1), 12);
 
         if ($ids) {
             $categories = Category::withoutTenantScope()
@@ -702,7 +738,7 @@ class StorefrontConfigurationResolver
     private function brandData(array $configuration, int $tenantId): array
     {
         $ids = array_values(array_filter(array_map('intval', $configuration['brand_ids'] ?? [])));
-        $limit = (int) ($configuration['limit'] ?? 8);
+        $limit = min(max((int) ($configuration['limit'] ?? 8), 1), 12);
 
         if ($ids) {
             $brands = Brand::withoutTenantScope()
@@ -746,7 +782,7 @@ class StorefrontConfigurationResolver
     private function productData(array $configuration, int $tenantId): array
     {
         $ids = array_values(array_filter(array_map('intval', $configuration['product_ids'] ?? [])));
-        $limit = min(max((int) ($configuration['limit'] ?? 8), 1), 24);
+        $limit = min(max((int) ($configuration['limit'] ?? 8), 1), 12);
 
         if ($ids) {
             $products = Product::withoutTenantScope()

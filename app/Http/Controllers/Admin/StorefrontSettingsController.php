@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateStorefrontConfigurationRequest;
 use App\Models\Storefront;
 use App\Models\StorefrontContent;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\StorefrontDesignToken;
-use App\Models\StorefrontHomepageSection;
 use App\Models\StorefrontMedia;
 use App\Models\StorefrontThemeConfig;
 use App\Models\Theme;
@@ -52,17 +50,15 @@ class StorefrontSettingsController extends Controller
         $theme = Theme::where('is_active', true)->findOrFail($validated['theme_id']);
         $previousThemeId = $storefront->theme_id;
 
-        DB::transaction(function () use ($request, $storefront, $validated, $theme, $previousThemeId) {
+        DB::transaction(function () use ($storefront, $validated, $theme, $previousThemeId) {
             $this->updateIdentity($validated);
 
             $storefront->update(['theme_id' => $theme->id, 'status' => 'active']);
-            $heroVariant = StorefrontConfigurationResolver::normalizeHeroVariant($validated['hero']['variant'] ?? null);
             StorefrontThemeConfig::withoutTenantScope()->updateOrCreate(
                 ['storefront_id' => $storefront->id],
                 [
                     'tenant_id' => tenant()->id,
                     'theme_id' => $theme->id,
-                    'configuration' => ['hero_variant' => $heroVariant],
                 ],
             );
 
@@ -79,7 +75,6 @@ class StorefrontSettingsController extends Controller
                 ],
             );
 
-            $this->updateSections($storefront, $validated, $request);
             $this->updateLabels($storefront, $validated['labels'] ?? []);
         });
         $this->revisionService->syncDraft($storefront);
@@ -101,93 +96,6 @@ class StorefrontSettingsController extends Controller
 
         $info->save();
         WebsiteInfo::clearCache();
-    }
-
-    private function updateSections(Storefront $storefront, array $validated, UpdateStorefrontConfigurationRequest $request): void
-    {
-        $sections = $validated['homepage_sections'];
-        $heroSection = null;
-
-        foreach ($sections as $position => $sectionData) {
-            $section = StorefrontHomepageSection::where('storefront_id', $storefront->id)
-                ->find($sectionData['id']);
-
-            // Tolerate section IDs captured in older revision snapshots whose
-            // rows were since removed (e.g. normalized duplicates), but never
-            // accept an ID that belongs to another storefront.
-            if (!$section) {
-                if (StorefrontHomepageSection::withoutTenantScope()->whereKey($sectionData['id'])->exists()) {
-                    throw (new ModelNotFoundException)
-                        ->setModel(StorefrontHomepageSection::class, [$sectionData['id']]);
-                }
-                continue;
-            }
-
-            $variant = $sectionData['variant'] ?? $section->variant;
-            if ($section->type === 'hero') {
-                $variant = StorefrontConfigurationResolver::normalizeHeroVariant($variant);
-            }
-            $section->update([
-                'enabled' => (bool) $sectionData['enabled'],
-                'desktop_visible' => (bool) $sectionData['desktop_visible'],
-                'mobile_visible' => (bool) $sectionData['mobile_visible'],
-                'position' => $position,
-                'variant' => $variant,
-            ]);
-
-            if ($section->type === 'hero') {
-                $heroSection = $section;
-            }
-        }
-
-        if (!$heroSection) {
-            return;
-        }
-
-        $hero = $validated['hero'] ?? [];
-        $existingMediaIds = $heroSection->configuration['media_ids'] ?? [];
-
-        if ($request->hasFile('hero_image')) {
-            $files = $request->file('hero_image');
-            if (!is_array($files)) {
-                $files = [$files];
-            }
-            $files = array_slice($files, 0, 5);
-            $newMediaIds = [];
-            foreach ($files as $file) {
-                $path = $this->imageService->upload($file, 'storefront-media');
-                $media = StorefrontMedia::withoutTenantScope()->create([
-                    'tenant_id' => tenant()->id,
-                    'storefront_id' => $storefront->id,
-                    'key' => 'hero',
-                    'path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                    'alt_text' => $validated['hero_alt_text'] ?? ($hero['title'] ?? tenant()->name),
-                ]);
-                $newMediaIds[] = $media->id;
-            }
-            $hero['media_ids'] = array_slice(array_merge($existingMediaIds, $newMediaIds), 0, 5);
-        } elseif (($validated['hero_remove_image'] ?? false) === true) {
-            $hero['media_ids'] = [];
-        } elseif (array_key_exists('media_ids', $hero)) {
-            $hero['media_ids'] = StorefrontMedia::where('storefront_id', $storefront->id)
-                ->whereIn('id', $hero['media_ids'])
-                ->pluck('id')->values()->all();
-        }
-
-        unset($hero['variant']);
-        $heroSection->update([
-            'variant' => StorefrontConfigurationResolver::normalizeHeroVariant($validated['hero']['variant'] ?? $heroSection->variant),
-            'configuration' => array_filter([
-                'title' => $hero['title'] ?? null,
-                'subtitle' => $hero['subtitle'] ?? null,
-                'button_text' => $hero['button_text'] ?? null,
-                'button_link' => $hero['button_link'] ?? null,
-                'media_ids' => $hero['media_ids'] ?? null,
-            ], static fn ($value) => $value !== null),
-        ]);
     }
 
     private function updateLabels(Storefront $storefront, array $labels): void

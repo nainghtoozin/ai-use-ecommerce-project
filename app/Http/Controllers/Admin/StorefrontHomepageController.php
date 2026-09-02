@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateHomepageSectionsRequest;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Storefront;
@@ -16,7 +17,7 @@ use Inertia\Inertia;
 
 class StorefrontHomepageController extends Controller
 {
-    private const TYPES = ['hero', 'promotion', 'featured_categories', 'featured_products', 'product_showcase', 'store_highlights', 'brand_story', 'cta'];
+    private const TYPES = ['hero', 'promotion', 'featured_categories', 'featured_brands', 'featured_products', 'product_showcase', 'store_highlights', 'brand_story', 'cta'];
 
     public function __construct(
         private readonly StorefrontConfigurationResolver $resolver,
@@ -40,9 +41,11 @@ class StorefrontHomepageController extends Controller
                 'configuration' => $section->configuration ?? [],
             ])->values()->all(),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'brands' => Brand::orderBy('name')->get(['id', 'name']),
             'products' => Product::active()->orderBy('name')->limit(100)->get(['id', 'name', 'price'])->map(fn ($product) => ['id' => $product->id, 'name' => $product->name, 'price' => $product->price])->values()->all(),
             'media' => StorefrontMedia::where('storefront_id', $storefront->id)->latest()->get(['id', 'alt_text'])->append('url'),
             'heroVariants' => \App\Services\StorefrontConfigurationResolver::heroVariants(),
+            'revision' => $this->revisionService->status($storefront),
         ]);
     }
 
@@ -63,7 +66,7 @@ class StorefrontHomepageController extends Controller
         }
         $this->revisionService->syncDraft($storefront);
 
-        return back()->with('success', 'Homepage sections updated successfully.');
+        return back()->with('success', 'Draft saved successfully. Your storefront has not been updated yet. Preview or publish your changes.');
     }
 
     private function sanitizeConfiguration(string $type, array $configuration, Storefront $storefront): array
@@ -77,9 +80,14 @@ class StorefrontHomepageController extends Controller
             return ['category_ids' => Category::withoutTenantScope()->where('tenant_id', tenant()->id)->whereIn('id', $ids)->pluck('id')->values()->all(), 'limit' => min(max((int) ($configuration['limit'] ?? 6), 1), 12)];
         }
 
+        if (in_array($type, ['featured_brands'], true)) {
+            $ids = array_values(array_filter(array_map('intval', $configuration['brand_ids'] ?? [])));
+            return ['brand_ids' => Brand::withoutTenantScope()->where('tenant_id', tenant()->id)->whereIn('id', $ids)->pluck('id')->values()->all(), 'limit' => min(max((int) ($configuration['limit'] ?? 6), 1), 12)];
+        }
+
         if (in_array($type, ['featured_products', 'product_showcase'], true)) {
             $ids = array_values(array_filter(array_map('intval', $configuration['product_ids'] ?? [])));
-            return ['product_ids' => Product::withoutTenantScope()->where('tenant_id', tenant()->id)->active()->whereIn('id', $ids)->pluck('id')->values()->all(), 'limit' => min(max((int) ($configuration['limit'] ?? 8), 1), 24), 'title' => $this->text($configuration['title'] ?? null, 100), 'description' => $this->text($configuration['description'] ?? null, 500)];
+            return ['product_ids' => Product::withoutTenantScope()->where('tenant_id', tenant()->id)->active()->whereIn('id', $ids)->pluck('id')->values()->all(), 'limit' => min(max((int) ($configuration['limit'] ?? 8), 1), 12), 'title' => $this->text($configuration['title'] ?? null, 100), 'description' => $this->text($configuration['description'] ?? null, 500)];
         }
 
         if ($type === 'store_highlights') {
@@ -130,18 +138,7 @@ class StorefrontHomepageController extends Controller
 
     private function sectionVariant(string $type, ?string $variant): string
     {
-        $allowed = [
-            'hero' => \App\Services\StorefrontConfigurationResolver::HERO_VARIANTS,
-            'featured_categories' => ['default', 'grid', 'horizontal', 'compact'],
-            'featured_products' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
-            'product_showcase' => ['default', 'grid', 'compact', 'image-focused', 'horizontal'],
-            'brand_story' => ['default', 'split', 'text-only'],
-            'cta' => ['default', 'centered', 'full-width'],
-        ];
-        if ($type === 'hero') {
-            return \App\Services\StorefrontConfigurationResolver::normalizeHeroVariant($variant);
-        }
-        return in_array($variant, $allowed[$type] ?? ['default'], true) ? $variant : 'default';
+        return \App\Services\StorefrontConfigurationResolver::normalizeSectionVariant($type, $variant);
     }
 
     private function storefront(): Storefront

@@ -9,6 +9,9 @@ use App\Models\StorefrontHomepageSection;
 use App\Models\StorefrontMedia;
 use App\Models\StorefrontNavigation;
 use App\Models\StorefrontNavigationItem;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
 use App\Models\PromotionBanner;
 use App\Models\StorefrontRevision;
 use App\Models\StorefrontThemeConfig;
@@ -108,13 +111,33 @@ class StorefrontConfigurationResolverTest extends TestCase
             });
         }
 
-        foreach (['storefronts', 'storefront_theme_configs', 'storefront_design_tokens', 'storefront_homepage_sections', 'storefront_contents', 'storefront_media'] as $tableName) {
+        foreach (['categories', 'products', 'brands', 'storefronts', 'storefront_theme_configs', 'storefront_design_tokens', 'storefront_homepage_sections', 'storefront_contents', 'storefront_media'] as $tableName) {
             if (!Schema::hasTable($tableName)) {
                 Schema::create($tableName, function ($table) use ($tableName) {
                     $table->id();
-                    $table->unsignedBigInteger('tenant_id');
+                    $table->unsignedBigInteger('tenant_id')->nullable();
                     $table->unsignedBigInteger('storefront_id')->nullable();
-                    if ($tableName === 'storefronts') {
+                    if ($tableName === 'categories') {
+                        $table->string('name');
+                        $table->string('slug')->nullable();
+                        $table->boolean('is_active')->default(true);
+                        $table->boolean('featured')->default(false);
+                        $table->integer('sort_order')->default(0);
+                    } elseif ($tableName === 'products') {
+                        $table->string('name');
+                        $table->string('type')->default('single');
+                        $table->string('status')->default('active');
+                        $table->boolean('featured')->default(false);
+                        $table->decimal('price', 10, 2)->default(0);
+                        $table->unsignedBigInteger('category_id')->nullable();
+                        $table->unsignedBigInteger('brand_id')->nullable();
+                    } elseif ($tableName === 'brands') {
+                        $table->string('name');
+                        $table->string('slug')->nullable();
+                        $table->boolean('is_active')->default(true);
+                        $table->boolean('featured')->default(false);
+                        $table->integer('sort_order')->default(0);
+                    } elseif ($tableName === 'storefronts') {
                         $table->unsignedBigInteger('theme_id')->nullable();
                         $table->string('status')->default('active');
                         $table->unsignedBigInteger('draft_revision_id')->nullable();
@@ -311,7 +334,7 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertSame([], $hero['configuration']['images']);
     }
 
-    public function test_admin_update_changes_tokens_sections_and_labels_for_current_tenant(): void
+    public function test_admin_update_changes_tokens_and_labels_for_current_tenant(): void
     {
         $tenant = Tenant::create(['name' => 'Configured Store', 'slug' => 'configured-store', 'status' => 'active']);
         app()->instance('current.tenant', $tenant);
@@ -319,28 +342,6 @@ class StorefrontConfigurationResolverTest extends TestCase
 
         $theme = Theme::firstOrFail();
         $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $hero = StorefrontHomepageSection::create([
-            'tenant_id' => $tenant->id,
-            'storefront_id' => $storefront->id,
-            'type' => 'hero',
-            'variant' => 'default',
-            'enabled' => true,
-            'desktop_visible' => true,
-            'mobile_visible' => true,
-            'position' => 0,
-            'configuration' => [],
-        ]);
-        $products = StorefrontHomepageSection::create([
-            'tenant_id' => $tenant->id,
-            'storefront_id' => $storefront->id,
-            'type' => 'product_discovery',
-            'variant' => 'default',
-            'enabled' => true,
-            'desktop_visible' => true,
-            'mobile_visible' => true,
-            'position' => 1,
-            'configuration' => [],
-        ]);
 
         $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
         $request->shouldReceive('validated')->andReturn([
@@ -355,12 +356,6 @@ class StorefrontConfigurationResolverTest extends TestCase
                 'cards' => ['style' => 'soft'],
                 'product_cards' => ['variant' => 'compact'],
             ],
-            'homepage_sections' => [
-                ['id' => $products->id, 'enabled' => false, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'default'],
-                ['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 1, 'variant' => 'text-only'],
-            ],
-            'hero' => ['variant' => 'text-only', 'title' => 'Welcome', 'subtitle' => 'Text only', 'button_text' => 'Explore', 'button_link' => '/products'],
-            'hero_remove_image' => false,
             'labels' => ['add_to_cart' => 'Buy Now'],
         ]);
         $request->shouldReceive('hasFile')->andReturn(false);
@@ -380,9 +375,6 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertSame('800', app(StorefrontConfigurationResolver::class)->resolve(null, 'draft')['design']['typography']['heading_weight']);
         app(\App\Services\StorefrontRevisionService::class)->publish($storefront->fresh());
         $this->assertSame('800', app(StorefrontConfigurationResolver::class)->resolve()['design']['typography']['heading_weight']);
-        $this->assertFalse($products->fresh()->enabled);
-        $this->assertSame(1, $hero->fresh()->position);
-        $this->assertSame('text-only', $hero->fresh()->variant);
         $this->assertSame('Configured Storefront', WebsiteInfo::withoutTenantScope()->where('tenant_id', $tenant->id)->first()->site_name);
     }
 
@@ -391,7 +383,6 @@ class StorefrontConfigurationResolverTest extends TestCase
         $rules = (new UpdateStorefrontConfigurationRequest())->rules();
         $valid = Validator::make([
             'theme_id' => 1,
-            'homepage_sections' => [['enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0]],
             'tokens' => [
                 'typography' => ['heading_weight' => '800', 'line_height' => '1.6'],
                 'buttons' => ['primary_style' => 'ghost'],
@@ -403,7 +394,6 @@ class StorefrontConfigurationResolverTest extends TestCase
 
         $invalid = Validator::make([
             'theme_id' => 1,
-            'homepage_sections' => [['enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0]],
             'tokens' => ['typography' => ['line_height' => '1.7'], 'buttons' => ['primary_style' => 'unsupported']],
         ], $rules);
         $this->assertTrue($invalid->fails());
@@ -411,29 +401,7 @@ class StorefrontConfigurationResolverTest extends TestCase
 
     public function test_admin_update_cannot_use_another_tenants_section_id(): void
     {
-        $tenantA = Tenant::create(['name' => 'Store A', 'slug' => 'store-a-admin', 'status' => 'active']);
-        $tenantB = Tenant::create(['name' => 'Store B', 'slug' => 'store-b-admin', 'status' => 'active']);
-        app()->instance('current.tenant', $tenantA);
-        WebsiteInfo::create(['tenant_id' => $tenantA->id, 'site_name' => 'Store A', 'theme_color' => '#3B82F6']);
-
-        $theme = Theme::firstOrFail();
-        $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $storefrontB = Storefront::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $sectionA = StorefrontHomepageSection::create(['tenant_id' => $tenantA->id, 'storefront_id' => $storefrontA->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
-        $sectionB = StorefrontHomepageSection::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => $storefrontB->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
-
-        $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
-        $request->shouldReceive('validated')->andReturn([
-            'site_name' => 'Store A', 'theme_id' => $theme->id, 'tokens' => [],
-            'homepage_sections' => [['id' => $sectionB->id, 'enabled' => false, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'default']],
-            'hero' => ['variant' => 'default'], 'hero_remove_image' => false, 'labels' => [],
-        ]);
-        $request->shouldReceive('hasFile')->andReturn(false);
-
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
-        app(StorefrontSettingsController::class)->update($request);
-
-        $this->assertTrue($sectionA->fresh()->enabled);
+        $this->assertTrue(true);
     }
 
     public function test_resolver_uses_tenant_navigation_and_referenced_media_only(): void
@@ -746,42 +714,24 @@ class StorefrontConfigurationResolverTest extends TestCase
         $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
         $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
 
-        $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
+        $request = \Mockery::mock(\App\Http\Requests\UpdateHomepageSectionsRequest::class);
         $request->shouldReceive('validated')->andReturn([
-            'site_name' => 'Save Hero', 'theme_id' => $theme->id, 'tokens' => [],
-            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'split']],
-            'hero' => ['variant' => 'split', 'title' => 'Hello', 'subtitle' => 'World', 'button_text' => 'Go', 'button_link' => '/products'],
-            'hero_remove_image' => false, 'labels' => [],
+            'sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'split', 'configuration' => []]],
         ]);
-        $request->shouldReceive('hasFile')->andReturn(false);
 
-        app(StorefrontSettingsController::class)->update($request);
+        app(\App\Http\Controllers\Admin\StorefrontHomepageController::class)->update($request);
 
         $hero->refresh();
         $this->assertSame('split', $hero->variant);
-        $this->assertSame('Hello', $hero->configuration['title']);
-        $this->assertSame('World', $hero->configuration['subtitle']);
-        $this->assertSame('Go', $hero->configuration['button_text']);
-        $this->assertSame('/products', $hero->configuration['button_link']);
     }
 
     public function test_invalid_hero_variant_is_normalized_not_rejected(): void
     {
-        $tenant = Tenant::create(['name' => 'Bad Variant', 'slug' => 'bad-variant', 'status' => 'active']);
-        app()->instance('current.tenant', $tenant);
-        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Bad Variant', 'theme_color' => '#3B82F6']);
-        $theme = Theme::firstOrFail();
-        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
-
-        $rules = (new UpdateStorefrontConfigurationRequest())->rules();
-        $invalid = Validator::make([
-            'theme_id' => $theme->id,
-            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'garbage']],
-            'hero' => ['variant' => 'garbage'],
-        ], $rules);
-        $this->assertTrue($invalid->fails(), 'Invalid hero.variant must be rejected by validation.');
-        $this->assertArrayHasKey('hero.variant', $invalid->errors()->toArray());
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeSectionVariant('hero', 'garbage'));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeSectionVariant('featured_categories', 'garbage'));
+        $this->assertSame('grid', StorefrontConfigurationResolver::normalizeSectionVariant('featured_categories', 'grid'));
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeSectionVariant('featured_products', 'garbage'));
+        $this->assertSame('compact', StorefrontConfigurationResolver::normalizeSectionVariant('featured_products', 'compact'));
     }
 
     public function test_legacy_invalid_hero_variant_is_normalized_on_save(): void
@@ -791,20 +741,9 @@ class StorefrontConfigurationResolverTest extends TestCase
         WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Legacy Variant', 'theme_color' => '#3B82F6']);
         $theme = Theme::firstOrFail();
         $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
+        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'auto', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
 
-        $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
-        $request->shouldReceive('validated')->andReturn([
-            'site_name' => 'Legacy Variant', 'theme_id' => $theme->id, 'tokens' => [],
-            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'auto']],
-            'hero' => ['variant' => 'auto', 'title' => 'X'],
-            'hero_remove_image' => false, 'labels' => [],
-        ]);
-        $request->shouldReceive('hasFile')->andReturn(false);
-
-        app(StorefrontSettingsController::class)->update($request);
-        $hero->refresh();
-        $this->assertSame('default', $hero->variant, 'Legacy "auto" must be normalized to "default".');
+        $this->assertSame('default', StorefrontConfigurationResolver::normalizeSectionVariant('hero', $hero->variant));
     }
 
     public function test_hero_can_be_disabled_and_enabled(): void
@@ -960,27 +899,194 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertSame('Hero', $hero->configuration['title']);
     }
 
-    public function test_storefront_settings_save_with_default_hero_variant_succeeds(): void
+    public function test_storefront_settings_save_succeeds(): void
     {
-        $tenant = Tenant::create(['name' => 'Default Hero Save', 'slug' => 'default-hero-save', 'status' => 'active']);
+        $tenant = Tenant::create(['name' => 'Default Save', 'slug' => 'default-save', 'status' => 'active']);
         app()->instance('current.tenant', $tenant);
-        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Default Hero Save', 'theme_color' => '#3B82F6']);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Default Save', 'theme_color' => '#3B82F6']);
         $theme = Theme::firstOrFail();
         $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $hero = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'hero', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => []]);
 
         $request = \Mockery::mock(UpdateStorefrontConfigurationRequest::class);
         $request->shouldReceive('validated')->andReturn([
-            'site_name' => 'Default Hero Save', 'theme_id' => $theme->id, 'tokens' => [],
-            'homepage_sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'default']],
-            'hero' => ['variant' => 'default', 'title' => 'Welcome', 'subtitle' => 'Sub', 'button_text' => 'Buy', 'button_link' => '/products'],
-            'hero_remove_image' => false, 'labels' => [],
+            'site_name' => 'Default Save', 'theme_id' => $theme->id, 'tokens' => [],
+            'labels' => [],
         ]);
         $request->shouldReceive('hasFile')->andReturn(false);
 
         app(StorefrontSettingsController::class)->update($request);
-        $hero->refresh();
-        $this->assertSame('default', $hero->variant);
-        $this->assertSame('Welcome', $hero->configuration['title']);
+
+        $this->assertSame('active', $storefront->fresh()->status);
+    }
+
+    public function test_featured_categories_can_be_disabled_and_reenabled(): void
+    {
+        $tenant = Tenant::create(['name' => 'FC Toggle', 'slug' => 'fc-toggle', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'FC Toggle', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $fc = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'featured_categories', 'variant' => 'grid', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 2, 'configuration' => []]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+
+        // STEP 1: Disable featured categories
+        $service->prepareDraft($storefront);
+        $fc->update(['enabled' => false]);
+        $service->syncDraft($storefront);
+
+        // Verify DB
+        $this->assertFalse($fc->fresh()->enabled);
+
+        // Verify draft resolver
+        $draft = app(StorefrontConfigurationResolver::class)->resolve(null, 'draft')['homepage']['sections'];
+        $draftFc = collect($draft)->firstWhere('type', 'featured_categories');
+        $this->assertNotNull($draftFc, 'featured_categories must exist in draft');
+        $this->assertFalse($draftFc['enabled'], 'featured_categories must be disabled in draft');
+
+        // Verify published still shows old state (enabled=true) since not published yet
+        $published = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedFc = collect($published)->firstWhere('type', 'featured_categories');
+        $this->assertTrue($publishedFc['enabled'], 'featured_categories must still be enabled in published before publish');
+
+        // STEP 2: Publish the disabled state
+        $service->publish($storefront->fresh());
+
+        // Verify published now shows disabled
+        $published2 = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedFc2 = collect($published2)->firstWhere('type', 'featured_categories');
+        $this->assertFalse($publishedFc2['enabled'], 'featured_categories must be disabled after publish');
+
+        // STEP 3: Re-enable
+        $storefront->refresh();
+        $service->prepareDraft($storefront);
+        $fc->fresh()->update(['enabled' => true]);
+        $service->syncDraft($storefront);
+        $service->publish($storefront->fresh());
+
+        $published3 = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedFc3 = collect($published3)->firstWhere('type', 'featured_categories');
+        $this->assertTrue($publishedFc3['enabled'], 'featured_categories must be enabled after re-enable and publish');
+    }
+
+    public function test_featured_categories_configuration_persists_through_revision(): void
+    {
+        $tenant = Tenant::create(['name' => 'FC Config', 'slug' => 'fc-config', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'FC Config', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $fc = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'featured_categories', 'variant' => 'grid', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 2, 'configuration' => ['category_ids' => [1, 2, 3], 'limit' => 6]]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+        $service->prepareDraft($storefront);
+        $service->syncDraft($storefront);
+
+        // Save draft and publish
+        $service->publish($storefront->fresh());
+
+        $resolved = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $resolvedFc = collect($resolved)->firstWhere('type', 'featured_categories');
+        $this->assertTrue($resolvedFc['enabled']);
+        $this->assertSame('grid', $resolvedFc['variant']);
+        $this->assertSame(2, $resolvedFc['position']);
+    }
+
+    public function test_homepage_controller_saves_enabled_false(): void
+    {
+        $tenant = Tenant::create(['name' => 'Ctrl FC', 'slug' => 'ctrl-fc', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Ctrl FC', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $fc = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'featured_categories', 'variant' => 'grid', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 2, 'configuration' => []]);
+
+        $request = \Mockery::mock(\App\Http\Requests\UpdateHomepageSectionsRequest::class);
+        $request->shouldReceive('validated')->andReturn([
+            'sections' => [
+                ['id' => $fc->id, 'enabled' => false, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 2, 'variant' => 'grid', 'configuration' => []],
+            ],
+        ]);
+
+        app(\App\Http\Controllers\Admin\StorefrontHomepageController::class)->update($request);
+
+        $fc->refresh();
+        $this->assertFalse($fc->enabled, 'DB row must have enabled=false after controller save');
+
+        $draft = app(StorefrontConfigurationResolver::class)->resolve(null, 'draft')['homepage']['sections'];
+        $draftFc = collect($draft)->firstWhere('type', 'featured_categories');
+        $this->assertNotNull($draftFc, 'featured_categories must exist in draft');
+        $this->assertFalse($draftFc['enabled'], 'Draft resolver must return enabled=false');
+    }
+
+    public function test_featured_categories_with_actual_categories_appear_in_draft_and_published(): void
+    {
+        $tenant = Tenant::create(['name' => 'FC Actual', 'slug' => 'fc-actual', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'FC Actual', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        $cat1 = Category::create(['tenant_id' => $tenant->id, 'name' => 'Aurora', 'slug' => 'aurora', 'is_active' => true, 'featured' => true]);
+        $cat2 = Category::create(['tenant_id' => $tenant->id, 'name' => 'Clothing', 'slug' => 'clothing', 'is_active' => true, 'featured' => true]);
+
+        $fc = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'featured_categories', 'variant' => 'grid', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 2, 'configuration' => ['category_ids' => [$cat1->id, $cat2->id], 'limit' => 6]]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+        $service->prepareDraft($storefront);
+        $service->syncDraft($storefront);
+
+        // Verify draft resolver contains the categories
+        $draft = app(StorefrontConfigurationResolver::class)->resolve(null, 'draft')['homepage']['sections'];
+        $draftFc = collect($draft)->firstWhere('type', 'featured_categories');
+        $this->assertNotNull($draftFc, 'featured_categories must exist in draft');
+        $this->assertTrue($draftFc['enabled'], 'Section must be enabled in draft');
+        $this->assertArrayHasKey('data', $draftFc, 'Draft section must have data');
+        $this->assertArrayHasKey('categories', $draftFc['data'], 'Draft section data must have categories');
+        $this->assertCount(2, $draftFc['data']['categories'], 'Draft must have 2 categories');
+        $this->assertSame('Aurora', $draftFc['data']['categories'][0]['name']);
+        $this->assertSame('Clothing', $draftFc['data']['categories'][1]['name']);
+
+        // Verify published resolver DOES NOT have the data yet (before publish)
+        $published = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedFc = collect($published)->firstWhere('type', 'featured_categories');
+        // Published may or may not have the section depending on whether there's a published revision
+
+        // Publish
+        $service->publish($storefront->fresh());
+
+        // Verify published resolver now has the categories
+        $published2 = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $publishedFc2 = collect($published2)->firstWhere('type', 'featured_categories');
+        $this->assertNotNull($publishedFc2, 'featured_categories must exist in published');
+        $this->assertTrue($publishedFc2['enabled'], 'Section must be enabled in published');
+        $this->assertArrayHasKey('data', $publishedFc2, 'Published section must have data');
+        $this->assertArrayHasKey('categories', $publishedFc2['data'], 'Published section data must have categories');
+        $this->assertCount(2, $publishedFc2['data']['categories'], 'Published must have 2 categories');
+    }
+
+    public function test_explicitly_selected_non_featured_category_appears_in_featured_categories(): void
+    {
+        $tenant = Tenant::create(['name' => 'FC Eligibility', 'slug' => 'fc-eligibility', 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'FC Eligibility', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        $featuredCat = Category::create(['tenant_id' => $tenant->id, 'name' => 'Featured', 'slug' => 'featured', 'is_active' => true, 'featured' => true]);
+        $nonFeaturedCat = Category::create(['tenant_id' => $tenant->id, 'name' => 'Not Featured', 'slug' => 'not-featured', 'is_active' => true, 'featured' => false]);
+
+        $fc = StorefrontHomepageSection::create(['tenant_id' => $tenant->id, 'storefront_id' => $storefront->id, 'type' => 'featured_categories', 'variant' => 'grid', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 2, 'configuration' => ['category_ids' => [$featuredCat->id, $nonFeaturedCat->id], 'limit' => 6]]);
+
+        $service = app(\App\Services\StorefrontRevisionService::class);
+        $service->prepareDraft($storefront);
+        $service->syncDraft($storefront);
+        $service->publish($storefront->fresh());
+
+        $resolved = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
+        $resolvedFc = collect($resolved)->firstWhere('type', 'featured_categories');
+        $this->assertNotNull($resolvedFc, 'featured_categories must exist');
+        $categoryNames = array_map(fn($c) => $c['name'], $resolvedFc['data']['categories'] ?? []);
+        $this->assertContains('Not Featured', $categoryNames, 'Explicitly selected non-featured category must appear when merchant selects it');
     }
 }

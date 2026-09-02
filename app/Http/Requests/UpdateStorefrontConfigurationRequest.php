@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Services\StorefrontConfigurationResolver;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStorefrontConfigurationRequest extends FormRequest
@@ -37,24 +36,6 @@ class UpdateStorefrontConfigurationRequest extends FormRequest
             'tokens.buttons.primary_style' => ['nullable', 'in:solid,outline,soft,ghost'],
             'tokens.cards.style' => ['nullable', 'in:bordered,raised,flat,soft'],
             'tokens.product_cards.variant' => ['nullable', 'in:standard,compact,image-focused'],
-            'homepage_sections' => ['required', 'array', 'min:1'],
-            'homepage_sections.*.id' => ['nullable', 'integer'],
-            'homepage_sections.*.enabled' => ['required', 'boolean'],
-            'homepage_sections.*.desktop_visible' => ['required', 'boolean'],
-            'homepage_sections.*.mobile_visible' => ['required', 'boolean'],
-            'homepage_sections.*.position' => ['required', 'integer', 'min:0'],
-            'homepage_sections.*.variant' => ['nullable', 'string', 'max:50', 'in:' . implode(',', StorefrontConfigurationResolver::HERO_VARIANTS)],
-            'hero.variant' => ['nullable', 'string', 'in:' . implode(',', StorefrontConfigurationResolver::HERO_VARIANTS)],
-            'hero.title' => ['nullable', 'string', 'max:255'],
-            'hero.subtitle' => ['nullable', 'string', 'max:1000'],
-            'hero.button_text' => ['nullable', 'string', 'max:100'],
-            'hero.button_link' => ['nullable', 'string', 'max:500', 'regex:/^(\/|https?:\/\/)/i'],
-            'hero.media_ids' => ['nullable', 'array'],
-            'hero.media_ids.*' => ['integer'],
-            'hero_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
-            'hero_image.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
-            'hero_alt_text' => ['nullable', 'string', 'max:255'],
-            'hero_remove_image' => ['nullable', 'boolean'],
             'labels' => ['nullable', 'array'],
             'labels.*' => ['nullable', 'string', 'max:100'],
         ];

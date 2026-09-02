@@ -7,7 +7,6 @@ const TABS = [
     ['overview', 'Overview'],
     ['identity', 'Identity'],
     ['appearance', 'Theme & Appearance'],
-    ['homepage', 'Homepage'],
     ['labels', 'Content & Labels'],
 ];
 
@@ -89,33 +88,12 @@ const colorFields = [
     ['border', 'Border color'],
 ];
 
-function Toggle({ checked, onChange, label }) {
-    return (
-        <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            {label}
-        </label>
-    );
-}
-
 export default function StorefrontSettings({ storefront, themes = [], media = [], revision = null, heroVariants = ['default', 'split', 'centered', 'text-only', 'minimal'] }) {
     const { tenant } = usePage().props;
     const [tab, setTab] = useState('overview');
-    const [identity] = useState({});
     const [themeId, setThemeId] = useState(storefront?.theme?.id || themes[0]?.id || '');
     const [tokens, setTokens] = useState(storefront?.design || {});
     const [resetTokens, setResetTokens] = useState(false);
-    const [sections, setSections] = useState(storefront?.homepage?.sections || []);
-    const hero = sections.find((section) => section.type === 'hero');
-    const heroVariantOptions = Array.isArray(heroVariants) && heroVariants.length ? heroVariants : ['default', 'split', 'centered', 'text-only', 'minimal'];
-    const initialHeroVariant = (hero?.variant && heroVariantOptions.includes(hero.variant))
-        ? hero.variant
-        : (heroVariantOptions[0] || 'default');
-    const [heroConfig, setHeroConfig] = useState(hero?.configuration || {});
-    const [heroVariant, setHeroVariant] = useState(initialHeroVariant);
-    const [heroFile, setHeroFile] = useState(null);
-    const [heroAltText, setHeroAltText] = useState('');
-    const [removeHeroImage, setRemoveHeroImage] = useState(false);
     const [labels, setLabels] = useState(storefront?.content?.labels || {});
     const [saving, setSaving] = useState(false);
     const [saveErrors, setSaveErrors] = useState({});
@@ -136,23 +114,6 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
         setResetTokens(true);
     };
 
-    const moveSection = (index, direction) => {
-        const nextIndex = index + direction;
-        if (nextIndex < 0 || nextIndex >= sections.length) return;
-        setSections((current) => {
-            const next = [...current];
-            [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-            return next;
-        });
-    };
-
-    const updateSection = (id, field, value) => {
-        setSections((current) => current.map((section) => section.id === id ? { ...section, [field]: value } : section));
-    };
-
-    const selectedMediaId = heroConfig.media_ids?.[0] || '';
-    const selectedMedia = selectedMediaId ? media.find((item) => String(item.id) === String(selectedMediaId)) : null;
-
     const submit = (event) => {
         event.preventDefault();
         setSaving(true);
@@ -167,31 +128,6 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
         Object.entries(tokens).forEach(([group, values]) => Object.entries(values || {}).forEach(([key, value]) => {
             if (typeof value !== 'object') data.append(`tokens[${group}][${key}]`, value ?? '');
         }));
-
-        sections.forEach((section, index) => {
-            data.append(`homepage_sections[${index}][id]`, section.id);
-            data.append(`homepage_sections[${index}][enabled]`, section.enabled ? '1' : '0');
-            data.append(`homepage_sections[${index}][desktop_visible]`, section.desktop_visible ? '1' : '0');
-            data.append(`homepage_sections[${index}][mobile_visible]`, section.mobile_visible ? '1' : '0');
-            data.append(`homepage_sections[${index}][position]`, index);
-            data.append(`homepage_sections[${index}][variant]`, section.variant || 'default');
-        });
-
-        data.append('hero[variant]', heroVariant);
-        data.append('hero[title]', heroConfig.title || '');
-        data.append('hero[subtitle]', heroConfig.subtitle || '');
-        data.append('hero[button_text]', heroConfig.button_text || '');
-        data.append('hero[button_link]', heroConfig.button_link || '');
-        if (heroConfig.media_ids?.length) heroConfig.media_ids.forEach((id) => data.append('hero[media_ids][]', id));
-        data.append('hero_remove_image', removeHeroImage ? '1' : '0');
-        data.append('hero_alt_text', heroAltText);
-        if (heroFile) {
-            if (Array.isArray(heroFile)) {
-                heroFile.forEach((file) => data.append('hero_image[]', file));
-            } else {
-                data.append('hero_image', heroFile);
-            }
-        }
 
         Object.entries(labels).forEach(([key, value]) => data.append(`labels[${key}]`, value || ''));
 
@@ -241,8 +177,8 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <Summary label="Status" value={revision?.published ? `Published revision ${revision.published.revision_number}` : 'Legacy live configuration'} />
                                 <Summary label="Current theme" value={`${storefront?.theme?.name || 'Commerce Default'} v${storefront?.theme?.version || '1.0.0'}`} />
-                                <Summary label="Homepage sections" value={`${sections.length} configured`} />
-                                <div className="sm:col-span-3 rounded-lg bg-blue-50 border border-blue-100 p-4 text-sm text-blue-800">Your storefront is ready for identity, appearance, homepage, and customer label changes.</div>
+                                <Summary label="Homepage" value="Configured in Store → Homepage" />
+                                <div className="sm:col-span-3 rounded-lg bg-blue-50 border border-blue-100 p-4 text-sm text-blue-800">Your storefront is ready for identity, appearance, and customer label changes.</div>
                             </div>
                         )}
 
@@ -264,8 +200,6 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
                             </div>
                         )}
 
-                        {tab === 'homepage' && <HomepageForm sections={sections} updateSection={updateSection} moveSection={moveSection} hero={hero} heroConfig={heroConfig} setHeroConfig={setHeroConfig} heroVariant={heroVariant} setHeroVariant={setHeroVariant} heroVariantOptions={heroVariantOptions} media={media} selectedMedia={selectedMedia} heroFile={heroFile} setHeroFile={setHeroFile} heroAltText={heroAltText} setHeroAltText={setHeroAltText} removeHeroImage={removeHeroImage} setRemoveHeroImage={setRemoveHeroImage} />}
-
                         {tab === 'labels' && <div className="space-y-6">{LABEL_GROUPS.map((group) => <div key={group.title}><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{group.title}</h3><p className="text-xs text-gray-500 mt-0.5 mb-3">{group.description}</p><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{group.labels.map(([key, fallback]) => <label key={key} className="text-sm font-medium text-gray-700 dark:text-gray-300">{fallback}<input value={labels[key] ?? ''} placeholder={fallback} onChange={(event) => setLabels((current) => ({ ...current, [key]: event.target.value }))} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>)}</div></div>)}</div>}
 
                         {tab !== 'overview' && <div className="flex justify-end mt-8 pt-5 border-t border-gray-200 dark:border-gray-800"><button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">{saving ? 'Saving...' : 'Save Storefront'}</button></div>}
@@ -283,14 +217,5 @@ function IdentityForm({ storefront }) {
     return <div className="max-w-2xl space-y-4"><div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3"><p className="text-xs uppercase tracking-wide text-gray-500">Business/store name</p><p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{storefront?.identity?.store_name || storefront?.identity?.name || 'Current store'}</p><p className="mt-1 text-xs text-gray-500">Managed from the Store / Tenant identity. Storefront uses this as its customer-facing name.</p></div><p className="text-sm text-gray-500">Tagline and description are managed in Website Settings. Homepage-specific hero copy is managed under Homepage Sections.</p><p className="text-sm text-gray-500">Logo and favicon are managed in <strong>Website Settings → Branding</strong>.</p></div>;
 }
 
-const SECTION_LABELS = { hero: 'Hero', promotion: 'Promotions', featured_categories: 'Featured Categories', featured_products: 'Featured Products', product_showcase: 'Product Showcase', store_highlights: 'Store Highlights', brand_story: 'Brand Story', cta: 'Call to Action' };
-const SECTION_DESCRIPTIONS = { hero: 'Introduce your store and guide customers to products.', promotion: 'Display promotional banners to customers.', featured_categories: 'Highlight specific product categories.', featured_products: 'Showcase selected products on the homepage.', product_showcase: 'Display products with a visual focus.', store_highlights: 'Highlight key store features and benefits.', brand_story: 'Share your brand story with customers.', cta: 'Guide customers to take a specific action.' };
-
-function HomepageForm({ sections, updateSection, moveSection, hero, heroConfig, setHeroConfig, heroVariant, setHeroVariant, heroVariantOptions = ['default', 'split', 'centered', 'text-only', 'minimal'], media, selectedMedia, heroFile, setHeroFile, heroAltText, setHeroAltText, removeHeroImage, setRemoveHeroImage }) {
-    const updateHero = (key, value) => setHeroConfig((current) => ({ ...current, [key]: value }));
-    return <div className="space-y-4"><div><h2 className="font-semibold text-gray-900 dark:text-gray-100">Homepage sections</h2><p className="text-sm text-gray-500 mt-1">Disabled sections are removed from the customer layout without leaving empty space.</p></div>{sections.map((section, index) => <div key={section.id} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4"><div className="flex flex-col sm:flex-row sm:items-center gap-3"><div className="flex-1"><h3 className="font-semibold text-gray-900 dark:text-gray-100">{SECTION_LABELS[section.type] || section.type}</h3><p className="text-xs text-gray-500 mt-1">{SECTION_DESCRIPTIONS[section.type] || 'Configure this section.'}</p></div><Toggle checked={section.enabled} onChange={(value) => updateSection(section.id, 'enabled', value)} label="Enabled" /><div className="flex gap-1"><button type="button" onClick={() => moveSection(index, -1)} disabled={index === 0} className="px-2 py-1 rounded border text-xs disabled:opacity-30">Up</button><button type="button" onClick={() => moveSection(index, 1)} disabled={index === sections.length - 1} className="px-2 py-1 rounded border text-xs disabled:opacity-30">Down</button></div></div><div className="flex flex-wrap gap-4 mt-4"><Toggle checked={section.desktop_visible} onChange={(value) => updateSection(section.id, 'desktop_visible', value)} label="Desktop" /><Toggle checked={section.mobile_visible} onChange={(value) => updateSection(section.id, 'mobile_visible', value)} label="Mobile" /></div>{section.type === 'hero' && hero?.id === section.id && <div className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-4"><SelectField label="Hero variant" value={heroVariant} options={heroVariantOptions} onChange={setHeroVariant} /><Field label="Title" value={heroConfig.title || ''} onChange={(value) => updateHero('title', value)} /><label className="md:col-span-2 text-sm font-medium text-gray-700 dark:text-gray-300">Subtitle<textarea value={heroConfig.subtitle || ''} onChange={(event) => updateHero('subtitle', event.target.value)} rows={3} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label><Field label="Button text" value={heroConfig.button_text || ''} onChange={(value) => updateHero('button_text', value)} /><Field label="Button link" value={heroConfig.button_link || ''} placeholder="/products" onChange={(value) => updateHero('button_link', value)} /><label className="text-sm font-medium text-gray-700 dark:text-gray-300">Hero image (up to 5)<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => { const files = Array.from(event.target.files || []).slice(0, 5); setHeroFile(files.length === 1 ? files[0] : files); }} className="mt-1 block w-full text-sm" /></label><label className="text-sm font-medium text-gray-700 dark:text-gray-300">Alt text<input value={heroAltText} onChange={(event) => setHeroAltText(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>{heroConfig.media_ids?.length > 0 && <div className="md:col-span-2"><p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current hero images ({heroConfig.media_ids.length}/5)</p><div className="flex flex-wrap gap-2">{heroConfig.media_ids.map((mediaId) => { const item = media.find((m) => String(m.id) === String(mediaId)); return item ? <div key={item.id} className="relative group"><img src={item.url} alt={item.alt_text || 'Hero image'} className="h-20 w-32 rounded-lg object-cover" /><span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{item.alt_text || 'Image'}</span></div> : null; })}</div></div>}{selectedMedia && !heroConfig.media_ids?.length && <div className="md:col-span-2 flex items-center gap-3"><img src={selectedMedia.url} alt={selectedMedia.alt_text || ''} className="h-20 w-32 rounded-lg object-cover" /><span className="text-sm text-gray-600 dark:text-gray-300">Current configured hero image</span></div>}<label className="md:col-span-2 inline-flex items-center gap-2 text-sm text-red-600"><input type="checkbox" checked={removeHeroImage} onChange={(event) => setRemoveHeroImage(event.target.checked)} className="rounded border-red-300 text-red-600" />Remove configured hero image and use text fallback</label>{media.length === 0 && <p className="md:col-span-2 text-xs text-gray-500">No new media is configured. Existing WebsiteInfo hero images remain available until you explicitly remove a configured image.</p>}</div>}</div>)}</div>;
-}
-
-function Field({ label, value, onChange, placeholder = '' }) { return <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}<input value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>; }
 function SelectField({ label, value, options, onChange }) { return <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal">{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>; }
 function themeDescription(slug) { return { 'commerce-default': 'Balanced commerce layout with clear actions and elevated product discovery.', 'minimal-store': 'Quiet surfaces, restrained borders, and compact product presentation.', 'elegant-fashion': 'Soft rose accents, generous spacing, rounded controls, and image-led cards.' }[slug] || 'A curated storefront visual preset.'; }
