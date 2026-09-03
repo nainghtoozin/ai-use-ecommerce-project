@@ -550,6 +550,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
         Route::put('website-info/edit', [SettingsController::class, 'update'])->name('website-info.update');
 
+        // General Settings (alias to website-info/edit)
+        Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
         // Storefront configuration
         Route::get('/storefront', [\App\Http\Controllers\Admin\StorefrontSettingsController::class, 'index'])->name('storefront.index');
         Route::put('/storefront', [\App\Http\Controllers\Admin\StorefrontSettingsController::class, 'update'])->name('storefront.update');

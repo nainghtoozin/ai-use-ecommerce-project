@@ -609,7 +609,7 @@ export default function AdminProfile({ mustVerifyEmail, status, currentRole, cur
 
     function submitProfile(e) {
         e.preventDefault();
-        profileForm.post(adminUrl('/profile'), {
+        profileForm.post(adminUrl('/profile', tenant?.slug), {
             forceFormData: true,
             onSuccess: () => {
                 profileForm.reset('profile_image');
@@ -627,7 +627,7 @@ export default function AdminProfile({ mustVerifyEmail, status, currentRole, cur
 
     function submitDelete(e) {
         e.preventDefault();
-        deleteForm.delete(adminUrl('/profile'), {
+        deleteForm.delete(adminUrl('/profile', tenant?.slug), {
             onSuccess: () => deleteForm.reset(),
         });
     }

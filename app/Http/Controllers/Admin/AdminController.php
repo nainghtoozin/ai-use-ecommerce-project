@@ -247,7 +247,7 @@ class AdminController extends Controller
     {
         $tenant = tenant();
         if (!$tenant) {
-            return back();
+            return redirect()->route('admin.dashboard');
         }
 
         $user = $request->user();
@@ -255,11 +255,12 @@ class AdminController extends Controller
 
         if ($user instanceof Account && $user->isOwner()) {
             $service = app(OnboardingService::class);
-            $service->resetOnboarding($tenant);
-            $onboarding = $service->getOnboardingData($tenant, $user);
+            $onboarding = $service->getSetupGuideData($tenant, $user);
         }
 
-        return redirect()->route('admin.dashboard');
+        return Inertia::render('Admin/Settings/SetupGuide', [
+            'onboarding' => $onboarding,
+        ]);
     }
 
     public function showLogin()

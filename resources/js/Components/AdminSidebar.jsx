@@ -149,7 +149,6 @@ export default function AdminSidebar() {
                     items: [
                         { label: 'Platform', href: '/superadmin/platform-settings', icon: 'Settings' },
                         { label: 'FAQ Management', href: '/superadmin/faqs', icon: 'HelpCircle' },
-                        { label: t('navigation.website'), href: '/admin/website-info/edit', icon: 'Globe' },
                     ]
                 },
                 {
@@ -201,13 +200,6 @@ export default function AdminSidebar() {
                 ]
             },
             {
-                title: 'Website',
-                items: [
-                    ...(can('settings.website') && isVis('settings.website') ? [{ label: 'Website Settings', href: '/admin/website-info/edit', icon: 'Globe' }] : []),
-                    ...(isOwner && isVis('settings.menu_visibility') ? [{ label: 'Menu Visibility', href: '/admin/settings/menu-visibility', icon: 'Layers' }] : []),
-                ]
-            },
-            {
                 title: 'Locations',
                 items: [
                     ...(can('cities.view') && isVis('locations.cities') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
@@ -247,6 +239,7 @@ export default function AdminSidebar() {
                     ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
                     ...(can('settings.telegram') && isVis('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
                     ...(isOwner && isVis('settings.setup_guide') ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),
+                    ...(isOwner && isVis('settings.menu_visibility') ? [{ label: 'Menu Visibility', href: '/admin/settings/menu-visibility', icon: 'Layers' }] : []),
                     ...(can('activity.view') && isVis('staff.activity') ? [{ label: 'Activity Log', href: '/admin/activity-logs', icon: 'Activity' }] : []),
                     ...(can('audit.view') && isVis('staff.audit') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
                 ]
@@ -489,7 +482,7 @@ export default function AdminSidebar() {
                     {!collapsed && (
                         <div className="mt-2 flex gap-1.5">
                             <Link
-                                href={adminUrl('/profile')}
+                                href={adminUrl('/profile', storeSlug)}
                                  className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium rounded-md transition-colors ${merchant ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900' : 'bg-white/[0.08] hover:bg-white/[0.12] text-slate-300 hover:text-white'}`}
                             >
                                 <User className="w-3.5 h-3.5" />{t('general.profile')}
