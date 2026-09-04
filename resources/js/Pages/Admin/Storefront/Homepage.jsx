@@ -114,51 +114,82 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
 
 function HeroImages({ config, updateConfig, section, media }) {
     const [uploading, setUploading] = useState(false);
+    const [heroImages, setHeroImages] = useState(() => {
+        const ids = config.media_ids || [];
+        return ids.map((id) => {
+            const item = media.find((m) => String(m.id) === String(id));
+            return item ? { id: item.id, url: item.url, alt_text: item.alt_text } : null;
+        }).filter(Boolean);
+    });
     const inputRef = useRef(null);
-    const mediaIds = config.media_ids || [];
-    const count = mediaIds.length;
 
     const handleUpload = (e) => {
-        const file = e.target.files?.[0];
-        if (!file || count >= 5) return;
+        const files = Array.from(e.target.files || []);
+        if (!files.length || heroImages.length >= 5) return;
+        const remaining = 5 - heroImages.length;
+        const toUpload = files.slice(0, remaining);
         setUploading(true);
-        const fd = new FormData();
-        fd.append('file', file);
-        fetch(adminUrl('/admin/storefront/media/hero/upload'), {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-        })
-        .then((r) => r.json())
-        .then((data) => {
-            if (data.id) updateConfig(section.id, { media_ids: [...mediaIds, data.id] });
-        })
-        .catch(() => {})
-        .finally(() => { setUploading(false); if (inputRef.current) inputRef.current.value = ''; });
+        let uploaded = 0;
+
+        toUpload.forEach((file) => {
+            const fd = new FormData();
+            fd.append('file', file);
+            fetch(adminUrl('/admin/storefront/media/hero/upload'), {
+                method: 'POST',
+                body: fd,
+                credentials: 'include',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '', 'Accept': 'application/json' },
+            })
+            .then((r) => {
+                if (!r.ok) throw new Error('Upload failed: ' + r.status);
+                return r.json();
+            })
+            .then((data) => {
+                if (data && data.id) {
+                    setHeroImages((prev) => {
+                        if (prev.some((i) => i.id === data.id)) return prev;
+                        const next = [...prev, { id: data.id, url: data.url, alt_text: data.alt_text }];
+                        updateConfig(section.id, { media_ids: next.map((i) => i.id) });
+                        return next;
+                    });
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                uploaded++;
+                if (uploaded >= toUpload.length) {
+                    setUploading(false);
+                    if (inputRef.current) inputRef.current.value = '';
+                }
+            });
+        });
+    };
+
+    const remove = (id) => {
+        const newImages = heroImages.filter((i) => i.id !== id);
+        setHeroImages(newImages);
+        updateConfig(section.id, { media_ids: newImages.map((i) => i.id) });
     };
 
     return (
         <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hero images (max 5)</p>
             <div className="flex flex-wrap gap-2 mb-2">
-                {mediaIds.map((id) => {
-                    const item = media.find((m) => String(m.id) === String(id));
-                    return item ? (
-                        <div key={item.id} className="relative group w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950">
-                            <img src={item.url} alt={item.alt_text || ''} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => updateConfig(section.id, { media_ids: mediaIds.filter((i) => i !== id) })} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
-                        </div>
-                    ) : null;
-                })}
+                {heroImages.map((img) => (
+                    <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950">
+                        <img src={img.url} alt={img.alt_text || ''} className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => remove(img.id)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"><X className="w-3 h-3" /></button>
+                    </div>
+                ))}
             </div>
-            {count < 5 && (
+            {heroImages.length < 5 && (
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
                     <Upload className="w-4 h-4" />
                     {uploading ? 'Uploading...' : 'Upload Image'}
-                    <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" onChange={handleUpload} className="hidden" disabled={uploading} />
+                    <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple onChange={handleUpload} className="hidden" disabled={uploading} />
                 </label>
             )}
-            <p className="text-xs text-gray-400 mt-1">{count} / 5 images</p>
+            <p className="text-xs text-gray-400 mt-1">{heroImages.length} / 5 images</p>
         </div>
     );
 }
