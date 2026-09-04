@@ -43,7 +43,7 @@ class StorefrontHomepageController extends Controller
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'brands' => Brand::orderBy('name')->get(['id', 'name']),
             'products' => Product::active()->orderBy('name')->limit(100)->get(['id', 'name', 'price'])->map(fn ($product) => ['id' => $product->id, 'name' => $product->name, 'price' => $product->price])->values()->all(),
-            'media' => StorefrontMedia::where('storefront_id', $storefront->id)->latest()->get(['id', 'alt_text'])->append('url'),
+            'media' => StorefrontMedia::where('storefront_id', $storefront->id)->latest()->get(['id', 'path', 'alt_text'])->append('url'),
             'heroVariants' => \App\Services\StorefrontConfigurationResolver::heroVariants(),
             'revision' => $this->revisionService->status($storefront),
         ]);

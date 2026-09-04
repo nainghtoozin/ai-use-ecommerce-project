@@ -114,19 +114,26 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
 
 function HeroImages({ config, updateConfig, section, media }) {
     const [uploading, setUploading] = useState(false);
-    const [heroImages, setHeroImages] = useState(() => {
-        const ids = config.media_ids || [];
-        return ids.map((id) => {
-            const item = media.find((m) => String(m.id) === String(id));
-            return item ? { id: item.id, url: item.url, alt_text: item.alt_text } : null;
-        }).filter(Boolean);
-    });
+    const [localImages, setLocalImages] = useState([]);
     const inputRef = useRef(null);
+
+    const savedIds = config.media_ids || [];
+    const resolvedFromMedia = savedIds.map((id) => {
+        const item = media.find((m) => String(m.id) === String(id));
+        return item ? { id: item.id, url: item.url, alt_text: item.alt_text } : null;
+    }).filter(Boolean);
+
+    const allImages = [...resolvedFromMedia];
+    localImages.forEach((li) => {
+        if (!allImages.some((i) => i.id === li.id)) {
+            allImages.push(li);
+        }
+    });
 
     const handleUpload = (e) => {
         const files = Array.from(e.target.files || []);
-        if (!files.length || heroImages.length >= 5) return;
-        const remaining = 5 - heroImages.length;
+        if (!files.length || allImages.length >= 5) return;
+        const remaining = 5 - allImages.length;
         const toUpload = files.slice(0, remaining);
         setUploading(true);
         let uploaded = 0;
@@ -146,12 +153,13 @@ function HeroImages({ config, updateConfig, section, media }) {
             })
             .then((data) => {
                 if (data && data.id) {
-                    setHeroImages((prev) => {
-                        if (prev.some((i) => i.id === data.id)) return prev;
-                        const next = [...prev, { id: data.id, url: data.url, alt_text: data.alt_text }];
-                        updateConfig(section.id, { media_ids: next.map((i) => i.id) });
-                        return next;
+                    const img = { id: data.id, url: data.url, alt_text: data.alt_text };
+                    setLocalImages((prev) => {
+                        if (prev.some((i) => i.id === img.id)) return prev;
+                        return [...prev, img];
                     });
+                    const allIds = [...new Set([...savedIds, ...localImages.map((i) => i.id), data.id].map(Number))];
+                    updateConfig(section.id, { media_ids: allIds });
                 }
             })
             .catch(() => {})
@@ -166,37 +174,39 @@ function HeroImages({ config, updateConfig, section, media }) {
     };
 
     const remove = (id) => {
-        const newImages = heroImages.filter((i) => i.id !== id);
-        setHeroImages(newImages);
-        updateConfig(section.id, { media_ids: newImages.map((i) => i.id) });
+        setLocalImages((prev) => prev.filter((i) => i.id !== id));
+        const newIds = savedIds.filter((i) => i !== id);
+        updateConfig(section.id, { media_ids: newIds });
     };
+
+    const count = allImages.length;
 
     return (
         <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hero images (max 5)</p>
             <div className="flex flex-wrap gap-2 mb-2">
-                {heroImages.map((img) => (
+                {allImages.map((img) => (
                     <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950">
                         <img src={img.url} alt={img.alt_text || ''} className="w-full h-full object-cover" />
                         <button type="button" onClick={() => remove(img.id)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"><X className="w-3 h-3" /></button>
                     </div>
                 ))}
             </div>
-            {heroImages.length < 5 && (
+            {count < 5 && (
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
                     <Upload className="w-4 h-4" />
                     {uploading ? 'Uploading...' : 'Upload Image'}
                     <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple onChange={handleUpload} className="hidden" disabled={uploading} />
                 </label>
             )}
-            <p className="text-xs text-gray-400 mt-1">{heroImages.length} / 5 images</p>
+            <p className="text-xs text-gray-400 mt-1">{count} / 5 images</p>
         </div>
     );
 }
 
 function SectionConfig({ section, categories, brands, products, media, updateConfig }) {
     const config = section.configuration || {};
-    if (section.type === 'hero') return <div className="mt-5 pt-4 border-t space-y-4"><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><Field label="Heading" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Button text" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /></div><Field label="Subtitle" value={config.subtitle || ''} onChange={(value) => updateConfig(section.id, { subtitle: value })} /><Field label="Button link" value={config.button_link || ''} placeholder="/products" onChange={(value) => updateConfig(section.id, { button_link: value })} /><HeroImages config={config} updateConfig={updateConfig} section={section} media={media} /></div>;
+    if (section.type === 'hero') return <div className="mt-5 pt-4 border-t space-y-5"><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><Field label="Heading" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Button text" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><Field label="Subtitle" value={config.subtitle || ''} onChange={(value) => updateConfig(section.id, { subtitle: value })} /><Field label="Button link" value={config.button_link || ''} placeholder="/products" onChange={(value) => updateConfig(section.id, { button_link: value })} /></div><div className="border-t border-gray-100 dark:border-gray-800 pt-5"><HeroImages config={config} updateConfig={updateConfig} section={section} media={media} /></div></div>;
     if (section.type === 'promotion') return <p className="mt-5 pt-4 border-t text-sm text-gray-500">Create and schedule promotions from <Link href={adminUrl('/admin/storefront/promotions')} className="text-blue-600">Promotions & Campaigns</Link>.</p>;
     if (section.type === 'featured_categories') return <div className="mt-5 pt-4 border-t"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-3">Only categories marked as <strong>Featured</strong> in the Category list will appear on the storefront. Select categories below to prioritize ordering when many are featured.</p><SelectionList title="Categories" items={categories} selected={config.category_ids || []} onChange={(ids) => updateConfig(section.id, { category_ids: ids, limit: config.limit || 6 })} /></div>;
     if (section.type === 'featured_brands') return <div className="mt-5 pt-4 border-t"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-3">Only brands marked as <strong>Featured</strong> in the Brand list will appear on the storefront. Select brands below to prioritize ordering when many are featured.</p><SelectionList title="Brands" items={brands} selected={config.brand_ids || []} onChange={(ids) => updateConfig(section.id, { brand_ids: ids, limit: config.limit || 6 })} /></div>;
