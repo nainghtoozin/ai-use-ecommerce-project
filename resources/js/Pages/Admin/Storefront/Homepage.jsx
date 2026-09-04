@@ -1,10 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { Upload, X } from 'lucide-react';
 
 const labels = { hero: 'Hero', promotion: 'Promotions', featured_categories: 'Featured Categories', featured_brands: 'Featured Brands', featured_products: 'Featured Products', product_showcase: 'Product Showcase', store_highlights: 'Store Highlights', brand_story: 'Brand Story', cta: 'Call to Action' };
+
+const SAVE_STATUS = { IDLE: 'idle', UNSAVED: 'unsaved', SAVING: 'saving', SAVED: 'saved', FAILED: 'failed' };
+const DEBOUNCE_MS = 1000;
 
 export default function StorefrontHomepage({ sections: initialSections = [], categories = [], brands = [], products = [], media = [], heroVariants = ['modern-split', 'full-background', 'centered-minimal', 'image-carousel', 'text-only'], revision = null }) {
     const { tenant, flash } = usePage().props;
@@ -14,36 +17,134 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
     const [showPublishConfirm, setShowPublishConfirm] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(null);
     const [saveError, setSaveError] = useState(null);
-
-    const update = (id, changes) => setSections((current) => current.map((section) => section.id === id ? { ...section, ...changes } : section));
-    const updateConfig = (id, changes) => setSections((current) => current.map((section) => section.id === id ? { ...section, configuration: { ...(section.configuration || {}), ...changes } } : section));
-    const move = (index, direction) => { const nextIndex = index + direction; if (nextIndex < 0 || nextIndex >= sections.length) return; setSections((current) => { const next = [...current]; [next[index], next[nextIndex]] = [next[nextIndex], next[index]]; return next; }); };
-
+    const [saveStatus, setSaveStatus] = useState(SAVE_STATUS.IDLE);
     const hasUnpublished = revision?.has_unpublished_changes;
     const publishedRevision = revision?.published?.revision_number;
+    const previewUrl = tenant?.slug ? `/store/${tenant.slug}/preview` : null;
 
-    const save = (event) => {
-        event.preventDefault();
+    const statusColor = { idle: 'text-emerald-600', unsaved: 'text-amber-600', saving: 'text-blue-600', saved: 'text-emerald-600', failed: 'text-red-600' };
+    const statusLabel = { idle: 'All changes saved', unsaved: 'Unsaved changes', saving: 'Saving…', saved: '✓ Draft saved', failed: 'Couldn\'t save changes' };
+
+    const dirtyRef = useRef(false);
+    const timerRef = useRef(null);
+    const sectionsRef = useRef(sections);
+    const savingRef = useRef(false);
+    const pendingAfterSaveRef = useRef(false);
+    const doSaveRef = useRef(null);
+    const flushActionRef = useRef(null);
+    sectionsRef.current = sections;
+
+    const doSave = useCallback(() => {
+        if (savingRef.current) {
+            pendingAfterSaveRef.current = true;
+            return;
+        }
+        savingRef.current = true;
         setSaving(true);
         setSaveSuccess(null);
         setSaveError(null);
-        router.put(adminUrl('/admin/storefront/homepage'), {
-            sections: sections.map((section, position) => ({ ...section, position })),
-        }, {
+        setSaveStatus(SAVE_STATUS.SAVING);
+        const payload = {
+            sections: sectionsRef.current.map((section, position) => ({ ...section, position })),
+        };
+        router.put(adminUrl('/admin/storefront/homepage'), payload, {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
-                setSaveSuccess('Draft saved successfully. Your storefront has not been updated yet. Preview or publish your changes.');
+                savingRef.current = false;
+                dirtyRef.current = false;
+                setSaving(false);
+                setSaveSuccess('Draft saved successfully.');
+                setSaveStatus(SAVE_STATUS.SAVED);
+                if (pendingAfterSaveRef.current) {
+                    pendingAfterSaveRef.current = false;
+                    dirtyRef.current = true;
+                    if (doSaveRef.current) doSaveRef.current();
+                }
+            },
+            onError: () => {
+                savingRef.current = false;
+                setSaving(false);
+                setSaveError('Could not save draft.');
+                setSaveStatus(SAVE_STATUS.FAILED);
+            },
+            onFinish: () => {
+                savingRef.current = false;
                 setSaving(false);
             },
-            onError: (errors) => {
-                setSaveError('Could not save draft. Please review the form for errors.');
-                setSaving(false);
-            },
-            onFinish: () => setSaving(false),
         });
-    };
+    }, []);
+    doSaveRef.current = doSave;
 
-    const confirmPublish = () => {
+    const markDirty = useCallback(() => {
+        dirtyRef.current = true;
+        setSaveStatus(SAVE_STATUS.UNSAVED);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+            if (dirtyRef.current && doSaveRef.current) doSaveRef.current();
+        }, DEBOUNCE_MS);
+    }, []);
+
+    const update = useCallback((id, changes) => {
+        setSections((current) => current.map((section) => section.id === id ? { ...section, ...changes } : section));
+        markDirty();
+    }, [markDirty]);
+
+    const updateConfig = useCallback((id, changes) => {
+        setSections((current) => current.map((section) => section.id === id ? { ...section, configuration: { ...(section.configuration || {}), ...changes } } : section));
+        markDirty();
+    }, [markDirty]);
+
+    const move = useCallback((index, direction) => {
+        const nextIndex = index + direction;
+        if (nextIndex < 0 || nextIndex >= sections.length) return;
+        setSections((current) => { const next = [...current]; [next[index], next[nextIndex]] = [next[nextIndex], next[index]]; return next; });
+        markDirty();
+    }, [sections.length, markDirty]);
+
+    useEffect(() => {
+        return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    }, []);
+
+    const flushBeforeAction = useCallback((action) => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (dirtyRef.current || savingRef.current) {
+            pendingAfterSaveRef.current = false;
+            savingRef.current = false;
+            dirtyRef.current = true;
+            if (doSaveRef.current) doSaveRef.current();
+            setTimeout(action, 300);
+        } else {
+            action();
+        }
+    }, []);
+
+    const handleRetry = useCallback(() => {
+        dirtyRef.current = true;
+        if (doSaveRef.current) doSaveRef.current();
+    }, []);
+
+    const handlePreview = useCallback(() => {
+        const url = previewUrl;
+        const doFlush = flushActionRef.current;
+        if (doFlush) {
+            doFlush(() => { window.open(url, '_blank'); });
+        } else {
+            window.open(url, '_blank');
+        }
+    }, [previewUrl]);
+
+    const handlePublishClick = useCallback(() => {
+        const doFlush = flushActionRef.current;
+        if (doFlush) {
+            doFlush(() => { setShowPublishConfirm(true); });
+        } else {
+            setShowPublishConfirm(true);
+        }
+    }, []);
+    flushActionRef.current = flushBeforeAction;
+
+    const confirmPublish = useCallback(() => {
         setPublishing(true);
         router.post(adminUrl('/admin/storefront/publish'), {}, {
             preserveScroll: true,
@@ -52,20 +153,16 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
                 setPublishing(false);
                 setSaveSuccess('Published! Your changes are now live on the storefront.');
             },
-            onError: () => {
-                setPublishing(false);
-            },
+            onError: () => setPublishing(false),
             onFinish: () => setPublishing(false),
         });
-    };
-
-    const previewUrl = tenant?.slug ? `/store/${tenant.slug}/preview` : null;
+    }, []);
 
     return (
         <AdminLayout>
             <Head title="Homepage Sections" />
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
                     <div>
                         <p className="text-sm font-medium text-blue-600">Storefront</p>
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">Homepage Sections</h1>
@@ -74,17 +171,35 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
                     <div className="flex flex-wrap items-center gap-2">
                         {hasUnpublished && <span className="px-3 py-2 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium">Unpublished draft</span>}
                         {publishedRevision && <span className="px-3 py-2 rounded-lg bg-green-50 text-green-700 text-xs font-medium">Live revision #{publishedRevision}</span>}
-                        {previewUrl && hasUnpublished && <a href={previewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Preview Draft</a>}
                         <Link href={adminUrl('/admin/storefront/revisions')} className="text-sm text-blue-600">History</Link>
                     </div>
                 </div>
 
-                {saveSuccess && <div role="status" className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3"><svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span>{saveSuccess}</span></div>}
+                {saveSuccess && <div role="status" className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{saveSuccess}</div>}
                 {saveError && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{saveError}</div>}
 
-                {hasUnpublished && <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div className="text-sm text-amber-800"><strong>Unpublished changes.</strong> Your draft changes are not yet visible to customers.</div><div className="flex gap-2">{previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-lg border border-amber-300 bg-white text-sm font-medium text-amber-800 hover:bg-amber-100">Preview Draft</a>}<button type="button" onClick={() => setShowPublishConfirm(true)} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">Publish</button></div></div>}
+                {hasUnpublished && <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"><strong>Unpublished changes.</strong> Your draft changes are not yet visible to customers.</div>}
 
-                <form onSubmit={save} className="space-y-4">
+                {/* Save status + actions */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className={`font-medium ${statusColor[saveStatus]}`}>
+                            {saveStatus === SAVE_STATUS.FAILED ? (
+                                <button type="button" onClick={handleRetry} className="underline hover:no-underline">{statusLabel[saveStatus]} — Retry</button>
+                            ) : statusLabel[saveStatus]}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {previewUrl && hasUnpublished && (
+                            <button type="button" onClick={handlePreview} className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Preview Draft</button>
+                        )}
+                        {hasUnpublished && (
+                            <button type="button" onClick={handlePublishClick} disabled={publishing} className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">{publishing ? 'Publishing…' : 'Publish'}</button>
+                        )}
+                    </div>
+                </div>
+
+                <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
                     {sections.map((section, index) => (
                         <section key={section.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-6">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -100,10 +215,6 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
                             <SectionConfig section={section} categories={categories} brands={brands} products={products} media={media} updateConfig={updateConfig} />
                         </section>
                     ))}
-                    <div className="flex justify-end gap-3">
-                        <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">{saving ? 'Saving Draft...' : 'Save Draft'}</button>
-                        {hasUnpublished && <button type="button" onClick={() => setShowPublishConfirm(true)} disabled={publishing} className="px-5 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-50">{publishing ? 'Publishing...' : 'Publish'}</button>}
-                    </div>
                 </form>
             </div>
 
@@ -124,11 +235,7 @@ function HeroImages({ config, updateConfig, section, media }) {
     }).filter(Boolean);
 
     const allImages = [...resolvedFromMedia];
-    localImages.forEach((li) => {
-        if (!allImages.some((i) => i.id === li.id)) {
-            allImages.push(li);
-        }
-    });
+    localImages.forEach((li) => { if (!allImages.some((i) => i.id === li.id)) allImages.push(li); });
 
     const handleUpload = (e) => {
         const files = Array.from(e.target.files || []);
@@ -137,68 +244,35 @@ function HeroImages({ config, updateConfig, section, media }) {
         const toUpload = files.slice(0, remaining);
         setUploading(true);
         let uploaded = 0;
-
         toUpload.forEach((file) => {
             const fd = new FormData();
             fd.append('file', file);
-            fetch(adminUrl('/admin/storefront/media/hero/upload'), {
-                method: 'POST',
-                body: fd,
-                credentials: 'include',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '', 'Accept': 'application/json' },
-            })
-            .then((r) => {
-                if (!r.ok) throw new Error('Upload failed: ' + r.status);
-                return r.json();
-            })
+            fetch(adminUrl('/admin/storefront/media/hero/upload'), { method: 'POST', body: fd, credentials: 'include', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '', 'Accept': 'application/json' } })
+            .then((r) => { if (!r.ok) throw new Error('Upload failed: ' + r.status); return r.json(); })
             .then((data) => {
                 if (data && data.id) {
                     const img = { id: data.id, url: data.url, alt_text: data.alt_text };
-                    setLocalImages((prev) => {
-                        if (prev.some((i) => i.id === img.id)) return prev;
-                        return [...prev, img];
-                    });
+                    setLocalImages((prev) => prev.some((i) => i.id === img.id) ? prev : [...prev, img]);
                     const allIds = [...new Set([...savedIds, ...localImages.map((i) => i.id), data.id].map(Number))];
                     updateConfig(section.id, { media_ids: allIds });
                 }
             })
             .catch(() => {})
-            .finally(() => {
-                uploaded++;
-                if (uploaded >= toUpload.length) {
-                    setUploading(false);
-                    if (inputRef.current) inputRef.current.value = '';
-                }
-            });
+            .finally(() => { uploaded++; if (uploaded >= toUpload.length) { setUploading(false); if (inputRef.current) inputRef.current.value = ''; } });
         });
     };
 
     const remove = (id) => {
         setLocalImages((prev) => prev.filter((i) => i.id !== id));
-        const newIds = savedIds.filter((i) => i !== id);
-        updateConfig(section.id, { media_ids: newIds });
+        updateConfig(section.id, { media_ids: savedIds.filter((i) => i !== id) });
     };
 
     const count = allImages.length;
-
     return (
         <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hero images (max 5)</p>
-            <div className="flex flex-wrap gap-2 mb-2">
-                {allImages.map((img) => (
-                    <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950">
-                        <img src={img.url} alt={img.alt_text || ''} className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => remove(img.id)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"><X className="w-3 h-3" /></button>
-                    </div>
-                ))}
-            </div>
-            {count < 5 && (
-                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
-                    <Upload className="w-4 h-4" />
-                    {uploading ? 'Uploading...' : 'Upload Image'}
-                    <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple onChange={handleUpload} className="hidden" disabled={uploading} />
-                </label>
-            )}
+            <div className="flex flex-wrap gap-2 mb-2">{allImages.map((img) => (<div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950"><img src={img.url} alt={img.alt_text || ''} className="w-full h-full object-cover" /><button type="button" onClick={() => remove(img.id)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"><X className="w-3 h-3" /></button></div>))}</div>
+            {count < 5 && (<label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors"><Upload className="w-4 h-4" />{uploading ? 'Uploading...' : 'Upload Image'}<input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple onChange={handleUpload} className="hidden" disabled={uploading} /></label>)}
             <p className="text-xs text-gray-400 mt-1">{count} / 5 images</p>
         </div>
     );
