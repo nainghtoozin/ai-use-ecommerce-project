@@ -306,7 +306,7 @@ class OrderService
                 } elseif ($item->variant_id) {
                     $variant = $item->variant;
                     if ($variant) {
-                        $oldStock = $this->stockCalculationService->forVariant($variant);
+                        $oldStock = $this->stockCalculationService->forVariantWithLock($variant);
                         $this->stockMovementService->record(
                             product: $product,
                             type: StockMovement::TYPE_SALE,
@@ -317,7 +317,7 @@ class OrderService
                             description: "Order #{$order->id} confirmed",
                             warehouseId: $warehouseId,
                         );
-                        $newStock = $this->stockCalculationService->forVariant($variant);
+                        $newStock = $this->stockCalculationService->forVariantWithLock($variant);
 
                         Log::info('Variant stock reduced via movement:', [
                             'variant_id' => $variant->id,
@@ -331,7 +331,7 @@ class OrderService
                         }
                     }
                 } else {
-                    $oldStock = $this->stockCalculationService->forProduct($product);
+                    $oldStock = $this->stockCalculationService->forProductWithLock($product);
                     $this->stockMovementService->record(
                         product: $product,
                         type: StockMovement::TYPE_SALE,
@@ -341,7 +341,7 @@ class OrderService
                         description: "Order #{$order->id} confirmed",
                         warehouseId: $warehouseId,
                     );
-                    $newStock = $this->stockCalculationService->forProduct($product);
+                    $newStock = $this->stockCalculationService->forProductWithLock($product);
 
                     Log::info('Stock reduced via movement:', [
                         'product_id' => $product->id,
@@ -374,7 +374,7 @@ class OrderService
 
             if ($comboItem->linked_variant_id && $comboItem->linkedVariant) {
                 $variant = $comboItem->linkedVariant;
-                $oldStock = $this->stockCalculationService->forVariant($variant);
+                $oldStock = $this->stockCalculationService->forVariantWithLock($variant);
                 $this->stockMovementService->record(
                     product: $comboItem->comboProduct,
                     type: StockMovement::TYPE_SALE,
@@ -385,7 +385,7 @@ class OrderService
                     description: "Order #{$order->id} confirmed (combo component)",
                     warehouseId: $warehouseId,
                 );
-                $newStock = $this->stockCalculationService->forVariant($variant);
+                $newStock = $this->stockCalculationService->forVariantWithLock($variant);
 
                 Log::info('Combo variant stock reduced via movement:', [
                     'combo_id' => $combo->id,
@@ -402,7 +402,7 @@ class OrderService
                 }
             } elseif ($comboItem->comboProduct) {
                 $componentProduct = $comboItem->comboProduct;
-                $oldStock = $this->stockCalculationService->forProduct($componentProduct);
+                $oldStock = $this->stockCalculationService->forProductWithLock($componentProduct);
                 $this->stockMovementService->record(
                     product: $componentProduct,
                     type: StockMovement::TYPE_SALE,
@@ -412,7 +412,7 @@ class OrderService
                     description: "Order #{$order->id} confirmed (combo component)",
                     warehouseId: $warehouseId,
                 );
-                $newStock = $this->stockCalculationService->forProduct($componentProduct);
+                $newStock = $this->stockCalculationService->forProductWithLock($componentProduct);
 
                 Log::info('Combo component stock reduced via movement:', [
                     'combo_id' => $combo->id,

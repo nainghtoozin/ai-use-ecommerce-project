@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Storefront;
+use App\Models\StorefrontCheckoutConfig;
 use App\Models\StorefrontContent;
 use App\Models\StorefrontDesignToken;
 use App\Models\StorefrontHomepageSection;
@@ -203,6 +204,7 @@ class StorefrontConfigurationResolver
                 'designTokens',
                 'homepageSections',
                 'content',
+                'checkoutConfig',
             ];
             if (Schema::hasTable('storefront_navigations')) {
                 $relations[] = 'navigation.items';
@@ -280,7 +282,10 @@ class StorefrontConfigurationResolver
                 'currency_position' => $legacy->currency_position,
                 'decimal_places' => $legacy->decimal_places,
             ],
-            'checkout' => [
+            'checkout' => array_replace_recursive(
+                StorefrontCheckoutConfig::getDefaults(),
+                $storefront?->checkoutConfig?->configuration ?? []
+            ) + [
                 'guest_checkout_enabled' => (bool) ($legacy->guest_checkout_enabled ?? true),
                 'cod_enabled' => (bool) ($legacy->cod_enabled ?? true),
             ],

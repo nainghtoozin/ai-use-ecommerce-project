@@ -343,6 +343,8 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/storefront/navigation', [StorefrontNavigationController::class, 'update'])->name('storefront.navigation.update');
         Route::get('/storefront/homepage', [StorefrontHomepageController::class, 'index'])->name('storefront.homepage.index');
         Route::put('/storefront/homepage', [StorefrontHomepageController::class, 'update'])->name('storefront.homepage.update');
+        Route::get('/storefront/checkout', [StorefrontSettingsController::class, 'checkout'])->name('storefront.checkout');
+        Route::put('/storefront/checkout', [StorefrontSettingsController::class, 'updateCheckout'])->name('storefront.checkout.update');
         Route::post('/storefront/publish', [StorefrontRevisionController::class, 'publish'])->name('storefront.publish');
         Route::get('/storefront/revisions', [StorefrontRevisionController::class, 'index'])->name('storefront.revisions.index');
         Route::post('/storefront/revisions/{revision}/restore', [StorefrontRevisionController::class, 'restore'])->name('storefront.revisions.restore')->whereNumber('revision');
@@ -427,6 +429,20 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/team/{member}/suspend', [\App\Http\Controllers\Admin\TeamController::class, 'suspend'])->name('team.member.suspend');
         Route::post('/team/{member}/restore', [\App\Http\Controllers\Admin\TeamController::class, 'restore'])->name('team.member.restore');
         Route::delete('/team/{member}', [\App\Http\Controllers\Admin\TeamController::class, 'remove'])->name('team.member.remove');
+
+        // Delivery Services
+        Route::resource('delivery-services', \App\Http\Controllers\Admin\AdminDeliveryServiceController::class)->except(['show']);
+        Route::post('delivery-services/{delivery_service}/toggle', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'toggle'])->name('delivery-services.toggle')->whereNumber('delivery_service');
+        Route::post('delivery-services/{delivery_service}/add-city-pricing', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'addCityPricing'])->name('delivery-services.add-city-pricing')->whereNumber('delivery_service');
+        Route::delete('delivery-services/pricing/{pricing}', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'removeCityPricing'])->name('delivery-services.remove-city-pricing')->whereNumber('pricing');
+
+        // Packaging Options
+        Route::resource('packaging-options', \App\Http\Controllers\Admin\AdminPackagingOptionController::class)->except(['show']);
+        Route::post('packaging-options/{packaging_option}/toggle', [\App\Http\Controllers\Admin\AdminPackagingOptionController::class, 'toggle'])->name('packaging-options.toggle')->whereNumber('packaging_option');
+
+        // COD Rules
+        Route::resource('cod-rules', \App\Http\Controllers\Admin\AdminCodRuleController::class)->except(['show']);
+        Route::post('cod-rules/{cod_rule}/toggle', [\App\Http\Controllers\Admin\AdminCodRuleController::class, 'toggle'])->name('cod-rules.toggle')->whereNumber('cod_rule');
 
     }); // ← ends tenant.active group
 }); // ← ends storefront admin group

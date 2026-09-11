@@ -55,7 +55,40 @@ class StorefrontCartController extends Controller
         }
 
         $tenantId = $tenant->id;
-        $tenantProductIds = Product::where('tenant_id', $tenantId)->pluck('id')->toArray();
+
+        $cartProductIds = [];
+        foreach ($cart as $item) {
+            $productId = $item['product_id'] ?? $item['id'] ?? null;
+            if ($productId) {
+                $cartProductIds[] = (int) $productId;
+            }
+        }
+        $cartProductIds = array_unique($cartProductIds);
+
+        if (empty($cartProductIds)) {
+            return [];
+        }
+
+        $tenantProducts = Product::where('tenant_id', $tenantId)
+            ->whereIn('id', $cartProductIds)
+            ->select(['id', 'name', 'price', 'type', 'photo1'])
+            ->get()
+            ->keyBy('id');
+
+        $cartVariantIds = [];
+        foreach ($cart as $item) {
+            if (!empty($item['variant_id'])) {
+                $cartVariantIds[] = (int) $item['variant_id'];
+            }
+        }
+        $cartVariantIds = array_unique($cartVariantIds);
+
+        $variants = !empty($cartVariantIds)
+            ? ProductVariant::whereIn('id', $cartVariantIds)
+                ->select(['id', 'product_id', 'price', 'attributes'])
+                ->get()
+                ->keyBy('id')
+            : collect();
 
         $items = [];
         foreach ($cart as $cartKey => $item) {
@@ -64,11 +97,7 @@ class StorefrontCartController extends Controller
                 continue;
             }
 
-            if (!in_array((int) $productId, $tenantProductIds)) {
-                continue;
-            }
-
-            $product = Product::select(['id', 'name', 'price', 'type', 'photo1'])->find($productId);
+            $product = $tenantProducts->get((int) $productId);
             if (!$product) {
                 continue;
             }
@@ -78,7 +107,7 @@ class StorefrontCartController extends Controller
             $variantId = $item['variant_id'] ?? null;
 
             if ($variantId) {
-                $variant = ProductVariant::select(['id', 'price', 'attributes'])->find($variantId);
+                $variant = $variants->get((int) $variantId);
                 if ($variant) {
                     $price = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;

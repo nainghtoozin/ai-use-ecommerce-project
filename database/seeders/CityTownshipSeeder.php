@@ -13,8 +13,8 @@ class CityTownshipSeeder extends Seeder
         $locations = require database_path('data/myanmar_locations.php');
 
         foreach ($locations as $cityData) {
-            $city = City::withoutTenantScope()->firstOrCreate(
-                ['tenant_id' => null, 'name' => $cityData['name']],
+            $city = City::firstOrCreate(
+                ['name' => $cityData['name']],
                 [
                     'delivery_fee' => $cityData['delivery_fee'] ?? 0,
                     'is_active' => true,
@@ -22,7 +22,7 @@ class CityTownshipSeeder extends Seeder
             );
 
             foreach ($cityData['townships'] as $townshipData) {
-                Township::withoutTenantScope()->firstOrCreate(
+                Township::firstOrCreate(
                     ['city_id' => $city->id, 'name' => $townshipData['name']],
                     [
                         'postal_code' => $townshipData['postal_code'] ?? null,

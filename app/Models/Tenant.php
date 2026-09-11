@@ -215,6 +215,13 @@ class Tenant extends Model
         return null;
     }
 
+    public static function setCurrent(?self $tenant): void
+    {
+        if ($tenant) {
+            App::instance('current.tenant', $tenant);
+        }
+    }
+
     public static function clearDefaultCache(): void
     {
         Cache::forget('tenant_default');

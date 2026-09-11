@@ -45,7 +45,7 @@ class ImageOptimizationService
 
         try {
             $optimizerChain = OptimizerChainFactory::create();
-            $optimizerChain->timeout = $this->timeout;
+            $optimizerChain->setTimeout($this->timeout);
             $optimizerChain->optimize($fullPath);
 
             $newSize = filesize($fullPath);

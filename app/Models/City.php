@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 
 class City extends Model
 {
-    use HasFactory, TenantAware;
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -35,17 +34,11 @@ class City extends Model
 
     public static function getActiveWithTownships()
     {
-        $suffix = tenant()?->id ?? 'global';
-        return Cache::remember('active_cities_with_townships_' . $suffix, 3600, function () {
+        return Cache::remember('active_cities_with_townships', 3600, function () {
             return static::active()
                 ->with(['townships' => fn($q) => $q->active()])
                 ->orderBy('name')
                 ->get();
         });
-    }
-
-    public static function allowsNullTenantFallback(): bool
-    {
-        return true;
     }
 }

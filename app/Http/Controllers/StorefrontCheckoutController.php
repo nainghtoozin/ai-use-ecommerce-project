@@ -7,17 +7,21 @@ use App\Models\City;
 use App\Models\Coupon;
 use App\Models\CustomerAddress;
 use App\Models\Order;
+use App\Models\PackagingOption;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
 use App\Models\Township;
+use App\Services\CodEligibilityService;
 use App\Services\CouponService;
+use App\Services\DeliveryFeeService;
 use App\Services\ImageService;
 use App\Services\PromotionService;
 use App\Services\StockCalculationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -28,6 +32,8 @@ class StorefrontCheckoutController extends Controller
         private readonly CouponService $couponService,
         private readonly PromotionService $promotionService,
         private readonly StockCalculationService $stockCalculationService,
+        private readonly DeliveryFeeService $deliveryFeeService,
+        private readonly CodEligibilityService $codEligibilityService,
     ) {}
 
     public function index()
@@ -90,7 +96,24 @@ class StorefrontCheckoutController extends Controller
         $totalDiscount = $couponDiscount + $promotionDiscount;
         $autoPromotions = $this->promotionService->getAutoPromotionsForCheckout($cartItems);
 
-        return Inertia::render('Storefront/Checkout', [
+        $deliveryServices = $this->deliveryFeeService->getAvailableServices();
+        $packagingOptions = PackagingOption::active()->ordered()->get();
+
+        $paymentMethodsFiltered = $paymentMethods;
+        $codMethod = $paymentMethods->firstWhere('type', 'cod');
+        if ($codMethod && auth()->check()) {
+            $codEligibility = $this->codEligibilityService->isCodAvailable(
+                $codMethod,
+                auth()->user(),
+                null,
+                $subtotal
+            );
+            if (!$codEligibility) {
+                $paymentMethodsFiltered = $paymentMethods->reject(fn($pm) => $pm->type === 'cod')->values();
+            }
+        }
+
+        return Inertia::render('Storefront/CheckoutV2', [
             'tenant' => [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
@@ -101,7 +124,7 @@ class StorefrontCheckoutController extends Controller
             ],
             'cartItems' => array_values($cartItems),
             'subtotal' => $subtotal,
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $paymentMethodsFiltered,
             'cities' => $cities,
             'appliedCoupon' => $appliedCoupon,
             'appliedPromotion' => $appliedPromotion,
@@ -109,6 +132,8 @@ class StorefrontCheckoutController extends Controller
             'autoPromotions' => $autoPromotions,
             'addresses' => $addresses,
             'defaultAddress' => $defaultAddress,
+            'deliveryServices' => $deliveryServices,
+            'packagingOptions' => $packagingOptions,
         ]);
     }
 
@@ -138,7 +163,12 @@ class StorefrontCheckoutController extends Controller
             'payer_name' => ['nullable', 'string', 'max:255'],
             'sender_account_number' => ['nullable', 'string', 'max:50'],
             'transaction_id' => ['nullable', 'string', 'max:255'],
+            'payment_date' => ['nullable', 'date'],
+            'payment_time' => ['nullable', 'string', 'max:10'],
+            'payment_note' => ['nullable', 'string', 'max:500'],
             'payment_screenshot' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'delivery_service_id' => ['nullable', 'exists:delivery_services,id'],
+            'packaging_id' => ['nullable', 'exists:packaging_options,id'],
         ]);
 
         if (!empty($validated['city_id']) && !empty($validated['township_id'])) {
@@ -152,21 +182,27 @@ class StorefrontCheckoutController extends Controller
             $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
         }
 
-        if (auth()->check()) {
-            $user = auth()->user();
-            if ($user->tenant && $user->tenant->subscriptionExpired()) {
-                return back()->with('error', 'Your subscription has expired. Please renew your subscription to place orders.');
+        if ($tenant->subscriptionExpired()) {
+            return back()->with('error', 'Your subscription has expired. Please renew your subscription to place orders.');
+        }
+
+        $idempotencyKey = $request->header('X-Idempotency-Key') ?? session()->get('checkout_idempotency_key');
+        if ($idempotencyKey) {
+            $existingOrder = Order::where('user_id', auth()->id())
+                ->where('created_at', '>=', now()->subMinutes(5))
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+            if ($existingOrder) {
+                return redirect()->route('storefront.customer.orders.show', [
+                    'store_slug' => $tenant->slug,
+                    'order' => $existingOrder->id,
+                ])->with('success', 'Order already submitted.');
             }
         }
 
-        if (auth()->check()) {
-            $codMethods = PaymentMethod::where('type', 'cod')->pluck('id');
-            if ($codMethods->isNotEmpty() && $codMethods->contains($validated['payment_method_id'])) {
-                $user = auth()->user();
-                if (!$user || !$user->allow_cod) {
-                    return back()->with('error', 'COD payment is not available for your account.');
-                }
-            }
+        $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
+        if (!$paymentMethod || $paymentMethod->tenant_id !== $tenant->id) {
+            return back()->withErrors(['payment_method_id' => 'Invalid payment method.'])->withInput();
         }
 
         $paymentScreenshotPath = null;
@@ -205,9 +241,25 @@ class StorefrontCheckoutController extends Controller
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
 
         $deliveryFee = 0;
+        $deliveryServiceId = $validated['delivery_service_id'] ?? null;
+        $deliveryDaysMin = null;
+        $deliveryDaysMax = null;
+
+        if ($deliveryServiceId) {
+            $deliveryService = \App\Models\DeliveryService::find($deliveryServiceId);
+            if (!$deliveryService || $deliveryService->tenant_id !== $tenant->id) {
+                return back()->withErrors(['delivery_service_id' => 'Invalid delivery service.'])->withInput();
+            }
+        }
+
         if (!empty($validated['city_id'])) {
             $city = City::find($validated['city_id']);
-            if ($city) $deliveryFee = (float) $city->delivery_fee;
+            if ($city) {
+                $deliveryFee = $this->deliveryFeeService->resolveDeliveryFee($city, $deliveryServiceId);
+                $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryServiceId, $city);
+                $deliveryDaysMin = $deliveryDays['min'];
+                $deliveryDaysMax = $deliveryDays['max'];
+            }
         }
 
         $couponData = $this->resolveCouponFromSession($items, $deliveryFee);
@@ -216,8 +268,42 @@ class StorefrontCheckoutController extends Controller
         $promotionData = $this->resolvePromotionFromSession($items, $deliveryFee);
         $promotionDiscount = (float) ($promotionData['discount'] ?? 0);
 
+        $packagingFee = 0;
+        $packagingId = $validated['packaging_id'] ?? null;
+        if ($packagingId) {
+            $packagingOption = PackagingOption::find($packagingId);
+            if (!$packagingOption || $packagingOption->tenant_id !== $tenant->id) {
+                return back()->withErrors(['packaging_id' => 'Invalid packaging option.'])->withInput();
+            }
+            $packagingFee = (int) $packagingOption->fee;
+        }
+
         $totalDiscount = $couponDiscount + $promotionDiscount;
-        $totalAmount = ($subtotal + $deliveryFee) - $totalDiscount;
+        $totalBeforeCod = ($subtotal + $deliveryFee + $packagingFee) - $totalDiscount;
+
+        $codFee = 0;
+        if ($paymentMethod && $paymentMethod->type === 'cod') {
+            $user = auth()->check() ? auth()->user() : null;
+            $cityId = $validated['city_id'] ?? null;
+
+            $reason = $this->codEligibilityService->getIneligibilityReason(
+                $paymentMethod,
+                $user,
+                $cityId,
+                $totalBeforeCod
+            );
+
+            if ($reason !== null) {
+                return back()->with('error', $reason);
+            }
+
+            $city = City::find($cityId);
+            if ($city) {
+                $codFee = $this->codEligibilityService->getCodFee($city->id, $totalBeforeCod);
+            }
+        }
+
+        $totalAmount = $totalBeforeCod + $codFee;
 
         $orderData = [
             'user_id' => auth()->id(),
@@ -235,12 +321,21 @@ class StorefrontCheckoutController extends Controller
             'sender_account_number' => $validated['sender_account_number'] ?? null,
             'payment_screenshot' => $paymentScreenshotPath,
             'transaction_id' => $validated['transaction_id'] ?? null,
+            'payment_date' => $validated['payment_date'] ?? null,
+            'payment_time' => $validated['payment_time'] ?? null,
+            'payment_note' => $validated['payment_note'] ?? null,
             'subtotal' => $subtotal,
             'delivery_fee' => $deliveryFee,
+            'delivery_service_id' => $deliveryServiceId,
+            'delivery_days_min' => $deliveryDaysMin,
+            'delivery_days_max' => $deliveryDaysMax,
+            'packaging_id' => $packagingId,
+            'packaging_fee' => $packagingFee > 0 ? $packagingFee : null,
             'discount_amount' => $totalDiscount,
             'total_amount' => $totalAmount,
             'payment_status' => Order::PAYMENT_STATUS_PENDING,
             'order_status' => Order::ORDER_STATUS_PENDING,
+            'cod_fee' => $codFee > 0 ? $codFee : null,
         ];
 
         if (!empty($promotionData['promotion'])) {
@@ -248,39 +343,70 @@ class StorefrontCheckoutController extends Controller
             $orderData['promotion_code'] = $promotionData['promotion']->code ?? 'AUTO';
         }
 
-        $order = Order::create($orderData);
+        $orderData['idempotency_key'] = $idempotencyKey;
 
-        $date = $order->created_at->format('Ymd');
-        $order->update(['invoice_number' => 'ORD-' . $date . '-' . str_pad($order->id, 5, '0', STR_PAD_LEFT)]);
+        try {
+            $order = DB::transaction(function () use ($orderData, $items, $couponData, $promotionData) {
+                $stockErrors = $this->validateStockWithLock($items);
+                if (!empty($stockErrors)) {
+                    throw new \App\Exceptions\CheckoutStockException(implode(' ', $stockErrors));
+                }
 
-        if (!empty($couponData['coupon'])) {
-            $this->couponService->applyCouponToOrder(
-                $order,
-                $couponData['coupon'],
-                $couponData['discount']
-            );
-        }
+                try {
+                    $order = Order::create($orderData);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if ($orderData['idempotency_key'] && str_contains($e->getMessage(), 'Duplicate entry')) {
+                        $existingOrder = Order::where('idempotency_key', $orderData['idempotency_key'])->first();
+                        if ($existingOrder) {
+                            return $existingOrder;
+                        }
+                    }
+                    throw $e;
+                }
 
-        if (!empty($promotionData['promotion'])) {
-            $this->promotionService->applyPromotionToOrder(
-                $order,
-                $promotionData['promotion'],
-                $promotionData['discount']
-            );
-        }
+                $date = $order->created_at->format('Ymd');
+                $order->update(['invoice_number' => 'ORD-' . $date . '-' . str_pad($order->id, 5, '0', STR_PAD_LEFT)]);
 
-        foreach ($items as $item) {
-            $orderItemData = [
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-            ];
+                if (!empty($couponData['coupon'])) {
+                    $this->couponService->applyCouponToOrder(
+                        $order,
+                        $couponData['coupon'],
+                        $couponData['discount']
+                    );
+                }
 
-            if (!empty($item['variant_id'])) {
-                $orderItemData['variant_id'] = $item['variant_id'];
-            }
+                if (!empty($promotionData['promotion'])) {
+                    $this->promotionService->applyPromotionToOrder(
+                        $order,
+                        $promotionData['promotion'],
+                        $promotionData['discount']
+                    );
+                }
 
-            $order->items()->create($orderItemData);
+                foreach ($items as $item) {
+                    $orderItemData = [
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                    ];
+
+                    if (!empty($item['variant_id'])) {
+                        $orderItemData['variant_id'] = $item['variant_id'];
+                    }
+
+                    $order->items()->create($orderItemData);
+                }
+
+                return $order;
+            });
+        } catch (\App\Exceptions\CheckoutStockException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (\Exception $e) {
+            Log::error('Order creation failed: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'tenant_id' => $tenant->id,
+            ]);
+            return back()->with('error', 'Failed to create order. Please try again.')->withInput();
         }
 
         ProcessOrderNotifications::dispatch($order, $paymentScreenshotPath)
@@ -289,6 +415,7 @@ class StorefrontCheckoutController extends Controller
         session()->forget('cart');
         session()->forget('applied_coupon');
         session()->forget('applied_promotion');
+        session()->forget('checkout_idempotency_key');
 
         return redirect()->route('storefront.customer.orders.show', [
             'store_slug' => $tenant->slug,
@@ -303,7 +430,40 @@ class StorefrontCheckoutController extends Controller
         }
 
         $tenantId = $tenant->id;
-        $tenantProductIds = Product::where('tenant_id', $tenantId)->pluck('id')->toArray();
+
+        $cartProductIds = [];
+        foreach ($cart as $item) {
+            $productId = $item['product_id'] ?? $item['id'] ?? null;
+            if ($productId) {
+                $cartProductIds[] = (int) $productId;
+            }
+        }
+        $cartProductIds = array_unique($cartProductIds);
+
+        if (empty($cartProductIds)) {
+            return [];
+        }
+
+        $tenantProducts = Product::where('tenant_id', $tenantId)
+            ->whereIn('id', $cartProductIds)
+            ->select(['id', 'name', 'price', 'type', 'photo1'])
+            ->get()
+            ->keyBy('id');
+
+        $cartVariantIds = [];
+        foreach ($cart as $item) {
+            if (!empty($item['variant_id'])) {
+                $cartVariantIds[] = (int) $item['variant_id'];
+            }
+        }
+        $cartVariantIds = array_unique($cartVariantIds);
+
+        $variants = !empty($cartVariantIds)
+            ? ProductVariant::whereIn('id', $cartVariantIds)
+                ->select(['id', 'product_id', 'price', 'attributes'])
+                ->get()
+                ->keyBy('id')
+            : collect();
 
         $items = [];
         foreach ($cart as $cartKey => $item) {
@@ -312,11 +472,7 @@ class StorefrontCheckoutController extends Controller
                 continue;
             }
 
-            if (!in_array((int) $productId, $tenantProductIds)) {
-                continue;
-            }
-
-            $product = Product::select(['id', 'name', 'price', 'type', 'photo1'])->find($productId);
+            $product = $tenantProducts->get((int) $productId);
             if (!$product) {
                 continue;
             }
@@ -326,7 +482,7 @@ class StorefrontCheckoutController extends Controller
             $variantId = $item['variant_id'] ?? null;
 
             if ($variantId) {
-                $variant = ProductVariant::select(['id', 'price', 'attributes'])->find($variantId);
+                $variant = $variants->get((int) $variantId);
                 if ($variant) {
                     $price = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;
@@ -428,7 +584,47 @@ class StorefrontCheckoutController extends Controller
                 } else {
                     $stock = $this->stockCalculationService->forProduct($product);
                     if ($stock <= 0) {
-                        $errors[] = "{$product->name} is out of stock and has been removed from your cart.";
+                        $errors[] = "{$product->name} is out of stock.";
+                    } elseif ($stock < $item['quantity']) {
+                        $errors[] = "Insufficient stock for {$product->name}. Only {$stock} available.";
+                    }
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    private function validateStockWithLock(array $items): array
+    {
+        $errors = [];
+        $productIds = array_unique(array_column($items, 'product_id'));
+        $variantIds = array_values(array_unique(array_filter(array_column($items, 'variant_id'))));
+
+        $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+        $variants = !empty($variantIds)
+            ? ProductVariant::whereIn('id', $variantIds)->lockForUpdate()->get()->keyBy('id')
+            : collect();
+
+        foreach ($items as $item) {
+            if (!empty($item['variant_id'])) {
+                $variant = $variants->get($item['variant_id']);
+                if (!$variant) {
+                    $errors[] = 'A product variant in your cart no longer exists. Please review your cart.';
+                } else {
+                    $stock = $this->stockCalculationService->forVariant($variant);
+                    if ($stock < $item['quantity']) {
+                        $errors[] = "Insufficient stock for a product variant. Only {$stock} available.";
+                    }
+                }
+            } else {
+                $product = $products->get($item['product_id']);
+                if (!$product) {
+                    $errors[] = 'A product in your cart no longer exists. Please review your cart.';
+                } else {
+                    $stock = $this->stockCalculationService->forProduct($product);
+                    if ($stock <= 0) {
+                        $errors[] = "{$product->name} is out of stock.";
                     } elseif ($stock < $item['quantity']) {
                         $errors[] = "Insufficient stock for {$product->name}. Only {$stock} available.";
                     }

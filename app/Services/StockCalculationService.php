@@ -23,6 +23,21 @@ class StockCalculationService
             ->sum('quantity');
     }
 
+    public function forProductWithLock(Product $product): float
+    {
+        return (float) StockMovement::where('product_id', $product->id)
+            ->whereNull('product_variant_id')
+            ->lockForUpdate()
+            ->sum('quantity');
+    }
+
+    public function forVariantWithLock(ProductVariant $variant): float
+    {
+        return (float) StockMovement::where('product_variant_id', $variant->id)
+            ->lockForUpdate()
+            ->sum('quantity');
+    }
+
     public function forProductWithVariants(Product $product): float
     {
         return (float) StockMovement::where('product_id', $product->id)

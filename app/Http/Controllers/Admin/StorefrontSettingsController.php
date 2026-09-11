@@ -4,7 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateStorefrontConfigurationRequest;
+use App\Models\City;
+use App\Models\CodRule;
+use App\Models\DeliveryService;
+use App\Models\PackagingOption;
 use App\Models\Storefront;
+use App\Models\StorefrontCheckoutConfig;
 use App\Models\StorefrontContent;
 use App\Models\StorefrontDesignToken;
 use App\Models\StorefrontMedia;
@@ -76,6 +81,7 @@ class StorefrontSettingsController extends Controller
             );
 
             $this->updateLabels($storefront, $validated['labels'] ?? []);
+            $this->updateCheckoutConfig($storefront, $validated['checkout'] ?? []);
         });
         $this->revisionService->syncDraft($storefront);
 
@@ -108,6 +114,76 @@ class StorefrontSettingsController extends Controller
         $content->tenant_id = tenant()->id;
         $content->labels = array_replace($content->labels ?? [], $labels);
         $content->save();
+    }
+
+    public function checkout()
+    {
+        $storefront = $this->storefront();
+        $this->ensureSections($storefront);
+        $contract = $this->resolver->resolve(null, 'draft');
+
+        return Inertia::render('Admin/Storefront/Checkout', [
+            'storefront' => $contract,
+            'deliveryServices' => DeliveryService::orderBy('sort_order')->orderBy('name')->get(),
+            'packagingOptions' => PackagingOption::orderBy('sort_order')->orderBy('name')->get(),
+            'codRules' => CodRule::all(),
+            'cities' => City::where('is_active', true)->orderBy('name')->get(),
+            'revision' => $this->revisionService->status($storefront),
+        ]);
+    }
+
+    public function updateCheckout(\Illuminate\Http\Request $request)
+    {
+        $storefront = $this->storefront();
+        $validated = $request->validate([
+            'checkout' => 'required|array',
+            'checkout.title' => 'nullable|string|max:255',
+            'checkout.subtitle' => 'nullable|string|max:255',
+            'checkout.show_branding' => 'nullable|boolean',
+            'checkout.sections' => 'nullable|array',
+            'checkout.sections.*.visible' => 'nullable|boolean',
+            'checkout.sections.*.title' => 'nullable|string|max:255',
+            'checkout.sections.*.order' => 'nullable|integer|min:1',
+            'checkout.button_labels' => 'nullable|array',
+            'checkout.button_labels.*' => 'nullable|string|max:255',
+            'checkout.appearance' => 'nullable|array',
+            'checkout.appearance.card_style' => 'nullable|string',
+            'checkout.appearance.section_spacing' => 'nullable|string',
+            'checkout.appearance.compact_mode' => 'nullable|boolean',
+            'checkout.appearance.border_radius' => 'nullable|string',
+            'checkout.appearance.button_style' => 'nullable|string',
+            'checkout.layout' => 'nullable|array',
+            'checkout.layout.order_summary_position' => 'nullable|string',
+            'checkout.layout.show_order_summary_on_mobile' => 'nullable|boolean',
+            'checkout.visual' => 'nullable|array',
+            'checkout.visual.preset' => 'nullable|string',
+            'checkout.visual.show_store_logo' => 'nullable|boolean',
+            'checkout.visual.order_summary_style' => 'nullable|string',
+        ]);
+
+        $this->revisionService->prepareDraft($storefront);
+        $this->updateCheckoutConfig($storefront, $validated['checkout'] ?? []);
+        $this->revisionService->syncDraft($storefront);
+
+        return back()->with('success', 'Checkout settings saved to draft.');
+    }
+
+    private function updateCheckoutConfig(Storefront $storefront, array $config): void
+    {
+        if (!$config) {
+            return;
+        }
+
+        $defaults = StorefrontCheckoutConfig::getDefaults();
+        $merged = array_replace_recursive($defaults, $config);
+
+        StorefrontCheckoutConfig::withoutTenantScope()->updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => tenant()->id,
+                'configuration' => $merged,
+            ],
+        );
     }
 
     private function ensureSections(Storefront $storefront): void

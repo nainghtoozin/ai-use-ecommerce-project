@@ -65,4 +65,9 @@ class Storefront extends Model
     {
         return $this->hasMany(StorefrontRevision::class)->latest('revision_number');
     }
+
+    public function checkoutConfig()
+    {
+        return $this->hasOne(StorefrontCheckoutConfig::class);
+    }
 }

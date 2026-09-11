@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CodRule;
 use App\Models\PaymentMethod;
 use App\Models\Tenant;
 use App\Models\WebsiteFaq;
@@ -23,6 +24,7 @@ class TenantDefaultSeeder extends Seeder
             $this->seedPaymentMethods($tenant);
             $this->seedWebsiteInfo($tenant);
             $this->seedFaqs($tenant);
+            $this->seedCodRules($tenant);
         }
 
         $this->command->info('Tenant defaults seeded successfully for all tenants.');
@@ -195,5 +197,28 @@ class TenantDefaultSeeder extends Seeder
                 ]
             );
         }
+    }
+
+    private function seedCodRules(Tenant $tenant): void
+    {
+        $existing = CodRule::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->exists();
+
+        if ($existing) {
+            return;
+        }
+
+        CodRule::withoutTenantScope()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Default COD Rule',
+            'is_active' => true,
+            'min_order_amount' => null,
+            'max_order_amount' => null,
+            'allowed_city_ids' => null,
+            'excluded_city_ids' => null,
+            'cod_fee' => 0,
+            'apply_cod_fee_to_total' => false,
+        ]);
     }
 }

@@ -617,6 +617,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::resource('townships', AdminTownshipController::class)->except(['show']);
         Route::post('townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
 
+        // Delivery Services
+        Route::resource('delivery-services', \App\Http\Controllers\Admin\AdminDeliveryServiceController::class)->except(['show']);
+        Route::post('delivery-services/{delivery_service}/toggle', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'toggle'])->name('delivery-services.toggle');
+        Route::post('delivery-services/{delivery_service}/add-city-pricing', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'addCityPricing'])->name('delivery-services.add-city-pricing');
+        Route::delete('delivery-services/pricing/{pricing}', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'removeCityPricing'])->name('delivery-services.remove-city-pricing');
+
+        // Packaging Options
+        Route::resource('packaging-options', \App\Http\Controllers\Admin\AdminPackagingOptionController::class)->except(['show']);
+        Route::post('packaging-options/{packaging_option}/toggle', [\App\Http\Controllers\Admin\AdminPackagingOptionController::class, 'toggle'])->name('packaging-options.toggle');
+
+        // COD Rules
+        Route::resource('cod-rules', \App\Http\Controllers\Admin\AdminCodRuleController::class)->except(['show']);
+        Route::post('cod-rules/{cod_rule}/toggle', [\App\Http\Controllers\Admin\AdminCodRuleController::class, 'toggle'])->name('cod-rules.toggle');
+
         // ============================================================
         // USER MANAGEMENT ROUTES
         // ============================================================

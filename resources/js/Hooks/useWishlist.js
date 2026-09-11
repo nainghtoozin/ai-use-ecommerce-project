@@ -1,9 +1,6 @@
 import { useState, useCallback } from 'react';
 import { usePage, router } from '@inertiajs/react';
-
-function getCsrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.content || '';
-}
+import { csrfHeaders, parseResponse } from '@/Utils/csrf';
 
 export function useWishlist() {
     const { props } = usePage();
@@ -19,12 +16,16 @@ export function useWishlist() {
             const response = await fetch(`/wishlist/${productId}`, {
                 method,
                 headers: {
-                    'X-CSRF-TOKEN': getCsrfToken(),
                     'Content-Type': 'application/json',
+                    ...csrfHeaders(),
                 },
             });
 
-            const data = await response.json();
+            const data = await parseResponse(response);
+
+            if (!response.ok) {
+                return { error: data.error || `Request failed with status ${response.status}` };
+            }
 
             if (data.wishlist_count !== undefined) {
                 window.dispatchEvent(
@@ -47,10 +48,14 @@ export function useWishlist() {
         try {
             const response = await fetch(`/wishlist/${productId}`, {
                 method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+                headers: csrfHeaders(),
             });
 
-            const data = await response.json();
+            const data = await parseResponse(response);
+
+            if (!response.ok) {
+                return { error: data.error || `Request failed with status ${response.status}` };
+            }
 
             if (data.wishlist_count !== undefined) {
                 window.dispatchEvent(
@@ -73,10 +78,14 @@ export function useWishlist() {
         try {
             const response = await fetch(`/wishlist/move-to-cart/${productId}`, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+                headers: csrfHeaders(),
             });
 
-            const data = await response.json();
+            const data = await parseResponse(response);
+
+            if (!response.ok) {
+                return { error: data.error || `Request failed with status ${response.status}` };
+            }
 
             if (data.cart_count !== undefined) {
                 window.dispatchEvent(
@@ -97,10 +106,14 @@ export function useWishlist() {
         try {
             const response = await fetch('/wishlist/move-all-to-cart', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+                headers: csrfHeaders(),
             });
 
-            const data = await response.json();
+            const data = await parseResponse(response);
+
+            if (!response.ok) {
+                return { error: data.error || `Request failed with status ${response.status}` };
+            }
 
             if (data.cart_count !== undefined) {
                 window.dispatchEvent(
@@ -119,10 +132,14 @@ export function useWishlist() {
         try {
             const response = await fetch('/wishlist/clear', {
                 method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+                headers: csrfHeaders(),
             });
 
-            const data = await response.json();
+            const data = await parseResponse(response);
+
+            if (!response.ok) {
+                return { error: data.error || `Request failed with status ${response.status}` };
+            }
 
             if (data.wishlist_count !== undefined) {
                 window.dispatchEvent(

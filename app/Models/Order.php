@@ -43,6 +43,9 @@ class Order extends Model
         'payment_screenshot',
         'payment_proof',
         'transaction_id',
+        'payment_date',
+        'payment_time',
+        'payment_note',
         'subtotal',
         'total_amount',
         'delivery_fee',
@@ -56,6 +59,13 @@ class Order extends Model
         'payment_verified_at',
         'rejection_reason',
         'telegram_notified_at',
+        'packaging_id',
+        'packaging_fee',
+        'delivery_service_id',
+        'delivery_days_min',
+        'delivery_days_max',
+        'cod_fee',
+        'idempotency_key',
     ];
 
     protected $casts = [
@@ -64,9 +74,14 @@ class Order extends Model
         'delivery_fee' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'cod_fee' => 'decimal:2',
+        'packaging_fee' => 'decimal:2',
         'stock_reduced' => 'boolean',
         'payment_verified_at' => 'datetime',
+        'payment_date' => 'date',
         'telegram_notified_at' => 'datetime',
+        'delivery_days_min' => 'integer',
+        'delivery_days_max' => 'integer',
     ];
 
     protected $appends = [
@@ -128,6 +143,16 @@ class Order extends Model
     public function promotion()
     {
         return $this->belongsTo(Promotion::class);
+    }
+
+    public function packaging()
+    {
+        return $this->belongsTo(PackagingOption::class, 'packaging_id');
+    }
+
+    public function deliveryService()
+    {
+        return $this->belongsTo(DeliveryService::class, 'delivery_service_id');
     }
 
     public function canCancel(): bool

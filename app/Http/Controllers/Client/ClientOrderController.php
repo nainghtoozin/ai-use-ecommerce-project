@@ -190,7 +190,7 @@ class ClientOrderController extends Controller
                 throw new \Exception('Order not found in database after creation!');
             }
 
-            if ($verifyItems->count() === 0) {
+            if ($verifyOrder->items()->count() === 0) {
                 throw new \Exception('Order items not saved in database!');
             }
 
@@ -364,11 +364,6 @@ class ClientOrderController extends Controller
             return redirect()->back()->with('error', 'You have already confirmed payment for this order.');
         }
 
-        $order->update([
-            'payment_status' => Order::PAYMENT_STATUS_PAID,
-            'transaction_id' => $request->transaction_id ?? null,
-        ]);
-
-        return redirect()->back()->with('success', 'Payment confirmed. We will verify your payment shortly.');
+        return redirect()->back()->with('error', 'Payment confirmation requires admin verification. Your payment proof has been submitted with the order.');
     }
 }

@@ -160,6 +160,24 @@ class PermissionSeeder extends Seeder
             'warehouses.create',
             'warehouses.update',
             'warehouses.delete',
+
+            // Delivery Service Management
+            'delivery-services.view',
+            'delivery-services.create',
+            'delivery-services.update',
+            'delivery-services.delete',
+
+            // Packaging Options Management
+            'packaging-options.view',
+            'packaging-options.create',
+            'packaging-options.update',
+            'packaging-options.delete',
+
+            // COD Rules Management
+            'cod-rules.view',
+            'cod-rules.create',
+            'cod-rules.update',
+            'cod-rules.delete',
         ];
 
         foreach ($permissions as $name) {

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Storefront;
+use App\Models\StorefrontCheckoutConfig;
 use App\Models\StorefrontContent;
 use App\Models\StorefrontDesignToken;
 use App\Models\StorefrontHomepageSection;
@@ -111,7 +112,7 @@ class StorefrontConfigurationResolverTest extends TestCase
             });
         }
 
-        foreach (['categories', 'products', 'brands', 'storefronts', 'storefront_theme_configs', 'storefront_design_tokens', 'storefront_homepage_sections', 'storefront_contents', 'storefront_media'] as $tableName) {
+        foreach (['categories', 'products', 'brands', 'storefronts', 'storefront_theme_configs', 'storefront_design_tokens', 'storefront_homepage_sections', 'storefront_contents', 'storefront_media', 'storefront_checkout_configs'] as $tableName) {
             if (!Schema::hasTable($tableName)) {
                 Schema::create($tableName, function ($table) use ($tableName) {
                     $table->id();
@@ -164,6 +165,8 @@ class StorefrontConfigurationResolverTest extends TestCase
                         $table->string('alt_text')->nullable();
                         $table->json('metadata')->nullable();
                         $table->boolean('is_visible')->default(true);
+                    } elseif ($tableName === 'storefront_checkout_configs') {
+                        $table->json('configuration')->nullable();
                     } else {
                         $table->json('labels')->nullable();
                     }
@@ -1088,5 +1091,188 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertNotNull($resolvedFc, 'featured_categories must exist');
         $categoryNames = array_map(fn($c) => $c['name'], $resolvedFc['data']['categories'] ?? []);
         $this->assertContains('Not Featured', $categoryNames, 'Explicitly selected non-featured category must appear when merchant selects it');
+    }
+
+    public function test_checkout_config_resolver_returns_defaults_when_no_config_saved(): void
+    {
+        $tenant = Tenant::create(['name' => 'Checkout Test Store', 'slug' => 'checkout-test-' . uniqid(), 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Checkout Test', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        $resolver = app(StorefrontConfigurationResolver::class);
+        $config = $resolver->resolve()['checkout'];
+
+        $this->assertIsArray($config);
+        $this->assertEquals('Checkout', $config['title']);
+        $this->assertEquals('Complete your order', $config['subtitle']);
+        $this->assertTrue($config['show_branding']);
+        $this->assertArrayHasKey('sections', $config);
+        $this->assertArrayHasKey('button_labels', $config);
+        $this->assertArrayHasKey('appearance', $config);
+        $this->assertArrayHasKey('layout', $config);
+        $this->assertEquals('Continue to Delivery', $config['button_labels']['continue_to_delivery']);
+        $this->assertEquals('bordered', $config['appearance']['card_style']);
+        $this->assertEquals('right', $config['layout']['order_summary_position']);
+    }
+
+    public function test_checkout_config_resolver_merges_stored_config_with_defaults(): void
+    {
+        $tenant = Tenant::create(['name' => 'Checkout Merge Store', 'slug' => 'checkout-merge-' . uniqid(), 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Checkout Merge', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        StorefrontCheckoutConfig::updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => $tenant->id,
+                'configuration' => [
+                    'title' => 'Custom Checkout Title',
+                    'sections' => [
+                        'address' => ['visible' => false, 'title' => 'My Address', 'order' => 10],
+                    ],
+                    'button_labels' => [
+                        'place_order' => 'Submit My Order',
+                    ],
+                ],
+            ]
+        );
+
+        $resolver = app(StorefrontConfigurationResolver::class);
+        $config = $resolver->resolve()['checkout'];
+
+        $this->assertEquals('Custom Checkout Title', $config['title']);
+        $this->assertEquals('Complete your order', $config['subtitle']);
+        $this->assertFalse($config['sections']['address']['visible']);
+        $this->assertEquals('My Address', $config['sections']['address']['title']);
+        $this->assertEquals(10, $config['sections']['address']['order']);
+        $this->assertEquals('Submit My Order', $config['button_labels']['place_order']);
+        $this->assertEquals('Continue to Delivery', $config['button_labels']['continue_to_delivery']);
+        $this->assertEquals('bordered', $config['appearance']['card_style']);
+    }
+
+    public function test_checkout_config_tenant_isolation(): void
+    {
+        $uniqueA = uniqid('tca_');
+        $uniqueB = uniqid('tcb_');
+        $tenantA = Tenant::create(['name' => 'Tenant A Checkout', 'slug' => 'tenant-a-checkout-' . $uniqueA, 'status' => 'active']);
+        $theme = Theme::firstOrFail();
+
+        app()->instance('current.tenant', $tenantA);
+        WebsiteInfo::create(['tenant_id' => $tenantA->id, 'site_name' => 'Tenant A', 'theme_color' => '#3B82F6']);
+        $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        StorefrontCheckoutConfig::updateOrCreate(
+            ['storefront_id' => $storefrontA->id],
+            [
+                'tenant_id' => $tenantA->id,
+                'configuration' => ['title' => 'Tenant A Checkout'],
+            ]
+        );
+
+        $resolver = app(StorefrontConfigurationResolver::class);
+
+        $configA = $resolver->resolve()['checkout'];
+        $this->assertEquals('Tenant A Checkout', $configA['title']);
+
+        $tenantB = Tenant::create(['name' => 'Tenant B Checkout', 'slug' => 'tenant-b-checkout-' . $uniqueB, 'status' => 'active']);
+        app()->instance('current.tenant', $tenantB);
+        WebsiteInfo::create(['tenant_id' => $tenantB->id, 'site_name' => 'Tenant B', 'theme_color' => '#3B82F6']);
+        $storefrontB = Storefront::create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        $configB = $resolver->resolve()['checkout'];
+        $this->assertEquals('Checkout', $configB['title']);
+    }
+
+    public function test_checkout_config_draft_vs_published(): void
+    {
+        $unique = uniqid('cd_');
+        $tenant = Tenant::create(['name' => 'Checkout Draft Store', 'slug' => 'checkout-draft-' . $unique, 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Checkout Draft', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        StorefrontCheckoutConfig::updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => $tenant->id,
+                'configuration' => ['title' => 'Published Title'],
+            ]
+        );
+
+        $revisionService = app(\App\Services\StorefrontRevisionService::class);
+        $revisionService->prepareDraft($storefront);
+        $revisionService->syncDraft($storefront);
+
+        StorefrontCheckoutConfig::withoutTenantScope()->updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => $tenant->id,
+                'configuration' => ['title' => 'Draft Title'],
+            ]
+        );
+
+        $revisionService->syncDraft($storefront->fresh());
+
+        $resolver = app(StorefrontConfigurationResolver::class);
+        $draftConfig = $resolver->resolve(null, 'draft')['checkout'];
+        $publishedConfig = $resolver->resolve(null, 'published')['checkout'];
+
+        $this->assertEquals('Draft Title', $draftConfig['title']);
+        $this->assertEquals('Published Title', $publishedConfig['title']);
+    }
+
+    public function test_checkout_config_partial_update_preserves_other_values(): void
+    {
+        $unique = uniqid('cp_');
+        $tenant = Tenant::create(['name' => 'Checkout Partial Store', 'slug' => 'checkout-partial-' . $unique, 'status' => 'active']);
+        app()->instance('current.tenant', $tenant);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => 'Checkout Partial', 'theme_color' => '#3B82F6']);
+        $theme = Theme::firstOrFail();
+        $storefront = Storefront::create(['tenant_id' => $tenant->id, 'theme_id' => $theme->id, 'status' => 'active']);
+
+        StorefrontCheckoutConfig::updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => $tenant->id,
+                'configuration' => [
+                    'title' => 'Original Title',
+                    'subtitle' => 'Original Subtitle',
+                    'appearance' => ['card_style' => 'raised', 'section_spacing' => 'relaxed'],
+                    'layout' => ['order_summary_position' => 'left'],
+                ],
+            ]
+        );
+
+        $defaults = StorefrontCheckoutConfig::getDefaults();
+        $partialUpdate = ['title' => 'Updated Title'];
+        $merged = array_replace_recursive($defaults, [
+            'title' => 'Original Title',
+            'subtitle' => 'Original Subtitle',
+            'appearance' => ['card_style' => 'raised', 'section_spacing' => 'relaxed'],
+            'layout' => ['order_summary_position' => 'left'],
+        ]);
+        $merged['title'] = 'Updated Title';
+
+        StorefrontCheckoutConfig::withoutTenantScope()->updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => $tenant->id,
+                'configuration' => $merged,
+            ]
+        );
+
+        $resolver = app(StorefrontConfigurationResolver::class);
+        $config = $resolver->resolve()['checkout'];
+
+        $this->assertEquals('Updated Title', $config['title']);
+        $this->assertEquals('Original Subtitle', $config['subtitle']);
+        $this->assertEquals('raised', $config['appearance']['card_style']);
+        $this->assertEquals('relaxed', $config['appearance']['section_spacing']);
+        $this->assertEquals('left', $config['layout']['order_summary_position']);
     }
 }

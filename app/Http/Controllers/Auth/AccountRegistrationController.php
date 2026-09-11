@@ -49,6 +49,7 @@ class AccountRegistrationController extends Controller
             }
 
             Auth::guard('accounts')->login($existing);
+            $request->session()->regenerate();
 
             if (!$existing->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice')
@@ -77,6 +78,7 @@ class AccountRegistrationController extends Controller
         event(new Registered($account));
 
         Auth::guard('accounts')->login($account);
+        $request->session()->regenerate();
 
         return redirect()->route('verification.notice');
     }
@@ -107,6 +109,7 @@ class AccountRegistrationController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+        $request->session()->regenerate();
 
         return redirect()->route('verification.notice');
     }

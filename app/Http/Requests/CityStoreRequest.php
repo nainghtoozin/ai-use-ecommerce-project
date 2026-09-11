@@ -17,7 +17,7 @@ class CityStoreRequest extends FormRequest
         return [
             'name' => [
                 'required', 'string', 'max:255',
-                Rule::unique('cities', 'name')->where('tenant_id', tenant()?->id),
+                Rule::unique('cities', 'name'),
             ],
             'delivery_fee' => 'required|numeric|min:0',
             'is_active' => 'boolean',

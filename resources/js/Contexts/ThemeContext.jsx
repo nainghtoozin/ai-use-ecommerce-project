@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { adminUrl } from '@/Utils/adminUrl';
+import { csrfHeaders } from '@/Utils/csrf';
 
 const ThemeContext = createContext(undefined);
 
@@ -64,13 +65,11 @@ export function ThemeProvider({ children, initialTheme = 'system' }) {
 
         // Persist to server silently — no navigation, no URL change
         const url = adminUrl('/admin/theme/switch');
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken || '',
-                'X-Requested-With': 'XMLHttpRequest',
+                ...csrfHeaders(),
             },
             body: JSON.stringify({ theme: newTheme }),
         }).catch(() => {

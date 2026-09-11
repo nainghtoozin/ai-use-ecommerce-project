@@ -17,6 +17,7 @@ class DemoDataSeeder extends Seeder
         $this->call([
             ProductSeeder::class,
             OrderSeeder::class,
+            CheckoutDemoDataSeeder::class,
         ]);
 
         $this->command->info('Demo data seeded successfully.');

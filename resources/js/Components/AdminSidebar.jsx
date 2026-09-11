@@ -193,6 +193,7 @@ export default function AdminSidebar() {
                 items: [
                     ...(can('settings.website') && isVis('storefront.overview') ? [{ label: 'Storefront', href: '/admin/storefront', icon: 'LayoutTemplate' }] : []),
                     ...(can('settings.website') && isVis('storefront.homepage') ? [{ label: 'Homepage', href: '/admin/storefront/homepage', icon: 'LayoutList' }] : []),
+                    ...(can('settings.website') && isVis('storefront.checkout') ? [{ label: 'Checkout', href: '/admin/storefront/checkout', icon: 'ShoppingCart' }] : []),
                     ...(can('settings.website') && isVis('storefront.navigation') ? [{ label: 'Header & Navigation', href: '/admin/storefront/navigation', icon: 'Navigation' }] : []),
                     ...(can('settings.website') && isVis('storefront.promotions') ? [{ label: 'Promotions', href: '/admin/storefront/promotions', icon: 'Megaphone' }] : []),
                     ...(can('settings.website') && isVis('storefront.media') ? [{ label: 'Media', href: '/admin/storefront/media', icon: 'Images' }] : []),

@@ -8,6 +8,7 @@ const TABS = [
     ['identity', 'Identity'],
     ['appearance', 'Theme & Appearance'],
     ['labels', 'Content & Labels'],
+    ['checkout', 'Checkout'],
 ];
 
 const LABEL_GROUPS = [
@@ -95,6 +96,7 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
     const [tokens, setTokens] = useState(storefront?.design || {});
     const [resetTokens, setResetTokens] = useState(false);
     const [labels, setLabels] = useState(storefront?.content?.labels || {});
+    const [checkout, setCheckout] = useState(storefront?.checkout || {});
     const [saving, setSaving] = useState(false);
     const [saveErrors, setSaveErrors] = useState({});
     const [saveSuccess, setSaveSuccess] = useState(null);
@@ -130,6 +132,31 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
         }));
 
         Object.entries(labels).forEach(([key, value]) => data.append(`labels[${key}]`, value || ''));
+
+        if (checkout.title) data.append('checkout[title]', checkout.title);
+        if (checkout.subtitle) data.append('checkout[subtitle]', checkout.subtitle);
+        if (checkout.show_branding !== undefined) data.append('checkout[show_branding]', checkout.show_branding ? '1' : '0');
+        if (checkout.sections) {
+            Object.entries(checkout.sections).forEach(([sectionKey, sectionValue]) => {
+                if (sectionValue.visible !== undefined) data.append(`checkout[sections][${sectionKey}][visible]`, sectionValue.visible ? '1' : '0');
+                if (sectionValue.title) data.append(`checkout[sections][${sectionKey}][title]`, sectionValue.title);
+                if (sectionValue.order !== undefined) data.append(`checkout[sections][${sectionKey}][order]`, sectionValue.order);
+            });
+        }
+        if (checkout.button_labels) {
+            Object.entries(checkout.button_labels).forEach(([key, value]) => {
+                if (value) data.append(`checkout[button_labels][${key}]`, value);
+            });
+        }
+        if (checkout.appearance) {
+            if (checkout.appearance.card_style) data.append('checkout[appearance][card_style]', checkout.appearance.card_style);
+            if (checkout.appearance.section_spacing) data.append('checkout[appearance][section_spacing]', checkout.appearance.section_spacing);
+            if (checkout.appearance.compact_mode !== undefined) data.append('checkout[appearance][compact_mode]', checkout.appearance.compact_mode ? '1' : '0');
+        }
+        if (checkout.layout) {
+            if (checkout.layout.order_summary_position) data.append('checkout[layout][order_summary_position]', checkout.layout.order_summary_position);
+            if (checkout.layout.show_order_summary_on_mobile !== undefined) data.append('checkout[layout][show_order_summary_on_mobile]', checkout.layout.show_order_summary_on_mobile ? '1' : '0');
+        }
 
         router.post(adminUrl('/admin/storefront'), data, {
             forceFormData: true,
@@ -202,6 +229,12 @@ export default function StorefrontSettings({ storefront, themes = [], media = []
 
                         {tab === 'labels' && <div className="space-y-6">{LABEL_GROUPS.map((group) => <div key={group.title}><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{group.title}</h3><p className="text-xs text-gray-500 mt-0.5 mb-3">{group.description}</p><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{group.labels.map(([key, fallback]) => <label key={key} className="text-sm font-medium text-gray-700 dark:text-gray-300">{fallback}<input value={labels[key] ?? ''} placeholder={fallback} onChange={(event) => setLabels((current) => ({ ...current, [key]: event.target.value }))} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>)}</div></div>)}</div>}
 
+                        {tab === 'checkout' && (
+                            <div className="space-y-6">
+                                <CheckoutForm checkout={checkout} setCheckout={setCheckout} />
+                            </div>
+                        )}
+
                         {tab !== 'overview' && <div className="flex justify-end mt-8 pt-5 border-t border-gray-200 dark:border-gray-800"><button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">{saving ? 'Saving...' : 'Save Storefront'}</button></div>}
                     </form>
                 </div>
@@ -219,3 +252,151 @@ function IdentityForm({ storefront }) {
 
 function SelectField({ label, value, options, onChange }) { return <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal">{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>; }
 function themeDescription(slug) { return { 'commerce-default': 'Balanced commerce layout with clear actions and elevated product discovery.', 'minimal-store': 'Quiet surfaces, restrained borders, and compact product presentation.', 'elegant-fashion': 'Soft rose accents, generous spacing, rounded controls, and image-led cards.' }[slug] || 'A curated storefront visual preset.'; }
+
+function CheckoutForm({ checkout, setCheckout }) {
+    const { tenant } = usePage().props;
+    const update = (path, value) => setCheckout((prev) => {
+        const next = { ...prev };
+        const keys = path.split('.');
+        let ref = next;
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (!ref[keys[i]]) ref[keys[i]] = {};
+            ref = ref[keys[i]];
+        }
+        ref[keys[keys.length - 1]] = value;
+        return next;
+    });
+
+    const sections = checkout?.sections || {
+        address: { visible: true, title: 'Delivery Address', order: 1 },
+        delivery: { visible: true, title: 'Delivery Options', order: 2 },
+        payment: { visible: true, title: 'Payment Method', order: 3 },
+    };
+
+    const buttonLabels = checkout?.button_labels || {};
+    const appearance = checkout?.appearance || {};
+    const layout = checkout?.layout || {};
+
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Checkout Experience</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Customize the look and feel of your checkout page.</p>
+                </div>
+                {tenant?.slug && <a href={`/store/${tenant.slug}/checkout`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Preview Checkout</a>}
+            </div>
+
+            <div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Page Text</h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">Customize the checkout page heading and description.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Checkout Title<input value={checkout?.title || ''} onChange={(e) => update('title', e.target.value)} placeholder="Checkout" className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Subtitle<input value={checkout?.subtitle || ''} onChange={(e) => update('subtitle', e.target.value)} placeholder="Complete your order" className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>
+                </div>
+            </div>
+
+            <div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Sections</h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">Control which sections appear and their display order.</p>
+                <div className="space-y-3">
+                    {Object.entries(sections).map(([key, section]) => (
+                        <div key={key} className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{key}</span>
+                                <label className="flex items-center gap-2 text-xs text-gray-500">
+                                    <input type="checkbox" checked={section.visible !== false} onChange={(e) => update(`sections.${key}.visible`, e.target.checked)} className="rounded border-gray-300 text-blue-600" />
+                                    Visible
+                                </label>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Section Title<input value={section.title || ''} onChange={(e) => update(`sections.${key}.title`, e.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal text-sm" /></label>
+                                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Display Order<input type="number" min="1" value={section.order || 1} onChange={(e) => update(`sections.${key}.order`, parseInt(e.target.value, 10))} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal text-sm" /></label>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Button Labels</h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">Customize the text on checkout action buttons.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Continue to Delivery<input value={buttonLabels?.continue_to_delivery || ''} onChange={(e) => update('button_labels.continue_to_delivery', e.target.value)} placeholder="Continue to Delivery" className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Continue to Payment<input value={buttonLabels?.continue_to_payment || ''} onChange={(e) => update('button_labels.continue_to_payment', e.target.value)} placeholder="Continue to Payment" className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Place Order<input value={buttonLabels?.place_order || ''} onChange={(e) => update('button_labels.place_order', e.target.value)} placeholder="Place Order" className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>
+                </div>
+            </div>
+
+            <div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Appearance</h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">Adjust the visual style of the checkout page.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <SelectField label="Card Style" value={appearance?.card_style || 'bordered'} options={['bordered', 'raised', 'flat', 'soft']} onChange={(v) => update('appearance.card_style', v)} />
+                    <SelectField label="Section Spacing" value={appearance?.section_spacing || 'normal'} options={['compact', 'normal', 'relaxed']} onChange={(v) => update('appearance.section_spacing', v)} />
+                    <SelectField label="Border Radius" value={appearance?.border_radius || 'medium'} options={['none', 'small', 'medium', 'large']} onChange={(v) => update('appearance.border_radius', v)} />
+                    <SelectField label="Button Style" value={appearance?.button_style || 'solid'} options={['solid', 'outline']} onChange={(v) => update('appearance.button_style', v)} />
+                </div>
+                <div className="mt-4">
+                    <label className="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <input type="checkbox" checked={appearance?.compact_mode || false} onChange={(e) => update('appearance.compact_mode', e.target.checked)} className="rounded border-gray-300 text-blue-600" />
+                        Compact Mode
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Visual Style</h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">Choose a visual preset or customize individual elements.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    {['modern', 'minimal', 'compact'].map((preset) => {
+                        const visual = checkout?.visual || {};
+                        const isActive = (visual.preset || 'modern') === preset;
+                        const presetDescriptions = {
+                            modern: 'Clean borders, medium spacing, rounded corners',
+                            minimal: 'Flat design, tight spacing, sharp corners',
+                            compact: 'Dense layout, smaller elements, efficient space',
+                        };
+                        return (
+                            <button
+                                key={preset}
+                                type="button"
+                                onClick={() => update('visual.preset', preset)}
+                                className={`p-4 rounded-lg border-2 text-left transition-all ${isActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}
+                            >
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{preset}</span>
+                                    {isActive && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
+                                </div>
+                                <p className="text-xs text-gray-500">{presetDescriptions[preset]}</p>
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <input type="checkbox" checked={checkout?.visual?.show_store_logo !== false} onChange={(e) => update('visual.show_store_logo', e.target.checked)} className="rounded border-gray-300 text-blue-600" />
+                        Show Store Logo in Header
+                    </label>
+                    <SelectField label="Order Summary Style" value={checkout?.visual?.order_summary_style || 'card'} options={['card', 'inline']} onChange={(v) => update('visual.order_summary_style', v)} />
+                </div>
+            </div>
+
+            <div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Layout</h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">Control the order summary position and mobile display.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <SelectField label="Order Summary Position" value={layout?.order_summary_position || 'right'} options={['right', 'left', 'bottom']} onChange={(v) => update('layout.order_summary_position', v)} />
+                    <label className="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 pt-6">
+                        <input type="checkbox" checked={layout?.show_order_summary_on_mobile !== false} onChange={(e) => update('layout.show_order_summary_on_mobile', e.target.checked)} className="rounded border-gray-300 text-blue-600" />
+                        Show Order Summary on Mobile
+                    </label>
+                </div>
+            </div>
+
+            <div className="rounded-lg border border-blue-100 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-900 p-4">
+                <p className="text-xs text-blue-700 dark:text-blue-300">Changes are saved as draft and published when you publish your storefront. Business logic (pricing, fees, stock validation, COD eligibility) is server-controlled and cannot be modified here.</p>
+            </div>
+        </div>
+    );
+}

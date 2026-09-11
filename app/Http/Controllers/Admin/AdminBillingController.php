@@ -466,8 +466,8 @@ class AdminBillingController extends Controller
 
     public function changePlanPreview(Request $request, SubscriptionPlanChangeService $planChange)
     {
-        if (!auth()->user()->can('billing.view')) {
-            abort(403);
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403, 'Unauthorized');
         }
 
         $tenant = Tenant::getCurrent();

@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Township extends Model
 {
-    use HasFactory, TenantAware;
+    use HasFactory;
 
     protected $fillable = [
         'city_id',
@@ -35,10 +34,5 @@ class Township extends Model
     public static function getByCity(int $cityId)
     {
         return static::where('city_id', $cityId)->active()->orderBy('name')->get();
-    }
-
-    public static function allowsNullTenantFallback(): bool
-    {
-        return true;
     }
 }
