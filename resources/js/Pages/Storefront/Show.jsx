@@ -223,7 +223,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                 <div className="grid grid-cols-1 lg:grid-cols-[42%_58%] gap-4 lg:gap-6">
                     {/* Image Section */}
                     <div>
-                        <div className="group relative bg-gray-50 dark:bg-gray-950 rounded-xl overflow-hidden aspect-[4/5] max-h-[520px]">
+                        <div className="group relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 aspect-[4/5] max-h-[520px]">
                             {mainImage ? (
                                 <img
                                     src={assetUrl(mainImage)}
@@ -252,15 +252,15 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                         </div>
 
                         {images.length > 1 && (
-                            <div className="flex gap-2 mt-3 overflow-x-auto pb-0.5">
+                            <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-thin">
                                 {images.map((img, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setActiveImage(idx)}
-                                        className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
+                                        className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 shrink-0 ${
                                             activeImage === idx
-                                                ? 'border-indigo-500 shadow-sm'
-                                                : 'border-transparent hover:border-gray-300 opacity-60 hover:opacity-100'
+                                                ? 'border-indigo-500 shadow-sm ring-1 ring-indigo-500/30'
+                                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 opacity-70 hover:opacity-100'
                                         }`}
                                     >
                                         <img

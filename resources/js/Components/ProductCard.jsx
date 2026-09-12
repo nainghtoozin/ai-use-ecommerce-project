@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
@@ -102,7 +102,14 @@ const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo })
         label = 'Single';
     }
     return (
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white dark:bg-gray-900/90 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded-full shadow-sm z-10">
+        <div
+            className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-semibold rounded-full backdrop-blur-sm z-10"
+            style={{
+                backgroundColor: 'color-mix(in srgb, var(--storefront-color-surface, #fff) 85%, transparent)',
+                color: 'var(--storefront-color-text, #111827)',
+                border: '1px solid var(--storefront-color-border, #E5E7EB)',
+            }}
+        >
             {label}
         </div>
     );
@@ -114,26 +121,43 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
 
     if (product.is_variable) {
         if (display === null || display === undefined || !Number.isFinite(Number(display))) {
-            return <div className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Price unavailable</div>;
+            return (
+                <div className="mt-1.5 text-sm" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
+                    Price unavailable
+                </div>
+            );
         }
         return (
             <div className="mt-1.5">
                 <div className="flex items-baseline gap-1 flex-wrap">
                     {label && (
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{label}</span>
+                        <span
+                            className="text-[10px] font-medium uppercase tracking-wide"
+                            style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                        >
+                            {label}
+                        </span>
                     )}
-                    <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
+                    <span
+                        className="text-[17px] font-extrabold leading-tight"
+                        style={{ color: 'var(--storefront-color-text, #111827)' }}
+                    >
                         {formatCurrency(display, cc)}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
+                        {cc.code}
+                    </span>
                 </div>
                 {original && (
-                    <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto block leading-tight">
+                    <span
+                        className="text-xs line-through w-full sm:w-auto block leading-tight"
+                        style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                    >
                         {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
                 {savings > 0 && (
-                    <p className="text-[10px] text-green-600 font-semibold flex items-center gap-1 leading-tight">
+                    <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -148,18 +172,26 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
         return (
             <div className="mt-1.5">
                 <div className="flex items-baseline gap-1 flex-wrap">
-                    <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
+                    <span
+                        className="text-[17px] font-extrabold leading-tight"
+                        style={{ color: 'var(--storefront-color-text, #111827)' }}
+                    >
                         {formatCurrency(display || Number(product.price ?? 0), cc)}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
+                        {cc.code}
+                    </span>
                     {product.display_price_summary?.base_price > 0 && (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto leading-tight">
+                        <span
+                            className="text-xs line-through w-full sm:w-auto leading-tight"
+                            style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                        >
                             {Number(product.display_price_summary.base_price).toLocaleString()} <span className="text-[10px]">{cc.code}</span>
                         </span>
                     )}
                 </div>
                 {product.display_price_summary?.savings > 0 && (
-                    <p className="text-[10px] text-green-600 font-semibold flex items-center gap-1 leading-tight">
+                    <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -167,7 +199,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     </p>
                 )}
                 {savings > 0 && (
-                    <p className="text-[10px] text-green-600 font-semibold flex items-center gap-1 leading-tight">
+                    <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -181,18 +213,26 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
     return (
         <div className="mt-1.5">
             <div className="flex items-baseline gap-1 flex-wrap">
-                    <span className="text-[17px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
+                    <span
+                        className="text-[17px] font-extrabold leading-tight"
+                        style={{ color: 'var(--storefront-color-text, #111827)' }}
+                    >
                         {display || Number(product.price ?? 0).toLocaleString()}
                     </span>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{cc.code}</span>
+                <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
+                    {cc.code}
+                </span>
                 {original && (
-                    <span className="text-xs text-gray-400 dark:text-gray-500 line-through w-full sm:w-auto leading-tight">
+                    <span
+                        className="text-xs line-through w-full sm:w-auto leading-tight"
+                        style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                    >
                         {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
             </div>
             {savings > 0 && (
-                <p className="text-[10px] text-green-600 font-semibold flex items-center gap-1 leading-tight">
+                <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -224,6 +264,55 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
     const [optimisticWishlisted, setOptimisticWishlisted] = useState(
         wishlisted_ids.includes(product.id)
     );
+    const [carouselIndex, setCarouselIndex] = useState(0);
+    const [carouselHovered, setCarouselHovered] = useState(false);
+    const touchStartX = useRef(0);
+
+    const productImages = useMemo(() => {
+        const seen = new Set();
+        const imgs = [];
+        const add = (url) => {
+            if (url && !seen.has(url)) {
+                seen.add(url);
+                imgs.push(url);
+            }
+        };
+        add(product.photo1_url);
+        add(product.photo2_url);
+        if (Array.isArray(product.gallery_images_url)) {
+            product.gallery_images_url.forEach(add);
+        }
+        return imgs;
+    }, [product.photo1_url, product.photo2_url, product.gallery_images_url]);
+
+    const hasMultipleImages = productImages.length > 1;
+
+    const handleCarouselPrev = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCarouselIndex((i) => (i === 0 ? productImages.length - 1 : i - 1));
+    }, [productImages.length]);
+
+    const handleCarouselNext = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCarouselIndex((i) => (i === productImages.length - 1 ? 0 : i + 1));
+    }, [productImages.length]);
+
+    const handleTouchStart = useCallback((e) => {
+        touchStartX.current = e.touches[0].clientX;
+    }, []);
+
+    const handleTouchEnd = useCallback((e) => {
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 40) {
+            if (diff > 0) {
+                setCarouselIndex((i) => (i === productImages.length - 1 ? 0 : i + 1));
+            } else {
+                setCarouselIndex((i) => (i === 0 ? productImages.length - 1 : i - 1));
+            }
+        }
+    }, [productImages.length]);
 
     useEffect(() => {
         setOptimisticWishlisted(wishlisted_ids.includes(product.id));
@@ -272,29 +361,79 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
     };
 
     return (
-        <div style={{ borderRadius: 'var(--storefront-radius-card, 0.75rem)', boxShadow: 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .1))' }} className="group relative min-w-0 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800/80 hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden flex flex-col"
-             onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; }}
-             onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
+        <div
+            className="group relative min-w-0 flex flex-col overflow-hidden transition-all duration-300"
+            style={{
+                borderRadius: 'var(--storefront-radius-card, 0.75rem)',
+                boxShadow: 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .08))',
+                backgroundColor: 'var(--storefront-color-surface, #FFFFFF)',
+                border: '1px solid var(--storefront-color-border, #E5E7EB)',
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px -2px rgb(0 0 0 / .1), 0 0 0 1px var(--theme-color, #3B82F6)';
+                e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .08))';
+                e.currentTarget.style.borderColor = 'var(--storefront-color-border, #E5E7EB)';
+            }}
         >
             <Link href={productUrl} className="block">
-                <div className={`relative ${productVariant === 'compact' ? 'h-[160px] sm:h-[136px] lg:h-[150px]' : productVariant === 'image-focused' ? 'h-[240px] sm:h-[200px] lg:h-[230px]' : 'h-[200px] sm:h-[160px] lg:h-[180px]'} bg-gray-100 dark:bg-gray-800 overflow-hidden`}>
-                    {product.photo1_url && !imageError ? (
+                <div
+                    className={`relative ${productVariant === 'compact' ? 'h-[160px] sm:h-[136px] lg:h-[150px]' : productVariant === 'image-focused' ? 'h-[240px] sm:h-[200px] lg:h-[230px]' : 'h-[200px] sm:h-[160px] lg:h-[180px]'} overflow-hidden`}
+                    style={{ backgroundColor: 'var(--storefront-color-surface-muted, #F1F5F9)' }}
+                    onMouseEnter={hasMultipleImages ? () => setCarouselHovered(true) : undefined}
+                    onMouseLeave={hasMultipleImages ? () => setCarouselHovered(false) : undefined}
+                    onTouchStart={hasMultipleImages ? handleTouchStart : undefined}
+                    onTouchEnd={hasMultipleImages ? handleTouchEnd : undefined}
+                >
+                    {productImages.length > 0 ? (
                         <>
-                            <img
-                                src={product.photo1_url}
-                                alt={product.name}
-                                width="360"
-                                height="360"
-                                className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                                    imageLoaded ? 'opacity-100' : 'opacity-0'
-                                }`}
-                                onLoad={() => setImageLoaded(true)}
-                                onError={() => setImageError(true)}
-                            />
-                            {!imageLoaded && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-6 h-6 border-2 border-gray-200 dark:border-gray-800 rounded-full animate-spin" style={{ borderTopColor: 'var(--theme-color, #3B82F6)' }}></div>
-                                </div>
+                            {productImages.map((img, idx) => (
+                                <img
+                                    key={img}
+                                    src={img}
+                                    alt={product.name}
+                                    width="360"
+                                    height="360"
+                                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
+                                        idx === carouselIndex
+                                            ? 'opacity-100 scale-100 z-10'
+                                            : 'opacity-0 scale-105 z-0 pointer-events-none'
+                                    }`}
+                                    onLoad={() => { if (idx === 0) setImageLoaded(true); }}
+                                    onError={() => { if (idx === 0) setImageError(true); }}
+                                />
+                            ))}
+                            {hasMultipleImages && (
+                                <>
+                                    <button
+                                        onClick={handleCarouselPrev}
+                                        className={`absolute left-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center text-xs transition-opacity duration-200 ${carouselHovered ? 'opacity-100' : 'opacity-0'} hover:bg-black/50`}
+                                        aria-label="Previous image"
+                                    >
+                                        &#8249;
+                                    </button>
+                                    <button
+                                        onClick={handleCarouselNext}
+                                        className={`absolute right-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center text-xs transition-opacity duration-200 ${carouselHovered ? 'opacity-100' : 'opacity-0'} hover:bg-black/50`}
+                                        aria-label="Next image"
+                                    >
+                                        &#8250;
+                                    </button>
+                                    <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1 z-20 pointer-events-none">
+                                        {productImages.map((_, idx) => (
+                                            <span
+                                                key={idx}
+                                                className={`block rounded-full transition-all duration-200 ${
+                                                    idx === carouselIndex
+                                                        ? 'w-3.5 h-1.5 bg-white'
+                                                        : 'w-1.5 h-1.5 bg-white/50'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
                             )}
                         </>
                     ) : (
@@ -346,15 +485,27 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
             <div className="p-3 flex flex-col gap-0">
                 <Link href={productUrl}>
                     {product.category?.name && (
-                        <span className="inline-block max-w-[8rem] truncate px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] font-medium rounded-full mb-1">
+                        <span
+                            className="inline-block max-w-[8rem] truncate px-2 py-0.5 text-[10px] font-medium rounded-full mb-1.5"
+                            style={{
+                                backgroundColor: 'var(--storefront-color-surface-muted, #F1F5F9)',
+                                color: 'var(--storefront-color-muted, #6B7280)',
+                            }}
+                        >
                             {product.category.name}
                         </span>
                     )}
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug group-hover:text-theme transition-colors">
+                    <h3
+                        className="text-[13px] font-semibold leading-snug line-clamp-2 transition-colors"
+                        style={{ color: 'var(--storefront-color-text, #111827)' }}
+                    >
                         {product.name}
                     </h3>
                     {product.brand?.name && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p
+                            className="text-[11px] mt-0.5 leading-tight"
+                            style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                        >
                             {product.brand.name}
                         </p>
                     )}
@@ -363,18 +514,38 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                 <PriceDisplay product={product} displayPrice={displayPrice} />
 
                 {!isOutOfStock && (
-                    <p className={`text-[11px] font-medium mt-1 leading-tight ${
-                        stockStatus === 'low_stock' ? 'text-orange-600' : 'text-green-600'
-                    }`}>
-                        {stockStatus === 'low_stock' ? 'Low Stock' : 'In Stock'}
-                    </p>
+                    <div className="flex items-center gap-1 mt-1.5">
+                        <span
+                            className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{
+                                backgroundColor: stockStatus === 'low_stock'
+                                    ? 'var(--storefront-color-warning, #D97706)'
+                                    : 'var(--storefront-color-success, #16A34A)',
+                            }}
+                        />
+                        <p
+                            className="text-[11px] font-medium leading-tight"
+                            style={{
+                                color: stockStatus === 'low_stock'
+                                    ? 'var(--storefront-color-warning, #D97706)'
+                                    : 'var(--storefront-color-success, #16A34A)',
+                            }}
+                        >
+                            {stockStatus === 'low_stock' ? 'Low Stock' : 'In Stock'}
+                        </p>
+                    </div>
                 )}
 
-                <div className="mt-2.5 space-y-1.5">
+                <div className="mt-3 space-y-1.5">
                     {isOutOfStock ? (
                         <button
                             disabled
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium cursor-not-allowed"
+                            style={{
+                                backgroundColor: 'var(--storefront-color-surface-muted, #F1F5F9)',
+                                color: 'var(--storefront-color-muted, #6B7280)',
+                                borderRadius: 'var(--storefront-radius-button, 0.5rem)',
+                            }}
                         >
                             <i className="bi bi-x-circle text-xs"></i>
                             {labels.out_of_stock || 'Out of Stock'}
@@ -383,10 +554,22 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                         <button
                             onClick={handleAddToCart}
                             disabled={addingId === product.id || isAdding}
-                            className={`w-full flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow ${buttonStyle === 'outline' || buttonStyle === 'ghost' ? '' : 'text-white'}`}
-                            style={{ backgroundColor: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'transparent' : 'var(--theme-color, #3B82F6)', color: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'var(--theme-color, #3B82F6)' : '#fff', border: buttonStyle === 'outline' ? '1px solid var(--theme-color, #3B82F6)' : '1px solid transparent', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}
-                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                            className={`w-full flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200`}
+                            style={{
+                                backgroundColor: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'transparent' : 'var(--theme-color, #3B82F6)',
+                                color: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'var(--theme-color, #3B82F6)' : '#fff',
+                                border: buttonStyle === 'outline' ? '1px solid var(--theme-color, #3B82F6)' : '1px solid transparent',
+                                borderRadius: 'var(--storefront-radius-button, 0.5rem)',
+                                boxShadow: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'none' : '0 1px 3px rgb(0 0 0 / .1)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.opacity = '0.9';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgb(0 0 0 / .15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.opacity = '1';
+                                e.currentTarget.style.boxShadow = buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'none' : '0 1px 3px rgb(0 0 0 / .1)';
+                            }}
                         >
                             {addingId === product.id || isAdding ? (
                                 <>
@@ -407,9 +590,19 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                     <Link
                         href={productUrl}
                         className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border text-xs font-semibold transition-all duration-200"
-                        style={{ borderColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)', color: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; e.currentTarget.style.backgroundColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.06)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)'; e.currentTarget.style.backgroundColor = ''; }}
+                        style={{
+                            borderColor: 'var(--storefront-color-border, #E5E7EB)',
+                            color: 'var(--theme-color, #3B82F6)',
+                            borderRadius: 'var(--storefront-radius-button, 0.5rem)',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)';
+                            e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--theme-color, #3B82F6) 5%, transparent)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--storefront-color-border, #E5E7EB)';
+                            e.currentTarget.style.backgroundColor = '';
+                        }}
                     >
                         <i className="bi bi-eye text-xs"></i>
                         {labels.view_product || 'View Product'}
