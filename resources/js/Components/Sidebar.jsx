@@ -86,8 +86,8 @@ export default function Sidebar({ categories, selectedCategory, onCategoryChange
             </aside>
 
             <div className="hidden lg:block w-64 flex-shrink-0">
-                <div className="sticky top-20">
-                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <div className="lg:sticky lg:top-[220px]">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 max-h-[calc(100vh-240px)] overflow-y-auto">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">
                             {labels.categories || 'Categories'}
                         </h3>

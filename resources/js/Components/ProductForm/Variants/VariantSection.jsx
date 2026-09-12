@@ -72,7 +72,8 @@ export default function VariantSection({ variants, setVariants }) {
 
         const newVariants = combos.map((combo) => {
             const existing = variants.find((v) => {
-                return combo.every((val, i) => v[`option${i + 1}`] === val);
+                return v.options && v.options.length === combo.length
+                    && combo.every((val, i) => v.options[i] === val);
             });
 
             if (existing) {

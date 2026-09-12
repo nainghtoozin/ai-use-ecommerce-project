@@ -3,6 +3,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -276,7 +277,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
              onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
         >
             <Link href={productUrl} className="block">
-                <div className={`relative ${productVariant === 'compact' ? 'h-[112px] sm:h-[136px] lg:h-[150px]' : productVariant === 'image-focused' ? 'h-[170px] sm:h-[200px] lg:h-[230px]' : 'h-[140px] sm:h-[160px] lg:h-[180px]'} bg-gray-100 dark:bg-gray-800 overflow-hidden`}>
+                <div className={`relative ${productVariant === 'compact' ? 'h-[160px] sm:h-[136px] lg:h-[150px]' : productVariant === 'image-focused' ? 'h-[240px] sm:h-[200px] lg:h-[230px]' : 'h-[200px] sm:h-[160px] lg:h-[180px]'} bg-gray-100 dark:bg-gray-800 overflow-hidden`}>
                     {product.photo1_url && !imageError ? (
                         <>
                             <img
@@ -297,12 +298,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                             )}
                         </>
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                                <i className="bi bi-image text-2xl text-gray-300"></i>
-                                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">No Image</p>
-                            </div>
-                        </div>
+                        <ProductImagePlaceholder className="absolute inset-0" />
                     )}
 
                     <StockBadge status={stockStatus} labels={labels} />
@@ -378,7 +374,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                     {isOutOfStock ? (
                         <button
                             disabled
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
                         >
                             <i className="bi bi-x-circle text-xs"></i>
                             {labels.out_of_stock || 'Out of Stock'}
@@ -387,7 +383,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                         <button
                             onClick={handleAddToCart}
                             disabled={addingId === product.id || isAdding}
-                            className={`w-full flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow ${buttonStyle === 'outline' || buttonStyle === 'ghost' ? '' : 'text-white'}`}
+                            className={`w-full flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow ${buttonStyle === 'outline' || buttonStyle === 'ghost' ? '' : 'text-white'}`}
                             style={{ backgroundColor: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'transparent' : 'var(--theme-color, #3B82F6)', color: buttonStyle === 'outline' || buttonStyle === 'ghost' ? 'var(--theme-color, #3B82F6)' : '#fff', border: buttonStyle === 'outline' ? '1px solid var(--theme-color, #3B82F6)' : '1px solid transparent', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}
                             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
@@ -410,7 +406,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                     )}
                     <Link
                         href={productUrl}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border text-xs font-semibold transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border text-xs font-semibold transition-all duration-200"
                         style={{ borderColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)', color: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' }}
                         onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--theme-color, #3B82F6)'; e.currentTarget.style.backgroundColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.06)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.25)'; e.currentTarget.style.backgroundColor = ''; }}

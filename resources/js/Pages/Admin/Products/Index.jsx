@@ -5,6 +5,7 @@ import { adminUrl } from '@/Utils/adminUrl';
 import PerPageSelect from '@/Components/PerPageSelect';
 import ImportWizard from '@/Components/ImportWizard';
 import ExportDialog from '@/Components/ExportDialog';
+import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 import {
     Package,
     Gift,
@@ -554,8 +555,8 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                                                 className="w-11 h-11 rounded-lg object-cover border border-gray-200 dark:border-gray-800 group-hover:border-gray-300 transition-colors"
                                                             />
                                                         ) : (
-                                                            <div className="w-11 h-11 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 flex items-center justify-center group-hover:bg-gray-150 transition-colors">
-                                                                <Package className="w-5 h-5 text-gray-300" />
+                                                            <div className="w-11 h-11 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 group-hover:bg-gray-150 transition-colors">
+                                                                <ProductImagePlaceholder className="w-full h-full" compact />
                                                             </div>
                                                         )}
                                                     </Link>

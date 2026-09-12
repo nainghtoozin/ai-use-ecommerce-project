@@ -381,10 +381,16 @@ class ProductService
                 $incomingIds[] = $variantData['id'];
             } else {
                 // Check for duplicate attribute combination before creating
+                // Use sorted keys for order-independent comparison
                 $newAttrs = $variantData['attributes'] ?? [];
+                ksort($newAttrs);
+                $newKey = json_encode($newAttrs);
+
                 $allVariants = $product->variants()->get();
-                $duplicate = $allVariants->first(function ($v) use ($newAttrs) {
-                    return json_encode($v->getAttribute('attributes')) === json_encode($newAttrs);
+                $duplicate = $allVariants->first(function ($v) use ($newKey) {
+                    $attrs = $v->getAttribute('attributes') ?? [];
+                    ksort($attrs);
+                    return json_encode($attrs) === $newKey;
                 });
                 if ($duplicate) {
                     throw new \InvalidArgumentException(

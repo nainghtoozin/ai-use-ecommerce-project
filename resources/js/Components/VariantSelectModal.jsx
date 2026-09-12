@@ -2,6 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
+function getVariantLabel(variant) {
+    const attrs = variant.attributes;
+    if (attrs && typeof attrs === 'object' && Object.keys(attrs).length > 0) {
+        return Object.values(attrs).join(' / ');
+    }
+    return variant.label || `Variant #${variant.id}`;
+}
+
 export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     const { platform_setting, website_info, storefront } = usePage().props;
     const labels = storefront?.content?.labels || {};
@@ -99,7 +107,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                     </p>
                                     <div className="space-y-2">
                                         {variants.map(v => {
-                                            const label = v.label || `Variant #${v.id}`;
+                                            const label = getVariantLabel(v);
                                             const inStock = Number(v.stock ?? 0) > 0;
                                             return (
                                                 <label

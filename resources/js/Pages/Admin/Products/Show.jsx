@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
+import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 import { usePermission } from '@/Hooks/usePermission';
 import {
     Eye,
@@ -164,9 +165,11 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                             />
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 mb-4">
-                                            <Eye className="w-8 h-8 text-gray-300 mb-2" />
-                                            <p className="text-sm text-gray-400 dark:text-gray-500">No featured image</p>
+                                        <div className="mb-4">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Featured Image</p>
+                                            <div className="w-full max-w-md h-48 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                                                <ProductImagePlaceholder className="w-full h-full" />
+                                            </div>
                                         </div>
                                     )}
 
