@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorefrontPromotionRequest;
+use App\Models\Promotion;
 use App\Models\PromotionBanner;
 use App\Models\Storefront;
 use App\Models\StorefrontMedia;
@@ -24,10 +25,17 @@ class StorefrontPromotionController extends Controller
     {
         $storefront = $this->storefront();
         $this->revisionService->prepareDraft($storefront);
+        $tenantId = tenant()->id;
 
         return Inertia::render('Admin/Storefront/Promotions', [
-            'promotions' => PromotionBanner::with('storefrontMedia')->orderBy('position')->latest()->paginate(12)->withQueryString(),
+            'promotions' => PromotionBanner::with(['storefrontMedia', 'promotion'])
+                ->where('tenant_id', $tenantId)
+                ->orderBy('position')->latest()->paginate(12)->withQueryString(),
             'media' => StorefrontMedia::where('storefront_id', $storefront->id)->latest()->get(['id', 'path', 'alt_text'])->append('url'),
+            'availablePromotions' => Promotion::where('tenant_id', $tenantId)
+                ->active()
+                ->orderBy('name')
+                ->get(['id', 'name', 'code', 'type', 'value']),
         ]);
     }
 
@@ -98,6 +106,14 @@ class StorefrontPromotionController extends Controller
             $data['storefront_media_id'] = StorefrontMedia::where('storefront_id', $storefront->id)
                 ->whereKey($data['storefront_media_id'])->value('id');
             abort_unless($data['storefront_media_id'], 422, 'The selected media does not belong to this storefront.');
+        }
+
+        if (!empty($data['promotion_id'])) {
+            $data['promotion_id'] = Promotion::where('tenant_id', tenant()->id)
+                ->whereKey($data['promotion_id'])->value('id');
+            abort_unless($data['promotion_id'], 422, 'The selected promotion does not exist.');
+        } else {
+            $data['promotion_id'] = null;
         }
 
         if (!empty($data['link']) && !str_starts_with($data['link'], '/') && !preg_match('#^https?://#i', $data['link'])) {

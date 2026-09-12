@@ -15,6 +15,7 @@ class PromotionBanner extends Model
 
     protected $fillable = [
         'tenant_id',
+        'promotion_id',
         'title',
         'description',
         'image',
@@ -55,6 +56,11 @@ class PromotionBanner extends Model
     public function storefrontMedia()
     {
         return $this->belongsTo(StorefrontMedia::class, 'storefront_media_id');
+    }
+
+    public function promotion()
+    {
+        return $this->belongsTo(Promotion::class);
     }
 
     public function scopeActive($query)

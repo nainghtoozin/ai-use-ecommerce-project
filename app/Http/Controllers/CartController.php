@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\Coupon;
-use App\Services\CouponService;
 use App\Services\FeatureGate;
 use App\Services\PromotionService;
 use App\Services\ProductService;
@@ -16,7 +14,6 @@ use Inertia\Inertia;
 class CartController extends Controller
 {
     public function __construct(
-        private readonly CouponService $couponService,
         private readonly PromotionService $promotionService,
         private readonly ProductService $productService
     ) {}
@@ -56,169 +53,80 @@ class CartController extends Controller
         ]);
 
         $cart = session()->get('cart', []);
-        $productId = $request->product_id;
-        $variantId = $request->variant_id;
-        $quantity = $request->quantity;
+        $key = $this->buildCartKey($request->product_id, $request->variant_id);
 
-        $purchasable = $this->productService->resolvePurchasable($productId, $variantId);
-
-        if ($purchasable['stock'] < $quantity) {
-            return response()->json([
-                'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
-            ], 422);
-        }
-
-        $cartKey = $this->buildCartKey($productId, $variantId);
-        $productName = $purchasable['name'];
-
-        if (isset($cart[$cartKey])) {
-            $newQty = $cart[$cartKey]['quantity'] + $quantity;
-            if ($purchasable['stock'] < $newQty) {
-                return response()->json([
-                    'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
-                ], 422);
-            }
-            $cart[$cartKey]['quantity'] = $newQty;
+        if (isset($cart[$key])) {
+            $cart[$key]['quantity'] += $request->quantity;
         } else {
-            $cart[$cartKey] = [
-                'id' => $purchasable['product_id'],
-                'product_id' => $purchasable['product_id'],
-                'variant_id' => $purchasable['variant_id'],
-                'name' => $purchasable['name'],
-                'price' => $purchasable['price'],
-                'photo1' => $purchasable['photo1'],
-                'quantity' => $quantity,
+            $product = Product::find($request->product_id);
+            $price = $product->price;
+
+            if ($request->variant_id) {
+                $variant = ProductVariant::find($request->variant_id);
+                if ($variant) {
+                    $price = $variant->price;
+                }
+            }
+
+            $cart[$key] = [
+                'product_id' => $request->product_id,
+                'variant_id' => $request->variant_id,
+                'quantity' => $request->quantity,
+                'price' => $price,
             ];
         }
 
         session()->put('cart', $cart);
-        
-        $cartCount = array_sum(array_column($cart, 'quantity'));
 
-        if ($request->header('X-Inertia')) {
-            return redirect()->route('cart.index')
-                ->with('success', '"' . $productName . '" added to cart successfully.');
-        }
-
-        return response()->json([
-            'success' => '"' . $productName . '" added to cart successfully.',
-            'cart_count' => $cartCount,
-        ]);
+        $count = array_sum(array_column($cart, 'quantity'));
+        return response()->json(['count' => $count]);
     }
 
-    public function update(Request $request, $cartKey)
+    public function update(Request $request, string $key)
     {
         $request->validate([
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$cartKey])) {
-            if ($request->quantity <= 0) {
-                $itemName = $cart[$cartKey]['name'] ?? 'Item';
-                unset($cart[$cartKey]);
-                session()->put('cart', $cart);
-                
-                $cartItems = $this->formatCartItems($cart);
-                $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
-
-                return response()->json([
-                    'success' => '"' . $itemName . '" removed from cart.',
-                    'cartItems' => $cartItems,
-                    'subtotal' => $subtotal,
-                ]);
-            } else {
-                $item = $cart[$cartKey];
-                $purchasable = $this->productService->resolvePurchasable(
-                    $item['product_id'],
-                    $item['variant_id'] ?? null
-                );
-
-                if ($purchasable['stock'] < $request->quantity) {
-                    return response()->json([
-                        'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
-                    ], 422);
-                }
-
-                $cart[$cartKey]['quantity'] = $request->quantity;
-                session()->put('cart', $cart);
-                
-                $cartItems = $this->formatCartItems($cart);
-                $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
-
-                return response()->json([
-                    'cartItems' => $cartItems,
-                    'subtotal' => $subtotal,
-                ]);
-            }
-        }
-
-        return response()->json(['error' => 'Item not found in cart.'], 422);
-    }
-
-    public function destroy($cartKey)
-    {
-        $cart = session()->get('cart', []);
-        
-        if (isset($cart[$cartKey])) {
-            $itemName = $cart[$cartKey]['name'] ?? 'Item';
-            unset($cart[$cartKey]);
+        if (isset($cart[$key])) {
+            $cart[$key]['quantity'] = $request->quantity;
             session()->put('cart', $cart);
-            
-            $cartItems = $this->formatCartItems($cart);
-            $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
-
-            return response()->json([
-                'success' => '"' . $itemName . '" removed from cart.',
-                'cartItems' => $cartItems,
-                'subtotal' => $subtotal,
-            ]);
         }
 
-        return response()->json(['error' => 'Item not found in cart.'], 422);
+        $count = array_sum(array_column($cart, 'quantity'));
+        return response()->json(['count' => $count]);
     }
 
-    public function clear(Request $request)
-    {
-        session()->forget('cart');
-
-        if ($request->header('X-Inertia')) {
-            return redirect()->back()->with('success', 'Cart cleared successfully.');
-        }
-
-        return response()->json([
-            'success' => 'Cart cleared successfully.',
-            'cartItems' => [],
-            'subtotal' => 0,
-        ]);
-    }
-
-    public function count()
+    public function destroy(string $key)
     {
         $cart = session()->get('cart', []);
+        unset($cart[$key]);
+        session()->put('cart', $cart);
+
         $count = array_sum(array_column($cart, 'quantity'));
         return response()->json(['count' => $count]);
     }
 
     public function applyCoupon(Request $request)
     {
-        if (!FeatureGate::enabled('coupons')) {
+        if (!FeatureGate::enabled('coupons') && !FeatureGate::enabled('promotions')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Coupons feature is not available on your current plan.',
+                'message' => 'Discount features are not available on your current plan.',
             ], 403);
         }
 
         $request->validate(['code' => 'required|string|max:50']);
 
         $cart = session()->get('cart', []);
-        $cartItems = collect($this->formatCartItems($cart));
+        $cartItems = $this->formatCartItems($cart);
         $deliveryFee = (float) $request->input('delivery_fee', 0);
 
-        $result = $this->couponService->validateCoupon(
+        $result = $this->promotionService->validateCouponCode(
             $request->code,
-            $cartItems,
+            collect($cartItems),
             auth()->id(),
             $deliveryFee
         );
@@ -231,19 +139,19 @@ class CartController extends Controller
         }
 
         session()->put('applied_coupon', [
-            'code' => $result['coupon']->code,
-            'coupon_id' => $result['coupon']->id,
-            'type' => $result['coupon']->type,
+            'code' => $result['promotion']->code,
+            'promotion_id' => $result['promotion']->id,
+            'type' => $result['promotion']->type,
             'discount' => $result['discount'],
-            'name' => $result['coupon']->name,
+            'name' => $result['promotion']->name,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => $result['message'],
             'discount' => $result['discount'],
-            'coupon_code' => $result['coupon']->code,
-            'coupon_name' => $result['coupon']->name,
+            'coupon_code' => $result['promotion']->code,
+            'coupon_name' => $result['promotion']->name,
         ]);
     }
 

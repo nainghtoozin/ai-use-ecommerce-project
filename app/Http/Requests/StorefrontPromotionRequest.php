@@ -17,6 +17,7 @@ class StorefrontPromotionRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'storefront_media_id' => ['nullable', 'integer'],
+            'promotion_id' => ['nullable', 'integer', 'exists:promotions,id'],
             'cta_label' => ['nullable', 'string', 'max:100'],
             'link' => ['nullable', 'string', 'max:500'],
             'is_active' => ['required', 'boolean'],

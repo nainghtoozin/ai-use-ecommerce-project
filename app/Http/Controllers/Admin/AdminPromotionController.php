@@ -36,6 +36,7 @@ class AdminPromotionController extends Controller
             'active' => Promotion::where('is_active', true)->count(),
             'expired' => Promotion::where('ends_at', '<', now())->count(),
             'auto' => Promotion::where('is_automatic', true)->count(),
+            'coupons' => Promotion::where('is_automatic', false)->whereNotNull('code')->count(),
         ];
 
         return Inertia::render('Admin/Promotions/Index', [
@@ -86,7 +87,8 @@ class AdminPromotionController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'code' => [
-                'nullable', 'string', 'max:50',
+                $request->boolean('is_automatic') ? 'nullable' : 'required',
+                'string', 'max:50',
                 Rule::unique('promotions', 'code')->where('tenant_id', tenant()?->id),
             ],
             'type' => 'required|in:percentage,fixed,free_shipping',
@@ -107,6 +109,10 @@ class AdminPromotionController extends Controller
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
         ]);
+
+        if (!$request->boolean('is_automatic') && !empty($data['code'])) {
+            $data['code'] = strtoupper($data['code']);
+        }
 
         $data['created_by'] = auth()->id();
 
@@ -167,7 +173,8 @@ class AdminPromotionController extends Controller
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'code' => [
-                'nullable', 'string', 'max:50',
+                $request->boolean('is_automatic') ? 'nullable' : 'required',
+                'string', 'max:50',
                 Rule::unique('promotions', 'code')->where('tenant_id', tenant()?->id)->ignore($promotion->id),
             ],
             'type' => 'sometimes|in:percentage,fixed,free_shipping',
@@ -188,6 +195,10 @@ class AdminPromotionController extends Controller
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
         ]);
+
+        if (isset($data['is_automatic']) && !$data['is_automatic'] && !empty($data['code'])) {
+            $data['code'] = strtoupper($data['code']);
+        }
 
         $promotion->update($data);
 
@@ -256,6 +267,7 @@ class AdminPromotionController extends Controller
             'active' => Promotion::where('is_active', true)->count(),
             'expired' => Promotion::where('ends_at', '<', now())->count(),
             'auto' => Promotion::where('is_automatic', true)->count(),
+            'coupons' => Promotion::where('is_automatic', false)->whereNotNull('code')->count(),
         ];
 
         return Inertia::render('Admin/Promotions/Index', [

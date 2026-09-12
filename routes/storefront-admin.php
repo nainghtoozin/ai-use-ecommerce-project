@@ -291,6 +291,8 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/coupons/{coupon}', [AdminCouponController::class, 'update'])->name('coupons.update')->whereNumber('coupon');
         Route::delete('/coupons/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy')->whereNumber('coupon');
         Route::get('/coupons/search', [AdminCouponController::class, 'search'])->name('coupons.search');
+        Route::post('/coupons/{coupon}/toggle', [AdminCouponController::class, 'toggle'])->name('coupons.toggle')->whereNumber('coupon');
+        Route::post('/coupons/{coupon}/duplicate', [AdminCouponController::class, 'duplicate'])->name('coupons.duplicate')->whereNumber('coupon');
 
         // Payment Methods
         Route::get('/payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');

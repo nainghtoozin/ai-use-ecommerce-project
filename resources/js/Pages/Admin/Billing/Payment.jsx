@@ -629,7 +629,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => router.get(adminUrl('/admin/billing/checkout'), {}, { preserveState: false })}
+                                        onClick={() => router.get(adminUrl(`/admin/billing/checkout/${selectedPlan?.slug || ''}`), {}, { preserveState: false })}
                                         className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                                     >
                                         <ArrowLeft className="w-4 h-4" />

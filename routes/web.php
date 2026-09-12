@@ -330,6 +330,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     Route::get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'index'])->name('billing');
     Route::get('/billing/subscription', [\App\Http\Controllers\Admin\AdminBillingController::class, 'subscription'])->name('billing.subscription');
     Route::get('/billing/upgrade', [\App\Http\Controllers\Admin\AdminBillingController::class, 'upgrade'])->name('billing.upgrade');
+    Route::get('/billing/checkout/{plan}', [\App\Http\Controllers\Admin\AdminBillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('/billing/payment', [\App\Http\Controllers\Admin\AdminBillingController::class, 'payment'])->name('billing.payment');
+    Route::post('/billing/payment/submit', [\App\Http\Controllers\Admin\AdminBillingController::class, 'paymentSubmit'])->name('billing.payment.submit');
     Route::get('/billing/payment-history', [\App\Http\Controllers\Admin\AdminBillingController::class, 'paymentHistory'])->name('billing.payment-history');
     Route::get('/billing/settings', [\App\Http\Controllers\Admin\AdminBillingController::class, 'settings'])->name('billing.settings');
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
@@ -501,6 +504,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::put('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'update'])->name('coupons.update');
         Route::delete('/coupons/{coupon}', [\App\Http\Controllers\Admin\AdminCouponController::class, 'destroy'])->name('coupons.destroy');
         Route::get('/coupons/search', [\App\Http\Controllers\Admin\AdminCouponController::class, 'search'])->name('coupons.search');
+        Route::post('/coupons/{coupon}/toggle', [\App\Http\Controllers\Admin\AdminCouponController::class, 'toggle'])->name('coupons.toggle');
+        Route::post('/coupons/{coupon}/duplicate', [\App\Http\Controllers\Admin\AdminCouponController::class, 'duplicate'])->name('coupons.duplicate');
 
         // Inventory
         Route::get('/inventory/dashboard', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');

@@ -107,6 +107,17 @@ class Promotion extends Model
             ->whereNotNull('code');
     }
 
+    public function scopeCodeBased(Builder $query): Builder
+    {
+        return $query->where('is_automatic', false)
+            ->whereNotNull('code');
+    }
+
+    public function isCodeBased(): bool
+    {
+        return !$this->is_automatic && $this->code !== null;
+    }
+
     public function isCurrentlyActive(): bool
     {
         if (!$this->is_active) {

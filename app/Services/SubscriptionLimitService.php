@@ -261,8 +261,10 @@ class SubscriptionLimitService
         if (!$tenant) {
             return 0;
         }
-        return Coupon::withoutTenantScope()
+        return Promotion::withoutTenantScope()
             ->where('tenant_id', $tenant->id)
+            ->where('is_automatic', false)
+            ->whereNotNull('code')
             ->count();
     }
 

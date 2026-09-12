@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Coupon;
+use App\Models\Promotion;
 use App\Models\Category;
 use App\Models\Product;
-use App\Services\CouponService;
 use App\Services\FeatureGate;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
@@ -15,9 +14,13 @@ use Inertia\Inertia;
 
 class AdminCouponController extends Controller
 {
-    public function __construct(
-        private readonly CouponService $couponService
-    ) {}
+    private function codeBasedPromotions()
+    {
+        return Promotion::withoutTenantScope()
+            ->where('tenant_id', tenantId())
+            ->where('is_automatic', false)
+            ->whereNotNull('code');
+    }
 
     public function index()
     {
@@ -32,7 +35,8 @@ class AdminCouponController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $coupons = Coupon::withCount(['products', 'categories'])
+        $coupons = $this->codeBasedPromotions()
+            ->withCount(['products', 'categories'])
             ->latest()
             ->paginate(15);
 
@@ -83,31 +87,35 @@ class AdminCouponController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'code' => [
-                'nullable', 'string', 'max:50',
-                Rule::unique('coupons', 'code')->where('tenant_id', tenant()?->id),
+                'required', 'string', 'max:50',
+                Rule::unique('promotions', 'code')->where('tenant_id', tenantId()),
             ],
-            'type' => 'required|in:percentage,fixed_amount,free_shipping',
-            'discount_value' => 'required|numeric|min:0',
-            'min_order_amount' => 'nullable|numeric|min:0',
-            'discount_cap' => 'nullable|numeric|min:0',
+            'type' => 'required|in:percentage,fixed,free_shipping',
+            'value' => 'required|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:0',
+            'minimum_order_amount' => 'nullable|numeric|min:0',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
             'usage_limit' => 'nullable|integer|min:1',
             'per_customer_limit' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
-            'starts_at' => 'nullable|date',
-            'expires_at' => 'nullable|date|after_or_equal:starts_at',
             'priority' => 'integer|min:0',
-            'is_stackable' => 'boolean',
+            'stackable' => 'boolean',
             'product_ids' => 'nullable|array',
             'product_ids.*' => 'exists:products,id',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
         ]);
 
+        $data['code'] = strtoupper($data['code']);
+        $data['is_automatic'] = false;
+        $data['created_by'] = auth()->id();
+
         if ($request->boolean('auto_generate') && empty($data['code'])) {
-            $data['code'] = $this->couponService->generateCode();
+            $data['code'] = Promotion::generateCode();
         }
 
-        $coupon = Coupon::create($data);
+        $coupon = Promotion::create($data);
 
         if (!empty($data['product_ids'])) {
             $coupon->products()->sync($data['product_ids']);
@@ -121,7 +129,7 @@ class AdminCouponController extends Controller
             ->with('success', 'Coupon created successfully.');
     }
 
-    public function edit(Coupon $coupon)
+    public function edit(Promotion $coupon)
     {
         if (!FeatureGate::enabled('coupons')) {
             return redirect()->back()->with('feature_locked', [
@@ -133,6 +141,11 @@ class AdminCouponController extends Controller
         if (!auth()->user()->can('coupons.update')) {
             abort(403, 'Unauthorized');
         }
+
+        abort_unless(
+            $coupon->tenant_id === tenantId() && !$coupon->is_automatic && $coupon->code !== null,
+            404
+        );
 
         $coupon->load(['products', 'categories']);
 
@@ -143,7 +156,7 @@ class AdminCouponController extends Controller
         ]);
     }
 
-    public function update(Request $request, Coupon $coupon)
+    public function update(Request $request, Promotion $coupon)
     {
         if (!FeatureGate::enabled('coupons')) {
             return redirect()->back()->with('feature_locked', [
@@ -156,29 +169,40 @@ class AdminCouponController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        abort_unless(
+            $coupon->tenant_id === tenantId() && !$coupon->is_automatic && $coupon->code !== null,
+            404
+        );
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'code' => [
-                'nullable', 'string', 'max:50',
-                Rule::unique('coupons', 'code')->where('tenant_id', tenant()?->id)->ignore($coupon->id),
+                'sometimes', 'required', 'string', 'max:50',
+                Rule::unique('promotions', 'code')->where('tenant_id', tenantId())->ignore($coupon->id),
             ],
-            'type' => 'sometimes|in:percentage,fixed_amount,free_shipping',
-            'discount_value' => 'sometimes|numeric|min:0',
-            'min_order_amount' => 'nullable|numeric|min:0',
-            'discount_cap' => 'nullable|numeric|min:0',
+            'type' => 'sometimes|in:percentage,fixed,free_shipping',
+            'value' => 'sometimes|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:0',
+            'minimum_order_amount' => 'nullable|numeric|min:0',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
             'usage_limit' => 'nullable|integer|min:1',
             'per_customer_limit' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
-            'starts_at' => 'nullable|date',
-            'expires_at' => 'nullable|date|after_or_equal:starts_at',
             'priority' => 'integer|min:0',
-            'is_stackable' => 'boolean',
+            'stackable' => 'boolean',
             'product_ids' => 'nullable|array',
             'product_ids.*' => 'exists:products,id',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
         ]);
+
+        if (isset($data['code'])) {
+            $data['code'] = strtoupper($data['code']);
+        }
+
+        $data['is_automatic'] = false;
 
         $coupon->update($data);
 
@@ -194,7 +218,7 @@ class AdminCouponController extends Controller
             ->with('success', 'Coupon updated successfully.');
     }
 
-    public function destroy(Coupon $coupon)
+    public function destroy(Promotion $coupon)
     {
         if (!FeatureGate::enabled('coupons')) {
             return redirect()->back()->with('feature_locked', [
@@ -207,8 +231,14 @@ class AdminCouponController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        abort_unless(
+            $coupon->tenant_id === tenantId() && !$coupon->is_automatic && $coupon->code !== null,
+            404
+        );
+
         $coupon->products()->detach();
         $coupon->categories()->detach();
+        $coupon->usages()->delete();
         $coupon->delete();
 
         return admin_redirect('admin.coupons.index')
@@ -230,7 +260,8 @@ class AdminCouponController extends Controller
 
         $query = $request->input('query');
 
-        $coupons = Coupon::where(function ($q) use ($query) {
+        $coupons = $this->codeBasedPromotions()
+            ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                   ->orWhere('code', 'like', "%{$query}%")
                   ->orWhere('type', 'like', "%{$query}%");
@@ -245,5 +276,63 @@ class AdminCouponController extends Controller
             'coupons' => $coupons,
             'query' => $query,
         ]);
+    }
+
+    public function toggle(Promotion $coupon)
+    {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
+        if (!auth()->user()->can('coupons.update')) {
+            abort(403, 'Unauthorized');
+        }
+
+        abort_unless(
+            $coupon->tenant_id === tenantId() && !$coupon->is_automatic && $coupon->code !== null,
+            404
+        );
+
+        $coupon->update(['is_active' => !$coupon->is_active]);
+
+        return admin_redirect('admin.coupons.index')
+            ->with('success', 'Coupon status toggled.');
+    }
+
+    public function duplicate(Promotion $coupon)
+    {
+        if (!FeatureGate::enabled('coupons')) {
+            return redirect()->back()->with('feature_locked', [
+                'feature' => FeatureGate::getLabelStatic('coupons'),
+                'required_plan' => FeatureGate::getUpgradeHintStatic('coupons') ?? 'Starter',
+            ]);
+        }
+
+        if (!auth()->user()->can('coupons.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        abort_unless(
+            $coupon->tenant_id === tenantId() && !$coupon->is_automatic && $coupon->code !== null,
+            404
+        );
+
+        $limitService = SubscriptionLimitService::for();
+        if (!$limitService->checkLimit('coupon_limit')) {
+            return redirect()->back()->with('error',
+                'Coupon limit reached. Please upgrade your plan to duplicate coupons.');
+        }
+
+        $newCoupon = $coupon->replicate();
+        $newCoupon->code = Promotion::generateCode();
+        $newCoupon->name = $coupon->name . ' (Copy)';
+        $newCoupon->usage_count = 0;
+        $newCoupon->save();
+
+        return admin_redirect('admin.coupons.edit', $newCoupon->id)
+            ->with('success', 'Coupon duplicated successfully.');
     }
 }

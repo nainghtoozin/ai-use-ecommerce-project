@@ -15,36 +15,30 @@ function isExpired(endsAt) {
     return new Date(endsAt) < new Date();
 }
 
-export default function PromotionsIndex({ promotions, stats, query = '' }) {
+export default function CouponsIndex({ coupons, query = '' }) {
     const [search, setSearch] = useState(query);
     const [deleteTarget, setDeleteTarget] = useState(null);
 
     function handleSearch(e) {
         e.preventDefault();
-        router.get(adminUrl('/admin/promotions/search'), { query: search }, { preserveState: true });
+        router.get(adminUrl('/admin/coupons/search'), { query: search }, { preserveState: true });
     }
 
     function handleToggle(id) {
-        router.post(adminUrl(`/admin/promotions/${id}/toggle`));
+        router.post(adminUrl(`/admin/coupons/${id}/toggle`));
     }
 
     function handleDuplicate(id) {
-        router.post(adminUrl(`/admin/promotions/${id}/duplicate`));
+        router.post(adminUrl(`/admin/coupons/${id}/duplicate`));
     }
 
     function handleDelete(id) {
-        router.delete(adminUrl(`/admin/promotions/${id}`));
+        router.delete(adminUrl(`/admin/coupons/${id}`));
         setDeleteTarget(null);
     }
 
     function handleCopy(code) {
         navigator.clipboard?.writeText(code);
-    }
-
-    function typeLabel(type) {
-        if (type === 'percentage') return '%';
-        if (type === 'fixed') return '$';
-        return 'Free Ship';
     }
 
     function typeColor(type) {
@@ -53,43 +47,19 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
         return 'text-purple-600 bg-purple-50';
     }
 
-    const statCards = [
-        { label: 'Total Promotions', value: stats?.total ?? 0, color: 'text-blue-600', bg: 'bg-blue-50', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-        { label: 'Active', value: stats?.active ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-        { label: 'Auto-Apply', value: stats?.auto ?? 0, color: 'text-purple-600', bg: 'bg-purple-50', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-        { label: 'Coupon Codes', value: stats?.coupons ?? 0, color: 'text-amber-600', bg: 'bg-amber-50', icon: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z' },
-    ];
-
     return (
         <AdminLayout>
-            <Head title="Promotions" />
+            <Head title="Coupons" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Promotions</h1>
-                    <Link href={adminUrl('/admin/promotions/create')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Coupons</h1>
+                    <Link href={adminUrl('/admin/coupons/create')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        Add Promotion
+                        Add Coupon
                     </Link>
                 </div>
-
-                {/* Stats Cards */}
-                {stats && (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        {statCards.map((card, i) => (
-                            <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-lg ${card.bg} flex items-center justify-center shrink-0`}>
-                                    <svg className={`w-5 h-5 ${card.color}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={card.icon} /></svg>
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{card.value}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{card.label}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
 
                 {/* Search */}
                 <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -99,7 +69,7 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                     </div>
                     <button type="submit" className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 text-sm font-medium">Search</button>
                     {query && (
-                        <button type="button" onClick={() => { setSearch(''); router.get(adminUrl('/admin/promotions')); }} className="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 text-sm">Clear</button>
+                        <button type="button" onClick={() => { setSearch(''); router.get(adminUrl('/admin/coupons')); }} className="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 text-sm">Clear</button>
                     )}
                 </form>
 
@@ -109,9 +79,9 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                             <thead className="bg-gray-50 dark:bg-gray-950">
                                 <tr>
-                                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Promotion</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Coupon</th>
                                     <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
-                                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Value</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Discount</th>
                                     <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Applies To</th>
                                     <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Usage</th>
                                     <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Schedule</th>
@@ -120,81 +90,60 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {!promotions?.data?.length ? (
+                                {!coupons?.data?.length ? (
                                     <tr>
                                         <td colSpan="8" className="px-5 py-16 text-center">
-                                            <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No promotions found</p>
-                                            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Get started by creating your first promotion.</p>
-                                            <Link href={adminUrl('/admin/promotions/create')} className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Promotion</Link>
+                                            <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No coupons found</p>
+                                            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Get started by creating your first coupon.</p>
+                                            <Link href={adminUrl('/admin/coupons/create')} className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Create Coupon</Link>
                                         </td>
                                     </tr>
-                                ) : promotions.data.map((p) => {
-                                    const expired = isExpired(p.ends_at);
-                                    const usagePct = p.usage_limit ? Math.min(100, Math.round((p.usage_count / p.usage_limit) * 100)) : 0;
+                                ) : coupons.data.map((c) => {
+                                    const expired = isExpired(c.ends_at);
+                                    const usagePct = c.usage_limit ? Math.min(100, Math.round((c.usage_count / c.usage_limit) * 100)) : 0;
 
                                     return (
-                                        <tr key={p.id} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
-                                            {/* Name */}
+                                        <tr key={c.id} className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors">
                                             <td className="px-5 py-4">
-                                                <div className="flex items-start gap-2">
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{p.name}</p>
-                                                        <div className="flex flex-wrap gap-1 mt-1">
-                                                            {p.is_automatic && (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium">Auto</span>
-                                                            )}
-                                                            {!p.is_automatic && p.code && (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-xs font-medium">Coupon</span>
-                                                            )}
-                                                            {p.stackable && (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-xs font-medium">Stackable</span>
-                                                            )}
-                                                            {p.applies_to === 'all' && (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 rounded text-xs">All</span>
-                                                            )}
-                                                        </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{c.name}</p>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {c.stackable && (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-xs font-medium">Stackable</span>
+                                                        )}
+                                                        {c.applies_to === 'all' && (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 rounded text-xs">All Products</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
-
-                                            {/* Code */}
                                             <td className="px-5 py-4">
-                                                {p.code ? (
-                                                    <button onClick={() => handleCopy(p.code)}
-                                                        className="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-100 transition-colors"
-                                                        title="Copy code">
-                                                        {p.code}
-                                                        <svg className="w-3 h-3 text-gray-400 group-hover:text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400 dark:text-gray-500 italic">No code</span>
-                                                )}
+                                                <button onClick={() => handleCopy(c.code)}
+                                                    className="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-100 transition-colors"
+                                                    title="Copy code">
+                                                    {c.code}
+                                                    <svg className="w-3 h-3 text-gray-400 group-hover:text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                                </button>
                                             </td>
-
-                                            {/* Value */}
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${typeColor(p.type)}`}>
-                                                        {p.type === 'percentage' ? `${p.value}%` : p.type === 'fixed' ? `$${Number(p.value).toFixed(2)}` : 'Free'}
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${typeColor(c.type)}`}>
+                                                        {c.type === 'percentage' ? `${c.value}%` : c.type === 'fixed' ? `${Number(c.value).toFixed(2)}` : 'Free'}
                                                     </span>
                                                 </div>
-                                                {p.type === 'percentage' && p.max_discount_amount && (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cap: ${Number(p.max_discount_amount).toFixed(2)}</p>
+                                                {c.type === 'percentage' && c.max_discount_amount && (
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cap: {Number(c.max_discount_amount).toFixed(2)}</p>
                                                 )}
                                             </td>
-
-                                            {/* Applies To */}
                                             <td className="px-5 py-4">
                                                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                                                    {p.applies_to === 'all' ? 'All Products' : p.applies_to === 'products' ? `${p.products_count} Product(s)` : `${p.categories_count} Categor(ies)`}
+                                                    {c.applies_to === 'all' ? 'All Products' : c.applies_to === 'products' ? `${c.products_count} Product(s)` : `${c.categories_count} Categor(ies)`}
                                                 </span>
-                                                {p.minimum_order_amount > 0 && (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Min: ${Number(p.minimum_order_amount).toFixed(2)}</p>
+                                                {c.minimum_order_amount > 0 && (
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Min: {Number(c.minimum_order_amount).toFixed(2)}</p>
                                                 )}
                                             </td>
-
-                                            {/* Usage */}
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex-1 max-w-[100px]">
@@ -204,50 +153,44 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                                                         </div>
                                                     </div>
                                                     <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                        {p.usage_count}{p.usage_limit ? `/${p.usage_limit}` : ''}
+                                                        {c.usage_count}{c.usage_limit ? `/${c.usage_limit}` : ''}
                                                     </span>
                                                 </div>
-                                                {p.per_customer_limit && (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{p.per_customer_limit} per customer</p>
+                                                {c.per_customer_limit && (
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{c.per_customer_limit} per customer</p>
                                                 )}
                                             </td>
-
-                                            {/* Schedule */}
                                             <td className="px-5 py-4">
                                                 <div className="text-sm text-gray-700 dark:text-gray-300">
-                                                    {p.starts_at ? formatDate(p.starts_at) : 'Any'} &rarr;
+                                                    {c.starts_at ? formatDate(c.starts_at) : 'Any'} &rarr;
                                                 </div>
                                                 <div className="text-sm text-gray-700 dark:text-gray-300">
-                                                    {p.ends_at ? formatDate(p.ends_at) : 'No end'}
+                                                    {c.ends_at ? formatDate(c.ends_at) : 'No end'}
                                                 </div>
                                             </td>
-
-                                            {/* Status */}
                                             <td className="px-5 py-4 text-center">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${expired ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : p.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                                    {expired ? 'Expired' : p.is_active ? 'Active' : 'Inactive'}
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${expired ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : c.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                                    {expired ? 'Expired' : c.is_active ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-
-                                            {/* Actions */}
                                             <td className="px-5 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <button onClick={() => handleToggle(p.id)}
+                                                    <button onClick={() => handleToggle(c.id)}
                                                         className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-amber-600 rounded-md hover:bg-amber-50 transition-colors"
-                                                        title={p.is_active ? 'Deactivate' : 'Activate'}>
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={p.is_active ? 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z' : 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z'} /></svg>
+                                                        title={c.is_active ? 'Deactivate' : 'Activate'}>
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={c.is_active ? 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z' : 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z'} /></svg>
                                                     </button>
-                                                    <Link href={adminUrl(`/admin/promotions/${p.id}/edit`)}
+                                                    <Link href={adminUrl(`/admin/coupons/${c.id}/edit`)}
                                                         className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
                                                         title="Edit">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                     </Link>
-                                                    <button onClick={() => handleDuplicate(p.id)}
+                                                    <button onClick={() => handleDuplicate(c.id)}
                                                         className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-purple-600 rounded-md hover:bg-purple-50 transition-colors"
                                                         title="Duplicate">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                                                     </button>
-                                                    <button onClick={() => setDeleteTarget(p)}
+                                                    <button onClick={() => setDeleteTarget(c)}
                                                         className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
                                                         title="Delete">
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -263,13 +206,13 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                 </div>
 
                 {/* Pagination */}
-                {promotions?.links && promotions.links.length > 3 && (
+                {coupons?.links && coupons.links.length > 3 && (
                     <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Showing {promotions.from} to {promotions.to} of {promotions.total} results
+                            Showing {coupons.from} to {coupons.to} of {coupons.total} results
                         </p>
                         <div className="flex gap-1">
-                            {promotions.links.map((link, i) => (
+                            {coupons.links.map((link, i) => (
                                 <Link key={i} href={link.url || '#'}
                                     className={`px-3 py-1.5 text-sm rounded-md transition-colors ${link.active ? 'bg-blue-600 text-white' : link.url ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800' : 'text-gray-300 cursor-not-allowed'}`}
                                     dangerouslySetInnerHTML={{ __html: link.label }} />
@@ -288,14 +231,14 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
                                 <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Promotion</h3>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Coupon</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone.</p>
                             </div>
                         </div>
                         <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
                             Are you sure you want to delete <span className="font-semibold">{deleteTarget.name}</span>?
                             {deleteTarget.usage_count > 0 && (
-                                <span className="block mt-1 text-amber-600">This promotion has been used {deleteTarget.usage_count} time(s).</span>
+                                <span className="block mt-1 text-amber-600">This coupon has been used {deleteTarget.usage_count} time(s).</span>
                             )}
                         </p>
                         <div className="flex justify-end gap-3">

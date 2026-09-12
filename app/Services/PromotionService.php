@@ -43,6 +43,38 @@ class PromotionService
         ];
     }
 
+    public function validateCouponCode(?string $code, Collection $cartItems, ?int $userId = null, ?float $deliveryFee = 0): array
+    {
+        if (empty($code)) {
+            return ['valid' => false, 'message' => 'No coupon code provided.'];
+        }
+
+        $promotion = Promotion::where('code', $code)->where('is_automatic', false)->first();
+
+        if (!$promotion) {
+            return ['valid' => false, 'message' => 'Invalid or expired coupon code.'];
+        }
+
+        $errors = $promotion->validateForUsage(
+            $userId ? User::find($userId) : null,
+            $cartItems->toArray(),
+            $deliveryFee
+        );
+
+        if (!empty($errors)) {
+            return ['valid' => false, 'message' => $errors[0]];
+        }
+
+        $discount = $promotion->calculateDiscount($cartItems->toArray(), $deliveryFee);
+
+        return [
+            'valid' => true,
+            'promotion' => $promotion,
+            'discount' => $discount,
+            'message' => 'Coupon applied successfully!',
+        ];
+    }
+
     public function getApplicableAutoPromotions(array $cartItems, ?float $deliveryFee = 0): Collection
     {
         $promotions = Promotion::valid()->automatic()
@@ -92,6 +124,11 @@ class PromotionService
         ]);
     }
 
+    public function applyCouponToOrder(Order $order, Promotion $promotion, float $discountAmount): void
+    {
+        $this->applyPromotionToOrder($order, $promotion, $discountAmount);
+    }
+
     public function calculateSubtotal(array $cartItems): float
     {
         return (float) collect($cartItems)->sum(fn($item) => ($item['price'] ?? 0) * ($item['quantity'] ?? 1));
@@ -114,5 +151,99 @@ class PromotionService
                 'discount' => $item['discount'],
                 'description' => $item['promotion']->description,
             ]);
+    }
+
+    public function canStackWith(Promotion $promotion, ?Promotion $existing = null): bool
+    {
+        if (!$promotion->stackable) {
+            return false;
+        }
+
+        if ($existing && !$existing->stackable) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function resolveBestDiscount(array $cartItems, ?float $deliveryFee = 0, ?string $code = null, ?int $userId = null): array
+    {
+        $codeDiscount = 0;
+        $codePromotion = null;
+        $autoDiscount = 0;
+        $autoPromotion = null;
+
+        if ($code) {
+            $codeResult = $this->validateCouponCode($code, collect($cartItems), $userId, $deliveryFee);
+            if ($codeResult['valid']) {
+                $codeDiscount = $codeResult['discount'];
+                $codePromotion = $codeResult['promotion'];
+            }
+        }
+
+        $autoPromotions = $this->getApplicableAutoPromotions($cartItems, $deliveryFee);
+        if ($autoPromotions->isNotEmpty()) {
+            $best = $autoPromotions->sortByDesc('discount')->first();
+            $autoDiscount = $best['discount'];
+            $autoPromotion = $best['promotion'];
+        }
+
+        if ($codePromotion && $autoPromotion) {
+            if ($this->canStackWith($codePromotion, $autoPromotion)) {
+                return [
+                    'discount' => $codeDiscount + $autoDiscount,
+                    'code_promotion' => $codePromotion,
+                    'code_discount' => $codeDiscount,
+                    'auto_promotion' => $autoPromotion,
+                    'auto_discount' => $autoDiscount,
+                ];
+            }
+
+            if ($codeDiscount >= $autoDiscount) {
+                return [
+                    'discount' => $codeDiscount,
+                    'code_promotion' => $codePromotion,
+                    'code_discount' => $codeDiscount,
+                    'auto_promotion' => null,
+                    'auto_discount' => 0,
+                ];
+            }
+
+            return [
+                'discount' => $autoDiscount,
+                'code_promotion' => null,
+                'code_discount' => 0,
+                'auto_promotion' => $autoPromotion,
+                'auto_discount' => $autoDiscount,
+            ];
+        }
+
+        if ($codePromotion) {
+            return [
+                'discount' => $codeDiscount,
+                'code_promotion' => $codePromotion,
+                'code_discount' => $codeDiscount,
+                'auto_promotion' => null,
+                'auto_discount' => 0,
+            ];
+        }
+
+        if ($autoPromotion) {
+            return [
+                'discount' => $autoDiscount,
+                'code_promotion' => null,
+                'code_discount' => 0,
+                'auto_promotion' => $autoPromotion,
+                'auto_discount' => $autoDiscount,
+            ];
+        }
+
+        return [
+            'discount' => 0,
+            'code_promotion' => null,
+            'code_discount' => 0,
+            'auto_promotion' => null,
+            'auto_discount' => 0,
+        ];
     }
 }

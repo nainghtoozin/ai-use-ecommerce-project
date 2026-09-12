@@ -17,6 +17,7 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\PromotionBanner;
+use App\Models\Promotion;
 use App\Models\StorefrontRevision;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -656,7 +657,7 @@ class StorefrontConfigurationResolver
     {
         $query = PromotionBanner::query()->withoutGlobalScopes()
             ->where('promotion_banners.tenant_id', $tenantId)
-            ->with('storefrontMedia')
+            ->with(['storefrontMedia', 'promotion'])
             ->orderBy('position')->orderByDesc('id');
         if (!$forRevision) {
             $query->where('promotion_banners.is_active', true)
@@ -683,8 +684,52 @@ class StorefrontConfigurationResolver
                 'ends_at' => $promotion->ends_at?->toISOString(),
                 'desktop_visible' => $promotion->desktop_visible,
                 'mobile_visible' => $promotion->mobile_visible,
+                'promotion' => $this->linkedPromotionData($promotion),
+                'destination' => $this->resolveDestination($promotion),
             ])->values()->all(),
         ];
+    }
+
+    private function linkedPromotionData(PromotionBanner $promotion): ?array
+    {
+        $promo = $promotion->promotion;
+        if (!$promo || !$promo->isCurrentlyActive()) {
+            return null;
+        }
+
+        return [
+            'id' => $promo->id,
+            'code' => $promo->code,
+            'type' => $promo->type,
+            'value' => (float) $promo->value,
+            'max_discount_amount' => $promo->max_discount_amount !== null ? (float) $promo->max_discount_amount : null,
+            'badge' => match ($promo->type) {
+                Promotion::TYPE_PERCENTAGE => "-{$promo->value}%",
+                Promotion::TYPE_FIXED => '-' . number_format((float) $promo->value, 0),
+                Promotion::TYPE_FREE_SHIPPING => 'Free Shipping',
+                default => 'Sale',
+            },
+        ];
+    }
+
+    private function resolveDestination(PromotionBanner $promotion): string
+    {
+        $promo = $promotion->promotion;
+        if (!$promo || !$promo->isCurrentlyActive()) {
+            return $promotion->link ?: '/products';
+        }
+
+        if ($promo->applies_to === Promotion::APPLIES_PRODUCTS && $promo->products()->count() > 0) {
+            $productIds = $promo->products()->pluck('products.id')->take(4)->implode(',');
+            return "/products?promoted=1&product_ids={$productIds}";
+        }
+
+        if ($promo->applies_to === Promotion::APPLIES_CATEGORIES && $promo->categories()->count() > 0) {
+            $categoryIds = $promo->categories()->pluck('categories.id')->take(4)->implode(',');
+            return "/products?category_ids={$categoryIds}";
+        }
+
+        return $promotion->link ?: '/products';
     }
 
     private function validPromotionImage(PromotionBanner $promotion): ?string

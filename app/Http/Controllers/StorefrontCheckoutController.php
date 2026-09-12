@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessOrderNotifications;
 use App\Models\City;
-use App\Models\Coupon;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\PackagingOption;
@@ -14,7 +13,6 @@ use App\Models\ProductVariant;
 use App\Models\Tenant;
 use App\Models\Township;
 use App\Services\CodEligibilityService;
-use App\Services\CouponService;
 use App\Services\DeliveryFeeService;
 use App\Services\ImageService;
 use App\Services\PromotionService;
@@ -29,7 +27,6 @@ class StorefrontCheckoutController extends Controller
 {
     public function __construct(
         private readonly ImageService $imageService,
-        private readonly CouponService $couponService,
         private readonly PromotionService $promotionService,
         private readonly StockCalculationService $stockCalculationService,
         private readonly DeliveryFeeService $deliveryFeeService,
@@ -262,11 +259,9 @@ class StorefrontCheckoutController extends Controller
             }
         }
 
-        $couponData = $this->resolveCouponFromSession($items, $deliveryFee);
-        $couponDiscount = (float) ($couponData['discount'] ?? 0);
-
-        $promotionData = $this->resolvePromotionFromSession($items, $deliveryFee);
-        $promotionDiscount = (float) ($promotionData['discount'] ?? 0);
+        $discountData = $this->resolveDiscountsFromSession($items, $deliveryFee);
+        $couponDiscount = (float) ($discountData['coupon_discount'] ?? 0);
+        $promotionDiscount = (float) ($discountData['promotion_discount'] ?? 0);
 
         $packagingFee = 0;
         $packagingId = $validated['packaging_id'] ?? null;
@@ -338,15 +333,15 @@ class StorefrontCheckoutController extends Controller
             'cod_fee' => $codFee > 0 ? $codFee : null,
         ];
 
-        if (!empty($promotionData['promotion'])) {
-            $orderData['promotion_id'] = $promotionData['promotion']->id;
-            $orderData['promotion_code'] = $promotionData['promotion']->code ?? 'AUTO';
+        if (!empty($discountData['promotion'])) {
+            $orderData['promotion_id'] = $discountData['promotion']->id;
+            $orderData['promotion_code'] = $discountData['promotion']->code ?? 'AUTO';
         }
 
         $orderData['idempotency_key'] = $idempotencyKey;
 
         try {
-            $order = DB::transaction(function () use ($orderData, $items, $couponData, $promotionData) {
+            $order = DB::transaction(function () use ($orderData, $items, $discountData) {
                 $stockErrors = $this->validateStockWithLock($items);
                 if (!empty($stockErrors)) {
                     throw new \App\Exceptions\CheckoutStockException(implode(' ', $stockErrors));
@@ -367,19 +362,11 @@ class StorefrontCheckoutController extends Controller
                 $date = $order->created_at->format('Ymd');
                 $order->update(['invoice_number' => 'ORD-' . $date . '-' . str_pad($order->id, 5, '0', STR_PAD_LEFT)]);
 
-                if (!empty($couponData['coupon'])) {
-                    $this->couponService->applyCouponToOrder(
-                        $order,
-                        $couponData['coupon'],
-                        $couponData['discount']
-                    );
-                }
-
-                if (!empty($promotionData['promotion'])) {
+                if (!empty($discountData['promotion'])) {
                     $this->promotionService->applyPromotionToOrder(
                         $order,
-                        $promotionData['promotion'],
-                        $promotionData['discount']
+                        $discountData['promotion'],
+                        $discountData['promotion_discount']
                     );
                 }
 
@@ -421,6 +408,53 @@ class StorefrontCheckoutController extends Controller
             'store_slug' => $tenant->slug,
             'order' => $order->id,
         ])->with('success', 'Order placed successfully!');
+    }
+
+    private function resolveDiscountsFromSession(array $items, float $deliveryFee): array
+    {
+        $result = [
+            'coupon_discount' => 0,
+            'promotion_discount' => 0,
+            'promotion' => null,
+        ];
+
+        $appliedCoupon = session()->get('applied_coupon');
+        if ($appliedCoupon && isset($appliedCoupon['promotion_id'])) {
+            $promotion = \App\Models\Promotion::find($appliedCoupon['promotion_id']);
+            if ($promotion && $promotion->isCurrentlyActive()) {
+                $validation = $this->promotionService->validateCouponCode(
+                    $promotion->code,
+                    collect($items),
+                    auth()->id(),
+                    $deliveryFee
+                );
+                if ($validation['valid']) {
+                    $result['coupon_discount'] = $validation['discount'];
+                    $result['promotion'] = $promotion;
+                }
+            }
+        }
+
+        $appliedPromotion = session()->get('applied_promotion');
+        if ($appliedPromotion && isset($appliedPromotion['promotion_id'])) {
+            $promotion = \App\Models\Promotion::find($appliedPromotion['promotion_id']);
+            if ($promotion && $promotion->isCurrentlyActive()) {
+                $validation = $this->promotionService->validatePromotion(
+                    $promotion->code,
+                    $items,
+                    auth()->id(),
+                    $deliveryFee
+                );
+                if ($validation['valid']) {
+                    $result['promotion_discount'] = $validation['discount'];
+                    if (!$result['promotion']) {
+                        $result['promotion'] = $promotion;
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 
     private function filterCartByTenant(array $cart, Tenant $tenant): array
@@ -502,57 +536,6 @@ class StorefrontCheckoutController extends Controller
         }
 
         return $items;
-    }
-
-    private function resolveCouponFromSession(array $items, float $deliveryFee): array
-    {
-        $appliedCoupon = session()->get('applied_coupon');
-
-        if ($appliedCoupon && isset($appliedCoupon['coupon_id'])) {
-            $coupon = Coupon::find($appliedCoupon['coupon_id']);
-            if ($coupon && $coupon->isValid()) {
-                $cartItems = collect($items);
-                $result = $this->couponService->validateCoupon(
-                    $coupon->code,
-                    $cartItems,
-                    auth()->id(),
-                    $deliveryFee
-                );
-                if ($result['valid']) {
-                    return [
-                        'coupon' => $coupon,
-                        'discount' => $result['discount'],
-                    ];
-                }
-            }
-        }
-
-        return [];
-    }
-
-    private function resolvePromotionFromSession(array $items, float $deliveryFee): array
-    {
-        $appliedPromotion = session()->get('applied_promotion');
-
-        if ($appliedPromotion && isset($appliedPromotion['promotion_id'])) {
-            $promotion = \App\Models\Promotion::find($appliedPromotion['promotion_id']);
-            if ($promotion && $promotion->isCurrentlyActive()) {
-                $result = $this->promotionService->validatePromotion(
-                    $promotion->code,
-                    $items,
-                    auth()->id(),
-                    $deliveryFee
-                );
-                if ($result['valid']) {
-                    return [
-                        'promotion' => $promotion,
-                        'discount' => $result['discount'],
-                    ];
-                }
-            }
-        }
-
-        return [];
     }
 
     private function validateStock(array $items): array

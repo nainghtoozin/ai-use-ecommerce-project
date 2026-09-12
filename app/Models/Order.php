@@ -223,8 +223,12 @@ class Order extends Model
             return '';
         }
 
-        if ($this->promotion_code) {
+        if ($this->promotion_code && $this->promotion_code !== 'AUTO') {
             return 'Promotion "' . $this->promotion_code . '"';
+        }
+
+        if ($this->promotion && !$this->promotion_code) {
+            return 'Automatic promotion';
         }
 
         $coupon = $this->coupons()->first();

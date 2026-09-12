@@ -20,9 +20,10 @@ export default function PromotionCreate({ products, categories }) {
         usage_limit: '',
         per_customer_limit: '',
         priority: 0,
-        is_automatic: false,
+        is_automatic: true,
         stackable: false,
         is_active: true,
+        promotion_mode: 'automatic',
     });
 
     const [productSearch, setProductSearch] = useState('');
@@ -47,8 +48,22 @@ export default function PromotionCreate({ products, categories }) {
         setData('code', result);
     }
 
+    function setPromotionMode(mode) {
+        setData('promotion_mode', mode);
+        if (mode === 'automatic') {
+            setData('is_automatic', true);
+            setData('code', '');
+        } else {
+            setData('is_automatic', false);
+        }
+    }
+
     function handleSubmit(e) {
         e.preventDefault();
+        if (data.promotion_mode === 'automatic') {
+            setData('is_automatic', true);
+            setData('code', '');
+        }
         post(adminUrl('/admin/promotions'));
     }
 
@@ -103,22 +118,67 @@ export default function PromotionCreate({ products, categories }) {
                             </h3>
                         </div>
                         <div className="p-6 space-y-5">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                <div>
-                                    <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                        Promotion Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input id="name" type="text" value={data.name} onChange={e => setData('name', e.target.value)}
-                                        className={inputClass('name')} placeholder="e.g. Summer Sale 2026" required />
-                                    {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Promotion Name <span className="text-red-500">*</span>
+                                </label>
+                                <input id="name" type="text" value={data.name} onChange={e => setData('name', e.target.value)}
+                                    className={inputClass('name')} placeholder="e.g. Summer Sale 2026" required />
+                                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    Promotion Type <span className="text-red-500">*</span>
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button type="button" onClick={() => setPromotionMode('automatic')}
+                                        className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                                            data.promotion_mode === 'automatic'
+                                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-sm'
+                                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+                                        }`}>
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                            data.promotion_mode === 'automatic'
+                                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600'
+                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                        }`}>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                        </div>
+                                        <div>
+                                            <span className={`text-sm font-semibold ${data.promotion_mode === 'automatic' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>Automatic Discount</span>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Applied automatically at checkout</p>
+                                        </div>
+                                    </button>
+                                    <button type="button" onClick={() => setPromotionMode('code')}
+                                        className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                                            data.promotion_mode === 'code'
+                                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-sm'
+                                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+                                        }`}>
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                            data.promotion_mode === 'code'
+                                                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600'
+                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                        }`}>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                                        </div>
+                                        <div>
+                                            <span className={`text-sm font-semibold ${data.promotion_mode === 'code' ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-700 dark:text-gray-300'}`}>Coupon Code</span>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Customer enters a code to apply</p>
+                                        </div>
+                                    </button>
                                 </div>
+                            </div>
+
+                            {data.promotion_mode === 'code' && (
                                 <div>
                                     <label htmlFor="code" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                        Coupon Code
+                                        Coupon Code <span className="text-red-500">*</span>
                                     </label>
                                     <div className="flex gap-2">
-                                        <input id="code" type="text" value={data.code} onChange={e => setData('code', e.target.value)}
-                                            className={`flex-1 ${inputClass('code')}`} placeholder="e.g. SUMMER20" />
+                                        <input id="code" type="text" value={data.code} onChange={e => setData('code', e.target.value.toUpperCase())}
+                                            className={`flex-1 ${inputClass('code')}`} placeholder="e.g. SUMMER20" required />
                                         <button type="button" onClick={generateCode}
                                             className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 dark:border-gray-700 whitespace-nowrap">
                                             <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -126,9 +186,9 @@ export default function PromotionCreate({ products, categories }) {
                                         </button>
                                     </div>
                                     {errors.code && <p className="mt-1 text-xs text-red-600">{errors.code}</p>}
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Leave empty for automatic/no-code promotions</p>
                                 </div>
-                            </div>
+                            )}
+
                             <div>
                                 <label htmlFor="description" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
                                 <textarea id="description" value={data.description} onChange={e => setData('description', e.target.value)}
@@ -378,17 +438,6 @@ export default function PromotionCreate({ products, categories }) {
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Higher values are evaluated first. Only applies to automatic promotions.</p>
                                 </div>
                                 <div className="flex flex-col justify-end gap-3">
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <div className="relative">
-                                            <input type="checkbox" checked={data.is_automatic} onChange={e => setData('is_automatic', e.target.checked)}
-                                                className="sr-only peer" />
-                                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-900 after:border-gray-300 dark:border-gray-700 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                        </div>
-                                        <div>
-                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Automatic Promotion</span>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500">Applied automatically without requiring a code</p>
-                                        </div>
-                                    </label>
                                     <label className="flex items-center gap-3 cursor-pointer">
                                         <div className="relative">
                                             <input type="checkbox" checked={data.stackable} onChange={e => setData('stackable', e.target.checked)}
