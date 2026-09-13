@@ -17,7 +17,7 @@ import {
     Rocket, HelpCircle,
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
-    Activity, Shield, UserPlus, ArrowUp,
+    Activity, Shield, UserPlus, ArrowUp, Truck,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -25,6 +25,7 @@ const SECTION_VIS_KEY = {
     'Catalog': 'catalog',
     'Sales': 'sales',
     'Store': 'store',
+    'Fulfillment': 'storefront',
     'Website': 'website',
     'Business': 'business',
     'Billing': 'billing',
@@ -49,6 +50,7 @@ const iconMap = {
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
+    Truck,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -198,6 +200,14 @@ export default function AdminSidebar() {
                     ...(can('settings.website') && isVis('storefront.promotions') ? [{ label: 'Promotions', href: '/admin/storefront/promotions', icon: 'Megaphone' }] : []),
                     ...(can('settings.website') && isVis('storefront.media') ? [{ label: 'Media', href: '/admin/storefront/media', icon: 'Images' }] : []),
                     ...(can('products.view') && isVis('content.faq') ? [{ label: 'FAQ', href: '/admin/faqs', icon: 'HelpCircle' }] : []),
+                ]
+            },
+            {
+                title: 'Fulfillment',
+                items: [
+                    ...(can('delivery-services.view') && isVis('storefront.checkout') ? [{ label: 'Delivery Services', href: '/admin/delivery-services', icon: 'Truck' }] : []),
+                    ...(can('packaging-options.view') && isVis('storefront.checkout') ? [{ label: 'Packaging', href: '/admin/packaging-options', icon: 'Package' }] : []),
+                    ...(can('cod-rules.view') && isVis('storefront.checkout') ? [{ label: 'COD Rules', href: '/admin/cod-rules', icon: 'Receipt' }] : []),
                 ]
             },
             {

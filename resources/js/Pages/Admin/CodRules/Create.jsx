@@ -27,7 +27,7 @@ export default function CodRuleCreate({ cities }) {
         e.preventDefault();
         setData('allowed_city_ids', selectedAllowed);
         setData('excluded_city_ids', selectedExcluded);
-        post(adminUrl('/admin/cod-rules'));
+        post(adminUrl('/admin/storefront/checkout'));
     }
 
     function toggleCity(list, setList, cityId) {
@@ -56,7 +56,7 @@ export default function CodRuleCreate({ cities }) {
             <Head title="Create COD Rule" />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href={adminUrl('/admin/cod-rules')} className="text-sm text-blue-600 hover:underline">&larr; Back to COD Rules</Link>
+                    <Link href={adminUrl('/admin/storefront/checkout')} className="text-sm text-blue-600 hover:underline">&larr; Back to Checkout</Link>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">Create COD Rule</h1>
                 </div>
 
@@ -149,7 +149,7 @@ export default function CodRuleCreate({ cities }) {
                         </div>
 
                         <div className="flex justify-end gap-3">
-                            <Link href={adminUrl('/admin/cod-rules')} className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200">Cancel</Link>
+                            <Link href={adminUrl('/admin/storefront/checkout')} className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200">Cancel</Link>
                             <button type="submit" disabled={processing}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                                 {processing ? 'Creating...' : 'Create COD Rule'}

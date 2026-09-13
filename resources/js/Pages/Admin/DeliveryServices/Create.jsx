@@ -40,7 +40,7 @@ export default function DeliveryServiceCreate() {
             <Head title="Create Delivery Service" />
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
-                    <Link href={adminUrl('/admin/delivery-services')} className="text-sm text-blue-600 hover:underline">&larr; Back to Delivery Services</Link>
+                    <Link href={adminUrl('/admin/storefront/checkout')} className="text-sm text-blue-600 hover:underline">&larr; Back to Checkout</Link>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">Create Delivery Service</h1>
                 </div>
 

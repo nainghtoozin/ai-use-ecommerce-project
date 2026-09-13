@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 const TABS = [
     ['configuration', 'Configuration'],
@@ -276,8 +277,12 @@ function ConfigurationTab({ checkout, updateCheckout, tenant }) {
                                 <div className="flex flex-wrap items-center gap-3">
                                     <Toggle label="Visible" checked={section.visible !== false} onChange={(v) => updateCheckout(`sections.${key}.visible`, v)} />
                                     <div className="flex gap-1">
-                                        <button type="button" onClick={() => moveSection(key, -1)} disabled={idx === 0} className="px-2 py-1 rounded border text-xs disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-800">\u2191</button>
-                                        <button type="button" onClick={() => moveSection(key, 1)} disabled={idx === sortedSections.length - 1} className="px-2 py-1 rounded border text-xs disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-800">\u2193</button>
+                                        <button type="button" onClick={() => moveSection(key, -1)} disabled={idx === 0} aria-label="Move section up" className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                            <ChevronUp className="w-4 h-4" aria-hidden="true" />
+                                        </button>
+                                        <button type="button" onClick={() => moveSection(key, 1)} disabled={idx === sortedSections.length - 1} aria-label="Move section down" className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                            <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>

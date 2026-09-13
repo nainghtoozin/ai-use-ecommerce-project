@@ -48,6 +48,10 @@ export default function CodRulesIndex({ codRules }) {
         <AdminLayout>
             <Head title="COD Rules" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <Link href={adminUrl('/admin/storefront/checkout')} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    Back to Checkout
+                </Link>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">COD Rules</h1>
                     {can('cod-rules.create') && (
