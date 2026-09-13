@@ -41,7 +41,7 @@ export default function StorefrontCheckoutV2({
   deliveryServices, packagingOptions = [], errors,
   appliedPromotion: initialAppliedPromotion,
   discountAmount: initialDiscountAmount, autoPromotions,
-  addresses = [], defaultAddress = null,
+  addresses = [], defaultAddress = null, previewMode = null,
 }) {
   const { auth, platform_setting, website_info, storefront } = usePage().props;
   const labels = storefront?.content?.labels || {};
@@ -294,15 +294,23 @@ export default function StorefrontCheckoutV2({
             <Link href={`/store/${tenant.slug}/login`} className="inline-flex items-center justify-center w-full px-6 py-3 bg-[var(--theme-color)] text-white font-semibold rounded-xl shadow-sm hover:opacity-90 transition-opacity">
               Sign In
             </Link>
-            <Link href={`/store/${tenant.slug}/cart`} className="block mt-4 text-sm font-medium text-[var(--theme-color)] hover:opacity-80">Back to Cart</Link>
+            <Link href={`/store/${tenant.slug}/cart`} className="block mt-4 text-sm font-medium text-[var(--theme-color)] hover:opacity-80">{buttonLabels.back_to_cart || 'Back to Cart'}</Link>
           </div>
         </div>
       </ShopLayout>
     );
   }
 
-  const completedSteps = [isAddressValid, isDeliveryReady && !!selectedDeliveryService, !!form.payment_method_id];
-  const stepLabels = ['Address', 'Delivery', 'Payment'];
+  const sectionChecks = {
+    address: isAddressValid,
+    delivery: isDeliveryReady && !!selectedDeliveryService,
+    packaging: true,
+    payment: !!form.payment_method_id,
+    summary: true,
+  };
+  const sortedSections = Object.entries(checkoutConfig.sections || {})
+    .filter(([, s]) => s.visible !== false)
+    .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
   function OrderSummaryPanel() {
     return (
@@ -397,7 +405,7 @@ export default function StorefrontCheckoutV2({
         <div className="mt-3 p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            <span>Order confirmed after payment verification</span>
+            <span>{checkoutConfig.messages?.payment_verification || 'Order confirmed after payment verification'}</span>
           </div>
         </div>
       </div>
@@ -441,7 +449,7 @@ export default function StorefrontCheckoutV2({
   }
 
   return (
-    <ShopLayout>
+    <ShopLayout previewMode={previewMode}>
       <Head title="Checkout" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 
@@ -459,24 +467,27 @@ export default function StorefrontCheckoutV2({
         </div>
 
         <nav aria-label="Checkout progress" className="mb-6">
-          <div className="flex items-center gap-2 sm:gap-4">
-            {stepLabels.map((label, i) => (
-              <div key={label} className="flex items-center flex-1 last:flex-none">
-                <div className={`flex items-center gap-2 min-w-0 ${i <= completedSteps.filter(Boolean).length ? '' : ''}`}>
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
-                    completedSteps[i] ? 'bg-[var(--theme-color)] text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
-                  }`}>
-                    {completedSteps[i] ? (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                    ) : i + 1}
+          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+            {sortedSections.map(([key, section], i) => {
+              const done = sectionChecks[key] ?? false;
+              return (
+                <div key={key} className="flex items-center flex-1 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 ${
+                      done ? 'bg-[var(--theme-color)] text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+                    }`}>
+                      {done ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      ) : i + 1}
+                    </div>
+                    <span className={`text-xs font-medium truncate hidden sm:inline ${done ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>{section.title || key}</span>
                   </div>
-                  <span className={`text-xs font-medium truncate hidden sm:inline ${completedSteps[i] ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>{label}</span>
+                  {i < sortedSections.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-2 sm:mx-3 rounded-full ${done ? 'bg-[var(--theme-color)]' : 'bg-gray-100 dark:bg-gray-800'}`} />
+                  )}
                 </div>
-                {i < stepLabels.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-2 sm:mx-3 rounded-full ${completedSteps[i] ? 'bg-[var(--theme-color)]' : 'bg-gray-100 dark:bg-gray-800'}`} />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </nav>
 

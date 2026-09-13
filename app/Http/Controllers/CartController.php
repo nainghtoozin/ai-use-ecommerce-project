@@ -95,8 +95,10 @@ class CartController extends Controller
             session()->put('cart', $cart);
         }
 
+        $cartItems = $this->formatCartItems($cart);
+        $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
         $count = array_sum(array_column($cart, 'quantity'));
-        return response()->json(['count' => $count]);
+        return response()->json(['count' => $count, 'cartItems' => $cartItems, 'subtotal' => $subtotal]);
     }
 
     public function destroy(string $key)
@@ -105,8 +107,19 @@ class CartController extends Controller
         unset($cart[$key]);
         session()->put('cart', $cart);
 
+        $cartItems = $this->formatCartItems($cart);
+        $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
         $count = array_sum(array_column($cart, 'quantity'));
-        return response()->json(['count' => $count]);
+        return response()->json(['count' => $count, 'cartItems' => $cartItems, 'subtotal' => $subtotal]);
+    }
+
+    public function clear()
+    {
+        session()->forget('cart');
+        session()->forget('applied_promotion');
+        session()->forget('applied_coupon');
+
+        return response()->json(['count' => 0, 'cartItems' => [], 'subtotal' => 0]);
     }
 
     public function applyCoupon(Request $request)

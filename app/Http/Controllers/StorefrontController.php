@@ -34,9 +34,6 @@ class StorefrontController extends Controller
         $tenant = Tenant::getCurrent();
         abort_unless($tenant, 404);
 
-        // Remember that this admin session is previewing the draft so follow-up
-        // storefront pages (products, product detail) keep resolving the draft
-        // configuration until they return to the admin area.
         $request->session()->put('storefront_preview_draft', (int) $tenant->id);
 
         $configuration = $revision ? $this->resolver->resolveRevision($revision) : null;

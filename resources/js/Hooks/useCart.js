@@ -34,11 +34,11 @@ export function useCart() {
             if (!response.ok) {
                 return { error: data.error || `Request failed with status ${response.status}` };
             }
-            
-            if (data.success) {
-                window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: data.cart_count } }));
+
+            if (data.count !== undefined) {
+                window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: data.count } }));
             }
-            
+
             return data;
         } catch (error) {
             console.error('Add to cart error:', error);
@@ -67,7 +67,11 @@ export function useCart() {
             if (!response.ok) {
                 return { error: data.error || `Request failed with status ${response.status}` };
             }
-            
+
+            if (data.count !== undefined) {
+                window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: data.count } }));
+            }
+
             return data;
         } catch (error) {
             console.error('Update cart error:', error);
@@ -91,7 +95,11 @@ export function useCart() {
             if (!response.ok) {
                 return { error: data.error || `Request failed with status ${response.status}` };
             }
-            
+
+            if (data.count !== undefined) {
+                window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: data.count } }));
+            }
+
             return data;
         } catch (error) {
             console.error('Remove from cart error:', error);
@@ -115,7 +123,9 @@ export function useCart() {
             if (!response.ok) {
                 return { error: data.error || `Request failed with status ${response.status}` };
             }
-            
+
+            window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: 0 } }));
+
             return data;
         } catch (error) {
             console.error('Clear cart error:', error);

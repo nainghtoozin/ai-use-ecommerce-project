@@ -25,14 +25,17 @@ class StorefrontCheckoutConfig extends Model
             'subtitle' => 'Complete your order',
             'show_branding' => true,
             'sections' => [
-                'address' => ['visible' => true, 'title' => 'Delivery Address', 'order' => 1],
-                'delivery' => ['visible' => true, 'title' => 'Delivery Options', 'order' => 2],
-                'payment' => ['visible' => true, 'title' => 'Payment Method', 'order' => 3],
+                'address' => ['visible' => true, 'title' => 'Delivery Address', 'order' => 1, 'desktop_visible' => true, 'mobile_visible' => true],
+                'delivery' => ['visible' => true, 'title' => 'Delivery Options', 'order' => 2, 'desktop_visible' => true, 'mobile_visible' => true],
+                'payment' => ['visible' => true, 'title' => 'Payment Method', 'order' => 3, 'desktop_visible' => true, 'mobile_visible' => true],
             ],
             'button_labels' => [
-                'continue_to_delivery' => 'Continue to Delivery',
-                'continue_to_payment' => 'Continue to Payment',
                 'place_order' => 'Place Order',
+                'back_to_cart' => 'Back to Cart',
+            ],
+            'messages' => [
+                'payment_verification' => '',
+                'order_confirmation' => '',
             ],
             'appearance' => [
                 'card_style' => 'bordered',

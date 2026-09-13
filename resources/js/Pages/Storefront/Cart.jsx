@@ -10,7 +10,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     const labels = storefront?.content?.labels || {};
     const primaryActionStyle = { backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' };
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
-    const { updateQuantity, removeItem } = useCart();
+    const { updateQuantity, removeItem, clearCart } = useCart();
     const [cartItems, setCartItems] = useState(initialCartItems || []);
     const [subtotal, setSubtotal] = useState(initialSubtotal || 0);
     const [updating, setUpdating] = useState(null);
@@ -166,17 +166,21 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
         setUpdating(null);
     }
 
-    function handleClearCart() {
+    async function handleClearCart() {
+        if (!window.confirm('Are you sure you want to clear your cart?')) return;
         setUpdating('clear');
 
-        router.delete('/cart/clear', {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: 0 } }));
-            },
-            onFinish: () => setUpdating(null),
-        });
+        const result = await clearCart();
+
+        if (!result.error) {
+            setCartItems([]);
+            setSubtotal(0);
+            setAppliedPromotion(null);
+            setAppliedCoupon(null);
+            setTotalDiscount(0);
+        }
+
+        setUpdating(null);
     }
 
     return (
@@ -195,9 +199,10 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                         <button
                             onClick={handleClearCart}
                             disabled={updating === 'clear'}
-                            className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:text-red-700 disabled:opacity-50 transition-colors"
                         >
-                            {labels.clear_cart || 'Clear Cart'}
+                            <i className="bi bi-trash3"></i>
+                            {updating === 'clear' ? 'Clearing...' : (labels.clear_cart || 'Clear Cart')}
                         </button>
                     )}
                 </div>

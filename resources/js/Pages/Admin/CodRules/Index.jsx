@@ -62,7 +62,7 @@ export default function CodRulesIndex({ codRules }) {
                     )}
                 </div>
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                         <thead className="bg-gray-50 dark:bg-gray-950">
                             <tr>

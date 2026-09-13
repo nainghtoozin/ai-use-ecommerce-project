@@ -235,7 +235,7 @@ export default function AdjustmentCreate({ products = [], warehouses = [], reaso
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type <span className="text-red-500">*</span></label>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => handleTypeChange('increase')}

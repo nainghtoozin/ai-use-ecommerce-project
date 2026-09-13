@@ -73,7 +73,7 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
 
                 <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 mb-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                                 <input id="name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)}
@@ -96,7 +96,7 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
                             {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="base_fee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Base Fee</label>
                                 <input id="base_fee" type="number" min="0" value={data.base_fee} onChange={(e) => setData('base_fee', parseInt(e.target.value) || 0)}
@@ -112,7 +112,7 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="min_days" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Delivery Days</label>
                                 <input id="min_days" type="number" min="0" value={data.min_days} onChange={(e) => setData('min_days', parseInt(e.target.value) || 0)}

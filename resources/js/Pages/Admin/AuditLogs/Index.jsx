@@ -99,7 +99,7 @@ function DetailModal({ log, onClose }) {
                         <p className="text-sm text-gray-900 dark:text-white">{log.description}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                                 <Clock className="w-3 h-3" /> Timestamp

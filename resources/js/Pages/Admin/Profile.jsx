@@ -436,7 +436,7 @@ function PreferencesTab({ theme, switchTheme, locale, handleLanguageChange, lang
                     </div>
                 </div>
                 <div className="p-6">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {availableLocales.map((loc) => (
                             <button
                                 key={loc.code}

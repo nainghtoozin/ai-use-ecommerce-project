@@ -69,7 +69,7 @@ export default function CodRuleCreate({ cities }) {
                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="min_order_amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Order Amount</label>
                                 <input id="min_order_amount" type="number" min="0" step="0.01" value={data.min_order_amount} onChange={(e) => setData('min_order_amount', e.target.value)}
@@ -91,7 +91,7 @@ export default function CodRuleCreate({ cities }) {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Allowed Cities</label>
                                 <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1">

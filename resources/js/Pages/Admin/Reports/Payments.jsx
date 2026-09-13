@@ -175,7 +175,7 @@ function VerifyModal({ order, onClose, onVerify, onReject, processing }) {
                 </div>
 
                 <div className="p-6 space-y-5">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order</p>
                             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">#{order.id}</p>

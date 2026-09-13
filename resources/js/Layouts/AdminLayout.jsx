@@ -14,6 +14,12 @@ export default function AdminLayout({ children, header = null }) {
                     --admin-theme: var(--theme-color, #3B82F6);
                     --admin-theme-rgb: var(--theme-color-rgb, 59, 130, 246);
                 }
+                @media (min-width: 1024px) {
+                    main .max-w-2xl { max-width: 56rem; }
+                    main .max-w-3xl { max-width: 64rem; }
+                    main .max-w-4xl { max-width: 72rem; }
+                    main .max-w-5xl { max-width: 80rem; }
+                }
             `}</style>
             <div className="min-h-screen flex bg-[#F1F5F9] dark:bg-gray-800">
                 <AdminSidebar />
@@ -26,7 +32,7 @@ export default function AdminLayout({ children, header = null }) {
                             </div>
                         </div>
                     )}
-                    <main className="flex-1">
+                    <main className="flex-1 min-w-0">
                         {children}
                     </main>
                     <AdminFooter />

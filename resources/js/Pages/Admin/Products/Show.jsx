@@ -365,7 +365,7 @@ export default function ProductShow({ product, relatedCombos = [] }) {
                                         </div>
                                     </div>
                                     <div className="px-5 py-5">
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Selling Price</p>
                                                 <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatPrice(product.price)}</p>

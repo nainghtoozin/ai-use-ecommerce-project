@@ -329,7 +329,7 @@ export default function TelegramIntegration({ integration }) {
                             <StatusBadge status="verified" />
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Telegram connected successfully</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                             <div>
                                 <span className="text-gray-500 dark:text-gray-400">Chat:</span>
                                 <p className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-1.5 mt-0.5">
@@ -382,7 +382,7 @@ export default function TelegramIntegration({ integration }) {
                         </div>
                         {isPersonalConnected ? (
                             <div className="space-y-3">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span className="text-gray-500 dark:text-gray-400">Chat ID</span>
                                         <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5 font-mono">{integrationData.personal_chat_id}</p>
@@ -444,7 +444,7 @@ export default function TelegramIntegration({ integration }) {
                         </div>
                         {isGroupConnected ? (
                             <div className="space-y-3">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span className="text-gray-500 dark:text-gray-400">Group Name</span>
                                         <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData.group_chat_title || '—'}</p>
@@ -611,7 +611,7 @@ export default function TelegramIntegration({ integration }) {
                                     Disconnect
                                 </button>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <span className="text-gray-500 dark:text-gray-400">Bot Name</span>
                                     <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{integrationData?.bot_name || botName || '—'}</p>

@@ -61,7 +61,7 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
                         <div className="lg:col-span-2">
                             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
                                 <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Basic Information</h2>
-                                <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
                                     {[
                                         ['SKU', product.sku || '-'],
                                         ['Type', product.type?.replace('_', ' ') || '-'],

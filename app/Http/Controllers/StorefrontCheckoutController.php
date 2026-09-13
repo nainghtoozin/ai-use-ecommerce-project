@@ -33,16 +33,18 @@ class StorefrontCheckoutController extends Controller
         private readonly CodEligibilityService $codEligibilityService,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $tenant = Tenant::getCurrent();
         if (!$tenant) {
             abort(404);
         }
 
+        $draftPreview = (int) $request->session()->get('storefront_preview_draft') === (int) $tenant->id;
+
         $guestCheckout = true;
 
-        if (!auth()->check() && !$guestCheckout) {
+        if (!auth()->check() && !$guestCheckout && !$draftPreview) {
             return redirect()->route('storefront.login', $tenant->slug)
                 ->with('error', 'Please login to continue checkout.');
         }
@@ -50,7 +52,7 @@ class StorefrontCheckoutController extends Controller
         $cart = session()->get('cart', []);
         $cartItems = $this->filterCartByTenant($cart, $tenant);
 
-        if (empty($cartItems)) {
+        if (empty($cartItems) && !$draftPreview) {
             return redirect()->route('storefront.cart', $tenant->slug)
                 ->with('error', 'Your cart is empty.');
         }
@@ -119,6 +121,10 @@ class StorefrontCheckoutController extends Controller
                 'logo' => $tenant->logo,
                 'status' => $tenant->status,
             ],
+            'previewMode' => $draftPreview ? [
+                'mode' => in_array($request->query('viewport'), ['mobile', 'desktop'], true) ? $request->query('viewport') : 'desktop',
+                'admin_url' => route('storefront.admin.storefront.checkout', ['store_slug' => $tenant->slug]),
+            ] : null,
             'cartItems' => array_values($cartItems),
             'subtotal' => $subtotal,
             'paymentMethods' => $paymentMethodsFiltered,
@@ -132,6 +138,20 @@ class StorefrontCheckoutController extends Controller
             'deliveryServices' => $deliveryServices,
             'packagingOptions' => $packagingOptions,
         ]);
+    }
+
+    public function preview(Request $request)
+    {
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(404);
+        }
+
+        abort_unless($request->user()?->can('settings.website'), 403);
+
+        $request->session()->put('storefront_preview_draft', (int) $tenant->id);
+
+        return $this->index($request);
     }
 
     public function store(Request $request): RedirectResponse

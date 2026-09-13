@@ -140,7 +140,7 @@ export default function PromotionEdit({ promotion, products, categories }) {
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     Promotion Type <span className="text-red-500">*</span>
                                 </label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <button type="button" onClick={() => setPromotionMode('automatic')}
                                         className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                                             data.promotion_mode === 'automatic'

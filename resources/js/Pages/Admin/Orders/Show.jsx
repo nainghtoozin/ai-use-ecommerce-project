@@ -261,7 +261,7 @@ export default function AdminOrdersShow({ order }) {
                         {/* Customer Information */}
                         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Customer Information</h2>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
                                     <p className="font-medium text-gray-900 dark:text-gray-100">{order.first_name} {order.last_name}</p>
@@ -545,7 +545,7 @@ export default function AdminOrdersShow({ order }) {
             {/* Reject Payment Modal */}
             {rejectModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-96">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-96 max-w-full">
                         <h3 className="text-lg font-semibold mb-4">Reject Payment</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Provide a reason for rejecting this payment (optional):</p>
                         <textarea
@@ -572,7 +572,7 @@ export default function AdminOrdersShow({ order }) {
             {/* Override Confirmation Modal */}
             {overrideModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-96">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-96 max-w-full">
                         <h3 className="text-lg font-semibold mb-4">
                             Override {overrideModal === 'order_status' ? 'Order Status' : 'Payment Status'}
                         </h3>

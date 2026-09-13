@@ -72,7 +72,7 @@ export default function PackagingOptionEdit({ packagingOption }) {
                             {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="fee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fee</label>
                                 <input id="fee" type="number" min="0" value={data.fee} onChange={(e) => setData('fee', parseInt(e.target.value) || 0)}
