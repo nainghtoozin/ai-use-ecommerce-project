@@ -130,25 +130,18 @@ const StockBadge = memo(function StockBadge({ status, labels = {} }) {
 });
 
 const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo }) {
-    let label;
-    if (isVariable) {
-        label = 'Multiple Options';
-    } else if (isCombo) {
-        label = 'Bundle';
-    } else {
-        label = 'Single';
-    }
+    if (!isVariable && !isCombo) return null;
+    const label = isVariable ? 'Multiple Options' : 'Bundle';
     return (
-        <div
-            className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-semibold rounded-full backdrop-blur-sm z-10"
+        <span
+            className="inline-block px-1.5 py-0.5 text-[9px] font-medium rounded"
             style={{
-                backgroundColor: 'color-mix(in srgb, var(--storefront-color-surface, #fff) 85%, transparent)',
-                color: 'var(--storefront-color-text, #111827)',
-                border: '1px solid var(--storefront-color-border, #E5E7EB)',
+                backgroundColor: 'var(--storefront-color-surface-muted, #F1F5F9)',
+                color: 'var(--storefront-color-muted, #6B7280)',
             }}
         >
             {label}
-        </div>
+        </span>
     );
 });
 
@@ -212,7 +205,9 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
                         {cc.code}
                     </span>
-                    {(original || originalMax) && (
+                </div>
+                {(original || originalMax) && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                         <span
                             className="text-[11px] line-through leading-tight"
                             style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
@@ -221,13 +216,14 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                                 ? <>{formatCurrency(original, cc)} - {formatCurrency(originalMax, cc)}</>
                                 : <>{formatCurrency(original, cc)}</>
                             }
+                            <span className="text-[9px]"> {cc.code}</span>
                         </span>
-                    )}
-                </div>
-                {savings > 0 && (
-                    <p className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
-                        Save {formatCurrency(savings, cc)}{displayPrice.promotionBadge ? ` · ${displayPrice.promotionBadge}` : ''}
-                    </p>
+                        {savings > 0 && (
+                            <span className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
+                                Save {formatCurrency(savings, cc)}
+                            </span>
+                        )}
+                    </div>
                 )}
             </div>
         );
@@ -338,19 +334,21 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                 <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
                     {cc.code}
                 </span>
-                {original && (
+            </div>
+            {hasPromotion && original && (
+                <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                     <span
                         className="text-[11px] line-through leading-tight"
                         style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
                     >
-                        {original}
+                        {original} <span className="text-[9px]">{cc.code}</span>
                     </span>
-                )}
-            </div>
-            {savings > 0 && (
-                <p className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
-                    Save {formatCurrency(savings, cc)}{displayPrice.promotionBadge ? ` · ${displayPrice.promotionBadge}` : ''}
-                </p>
+                    {savings > 0 && (
+                        <span className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
+                            Save {formatCurrency(savings, cc)}
+                        </span>
+                    )}
+                </div>
             )}
         </div>
     );
@@ -557,50 +555,48 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
 
                     <StockBadge status={stockStatus} labels={labels} />
 
-                    {!isOutOfStock && (
-                        <ProductTypeBadge isVariable={product.is_variable} isCombo={product.is_combo} />
-                    )}
+                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+                        {isFlashSale && (
+                            <div className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
+                                <Zap className="w-2.5 h-2.5 fill-current" />
+                                {displayPrice.flashSaleDiscount > 0 ? `-${displayPrice.flashSaleDiscount}%` : 'Flash'}
+                            </div>
+                        )}
 
-                    {isFlashSale && (
-                        <div className="absolute top-11 right-2 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm z-10 flex items-center gap-0.5">
-                            <Zap className="w-2.5 h-2.5 fill-current" />
-                            {displayPrice.flashSaleDiscount > 0 ? `-${displayPrice.flashSaleDiscount}%` : 'Flash'}
-                        </div>
-                    )}
+                        {hasPromotion && (
+                            <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                                {displayPrice.promotionBadge || product.promotion_badge || 'Sale'}
+                            </div>
+                        )}
 
-                    {hasPromotion && (
-                        <div className="absolute top-11 right-2 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm z-10">
-                            {displayPrice.promotionBadge || product.promotion_badge || 'Sale'}
-                        </div>
-                    )}
+                        {!hasPromotion && !isFlashSale && Number(product.discount_percentage ?? 0) > 0 && (
+                            <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                                -{product.discount_percentage}%
+                            </div>
+                        )}
 
-                    {!hasPromotion && !isFlashSale && Number(product.discount_percentage ?? 0) > 0 && (
-                        <div className="absolute top-11 right-2 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm z-10">
-                            -{product.discount_percentage}%
-                        </div>
-                    )}
-
-                    {wishlistEnabled && (
-                        <button
-                            onClick={handleWishlistToggle}
-                            className={`absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-                                optimisticWishlisted
-                                    ? 'shadow-sm'
-                                    : 'bg-white/80 backdrop-blur-sm shadow-sm hover:shadow'
-                            } ${wishlistAnim ? 'scale-110' : 'scale-100'}`}
-                            style={optimisticWishlisted ? { backgroundColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.1)' } : {}}
-                            aria-label={optimisticWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-                        >
-                            <Heart
-                                className={`w-[14px] h-[14px] transition-all duration-300 ${
+                        {wishlistEnabled && (
+                            <button
+                                onClick={handleWishlistToggle}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
                                     optimisticWishlisted
-                                        ? 'scale-110'
-                                        : 'fill-none hover:text-red-400'
-                                }`}
-                                style={optimisticWishlisted ? { fill: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' } : { color: 'var(--theme-color, #3B82F6)' }}
-                            />
-                        </button>
-                    )}
+                                        ? 'shadow-sm'
+                                        : 'bg-white/80 backdrop-blur-sm shadow-sm hover:shadow'
+                                } ${wishlistAnim ? 'scale-110' : 'scale-100'}`}
+                                style={optimisticWishlisted ? { backgroundColor: 'rgba(var(--theme-color-rgb, 59, 130, 246), 0.1)' } : {}}
+                                aria-label={optimisticWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                            >
+                                <Heart
+                                    className={`w-[14px] h-[14px] transition-all duration-300 ${
+                                        optimisticWishlisted
+                                            ? 'scale-110'
+                                            : 'fill-none hover:text-red-400'
+                                    }`}
+                                    style={optimisticWishlisted ? { fill: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' } : { color: 'var(--theme-color, #3B82F6)' }}
+                                />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </Link>
 
@@ -632,6 +628,14 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                         </p>
                     )}
                 </Link>
+
+                <div className="flex items-center gap-1.5 mt-1">
+                    <ProductTypeBadge isVariable={product.is_variable} isCombo={product.is_combo} />
+                </div>
+
+                <div className="flex items-center gap-1 mt-1 min-h-[14px]">
+                    {/* Rating placeholder — ready for future reviews */}
+                </div>
 
                 <PriceDisplay product={product} displayPrice={displayPrice} />
 

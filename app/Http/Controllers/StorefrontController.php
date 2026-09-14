@@ -89,7 +89,7 @@ class StorefrontController extends Controller
 
     private function enrichHomepageProducts(array &$storefront, Tenant $tenant, string $currencySymbol): void
     {
-        $sections = $storefront['homepageSections'] ?? [];
+        $sections = $storefront['homepage']['sections'] ?? [];
         if (empty($sections)) {
             return;
         }
