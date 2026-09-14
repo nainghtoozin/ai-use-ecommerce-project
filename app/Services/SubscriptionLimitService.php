@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\PromotionBanner;
+use App\Models\FlashSale;
 use App\Models\Tenant;
 
 class SubscriptionLimitService
@@ -285,7 +286,7 @@ class SubscriptionLimitService
         if (!$tenant) {
             return 0;
         }
-        return PromotionBanner::withoutTenantScope()
+        return FlashSale::withoutTenantScope()
             ->where('tenant_id', $tenant->id)
             ->count();
     }

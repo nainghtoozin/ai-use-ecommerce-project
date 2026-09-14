@@ -508,6 +508,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/coupons/{coupon}/toggle', [\App\Http\Controllers\Admin\AdminCouponController::class, 'toggle'])->name('coupons.toggle');
         Route::post('/coupons/{coupon}/duplicate', [\App\Http\Controllers\Admin\AdminCouponController::class, 'duplicate'])->name('coupons.duplicate');
 
+        // Flash Sales
+        Route::get('/flash-sales', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'index'])->name('flash-sales.index');
+        Route::get('/flash-sales/create', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'create'])->name('flash-sales.create');
+        Route::post('/flash-sales', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'store'])->name('flash-sales.store');
+        Route::get('/flash-sales/search', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'search'])->name('flash-sales.search');
+        Route::get('/flash-sales/{flashSale}/edit', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'edit'])->name('flash-sales.edit');
+        Route::put('/flash-sales/{flashSale}', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'update'])->name('flash-sales.update');
+        Route::delete('/flash-sales/{flashSale}', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'destroy'])->name('flash-sales.destroy');
+        Route::post('/flash-sales/{flashSale}/toggle', [\App\Http\Controllers\Admin\AdminFlashSaleController::class, 'toggle'])->name('flash-sales.toggle');
+
         // Inventory
         Route::get('/inventory/dashboard', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'dashboard'])->name('inventory.dashboard');
         Route::get('/inventory', [\App\Http\Controllers\Admin\AdminInventoryController::class, 'index'])->name('inventory.index');

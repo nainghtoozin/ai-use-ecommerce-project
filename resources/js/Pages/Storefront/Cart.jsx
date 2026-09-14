@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Zap } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { useCart } from '@/Hooks/useCart';
 import axios from 'axios';
@@ -256,7 +257,20 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 <div className="mt-2 space-y-1.5 text-sm">
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-500 dark:text-gray-400">Unit Price</span>
-                                                        <span className="text-gray-800 dark:text-gray-200 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                        <div className="text-right">
+                                                            {item.is_flash_sale ? (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded text-[10px] font-bold">
+                                                                        <Zap className="w-2.5 h-2.5 fill-current" />
+                                                                        Flash
+                                                                    </span>
+                                                                    <span className="text-orange-600 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                                    <span className="text-xs text-gray-400 line-through">{formatCurrency(item.original_price, cc)}</span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-gray-800 dark:text-gray-200 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className="text-gray-500 dark:text-gray-400">Qty</span>
@@ -309,7 +323,18 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 )}
                                             </div>
                                             <div className="text-center">
-                                                <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                {item.is_flash_sale ? (
+                                                    <div className="flex flex-col items-center gap-0.5">
+                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded text-[10px] font-bold">
+                                                            <Zap className="w-2.5 h-2.5 fill-current" />
+                                                            Flash
+                                                        </span>
+                                                        <span className="text-sm text-orange-600 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                        <span className="text-xs text-gray-400 line-through">{formatCurrency(item.original_price, cc)}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">{formatCurrency(item.price, cc)}</span>
+                                                )}
                                             </div>
                                             <div className="flex justify-center">
                                                 <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminOrderOverrideController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCouponController;
+use App\Http\Controllers\Admin\AdminFlashSaleController;
 use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminWarehouseController;
 use App\Http\Controllers\Admin\AdminPromotionController;
@@ -293,6 +294,16 @@ Route::prefix('store/{store_slug}/admin')
         Route::get('/coupons/search', [AdminCouponController::class, 'search'])->name('coupons.search');
         Route::post('/coupons/{coupon}/toggle', [AdminCouponController::class, 'toggle'])->name('coupons.toggle')->whereNumber('coupon');
         Route::post('/coupons/{coupon}/duplicate', [AdminCouponController::class, 'duplicate'])->name('coupons.duplicate')->whereNumber('coupon');
+
+        // Flash Sales
+        Route::get('/flash-sales', [AdminFlashSaleController::class, 'index'])->name('flash-sales.index');
+        Route::get('/flash-sales/create', [AdminFlashSaleController::class, 'create'])->name('flash-sales.create');
+        Route::post('/flash-sales', [AdminFlashSaleController::class, 'store'])->name('flash-sales.store');
+        Route::get('/flash-sales/search', [AdminFlashSaleController::class, 'search'])->name('flash-sales.search');
+        Route::get('/flash-sales/{flashSale}/edit', [AdminFlashSaleController::class, 'edit'])->name('flash-sales.edit')->whereNumber('flashSale');
+        Route::put('/flash-sales/{flashSale}', [AdminFlashSaleController::class, 'update'])->name('flash-sales.update')->whereNumber('flashSale');
+        Route::delete('/flash-sales/{flashSale}', [AdminFlashSaleController::class, 'destroy'])->name('flash-sales.destroy')->whereNumber('flashSale');
+        Route::post('/flash-sales/{flashSale}/toggle', [AdminFlashSaleController::class, 'toggle'])->name('flash-sales.toggle')->whereNumber('flashSale');
 
         // Payment Methods
         Route::get('/payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');

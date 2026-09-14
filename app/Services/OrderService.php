@@ -33,6 +33,7 @@ class OrderService
         private readonly StockMovementService $stockMovementService,
         private readonly StockCalculationService $stockCalculationService,
         private readonly WarehouseService $warehouseService,
+        private readonly FlashSaleService $flashSaleService,
     ) {}
 
     public function createOrder(array $orderData, array $items, ?array $couponData = null, ?array $promotionData = null): Order
@@ -281,7 +282,19 @@ class OrderService
             Log::info('Stock not reduced for order, skipping reversal.', ['order_id' => $order->id]);
             return;
         }
+
+        $order->load('items');
+
         $this->restoreStock($order);
+
+        $orderItems = $order->items->map(fn($item) => [
+            'product_id' => $item->product_id,
+            'variant_id' => $item->variant_id,
+            'quantity' => $item->quantity,
+            'flash_sale_id' => $item->flash_sale_id,
+        ])->toArray();
+        $this->flashSaleService->decrementQuantitySold($orderItems);
+
         $order->update(['stock_reduced' => false]);
     }
 

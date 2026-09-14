@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\StorefrontRevision;
 use App\Models\WebsiteInfo;
 use App\Services\ProductService;
+use App\Services\FlashSaleService;
 use App\Services\WebsiteFaqService;
 use App\Services\StorefrontConfigurationResolver;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class StorefrontController extends Controller
         private readonly ProductService $productService,
         private readonly WebsiteFaqService $faqService,
         private readonly StorefrontConfigurationResolver $resolver,
+        private readonly FlashSaleService $flashSaleService,
     ) {}
 
     public function index(Request $request)
@@ -149,6 +151,10 @@ class StorefrontController extends Controller
         $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
         $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
 
+        $paginatedProducts = $products->paginate(12);
+        $productIds = $paginatedProducts->pluck('id')->toArray();
+        $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($productIds);
+
         return Inertia::render('Storefront/Products', [
             'tenant' => [
                 'id' => $tenant->id,
@@ -158,8 +164,8 @@ class StorefrontController extends Controller
                 'logo' => $tenant->logo,
                 'status' => $tenant->status,
             ],
-            'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions, $currencySymbol) {
-                return $this->enrichProductWithPromotion($product, $promotions, $currencySymbol);
+            'products' => Inertia::scroll(fn () => $paginatedProducts->through(function ($product) use ($promotions, $flashSaleData, $currencySymbol) {
+                return $this->enrichProductWithPromotion($product, $promotions, $currencySymbol, $flashSaleData[$product->id] ?? null);
             })),
             'categories' => $categories,
             'brands' => $brands,
@@ -319,6 +325,10 @@ class StorefrontController extends Controller
         $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
         $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
 
+        $paginatedProducts = $products->paginate(12);
+        $productIds = $paginatedProducts->pluck('id')->toArray();
+        $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($productIds);
+
         return Inertia::render('Storefront/BrandProducts', [
             'tenant' => [
                 'id' => $tenant->id,
@@ -336,8 +346,8 @@ class StorefrontController extends Controller
                 'logo_url' => $brand->logo_url,
                 'banner_url' => $brand->banner_url,
             ],
-            'products' => Inertia::scroll(fn () => $products->paginate(12)->through(function ($product) use ($promotions, $currencySymbol) {
-                return $this->enrichProductWithPromotion($product, $promotions, $currencySymbol);
+            'products' => Inertia::scroll(fn () => $paginatedProducts->through(function ($product) use ($promotions, $flashSaleData, $currencySymbol) {
+                return $this->enrichProductWithPromotion($product, $promotions, $currencySymbol, $flashSaleData[$product->id] ?? null);
             })),
             'categories' => $categories,
             'brands' => $brands,
@@ -386,6 +396,9 @@ class StorefrontController extends Controller
             $product->loadMissing(['comboItems.comboProduct', 'comboItems.linkedVariant']);
         }
 
+        $flashSaleData = $this->flashSaleService->getFlashSalesForProducts([$product->id]);
+        $productFlashSale = $flashSaleData[$product->id] ?? null;
+
         $promotion = $this->findBestPromotionForProduct($product, $promotions);
         $detail = $this->productService->resolveForDetail($product);
 
@@ -413,7 +426,10 @@ class StorefrontController extends Controller
             $relatedProducts = $relatedProducts->merge($brandProducts);
         }
 
-        $relatedProducts = $relatedProducts->map(fn ($rp) => $this->enrichProductWithPromotion($rp, $promotions, $currencySymbol))->values();
+        $relatedFlashSaleData = $this->flashSaleService->getFlashSalesForProducts($relatedProducts->pluck('id')->toArray());
+        $relatedProducts = $relatedProducts->map(fn ($rp) => $this->enrichProductWithPromotion($rp, $promotions, $currencySymbol, $relatedFlashSaleData[$rp->id] ?? null))->values();
+
+        $this->flashSaleService->enrichProductWithFlashSale($product, $productFlashSale);
 
         return Inertia::render('Storefront/Show', [
             'tenant' => [
@@ -471,7 +487,7 @@ class StorefrontController extends Controller
         ]);
     }
 
-    private function enrichProductWithPromotion($product, $promotions, string $currencySymbol = 'K')
+    private function enrichProductWithPromotion($product, $promotions, string $currencySymbol = 'K', ?array $flashSaleData = null)
     {
         $bestPromotion = $this->findBestPromotionForProduct($product, $promotions);
         if ($bestPromotion) {
@@ -485,6 +501,9 @@ class StorefrontController extends Controller
             }
             $product->promotion_price = max(0, round($product->price - $discount, 2));
         }
+
+        $this->flashSaleService->enrichProductWithFlashSale($product, $flashSaleData);
+
         return $product;
     }
 

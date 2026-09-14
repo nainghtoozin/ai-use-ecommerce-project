@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { Heart } from 'lucide-react';
+import { Heart, Zap } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
@@ -39,6 +39,20 @@ function getStockStatus(product) {
 }
 
 function getDisplayPrice(product) {
+    if (product.is_flash_sale && product.flash_sale_price !== null && product.flash_sale_price !== undefined) {
+        const effPrice = product.flash_sale_price;
+        const original = product.flash_sale_original_price ?? getBasePrice(product);
+        return {
+            display: Number(effPrice).toLocaleString(),
+            original: Number(original).toLocaleString(),
+            savings: Math.round(original - effPrice),
+            isFlashSale: true,
+            flashSaleDiscount: product.flash_sale_discount_percentage,
+            flashSaleEndsAt: product.flash_sale_ends_at,
+            flashSaleName: product.flash_sale_name,
+        };
+    }
+
     if (product.promotion_price !== undefined && product.promotion_price !== null) {
         const effPrice = product.promotion_price;
         return {
@@ -116,8 +130,40 @@ const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo })
 });
 
 const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
-    const { display, original, savings, label } = displayPrice || {};
+    const { display, original, savings, label, isFlashSale, flashSaleDiscount, flashSaleEndsAt, flashSaleName } = displayPrice || {};
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+
+    if (isFlashSale) {
+        return (
+            <div className="mt-1.5">
+                <div className="flex items-baseline gap-1 flex-wrap">
+                    <span
+                        className="text-[17px] font-extrabold leading-tight"
+                        style={{ color: '#EA580C' }}
+                    >
+                        {formatCurrency(display, cc)}
+                    </span>
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
+                        {cc.code}
+                    </span>
+                    {original && (
+                        <span
+                            className="text-xs line-through w-full sm:w-auto block leading-tight"
+                            style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                        >
+                            {original} <span className="text-[10px]">{cc.code}</span>
+                        </span>
+                    )}
+                </div>
+                {savings > 0 && (
+                    <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: '#EA580C' }}>
+                        <Zap className="w-3 h-3 fill-current" />
+                        Save {formatCurrency(savings, cc)}
+                    </p>
+                )}
+            </div>
+        );
+    }
 
     if (product.is_variable) {
         if (display === null || display === undefined || !Number.isFinite(Number(display))) {
@@ -322,7 +368,8 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
     const stockStatus = getStockStatus(product);
     const isOutOfStock = stockStatus === 'out_of_stock';
     const displayPrice = getDisplayPrice(product);
-    const hasPromotion = product.promotion_price !== undefined
+    const isFlashSale = displayPrice?.isFlashSale;
+    const hasPromotion = !isFlashSale && product.promotion_price !== undefined
         && product.promotion_price !== null
         && product.promotion_price < getBasePrice(product);
 
@@ -447,6 +494,13 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
 
                     {!isOutOfStock && (
                         <ProductTypeBadge isVariable={product.is_variable} isCombo={product.is_combo} />
+                    )}
+
+                    {isFlashSale && (
+                        <div className="absolute top-11 right-2 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm z-10 flex items-center gap-0.5">
+                            <Zap className="w-2.5 h-2.5 fill-current" />
+                            {displayPrice.flashSaleDiscount > 0 ? `-${displayPrice.flashSaleDiscount}%` : 'Flash'}
+                        </div>
                     )}
 
                     {hasPromotion && (

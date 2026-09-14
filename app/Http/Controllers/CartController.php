@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\FeatureGate;
+use App\Services\FlashSaleService;
 use App\Services\PromotionService;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ class CartController extends Controller
 {
     public function __construct(
         private readonly PromotionService $promotionService,
-        private readonly ProductService $productService
+        private readonly ProductService $productService,
+        private readonly FlashSaleService $flashSaleService,
     ) {}
 
     public function index()
@@ -55,31 +57,40 @@ class CartController extends Controller
         $cart = session()->get('cart', []);
         $key = $this->buildCartKey($request->product_id, $request->variant_id);
 
+        $product = Product::find($request->product_id);
+        $basePrice = $product->price;
+
+        if ($request->variant_id) {
+            $variant = ProductVariant::find($request->variant_id);
+            if ($variant) {
+                $basePrice = $variant->price;
+            }
+        }
+
+        $flashPriceData = $this->flashSaleService->resolveEffectivePrice(
+            $request->product_id,
+            $request->variant_id,
+            (float) $basePrice
+        );
+
         if (isset($cart[$key])) {
             $cart[$key]['quantity'] += $request->quantity;
         } else {
-            $product = Product::find($request->product_id);
-            $price = $product->price;
-
-            if ($request->variant_id) {
-                $variant = ProductVariant::find($request->variant_id);
-                if ($variant) {
-                    $price = $variant->price;
-                }
-            }
-
             $cart[$key] = [
                 'product_id' => $request->product_id,
                 'variant_id' => $request->variant_id,
                 'quantity' => $request->quantity,
-                'price' => $price,
+                'price' => (float) $basePrice,
             ];
         }
 
         session()->put('cart', $cart);
 
         $count = array_sum(array_column($cart, 'quantity'));
-        return response()->json(['count' => $count]);
+        return response()->json([
+            'count' => $count,
+            'flash_sale_applied' => $flashPriceData['is_flash_sale'],
+        ]);
     }
 
     public function update(Request $request, string $key)
@@ -260,15 +271,17 @@ class CartController extends Controller
             }
 
             $variantName = null;
-            $price = $item['price'];
+            $basePrice = (float) $product->price;
 
             if ($variantId) {
                 $variant = ProductVariant::select(['id', 'price', 'sku', 'attributes'])->find($variantId);
                 if ($variant) {
-                    $price = (float) ($variant->price ?? $product->price);
+                    $basePrice = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;
                 }
             }
+
+            $flashData = $this->flashSaleService->resolveEffectivePrice($productId, $variantId, $basePrice);
 
             $items[] = [
                 'cart_key' => $cartKey,
@@ -276,9 +289,15 @@ class CartController extends Controller
                 'variant_id' => $variantId,
                 'name' => $product->name,
                 'variant_name' => $variantName,
-                'price' => (float) $price,
+                'price' => $flashData['price'],
+                'original_price' => $flashData['original_price'],
                 'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
+                'is_flash_sale' => $flashData['is_flash_sale'],
+                'flash_sale_id' => $flashData['flash_sale_id'],
+                'flash_sale_name' => $flashData['flash_sale_name'],
+                'flash_sale_ends_at' => $flashData['flash_sale_ends_at'],
+                'flash_sale_remaining_stock' => $flashData['flash_sale_remaining_stock'],
             ];
         }
         return $items;

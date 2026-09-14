@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Models\Township;
 use App\Services\CodEligibilityService;
 use App\Services\DeliveryFeeService;
+use App\Services\FlashSaleService;
 use App\Services\ImageService;
 use App\Services\PromotionService;
 use App\Services\StockCalculationService;
@@ -31,6 +32,7 @@ class StorefrontCheckoutController extends Controller
         private readonly StockCalculationService $stockCalculationService,
         private readonly DeliveryFeeService $deliveryFeeService,
         private readonly CodEligibilityService $codEligibilityService,
+        private readonly FlashSaleService $flashSaleService,
     ) {}
 
     public function index(Request $request)
@@ -241,6 +243,9 @@ class StorefrontCheckoutController extends Controller
                 'product_id' => $productId,
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'price' => (float) ($item['price'] ?? 0),
+                'original_price' => (float) ($item['original_price'] ?? $item['price'] ?? 0),
+                'is_flash_sale' => (bool) ($item['is_flash_sale'] ?? false),
+                'flash_sale_id' => $item['flash_sale_id'] ?? null,
             ];
 
             if (!empty($item['variant_id'])) {
@@ -253,6 +258,11 @@ class StorefrontCheckoutController extends Controller
         $stockErrors = $this->validateStock($items);
         if (!empty($stockErrors)) {
             return back()->with('error', implode(' ', $stockErrors));
+        }
+
+        $flashSaleErrors = $this->flashSaleService->validateFlashSaleQuantity($items);
+        if (!empty($flashSaleErrors)) {
+            return back()->with('error', implode(' ', $flashSaleErrors));
         }
 
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
@@ -361,11 +371,39 @@ class StorefrontCheckoutController extends Controller
         $orderData['idempotency_key'] = $idempotencyKey;
 
         try {
-            $order = DB::transaction(function () use ($orderData, $items, $discountData) {
+            $order = DB::transaction(function () use ($orderData, $items, $discountData, $tenant) {
                 $stockErrors = $this->validateStockWithLock($items);
                 if (!empty($stockErrors)) {
                     throw new \App\Exceptions\CheckoutStockException(implode(' ', $stockErrors));
                 }
+
+                $flashSaleErrors = $this->flashSaleService->validateFlashSaleQuantity($items);
+                if (!empty($flashSaleErrors)) {
+                    throw new \App\Exceptions\CheckoutStockException(implode(' ', $flashSaleErrors));
+                }
+
+                foreach ($items as &$item) {
+                    $basePrice = (float) $item['price'];
+                    $flashData = $this->flashSaleService->resolveEffectivePrice(
+                        $item['product_id'],
+                        $item['variant_id'] ?? null,
+                        $basePrice
+                    );
+                    $item['price'] = $flashData['price'];
+                    $item['original_price'] = $flashData['original_price'];
+                    $item['flash_sale_id'] = $flashData['flash_sale_id'];
+                    $item['is_flash_sale'] = $flashData['is_flash_sale'];
+                }
+                unset($item);
+
+                $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
+                $orderData['subtotal'] = $subtotal;
+
+                $totalDiscount = (float) ($orderData['discount_amount'] ?? 0);
+                $deliveryFee = (float) ($orderData['delivery_fee'] ?? 0);
+                $packagingFee = (float) ($orderData['packaging_fee'] ?? 0);
+                $codFee = (float) ($orderData['cod_fee'] ?? 0);
+                $orderData['total_amount'] = ($subtotal + $deliveryFee + $packagingFee + $codFee) - $totalDiscount;
 
                 try {
                     $order = Order::create($orderData);
@@ -390,6 +428,7 @@ class StorefrontCheckoutController extends Controller
                     );
                 }
 
+                $orderItemsForFlashSale = [];
                 foreach ($items as $item) {
                     $orderItemData = [
                         'product_id' => $item['product_id'],
@@ -401,8 +440,22 @@ class StorefrontCheckoutController extends Controller
                         $orderItemData['variant_id'] = $item['variant_id'];
                     }
 
+                    if (!empty($item['flash_sale_id'])) {
+                        $orderItemData['flash_sale_id'] = $item['flash_sale_id'];
+                        $orderItemData['original_price'] = $item['original_price'];
+                    }
+
                     $order->items()->create($orderItemData);
+
+                    $orderItemsForFlashSale[] = [
+                        'product_id' => $item['product_id'],
+                        'variant_id' => $item['variant_id'] ?? null,
+                        'quantity' => $item['quantity'],
+                        'flash_sale_id' => $item['flash_sale_id'] ?? null,
+                    ];
                 }
+
+                $this->flashSaleService->incrementQuantitySold($orderItemsForFlashSale);
 
                 return $order;
             });
@@ -519,6 +572,8 @@ class StorefrontCheckoutController extends Controller
                 ->keyBy('id')
             : collect();
 
+        $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($cartProductIds);
+
         $items = [];
         foreach ($cart as $cartKey => $item) {
             $productId = $item['product_id'] ?? $item['id'] ?? null;
@@ -531,17 +586,27 @@ class StorefrontCheckoutController extends Controller
                 continue;
             }
 
-            $price = (float) $product->price;
+            $basePrice = (float) $product->price;
             $variantName = null;
             $variantId = $item['variant_id'] ?? null;
 
             if ($variantId) {
                 $variant = $variants->get((int) $variantId);
                 if ($variant) {
-                    $price = (float) ($variant->price ?? $product->price);
+                    $basePrice = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;
                 }
             }
+
+            $productFlashSale = $flashSaleData[(int) $productId] ?? null;
+            $fs = null;
+            if ($variantId && isset($productFlashSale['variants'][(int) $variantId])) {
+                $fs = $productFlashSale['variants'][(int) $variantId];
+            } elseif (!$variantId && isset($productFlashSale['simple'])) {
+                $fs = $productFlashSale['simple'];
+            }
+
+            $price = $fs ? $fs['flash_price'] : $basePrice;
 
             $items[$cartKey] = [
                 'cart_key' => $cartKey,
@@ -550,8 +615,14 @@ class StorefrontCheckoutController extends Controller
                 'name' => $product->name,
                 'variant_name' => $variantName,
                 'price' => $price,
+                'original_price' => $basePrice,
                 'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
+                'is_flash_sale' => $fs !== null,
+                'flash_sale_id' => $fs['id'] ?? null,
+                'flash_sale_name' => $fs['name'] ?? null,
+                'flash_sale_ends_at' => $fs['ends_at'] ?? null,
+                'flash_sale_remaining_stock' => $fs['remaining_stock'] ?? null,
             ];
         }
 

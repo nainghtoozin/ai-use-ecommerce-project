@@ -5,10 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
+use App\Services\FlashSaleService;
 use Inertia\Inertia;
 
 class StorefrontCartController extends Controller
 {
+    public function __construct(
+        private readonly FlashSaleService $flashSaleService,
+    ) {}
+
     public function index()
     {
         $tenant = Tenant::getCurrent();
@@ -90,6 +95,8 @@ class StorefrontCartController extends Controller
                 ->keyBy('id')
             : collect();
 
+        $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($cartProductIds);
+
         $items = [];
         foreach ($cart as $cartKey => $item) {
             $productId = $item['product_id'] ?? $item['id'] ?? null;
@@ -102,27 +109,43 @@ class StorefrontCartController extends Controller
                 continue;
             }
 
-            $price = (float) $product->price;
+            $basePrice = (float) $product->price;
             $variantName = null;
             $variantId = $item['variant_id'] ?? null;
 
             if ($variantId) {
                 $variant = $variants->get((int) $variantId);
                 if ($variant) {
-                    $price = (float) ($variant->price ?? $product->price);
+                    $basePrice = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;
                 }
             }
 
-            $items[] = [
+            $productFlashSale = $flashSaleData[(int) $productId] ?? null;
+            $fs = null;
+            if ($variantId && isset($productFlashSale['variants'][(int) $variantId])) {
+                $fs = $productFlashSale['variants'][(int) $variantId];
+            } elseif (!$variantId && isset($productFlashSale['simple'])) {
+                $fs = $productFlashSale['simple'];
+            }
+
+            $price = $fs ? $fs['flash_price'] : $basePrice;
+
+            $items[$cartKey] = [
                 'cart_key' => $cartKey,
                 'id' => $product->id,
                 'variant_id' => $variantId,
                 'name' => $product->name,
                 'variant_name' => $variantName,
                 'price' => $price,
+                'original_price' => $basePrice,
                 'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
+                'is_flash_sale' => $fs !== null,
+                'flash_sale_id' => $fs['id'] ?? null,
+                'flash_sale_name' => $fs['name'] ?? null,
+                'flash_sale_ends_at' => $fs['ends_at'] ?? null,
+                'flash_sale_remaining_stock' => $fs['remaining_stock'] ?? null,
             ];
         }
 

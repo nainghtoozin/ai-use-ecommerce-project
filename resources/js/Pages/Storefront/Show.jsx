@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { Zap } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
 import RelatedProducts from '@/Components/Storefront/RelatedProducts';
@@ -60,30 +61,62 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     const mainImage = hasVariantImage ? selectedVariant.image_url : (images[activeImage] || null);
 
     const currentPrice = useMemo(() => {
+        if (product.is_flash_sale && product.flash_sale_price !== null && product.flash_sale_price !== undefined) {
+            if (isVariable && selectedVariant) {
+                const variantFlashSale = product.flash_sale_variants?.[selectedVariant.id];
+                if (variantFlashSale) return variantFlashSale.flash_price;
+            }
+            if (!isVariable || selectedVariant) {
+                return product.flash_sale_price;
+            }
+        }
         if (isVariable && selectedVariant) return safeNum(selectedVariant.price);
         if (isVariable) return null;
         return promotion?.promotion_price ?? product.price;
-    }, [isVariable, selectedVariant, promotion, product.price]);
+    }, [isVariable, selectedVariant, promotion, product.price, product.is_flash_sale, product.flash_sale_price, product.flash_sale_variants]);
 
     const originalPrice = useMemo(() => {
+        if (product.is_flash_sale && product.flash_sale_original_price !== null && product.flash_sale_original_price !== undefined) {
+            if (isVariable && selectedVariant) {
+                const variantFlashSale = product.flash_sale_variants?.[selectedVariant.id];
+                if (variantFlashSale) return safeNum(selectedVariant.price);
+            }
+            if (!isVariable || selectedVariant) {
+                return product.flash_sale_original_price;
+            }
+        }
         if (isVariable) return null;
         return promotion?.original_price ?? null;
-    }, [isVariable, promotion]);
+    }, [isVariable, promotion, product.is_flash_sale, product.flash_sale_original_price, product.flash_sale_variants, selectedVariant]);
 
     const discountPercent = useMemo(() => {
+        if (product.is_flash_sale && product.flash_sale_discount_percentage !== null && product.flash_sale_discount_percentage !== undefined) {
+            if (isVariable && selectedVariant) {
+                const variantFlashSale = product.flash_sale_variants?.[selectedVariant.id];
+                if (variantFlashSale) {
+                    const orig = safeNum(selectedVariant.price);
+                    return orig > 0 ? Math.round(((orig - variantFlashSale.flash_price) / orig) * 100) : null;
+                }
+            }
+            if (!isVariable || selectedVariant) {
+                return product.flash_sale_discount_percentage;
+            }
+        }
         if (isVariable) return null;
         if (!promotion || !promotion.discount_value) return null;
         const base = promotion.original_price ?? product.price;
         if (base <= 0) return null;
         if (promotion.promotion_type === 'percentage') return promotion.discount_value;
         return Math.round((promotion.discount_value / base) * 100);
-    }, [isVariable, promotion, product.price]);
+    }, [isVariable, promotion, product.price, product.is_flash_sale, product.flash_sale_discount_percentage, product.flash_sale_variants, selectedVariant]);
 
     const availableStock = useMemo(() => {
         if (isVariable && selectedVariant) return safeNum(selectedVariant.stock);
         if (isVariable) return 0;
         return product.effective_stock ?? product.stock ?? 0;
     }, [isVariable, selectedVariant, product.effective_stock, product.stock]);
+
+    const isFlashSale = !!product.is_flash_sale && currentPrice !== null && originalPrice !== null && currentPrice < originalPrice;
 
     const allOptionsSelected = !isVariable || !optionKeys.length || optionKeys.every(key => selectedOptions[key]);
 
@@ -244,7 +277,13 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                     Multiple Options
                                 </div>
                             )}
-                            {discountPercent > 0 && (
+                            {isFlashSale && (
+                                <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500/90 backdrop-blur-sm text-white text-[11px] font-semibold rounded-md shadow-sm z-10 flex items-center gap-1">
+                                    <Zap className="w-3 h-3 fill-current" />
+                                    {discountPercent > 0 ? `-${discountPercent}%` : 'Flash Sale'}
+                                </div>
+                            )}
+                            {!isFlashSale && discountPercent > 0 && (
                                 <div className="absolute top-3 right-3 px-2.5 py-1 bg-red-500/90 backdrop-blur-sm text-white text-[11px] font-semibold rounded-md shadow-sm z-10">
                                     -{discountPercent}%
                                 </div>
@@ -320,7 +359,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                         <span className="text-base text-gray-300 font-medium">{labels.select_options || 'Select options'}</span>
                                     ) : (
                                         <div className="flex items-baseline gap-2 flex-wrap">
-                                            <span className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-gray-100">
+                                            <span className={`text-xl sm:text-2xl font-extrabold ${isFlashSale ? 'text-orange-600' : 'text-gray-900 dark:text-gray-100'}`}>
                                                 {formatCurrency(currentPrice, cc)}
                                             </span>
                                             {originalPrice > 0 && originalPrice > currentPrice && (
@@ -328,7 +367,8 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                                     <span className="text-sm text-gray-400 dark:text-gray-500 line-through">
                                                         {formatCurrency(originalPrice, cc)}
                                                     </span>
-                                                    <span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[11px] font-bold">
+                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${isFlashSale ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
+                                                        {isFlashSale && <Zap className="w-3 h-3 inline mr-0.5 fill-current" />}
                                                         Save {discountPercent}%
                                                     </span>
                                                 </>
@@ -482,7 +522,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
             <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800 px-4 py-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 shrink-0">
-                        <div className="text-base font-bold text-gray-900 dark:text-gray-100">
+                        <div className={`text-base font-bold ${isFlashSale ? 'text-orange-600' : 'text-gray-900 dark:text-gray-100'}`}>
                             {currentPrice ? formatCurrency(currentPrice, cc) : '\u2014'}
                         </div>
                         <div className="mt-0.5">

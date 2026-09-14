@@ -11,6 +11,7 @@ use App\Models\Township;
 use App\Services\StockCalculationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\FlashSaleService;
 use App\Services\ImageService;
 use App\Services\NotificationPreferenceService;
 use App\Services\OrderNotificationService;
@@ -27,6 +28,7 @@ class OrderController extends Controller
         private readonly ImageService $imageService,
         private readonly PromotionService $promotionService,
         private readonly StockCalculationService $stockCalculationService,
+        private readonly FlashSaleService $flashSaleService,
     ) {}
 
     public function index(Request $request): \Inertia\Response
@@ -193,6 +195,30 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
+            $flashSaleErrors = $this->flashSaleService->validateFlashSaleQuantity($items);
+            if (!empty($flashSaleErrors)) {
+                DB::rollBack();
+                return back()->with('error', implode(' ', $flashSaleErrors));
+            }
+
+            foreach ($items as &$item) {
+                $basePrice = (float) $item['price'];
+                $flashData = $this->flashSaleService->resolveEffectivePrice(
+                    $item['product_id'],
+                    $item['variant_id'] ?? null,
+                    $basePrice
+                );
+                $item['price'] = $flashData['price'];
+                $item['original_price'] = $flashData['original_price'];
+                $item['flash_sale_id'] = $flashData['flash_sale_id'];
+                $item['is_flash_sale'] = $flashData['is_flash_sale'];
+            }
+            unset($item);
+
+            $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
+            $orderData['subtotal'] = $subtotal;
+            $orderData['total_amount'] = ($subtotal + $deliveryFee) - $totalDiscount;
+
             $order = auth()->check()
                 ? auth()->user()->orders()->create($orderData)
                 : Order::create($orderData);
@@ -208,6 +234,7 @@ class OrderController extends Controller
                 );
             }
 
+            $orderItemsForFlashSale = [];
             foreach ($items as $item) {
                 $orderItemData = [
                     'product_id' => $item['product_id'],
@@ -219,8 +246,22 @@ class OrderController extends Controller
                     $orderItemData['variant_id'] = $item['variant_id'];
                 }
 
+                if (!empty($item['flash_sale_id'])) {
+                    $orderItemData['flash_sale_id'] = $item['flash_sale_id'];
+                    $orderItemData['original_price'] = $item['original_price'];
+                }
+
                 $order->items()->create($orderItemData);
+
+                $orderItemsForFlashSale[] = [
+                    'product_id' => $item['product_id'],
+                    'variant_id' => $item['variant_id'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'flash_sale_id' => $item['flash_sale_id'] ?? null,
+                ];
             }
+
+            $this->flashSaleService->incrementQuantitySold($orderItemsForFlashSale);
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -341,13 +382,25 @@ class OrderController extends Controller
             : collect();
 
         foreach ($items as &$item) {
+            $basePrice = 0;
             if (!empty($item['variant_id'])) {
                 $variant = $variants->get($item['variant_id']);
-                $item['price'] = $variant ? (float) $variant->price : 0;
+                $basePrice = $variant ? (float) $variant->price : 0;
             } else {
                 $product = $products->get($item['product_id']);
-                $item['price'] = $product ? (float) $product->getEffectivePrice() : 0;
+                $basePrice = $product ? (float) $product->getEffectivePrice() : 0;
             }
+
+            $flashData = $this->flashSaleService->resolveEffectivePrice(
+                $item['product_id'],
+                $item['variant_id'] ?? null,
+                $basePrice
+            );
+
+            $item['price'] = $flashData['price'];
+            $item['original_price'] = $flashData['original_price'];
+            $item['flash_sale_id'] = $flashData['flash_sale_id'];
+            $item['is_flash_sale'] = $flashData['is_flash_sale'];
         }
         unset($item);
     }

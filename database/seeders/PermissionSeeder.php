@@ -124,6 +124,12 @@ class PermissionSeeder extends Seeder
             'promotions.update',
             'promotions.delete',
 
+            // Flash Sale Management
+            'flash_sales.view',
+            'flash_sales.create',
+            'flash_sales.update',
+            'flash_sales.delete',
+
             // City Management
             'cities.view',
             'cities.create',

@@ -16,6 +16,12 @@ class OrderItem extends Model
         'variant_id',
         'quantity',
         'price',
+        'flash_sale_id',
+        'original_price',
+    ];
+
+    protected $casts = [
+        'original_price' => 'decimal:2',
     ];
 
     public function order()
@@ -31,5 +37,10 @@ class OrderItem extends Model
     public function variant()
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function flashSale()
+    {
+        return $this->belongsTo(FlashSale::class);
     }
 }

@@ -100,6 +100,7 @@ class AdminCouponController extends Controller
             'per_customer_limit' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
             'priority' => 'integer|min:0',
+            'applies_to' => 'required|in:all,products,categories',
             'stackable' => 'boolean',
             'product_ids' => 'nullable|array',
             'product_ids.*' => 'exists:products,id',
@@ -110,10 +111,6 @@ class AdminCouponController extends Controller
         $data['code'] = strtoupper($data['code']);
         $data['is_automatic'] = false;
         $data['created_by'] = auth()->id();
-
-        if ($request->boolean('auto_generate') && empty($data['code'])) {
-            $data['code'] = Promotion::generateCode();
-        }
 
         $coupon = Promotion::create($data);
 
@@ -190,6 +187,7 @@ class AdminCouponController extends Controller
             'usage_limit' => 'nullable|integer|min:1',
             'per_customer_limit' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
+            'applies_to' => 'sometimes|in:all,products,categories',
             'priority' => 'integer|min:0',
             'stackable' => 'boolean',
             'product_ids' => 'nullable|array',

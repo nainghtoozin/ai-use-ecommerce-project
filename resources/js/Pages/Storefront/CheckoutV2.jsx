@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
+import { Zap } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
@@ -331,9 +332,24 @@ export default function StorefrontCheckoutV2({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
                 {item.variant_name && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.variant_name}</p>}
+                {item.is_flash_sale && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mt-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded text-[10px] font-bold">
+                    <Zap className="w-2.5 h-2.5 fill-current" />
+                    Flash Sale
+                  </span>
+                )}
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-gray-400">Qty: {item.quantity}</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(Number(item.price) * Number(item.quantity), cc)}</span>
+                  <div className="text-right">
+                    {item.is_flash_sale ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-gray-400 line-through">{formatCurrency(Number(item.original_price) * Number(item.quantity), cc)}</span>
+                        <span className="text-sm font-semibold text-orange-600">{formatCurrency(Number(item.price) * Number(item.quantity), cc)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(Number(item.price) * Number(item.quantity), cc)}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
