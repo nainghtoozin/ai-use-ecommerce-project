@@ -131,7 +131,7 @@ class StorefrontCartController extends Controller
 
             $price = $fs ? $fs['flash_price'] : $basePrice;
 
-            $items[$cartKey] = [
+            $items[] = [
                 'cart_key' => $cartKey,
                 'id' => $product->id,
                 'variant_id' => $variantId,

@@ -85,6 +85,7 @@ class CartController extends Controller
         }
 
         session()->put('cart', $cart);
+        session()->save();
 
         $count = array_sum(array_column($cart, 'quantity'));
         return response()->json([
@@ -104,6 +105,7 @@ class CartController extends Controller
         if (isset($cart[$key])) {
             $cart[$key]['quantity'] = $request->quantity;
             session()->put('cart', $cart);
+            session()->save();
         }
 
         $cartItems = $this->formatCartItems($cart);
@@ -117,6 +119,7 @@ class CartController extends Controller
         $cart = session()->get('cart', []);
         unset($cart[$key]);
         session()->put('cart', $cart);
+        session()->save();
 
         $cartItems = $this->formatCartItems($cart);
         $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
@@ -129,6 +132,7 @@ class CartController extends Controller
         session()->forget('cart');
         session()->forget('applied_promotion');
         session()->forget('applied_coupon');
+        session()->save();
 
         return response()->json(['count' => 0, 'cartItems' => [], 'subtotal' => 0]);
     }
@@ -260,12 +264,33 @@ class CartController extends Controller
             return [];
         }
 
+        $productIds = [];
+        $variantIds = [];
+        foreach ($cart as $item) {
+            $productIds[] = (int) $item['product_id'];
+            if (!empty($item['variant_id'])) {
+                $variantIds[] = (int) $item['variant_id'];
+            }
+        }
+
+        $products = Product::select(['id', 'name', 'price', 'photo1', 'type'])
+            ->whereIn('id', array_unique($productIds))
+            ->get()
+            ->keyBy('id');
+
+        $variants = !empty($variantIds)
+            ? ProductVariant::select(['id', 'product_id', 'price', 'sku', 'attributes'])
+                ->whereIn('id', array_unique($variantIds))
+                ->get()
+                ->keyBy('id')
+            : collect();
+
         $items = [];
         foreach ($cart as $cartKey => $item) {
             $productId = $item['product_id'];
             $variantId = $item['variant_id'] ?? null;
 
-            $product = Product::select(['id', 'name', 'price', 'photo1', 'type'])->find($productId);
+            $product = $products->get($productId);
             if (!$product) {
                 continue;
             }
@@ -274,7 +299,7 @@ class CartController extends Controller
             $basePrice = (float) $product->price;
 
             if ($variantId) {
-                $variant = ProductVariant::select(['id', 'price', 'sku', 'attributes'])->find($variantId);
+                $variant = $variants->get($variantId);
                 if ($variant) {
                     $basePrice = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;

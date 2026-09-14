@@ -188,15 +188,36 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
-        $productIds = array_keys($sessionCart);
+        $productIds = [];
+        foreach ($sessionCart as $item) {
+            $pid = $item['product_id'] ?? $item['id'] ?? null;
+            if ($pid) {
+                $productIds[] = (int) $pid;
+            }
+        }
+        $productIds = array_unique($productIds);
+
+        if (empty($productIds)) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'items' => [],
+            ];
+        }
+
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
         $items = [];
         $total = 0;
         $count = 0;
 
-        foreach ($sessionCart as $productId => $item) {
-            $product = $products->get($productId);
+        foreach ($sessionCart as $cartKey => $item) {
+            $productId = $item['product_id'] ?? $item['id'] ?? null;
+            if (!$productId) {
+                continue;
+            }
+
+            $product = $products->get((int) $productId);
 
             if ($product) {
                 $quantity = $item['quantity'];

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Zap } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
@@ -14,8 +14,13 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     const { updateQuantity, removeItem, clearCart } = useCart();
     const [cartItems, setCartItems] = useState(initialCartItems || []);
     const [subtotal, setSubtotal] = useState(initialSubtotal || 0);
-    const [updating, setUpdating] = useState(null);
+    const [clearing, setClearing] = useState(false);
     const [quantityDrafts, setQuantityDrafts] = useState({});
+    const cartRef = useRef(cartItems);
+    const subtotalRef = useRef(subtotal);
+    const pendingOps = useRef({});
+    cartRef.current = cartItems;
+    subtotalRef.current = subtotal;
 
     const [appliedPromotion, setAppliedPromotion] = useState(initialPromotion || null);
     const [appliedCoupon, setAppliedCoupon] = useState(initialCoupon || null);
@@ -94,20 +99,38 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
 
     async function handleUpdateQuantity(cartKey, newQty) {
         if (newQty < 1) newQty = 1;
-        setUpdating(cartKey);
+        const prevItems = cartRef.current;
+        const prevSubtotal = subtotalRef.current;
+        const item = prevItems.find(i => i.cart_key === cartKey);
+        if (!item) return;
+
+        const optimisticItems = prevItems.map(i =>
+            i.cart_key === cartKey ? { ...i, quantity: newQty } : i
+        );
+        const optimisticSubtotal = optimisticItems.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
+
+        const opId = Date.now() + Math.random();
+        pendingOps.current[cartKey] = opId;
+
+        setCartItems(optimisticItems);
+        setSubtotal(optimisticSubtotal);
 
         const result = await updateQuantity(cartKey, newQty);
+
+        if (pendingOps.current[cartKey] !== opId) {
+            return;
+        }
+
+        if (result.error) {
+            setCartItems(prevItems);
+            setSubtotal(prevSubtotal);
+            return;
+        }
 
         if (result.cartItems) {
             setCartItems(result.cartItems);
             setSubtotal(result.subtotal);
         }
-
-        if (result.success && newQty === 0) {
-            setCartItems(prev => prev.filter(item => item.cart_key !== cartKey));
-        }
-
-        setUpdating(null);
     }
 
     function handleDraftChange(cartKey, value) {
@@ -155,33 +178,55 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     }
 
     async function handleRemoveItem(cartKey) {
-        setUpdating(cartKey);
+        const prevItems = cartRef.current;
+        const prevSubtotal = subtotalRef.current;
+
+        const optimisticItems = prevItems.filter(i => i.cart_key !== cartKey);
+        const optimisticSubtotal = optimisticItems.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
+
+        setCartItems(optimisticItems);
+        setSubtotal(optimisticSubtotal);
 
         const result = await removeItem(cartKey);
+
+        if (result.error) {
+            setCartItems(prevItems);
+            setSubtotal(prevSubtotal);
+            return;
+        }
 
         if (result.cartItems) {
             setCartItems(result.cartItems);
             setSubtotal(result.subtotal);
         }
-
-        setUpdating(null);
     }
 
     async function handleClearCart() {
         if (!window.confirm('Are you sure you want to clear your cart?')) return;
-        setUpdating('clear');
+        setClearing(true);
+        const prevItems = cartRef.current;
+        const prevSubtotal = subtotalRef.current;
+        const prevPromotion = appliedPromotion;
+        const prevCoupon = appliedCoupon;
+        const prevDiscount = totalDiscount;
+
+        setCartItems([]);
+        setSubtotal(0);
+        setAppliedPromotion(null);
+        setAppliedCoupon(null);
+        setTotalDiscount(0);
 
         const result = await clearCart();
 
-        if (!result.error) {
-            setCartItems([]);
-            setSubtotal(0);
-            setAppliedPromotion(null);
-            setAppliedCoupon(null);
-            setTotalDiscount(0);
-        }
+        setClearing(false);
 
-        setUpdating(null);
+        if (result.error) {
+            setCartItems(prevItems);
+            setSubtotal(prevSubtotal);
+            setAppliedPromotion(prevPromotion);
+            setAppliedCoupon(prevCoupon);
+            setTotalDiscount(prevDiscount);
+        }
     }
 
     return (
@@ -199,11 +244,11 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                     {cartItems?.length > 0 && (
                         <button
                             onClick={handleClearCart}
-                            disabled={updating === 'clear'}
+                            disabled={clearing}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:text-red-700 disabled:opacity-50 transition-colors"
                         >
                             <i className="bi bi-trash3"></i>
-                            {updating === 'clear' ? 'Clearing...' : (labels.clear_cart || 'Clear Cart')}
+                            {clearing ? 'Clearing...' : (labels.clear_cart || 'Clear Cart')}
                         </button>
                     )}
                 </div>
@@ -275,7 +320,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className="text-gray-500 dark:text-gray-400">Qty</span>
                                                         <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
-                                                            <button onClick={() => handleStepperClick(item.cart_key, -1)} disabled={updating === item.cart_key}
+                                                            <button onClick={() => handleStepperClick(item.cart_key, -1)} 
                                                                 className="px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-50 transition-colors">
                                                                 <i className="bi bi-dash"></i>
                                                             </button>
@@ -284,9 +329,9 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                                 onChange={(e) => handleDraftChange(item.cart_key, e.target.value)}
                                                                 onBlur={() => commitDraft(item.cart_key)}
                                                                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
-                                                                disabled={updating === item.cart_key}
+                                                                
                                                                 className="w-12 sm:w-14 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50" />
-                                                            <button onClick={() => handleStepperClick(item.cart_key, 1)} disabled={updating === item.cart_key}
+                                                            <button onClick={() => handleStepperClick(item.cart_key, 1)} 
                                                                 className="px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-r-lg disabled:opacity-50 transition-colors">
                                                                 <i className="bi bi-plus"></i>
                                                             </button>
@@ -297,7 +342,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                         <span className="text-gray-900 dark:text-gray-100 font-bold">{formatCurrency(lineSubtotal, cc)}</span>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => handleRemoveItem(item.cart_key)} disabled={updating === item.cart_key}
+                                                <button onClick={() => handleRemoveItem(item.cart_key)} 
                                                     className="mt-2 text-xs text-red-500 hover:text-red-700 disabled:opacity-50 flex items-center gap-1">
                                                     <i className="bi bi-trash"></i> Remove
                                                 </button>
@@ -338,7 +383,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                             </div>
                                             <div className="flex justify-center">
                                                 <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
-                                                    <button onClick={() => handleStepperClick(item.cart_key, -1)} disabled={updating === item.cart_key}
+                                                    <button onClick={() => handleStepperClick(item.cart_key, -1)} 
                                                         className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-l-lg disabled:opacity-50 transition-colors">
                                                         <i className="bi bi-dash"></i>
                                                     </button>
@@ -347,9 +392,9 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                         onChange={(e) => handleDraftChange(item.cart_key, e.target.value)}
                                                         onBlur={() => commitDraft(item.cart_key)}
                                                         onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
-                                                        disabled={updating === item.cart_key}
+                                                        
                                                         className="w-14 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50" />
-                                                    <button onClick={() => handleStepperClick(item.cart_key, 1)} disabled={updating === item.cart_key}
+                                                    <button onClick={() => handleStepperClick(item.cart_key, 1)} 
                                                         className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-r-lg disabled:opacity-50 transition-colors">
                                                         <i className="bi bi-plus"></i>
                                                     </button>
@@ -359,7 +404,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                                 <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(lineSubtotal, cc)}</span>
                                             </div>
                                             <div className="flex justify-center">
-                                                <button onClick={() => handleRemoveItem(item.cart_key)} disabled={updating === item.cart_key}
+                                                <button onClick={() => handleRemoveItem(item.cart_key)} 
                                                     className="text-gray-300 hover:text-red-500 transition-colors p-1 disabled:opacity-50" title="Remove item">
                                                     <i className="bi bi-x-lg text-sm"></i>
                                                 </button>
