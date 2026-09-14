@@ -53,12 +53,35 @@ function getDisplayPrice(product) {
         };
     }
 
-    if (product.promotion_price !== undefined && product.promotion_price !== null) {
+    const hasPromotion = product.promotion_price !== undefined
+        && product.promotion_price !== null
+        && product.promotion_price < getBasePrice(product);
+
+    if (hasPromotion) {
+        if (product.is_variable) {
+            const minPrice = safeNumber(product.promotion_price);
+            const maxPrice = safeNumber(product.promotion_price_max);
+            const originalMin = safeNumber(product.display_price_summary?.min) ?? safeNumber(product.price_range?.[0]) ?? getVariablePrice(product);
+            const originalMax = safeNumber(product.display_price_summary?.max) ?? safeNumber(product.price_range?.[1]) ?? originalMin;
+            const label = minPrice !== null && maxPrice !== null && minPrice !== maxPrice ? 'From' : '';
+            return {
+                display: minPrice,
+                displayMax: maxPrice,
+                original: originalMin,
+                originalMax: originalMax,
+                savings: originalMin !== null ? Math.round(originalMin - minPrice) : null,
+                label,
+                hasPromotion: true,
+                promotionBadge: product.promotion_badge,
+            };
+        }
         const effPrice = product.promotion_price;
         return {
             display: Number(effPrice).toLocaleString(),
             original: Number(getBasePrice(product)).toLocaleString(),
             savings: Math.round(getBasePrice(product) - effPrice),
+            hasPromotion: true,
+            promotionBadge: product.promotion_badge,
         };
     }
 
@@ -130,7 +153,7 @@ const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo })
 });
 
 const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
-    const { display, original, savings, label, isFlashSale, flashSaleDiscount, flashSaleEndsAt, flashSaleName } = displayPrice || {};
+    const { display, displayMax, original, originalMax, savings, label, isFlashSale, flashSaleDiscount, flashSaleEndsAt, flashSaleName, hasPromotion, promotionBadge } = displayPrice || {};
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
 
     if (isFlashSale) {
@@ -165,11 +188,58 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
         );
     }
 
+    if (hasPromotion && product.is_variable) {
+        const hasRange = displayMax !== null && displayMax !== undefined && Number(display) !== Number(displayMax);
+        const hasOriginalRange = originalMax !== null && originalMax !== undefined && Number(original) !== Number(originalMax);
+        return (
+            <div className="mt-1.5">
+                <div className="flex items-baseline gap-1 flex-wrap">
+                    {label && (
+                        <span
+                            className="text-[10px] font-medium uppercase tracking-wide"
+                            style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                        >
+                            {label}
+                        </span>
+                    )}
+                    <span
+                        className="text-[17px] font-extrabold leading-tight"
+                        style={{ color: 'var(--storefront-color-success, #16A34A)' }}
+                    >
+                        {formatCurrency(display, cc)}
+                        {hasRange && <span className="text-[12px] font-semibold"> - {formatCurrency(displayMax, cc)}</span>}
+                    </span>
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
+                        {cc.code}
+                    </span>
+                    {(original || originalMax) && (
+                        <span
+                            className="text-[11px] line-through leading-tight"
+                            style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
+                        >
+                            {hasOriginalRange
+                                ? <>{formatCurrency(original, cc)} - {formatCurrency(originalMax, cc)}</>
+                                : <>{formatCurrency(original, cc)}</>
+                            }
+                        </span>
+                    )}
+                </div>
+                {savings > 0 && (
+                    <p className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
+                        Save {formatCurrency(savings, cc)}{displayPrice.promotionBadge ? ` · ${displayPrice.promotionBadge}` : ''}
+                    </p>
+                )}
+            </div>
+        );
+    }
+
     if (product.is_variable) {
         if (display === null || display === undefined || !Number.isFinite(Number(display))) {
             return (
-                <div className="mt-1.5 text-sm" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
-                    Price unavailable
+                <div className="mt-1.5">
+                    <span className="text-[13px] font-semibold" style={{ color: 'var(--theme-color, #3B82F6)' }}>
+                        Select Options
+                    </span>
                 </div>
             );
         }
@@ -261,7 +331,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
             <div className="flex items-baseline gap-1 flex-wrap">
                     <span
                         className="text-[17px] font-extrabold leading-tight"
-                        style={{ color: 'var(--storefront-color-text, #111827)' }}
+                        style={{ color: hasPromotion ? 'var(--storefront-color-success, #16A34A)' : 'var(--storefront-color-text, #111827)' }}
                     >
                         {display || Number(product.price ?? 0).toLocaleString()}
                     </span>
@@ -270,19 +340,16 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                 </span>
                 {original && (
                     <span
-                        className="text-xs line-through w-full sm:w-auto leading-tight"
+                        className="text-[11px] line-through leading-tight"
                         style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
                     >
-                        {original} <span className="text-[10px]">{cc.code}</span>
+                        {original}
                     </span>
                 )}
             </div>
             {savings > 0 && (
-                <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Save {formatCurrency(savings, cc)}
+                <p className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
+                    Save {formatCurrency(savings, cc)}{displayPrice.promotionBadge ? ` · ${displayPrice.promotionBadge}` : ''}
                 </p>
             )}
         </div>
@@ -369,9 +436,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
     const isOutOfStock = stockStatus === 'out_of_stock';
     const displayPrice = getDisplayPrice(product);
     const isFlashSale = displayPrice?.isFlashSale;
-    const hasPromotion = !isFlashSale && product.promotion_price !== undefined
-        && product.promotion_price !== null
-        && product.promotion_price < getBasePrice(product);
+    const hasPromotion = !isFlashSale && displayPrice?.hasPromotion === true;
 
     const handleAddToCart = async (e) => {
         e.preventDefault();
@@ -505,11 +570,11 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
 
                     {hasPromotion && (
                         <div className="absolute top-11 right-2 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm z-10">
-                            {product.promotion_badge}
+                            {displayPrice.promotionBadge || product.promotion_badge || 'Sale'}
                         </div>
                     )}
 
-                    {!hasPromotion && Number(product.discount_percentage ?? 0) > 0 && (
+                    {!hasPromotion && !isFlashSale && Number(product.discount_percentage ?? 0) > 0 && (
                         <div className="absolute top-11 right-2 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm z-10">
                             -{product.discount_percentage}%
                         </div>

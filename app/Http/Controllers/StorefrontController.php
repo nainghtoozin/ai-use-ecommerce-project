@@ -62,6 +62,13 @@ class StorefrontController extends Controller
             return $this->renderLocked($tenant);
         }
 
+        $storefront = $configuration ?? $this->resolver->resolve($tenant, $context);
+
+        $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
+        $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
+
+        $this->enrichHomepageProducts($storefront, $tenant, $currencySymbol);
+
         return Inertia::render('Storefront/Index', [
             'tenant' => [
                 'id' => $tenant->id,
@@ -71,13 +78,59 @@ class StorefrontController extends Controller
                 'logo' => $tenant->logo,
                 'status' => $tenant->status,
             ],
-            'storefront' => $configuration ?? $this->resolver->resolve($tenant, $context),
+            'storefront' => $storefront,
             'previewMode' => $context === 'draft' ? [
                 'mode' => in_array($request->query('viewport'), ['mobile', 'desktop'], true) ? $request->query('viewport') : 'desktop',
                 'revision_number' => $previewRevision?->revision_number,
                 'admin_url' => route('storefront.admin.storefront.index', ['store_slug' => $tenant->slug]),
             ] : null,
         ]);
+    }
+
+    private function enrichHomepageProducts(array &$storefront, Tenant $tenant, string $currencySymbol): void
+    {
+        $sections = $storefront['homepageSections'] ?? [];
+        if (empty($sections)) {
+            return;
+        }
+
+        $allProductIds = [];
+        foreach ($sections as $section) {
+            $type = $section['type'] ?? '';
+            if (in_array($type, ['featured_products', 'product_showcase']) && !empty($section['data']['products'])) {
+                foreach ($section['data']['products'] as $product) {
+                    $allProductIds[] = is_object($product) ? $product->id : $product['id'];
+                }
+            }
+        }
+
+        if (empty($allProductIds)) {
+            return;
+        }
+
+        $allProductIds = array_unique($allProductIds);
+
+        $promotions = Promotion::valid()->automatic()
+            ->with(['products', 'categories'])
+            ->orderBy('priority', 'desc')
+            ->get();
+
+        $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($allProductIds);
+
+        foreach ($sections as &$section) {
+            $type = $section['type'] ?? '';
+            if (!in_array($type, ['featured_products', 'product_showcase'])) {
+                continue;
+            }
+            if (empty($section['data']['products'])) {
+                continue;
+            }
+            foreach ($section['data']['products'] as &$product) {
+                $this->enrichProductWithPromotion($product, $promotions, $currencySymbol, $flashSaleData[$product->id] ?? null);
+            }
+            unset($product);
+        }
+        unset($section);
     }
 
     public function products(Request $request)
@@ -402,6 +455,21 @@ class StorefrontController extends Controller
         $promotion = $this->findBestPromotionForProduct($product, $promotions);
         $detail = $this->productService->resolveForDetail($product);
 
+        if ($promotion && !empty($detail['variants'])) {
+            $detail['variants'] = collect($detail['variants'])->map(function ($variant) use ($promotion) {
+                $variantPrice = $variant['price'];
+                $discount = $promotion->type === Promotion::TYPE_PERCENTAGE
+                    ? $variantPrice * (float) $promotion->value / 100
+                    : (float) $promotion->value;
+                if ($promotion->max_discount_amount !== null) {
+                    $discount = min($discount, (float) $promotion->max_discount_amount);
+                }
+                $variant['promotion_price'] = max(0, round($variantPrice - $discount, 2));
+                $variant['original_price'] = $variantPrice;
+                return $variant;
+            });
+        }
+
         $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
         $currencySymbol = $websiteInfo->currency_symbol ?? 'K';
 
@@ -429,7 +497,7 @@ class StorefrontController extends Controller
         $relatedFlashSaleData = $this->flashSaleService->getFlashSalesForProducts($relatedProducts->pluck('id')->toArray());
         $relatedProducts = $relatedProducts->map(fn ($rp) => $this->enrichProductWithPromotion($rp, $promotions, $currencySymbol, $relatedFlashSaleData[$rp->id] ?? null))->values();
 
-        $this->flashSaleService->enrichProductWithFlashSale($product, $productFlashSale);
+        $this->enrichProductWithPromotion($product, $promotions, $currencySymbol, $productFlashSale);
 
         return Inertia::render('Storefront/Show', [
             'tenant' => [
@@ -493,13 +561,34 @@ class StorefrontController extends Controller
         if ($bestPromotion) {
             $product->promotion_badge = $this->formatPromotionBadge($bestPromotion, $currencySymbol);
             $product->promotion_discount = (float) $bestPromotion->value;
-            $discount = $bestPromotion->type === Promotion::TYPE_PERCENTAGE
-                ? $product->price * (float) $bestPromotion->value / 100
-                : (float) $bestPromotion->value;
-            if ($bestPromotion->max_discount_amount !== null) {
-                $discount = min($discount, (float) $bestPromotion->max_discount_amount);
+
+            if ($product->is_variable && $product->variants && $product->variants->count() > 0) {
+                $minPrice = null;
+                $maxPrice = null;
+                foreach ($product->variants as $variant) {
+                    $variantPrice = (float) ($variant->price ?? $product->price);
+                    $discount = $bestPromotion->type === Promotion::TYPE_PERCENTAGE
+                        ? $variantPrice * (float) $bestPromotion->value / 100
+                        : (float) $bestPromotion->value;
+                    if ($bestPromotion->max_discount_amount !== null) {
+                        $discount = min($discount, (float) $bestPromotion->max_discount_amount);
+                    }
+                    $discountedPrice = max(0, round($variantPrice - $discount, 2));
+                    $variant->promotion_price = $discountedPrice;
+                    $minPrice = $minPrice === null ? $discountedPrice : min($minPrice, $discountedPrice);
+                    $maxPrice = $maxPrice === null ? $discountedPrice : max($maxPrice, $discountedPrice);
+                }
+                $product->promotion_price = $minPrice;
+                $product->promotion_price_max = $maxPrice;
+            } else {
+                $discount = $bestPromotion->type === Promotion::TYPE_PERCENTAGE
+                    ? $product->price * (float) $bestPromotion->value / 100
+                    : (float) $bestPromotion->value;
+                if ($bestPromotion->max_discount_amount !== null) {
+                    $discount = min($discount, (float) $bestPromotion->max_discount_amount);
+                }
+                $product->promotion_price = max(0, round($product->price - $discount, 2));
             }
-            $product->promotion_price = max(0, round($product->price - $discount, 2));
         }
 
         $this->flashSaleService->enrichProductWithFlashSale($product, $flashSaleData);

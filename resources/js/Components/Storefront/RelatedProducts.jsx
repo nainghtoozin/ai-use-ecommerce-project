@@ -63,10 +63,24 @@ function ProductCard({ product }) {
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">
                     {product.name}
                 </h3>
-                <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                        {formatCurrency(price, cc)}
-                    </span>
+                <div className="mt-2">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className={`text-sm font-bold ${hasDiscount ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                            {formatCurrency(price, cc)}
+                        </span>
+                        {hasDiscount && (
+                            <span className="text-[11px] text-gray-400 line-through">
+                                {formatCurrency(originalPrice, cc)}
+                            </span>
+                        )}
+                    </div>
+                    {hasDiscount && (
+                        <p className="text-[10px] font-medium text-green-600 dark:text-green-400 leading-tight">
+                            Save {discountPct}%
+                        </p>
+                    )}
+                </div>
+                <div className="flex items-center mt-1">
                     {effectiveStock <= 0 ? (
                         <span className="text-[10px] text-red-500 font-medium">Out of Stock</span>
                     ) : effectiveStock < 10 ? (

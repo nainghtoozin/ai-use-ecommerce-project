@@ -34,7 +34,28 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
 
     const displayPrice = useMemo(() => {
         if (selectedVariant) {
-            return selectedVariant.price != null ? Number(selectedVariant.price).toLocaleString() : '—';
+            if (selectedVariant.promotion_price != null) {
+                return Number(selectedVariant.promotion_price);
+            }
+            return selectedVariant.price != null ? Number(selectedVariant.price) : null;
+        }
+        return null;
+    }, [selectedVariant]);
+
+    const originalPrice = useMemo(() => {
+        if (selectedVariant && selectedVariant.promotion_price != null && selectedVariant.price != null) {
+            return Number(selectedVariant.price);
+        }
+        return null;
+    }, [selectedVariant]);
+
+    const variantDiscount = useMemo(() => {
+        if (selectedVariant && selectedVariant.promotion_price != null && selectedVariant.price != null) {
+            const orig = Number(selectedVariant.price);
+            const promo = Number(selectedVariant.promotion_price);
+            if (orig > 0 && promo < orig) {
+                return Math.round(((orig - promo) / orig) * 100);
+            }
         }
         return null;
     }, [selectedVariant]);
@@ -141,9 +162,20 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                         )}
                                                     </div>
                                                     <div className="text-right flex-shrink-0">
-                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 block">
-                                                            {v.price != null ? formatCurrency(v.price, cc) : '—'}
-                                                        </span>
+                                                        {v.promotion_price != null && v.price != null && Number(v.promotion_price) < Number(v.price) ? (
+                                                            <>
+                                                                <span className="text-sm font-semibold text-green-600 block">
+                                                                    {formatCurrency(v.promotion_price, cc)}
+                                                                </span>
+                                                                <span className="text-xs text-gray-400 line-through">
+                                                                    {formatCurrency(v.price, cc)}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 block">
+                                                                {v.price != null ? formatCurrency(v.price, cc) : '—'}
+                                                            </span>
+                                                        )}
                                                         <span className={`text-[10px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
                                                             {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'Low Stock' : 'In Stock') : (labels.out_of_stock || 'Out of Stock')}
                                                         </span>
@@ -162,9 +194,25 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Price</p>
-                                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                                        {formatCurrency(displayPrice, cc)}
-                                    </p>
+                                    {originalPrice != null ? (
+                                        <>
+                                            <p className="text-xl font-bold text-green-600">
+                                                {formatCurrency(displayPrice, cc)}
+                                            </p>
+                                            <p className="text-sm text-gray-400 line-through">
+                                                {formatCurrency(originalPrice, cc)}
+                                            </p>
+                                            {variantDiscount != null && (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-green-50 text-green-600 rounded-full mt-0.5">
+                                                    {variantDiscount}% OFF
+                                                </span>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                                            {formatCurrency(displayPrice, cc)}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Stock</p>
