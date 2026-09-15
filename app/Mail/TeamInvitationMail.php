@@ -36,9 +36,7 @@ class TeamInvitationMail extends Mailable implements ShouldQueue
         $inviter = $invitation->inviter;
         $platform = PlatformSetting::current();
 
-        $websiteInfo = WebsiteInfo::withoutTenantScope(function () use ($tenant) {
-            return WebsiteInfo::where('tenant_id', $tenant->id)->first();
-        });
+        $websiteInfo = WebsiteInfo::withoutTenantScope()->where('tenant_id', $tenant->id)->first();
 
         $logoUrl = null;
         if ($websiteInfo && $websiteInfo->logo) {

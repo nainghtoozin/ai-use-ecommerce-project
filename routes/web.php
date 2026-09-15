@@ -693,6 +693,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/permissions/{permission}/edit', [PermissionController::class, 'edit'])->name('permissions.edit');
         Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
         Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+
+        // ============================================================
+        // TEAM MANAGEMENT ROUTES (mirrors storefront admin prefix)
+        // ============================================================
+        Route::get('/team', [\App\Http\Controllers\Admin\TeamController::class, 'index'])->name('team.index');
+        Route::get('/team/members', [\App\Http\Controllers\Admin\TeamController::class, 'members'])->name('team.members');
+        Route::get('/team/invitations', [\App\Http\Controllers\Admin\TeamController::class, 'invitations'])->name('team.invitations');
+        Route::get('/team/{member}/json', [\App\Http\Controllers\Admin\TeamController::class, 'showJson'])->name('team.member.json');
+        Route::post('/team/invite', [\App\Http\Controllers\Admin\TeamController::class, 'invite'])->name('team.invite');
+        Route::delete('/team/invitations/{invitation}', [\App\Http\Controllers\Admin\TeamController::class, 'revokeInvitation'])->name('team.invitations.revoke');
+        Route::put('/team/{member}/role', [\App\Http\Controllers\Admin\TeamController::class, 'updateRole'])->name('team.member.role');
+        Route::post('/team/{member}/suspend', [\App\Http\Controllers\Admin\TeamController::class, 'suspend'])->name('team.member.suspend');
+        Route::post('/team/{member}/restore', [\App\Http\Controllers\Admin\TeamController::class, 'restore'])->name('team.member.restore');
+        Route::delete('/team/{member}', [\App\Http\Controllers\Admin\TeamController::class, 'remove'])->name('team.member.remove');
     }); // ← ends tenant.active group
 }); // ← ends tenant.valid + admin group
 

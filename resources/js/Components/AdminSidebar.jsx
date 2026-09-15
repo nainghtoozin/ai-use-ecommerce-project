@@ -222,6 +222,7 @@ export default function AdminSidebar() {
                 items: [
                     ...((can('users.view') || auth?.user?.is_owner) && isVis('staff.staff') ? [{ label: 'Team', href: '/admin/team', icon: 'Users' }] : []),
                     ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'UserPlus' }] : []),
+                    ...(can('roles.view') && isVis('staff.roles') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'ShieldCheck' }] : []),
                 ]
             },
             ...(can('billing.view') ? [{
