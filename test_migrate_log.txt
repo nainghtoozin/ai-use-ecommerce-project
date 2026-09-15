@@ -1,0 +1,37 @@
+
+   INFO  Preparing database.  
+
+  Creating migration table ....................................................... 565.41ms DONE
+
+   INFO  Running migrations.  
+
+  0001_01_01_000000_create_users_table ........................................... 807.27ms DONE
+  0001_01_01_000001_create_cache_table ........................................... 293.54ms DONE
+  0001_01_01_000002_create_jobs_table ............................................ 651.93ms DONE
+  2025_09_28_091630_create_categories_table ....................................... 97.06ms DONE
+  2025_09_28_091702_create_products_table ........................................ 542.89ms DONE
+  2025_09_28_100013_create_orders_table .......................................... 566.22ms DONE
+  2025_09_28_100019_create_order_items_table ........................................... 1s DONE
+  2025_10_06_194837_add_photos_to_products_table ....................................... 1s DONE
+  2025_10_09_211429_add_client_info_to_orders_table ................................ 0.26ms DONE
+  2025_10_12_093103_create_promotions_table ...................................... 110.30ms DONE
+  2025_10_14_215335_add_base_price_to_products_table ............................... 0.21ms DONE
+  2025_10_14_215517_add_base_price_to_products_table ............................. 212.74ms DONE
+  2025_10_18_144058_add_shipping_cost_to_orders_table ............................ 234.55ms DONE
+  2025_10_20_000001_create_payment_methods_table .................................. 72.24ms DONE
+  2025_10_20_000002_add_payment_method_to_orders_table ................................. 1s DONE
+  2025_10_20_000003_add_order_management_fields ........................................ 1s DONE
+  2025_10_21_000001_create_cities_table ........................................... 71.21ms DONE
+  2025_10_21_000002_create_townships_table ....................................... 321.49ms DONE
+  2025_10_21_000003_add_location_to_orders_table ....................................... 2s DONE
+  2025_10_21_000004_add_paid_amount_to_orders_table .............................. 295.80ms DONE
+  2025_10_21_000005_add_subtotal_to_orders_table ................................. 285.48ms DONE
+  2025_10_21_000006_reorder_order_amount_columns ....................................... 1s DONE
+  2026_04_22_000001_make_orders_city_nullable .................................... 338.28ms DONE
+  2026_04_22_000002_drop_shipping_cost_from_orders ............................... 288.28ms DONE
+  2026_04_23_000001_add_customer_name_to_orders_table ............................ 251.14ms DONE
+  2026_04_23_000002_drop_city_column_from_orders_table ........................... 702.65ms DONE
+  2026_04_26_000001_create_notifications_table ................................... 182.18ms DONE
+  2026_04_26_000001_fix_order_status_column_length ............................... 518.35ms DONE
+  2026_04_26_000002_add_paid_to_order_status_enum ................................ 300.42ms DONE
+  2026_04_26_000002_add_verified_rejected_to_order_status_enum ................... 613.43ms DONE

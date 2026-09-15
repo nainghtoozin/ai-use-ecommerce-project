@@ -1,0 +1,8 @@
+  2026_04_22_000001_make_orders_city_nullable .................................... 338.28ms DONE
+  2026_04_22_000002_drop_shipping_cost_from_orders ............................... 288.28ms DONE
+  2026_04_23_000001_add_customer_name_to_orders_table ............................ 251.14ms DONE
+  2026_04_23_000002_drop_city_column_from_orders_table ........................... 702.65ms DONE
+  2026_04_26_000001_create_notifications_table ................................... 182.18ms DONE
+  2026_04_26_000001_fix_order_status_column_length ............................... 518.35ms DONE
+  2026_04_26_000002_add_paid_to_order_status_enum ................................ 300.42ms DONE
+  2026_04_26_000002_add_verified_rejected_to_order_status_enum ................... 613.43ms DONE

@@ -1,0 +1,6 @@
+C:\laragon\www\ai-use-ecommerce-project\tests\Feature\CatalogV2FoundationTest.php
+C:\laragon\www\ai-use-ecommerce-project\tests\Feature\PromotionApiTest.php
+C:\laragon\www\ai-use-ecommerce-project\tests\Feature\PromotionModelTest.php
+C:\laragon\www\ai-use-ecommerce-project\tests\Feature\PromotionReportTest.php
+C:\laragon\www\ai-use-ecommerce-project\tests\Feature\PromotionServiceTest.php
+C:\laragon\www\ai-use-ecommerce-project\tests\Feature\StorefrontCatalogTest.php

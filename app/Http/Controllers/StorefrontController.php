@@ -89,20 +89,20 @@ class StorefrontController extends Controller
 
     private function enrichHomepageProducts(array &$storefront, Tenant $tenant, string $currencySymbol): void
     {
-        $sections = $storefront['homepage']['sections'] ?? [];
-        if (empty($sections)) {
+        if (empty($storefront['homepage']['sections']) || !is_array($storefront['homepage']['sections'])) {
             return;
         }
 
         $allProductIds = [];
-        foreach ($sections as $section) {
+        foreach ($storefront['homepage']['sections'] as $section) {
             $type = $section['type'] ?? '';
             if (in_array($type, ['featured_products', 'product_showcase']) && !empty($section['data']['products'])) {
                 foreach ($section['data']['products'] as $product) {
-                    $allProductIds[] = is_object($product) ? $product->id : $product['id'];
+                    $allProductIds[] = is_object($product) ? $product->id : ($product['id'] ?? null);
                 }
             }
         }
+        $allProductIds = array_filter($allProductIds);
 
         if (empty($allProductIds)) {
             return;
@@ -117,7 +117,18 @@ class StorefrontController extends Controller
 
         $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($allProductIds);
 
-        foreach ($sections as &$section) {
+        $productModels = Product::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->whereIn('id', $allProductIds)
+            ->with([
+                'category' => fn ($query) => $query->withoutGlobalScopes()->where('categories.tenant_id', $tenant->id),
+                'brand' => fn ($query) => $query->withoutGlobalScopes()->where('brands.tenant_id', $tenant->id),
+                'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant',
+            ])
+            ->get()
+            ->keyBy('id');
+
+        foreach ($storefront['homepage']['sections'] as &$section) {
             $type = $section['type'] ?? '';
             if (!in_array($type, ['featured_products', 'product_showcase'])) {
                 continue;
@@ -126,11 +137,63 @@ class StorefrontController extends Controller
                 continue;
             }
             foreach ($section['data']['products'] as &$product) {
-                $this->enrichProductWithPromotion($product, $promotions, $currencySymbol, $flashSaleData[$product->id] ?? null);
+                if (is_object($product)) {
+                    $this->enrichProductWithPromotion($product, $promotions, $currencySymbol, $flashSaleData[$product->id] ?? null);
+                    continue;
+                }
+
+                $productId = $product['id'] ?? null;
+                $model = $productId === null ? null : $productModels->get($productId);
+                if (!$model) {
+                    continue;
+                }
+
+                $this->enrichProductWithPromotion($model, $promotions, $currencySymbol, $flashSaleData[$productId] ?? null);
+                $product = $this->copyEnrichedProductFields($product, $model);
             }
             unset($product);
         }
         unset($section);
+    }
+
+    private function copyEnrichedProductFields(array $product, Product $model): array
+    {
+        $product['promotion_badge'] = $model->promotion_badge ?? null;
+        $product['promotion_discount'] = $model->promotion_discount ?? null;
+        $product['promotion_price'] = $model->promotion_price ?? null;
+        $product['promotion_price_max'] = $model->promotion_price_max ?? null;
+        $product['is_flash_sale'] = $model->is_flash_sale ?? false;
+        $product['flash_sale_price'] = $model->flash_sale_price ?? null;
+        $product['flash_sale_original_price'] = $model->flash_sale_original_price ?? null;
+        $product['flash_sale_discount'] = $model->flash_sale_discount ?? null;
+        $product['flash_sale_discount_percentage'] = $model->flash_sale_discount_percentage ?? null;
+        $product['flash_sale_ends_at'] = $model->flash_sale_ends_at ?? null;
+        $product['flash_sale_remaining_stock'] = $model->flash_sale_remaining_stock ?? null;
+        $product['flash_sale_name'] = $model->flash_sale_name ?? null;
+        $product['flash_sale_variants'] = $model->flash_sale_variants ?? [];
+
+        if (!$model->variants || empty($model->variants)) {
+            return $product;
+        }
+
+        $promotionPrices = [];
+        foreach ($model->variants->keyBy('id')->all() as $variantId => $variant) {
+            $promotionPrices[$variantId] = $variant->promotion_price;
+        }
+
+        if (!is_array($product['variants'] ?? null)) {
+            return $product;
+        }
+
+        foreach ($product['variants'] as &$variant) {
+            $variantId = $variant['id'] ?? null;
+            if ($variantId !== null && isset($promotionPrices[$variantId])) {
+                $variant['promotion_price'] = $promotionPrices[$variantId];
+            }
+        }
+        unset($variant);
+
+        return $product;
     }
 
     public function products(Request $request)

@@ -1,0 +1,11 @@
+PHPUnit 11.5.39 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.30
+Configuration: C:\laragon\www\ai-use-ecommerce-project\phpunit.xml
+
+SSSSSSSSSSSSSSSSSSSSSSSSSSS                                       27 / 27 (100%)
+
+Time: 00:06.157, Memory: 44.00 MB
+
+OK, but there were issues!
+Tests: 27, Assertions: 0, PHPUnit Deprecations: 27, Skipped: 27.

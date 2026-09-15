@@ -1,0 +1,18 @@
+
+   INFO  Running migrations.  
+
+  2026_04_26_000003_create_messages_table ............................................................... 37.34ms FAIL
+
+In Connection.php line 824:
+                                                                                                                       
+  SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'messages' already exists (Connection: mysql, SQL: c  
+  reate table `messages` (`id` bigint unsigned not null auto_increment primary key, `sender_id` bigint unsigned not n  
+  ull, `receiver_id` bigint unsigned not null, `message` text not null, `is_read` tinyint(1) not null default '0', `c  
+  reated_at` timestamp null, `updated_at` timestamp null) default character set utf8mb4 collate 'utf8mb4_unicode_ci')  
+                                                                                                                       
+
+In Connection.php line 570:
+                                                                                            
+  SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'messages' already exists  
+                                                                                            
+
