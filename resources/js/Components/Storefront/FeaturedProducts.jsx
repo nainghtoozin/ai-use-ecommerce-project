@@ -13,7 +13,7 @@ export default function FeaturedProducts({ products, title, subtitle, variant = 
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{title || 'Featured Products'}</h2>
                 {subtitle && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
             </div>
-            <div className={layout === 'horizontal' ? 'flex gap-3 overflow-x-auto snap-x pb-2 sm:grid sm:grid-cols-3 lg:grid-cols-4 sm:overflow-visible' : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4'}>
+            <div className={layout === 'horizontal' ? 'flex gap-3 overflow-x-auto snap-x pb-2 sm:grid sm:grid-cols-3 lg:grid-cols-4 sm:overflow-visible' : 'grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4'}>
                 {products.slice(0, 8).map((product) => (
                     <ProductCard
                         key={product.id}
