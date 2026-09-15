@@ -2,9 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
-import { ChevronUp, ChevronDown, LayoutGrid, Type, Palette, Columns, Monitor, Eye, Settings, MapPin, Truck, Package, CreditCard, FileText, GripVertical, Pencil, MessageSquare, Receipt, Smartphone, Tablet, Laptop, Maximize } from 'lucide-react';
+import { ChevronUp, ChevronDown, LayoutGrid, Type, Palette, Columns, Monitor, Eye, MapPin, Truck, Package, CreditCard, FileText, GripVertical, Pencil, MessageSquare, Receipt, Smartphone, Tablet, Laptop, Maximize, Banknote } from 'lucide-react';
+import { DraftBadge, EditorCard, EmptyState, FIELD_INPUT, FIELD_SELECT, IconButton, LiveBadge, Notice, OutlineButton, PrimaryLink, PublishConfirmModal, SAVE_STATUS, SaveStatusText, SectionHeader, StatusPill, SuccessButton, Switch } from '@/Components/Admin/StorefrontUI';
 
-const SAVE_STATUS = { IDLE: 'idle', UNSAVED: 'unsaved', SAVING: 'saving', SAVED: 'saved', FAILED: 'failed' };
 const DEBOUNCE_MS = 1000;
 
 const PRESET_DESCRIPTIONS = {
@@ -37,6 +37,8 @@ const MANAGEMENT_TABS = [
     ['cod', 'COD Rules'],
 ];
 
+const MGMT_ICONS = { delivery: Truck, packaging: Package, cod: Banknote };
+
 export default function CheckoutManagement({ storefront, deliveryServices: initialDelivery, packagingOptions: initialPackaging, codRules: initialCod, cities, revision }) {
     const { tenant } = usePage().props;
     const [editorTab, setEditorTab] = useState('sections');
@@ -59,9 +61,6 @@ export default function CheckoutManagement({ storefront, deliveryServices: initi
     const hasUnpublished = revision?.has_unpublished_changes;
     const publishedRevision = revision?.published?.revision_number;
     const previewUrl = tenant?.slug ? `/store/${tenant.slug}/checkout/preview` : null;
-
-    const statusColor = { idle: 'text-emerald-600', unsaved: 'text-amber-600', saving: 'text-blue-600', saved: 'text-emerald-600', failed: 'text-red-600' };
-    const statusLabel = { idle: 'All changes saved', unsaved: 'Unsaved changes', saving: 'Saving\u2026', saved: '\u2713 Draft saved', failed: 'Couldn\'t save changes' };
 
     const doSave = useCallback(() => {
         if (savingRef.current) { pendingAfterSaveRef.current = true; return; }
@@ -147,7 +146,7 @@ export default function CheckoutManagement({ storefront, deliveryServices: initi
             <Head title="Checkout Editor" />
             <div className="max-w-full mx-auto">
                 {/* Editor Header */}
-                <div className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+                <div className="sticky top-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-b border-gray-200 dark:border-gray-800 shadow-sm">
                     <div className="px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-14">
                             <div className="flex items-center gap-3 min-w-0">
@@ -156,24 +155,20 @@ export default function CheckoutManagement({ storefront, deliveryServices: initi
                                 </Link>
                                 <span className="text-gray-300 dark:text-gray-600">/</span>
                                 <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">Checkout Editor</h1>
-                                {hasUnpublished && <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium uppercase tracking-wide">Draft</span>}
-                                {publishedRevision && <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] font-medium uppercase tracking-wide">Live #{publishedRevision}</span>}
+                                {hasUnpublished && <DraftBadge className="hidden sm:inline-flex" />}
+                                {publishedRevision && <LiveBadge className="hidden sm:inline-flex">Live #{publishedRevision}</LiveBadge>}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`text-[11px] font-medium ${statusColor[saveStatus]}`}>
-                                    {saveStatus === SAVE_STATUS.FAILED ? (
-                                        <button type="button" onClick={handleRetry} className="underline hover:no-underline">{statusLabel[saveStatus]}</button>
-                                    ) : statusLabel[saveStatus]}
-                                </span>
-                                {previewUrl && <button type="button" onClick={handlePreview} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"><Eye className="w-3.5 h-3.5" />Preview</button>}
-                                {hasUnpublished && <button type="button" onClick={handlePublishClick} className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 transition-colors">Publish</button>}
+                                <SaveStatusText status={saveStatus} onRetry={handleRetry} />
+                                {previewUrl && <OutlineButton size="sm" onClick={handlePreview} className="hidden sm:inline-flex shrink-0"><Eye className="w-3.5 h-3.5" />Preview</OutlineButton>}
+                                {hasUnpublished && <SuccessButton size="sm" onClick={handlePublishClick} className="shrink-0">Publish</SuccessButton>}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {saveSuccess && <div role="status" className="mx-4 sm:mx-6 lg:mx-8 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{saveSuccess}</div>}
-                {saveError && <div role="alert" className="mx-4 sm:mx-6 lg:mx-8 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{saveError}</div>}
+                {saveSuccess && <Notice tone="success" className="mx-4 sm:mx-6 lg:mx-8 mt-4">{saveSuccess}</Notice>}
+                {saveError && <Notice tone="error" className="mx-4 sm:mx-6 lg:mx-8 mt-4">{saveError}</Notice>}
 
                 {/* Main Layout: Sidebar + Content */}
                 <div className="flex min-h-[calc(100vh-56px)]">
@@ -194,13 +189,16 @@ export default function CheckoutManagement({ storefront, deliveryServices: initi
                         <div className="p-3 border-t border-gray-200 dark:border-gray-800">
                             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-2">Manage</p>
                             <nav className="space-y-0.5">
-                                {MANAGEMENT_TABS.map(([key, label]) => (
+                                {MANAGEMENT_TABS.map(([key, label]) => {
+                                    const MgmtIcon = MGMT_ICONS[key] || Banknote;
+                                    return (
                                     <button key={key} type="button" onClick={() => { setMgmtTab(key); setEditorTab(null); }}
                                         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${mgmtTab === key ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'}`}>
-                                        <Settings className="w-4 h-4 shrink-0" />
+                                        <MgmtIcon className="w-4 h-4 shrink-0" />
                                         {label}
                                     </button>
-                                ))}
+                                    );
+                                })}
                             </nav>
                         </div>
                     </aside>
@@ -214,17 +212,20 @@ export default function CheckoutManagement({ storefront, deliveryServices: initi
                             </button>
                         ))}
                         <span className="w-px bg-gray-200 dark:bg-gray-700 my-1" />
-                        {MANAGEMENT_TABS.map(([key, label]) => (
+                        {MANAGEMENT_TABS.map(([key, label]) => {
+                            const MgmtIcon = MGMT_ICONS[key] || Banknote;
+                            return (
                             <button key={key} type="button" onClick={() => { setMgmtTab(key); setEditorTab(null); }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${mgmtTab === key ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
-                                <Settings className="w-3.5 h-3.5" />{label}
+                                <MgmtIcon className="w-3.5 h-3.5" />{label}
                             </button>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* Main Content Area */}
                     <main className="flex-1 min-w-0 pb-20 lg:pb-0">
-                        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
                             {/* Editor Sections */}
                             {editorTab === 'sections' && <SectionsEditor checkout={checkout} updateCheckout={updateCheckout} tenant={tenant} />}
                             {editorTab === 'content' && <ContentEditor checkout={checkout} updateCheckout={updateCheckout} />}
@@ -242,16 +243,12 @@ export default function CheckoutManagement({ storefront, deliveryServices: initi
             </div>
 
             {showPublishConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl">
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Publish checkout changes?</h2>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Your draft changes will become visible to customers on the checkout page.</p>
-                        <div className="flex justify-end gap-2 mt-6">
-                            <button type="button" onClick={() => setShowPublishConfirm(false)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
-                            <button type="button" onClick={confirmPublish} className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Publish Changes</button>
-                        </div>
-                    </div>
-                </div>
+                <PublishConfirmModal
+                    title="Publish checkout changes?"
+                    description="Your draft changes will become visible to customers on the checkout page."
+                    onCancel={() => setShowPublishConfirm(false)}
+                    onConfirm={confirmPublish}
+                />
             )}
         </AdminLayout>
     );
@@ -299,16 +296,11 @@ function SectionsEditor({ checkout, updateCheckout, tenant }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Sections</h2>
-                    <p className="text-sm text-gray-500 mt-1">Reorder and toggle checkout sections. Each section maps to a checkout step.</p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <GripVertical className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Use arrows to reorder</span>
-                </div>
-            </div>
+            <SectionHeader
+                title="Sections"
+                description="Reorder and toggle checkout sections. Each section maps to a checkout step."
+                actions={<span className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500"><GripVertical className="w-3.5 h-3.5" /><span className="hidden sm:inline">Use arrows to reorder</span></span>}
+            />
 
             {/* Section list */}
             <div className="space-y-2">
@@ -322,7 +314,7 @@ function SectionsEditor({ checkout, updateCheckout, tenant }) {
                     const canTitle = canEditTitle.includes(key);
 
                     return (
-                        <div key={key} className={`rounded-xl border transition-all ${isVisible ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900' : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50'}`}>
+                        <div key={key} className={`rounded-xl border transition-all ${isVisible ? 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm' : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50'}`}>
                             <div className="flex items-center gap-3 p-3 sm:p-4">
                                 {/* Drag handle */}
                                 <div className="hidden sm:flex flex-col items-center gap-0.5 text-gray-300 dark:text-gray-600 shrink-0">
@@ -338,11 +330,7 @@ function SectionsEditor({ checkout, updateCheckout, tenant }) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className={`text-sm font-semibold ${isVisible ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>{section.title || meta.label}</span>
-                                        {isVisible ? (
-                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">On</span>
-                                        ) : (
-                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">Off</span>
-                                        )}
+                                        <StatusPill size="xs" active={isVisible} activeLabel="On" inactiveLabel="Off" />
                                     </div>
                                     <p className={`text-xs mt-0.5 ${isVisible ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{meta.desc}</p>
                                 </div>
@@ -365,17 +353,13 @@ function SectionsEditor({ checkout, updateCheckout, tenant }) {
                                     </button>
 
                                     {/* Reorder */}
-                                    <div className="flex gap-0.5">
-                                        <button type="button" onClick={() => moveSection(key, -1)} disabled={isFirst}
-                                            aria-label="Move section up"
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
+                                    <div className="flex gap-1">
+                                        <IconButton label="Move section up" onClick={() => moveSection(key, -1)} disabled={isFirst}>
                                             <ChevronUp className="w-4 h-4" />
-                                        </button>
-                                        <button type="button" onClick={() => moveSection(key, 1)} disabled={isLast}
-                                            aria-label="Move section down"
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
+                                        </IconButton>
+                                        <IconButton label="Move section down" onClick={() => moveSection(key, 1)} disabled={isLast}>
                                             <ChevronDown className="w-4 h-4" />
-                                        </button>
+                                        </IconButton>
                                     </div>
                                 </div>
                             </div>
@@ -386,7 +370,7 @@ function SectionsEditor({ checkout, updateCheckout, tenant }) {
                                     <label className="text-xs font-medium text-gray-500 mb-1 block">Section Title</label>
                                     <input type="text" value={section.title || ''} onChange={(e) => updateCheckout(`sections.${key}.title`, e.target.value)}
                                         placeholder={meta.label}
-                                        className="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm" />
+                                        className={FIELD_INPUT} />
                                     <p className="text-[11px] text-gray-400 mt-1">Displayed as the section heading on the checkout page.</p>
                                 </div>
                             )}
@@ -436,13 +420,13 @@ function ContentEditor({ checkout, updateCheckout }) {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Content</h2>
-                <p className="text-sm text-gray-500 mt-1">Customize all customer-facing text, headings, and messages.</p>
-            </div>
+            <SectionHeader
+                title="Content"
+                description="Customize all customer-facing text, headings, and messages."
+            />
 
             {/* Page Header */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-5">
+            <EditorCard className="space-y-5">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Page Header</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -450,10 +434,10 @@ function ContentEditor({ checkout, updateCheckout }) {
                         <Field label="Subtitle" value={checkout?.subtitle || ''} onChange={(v) => updateCheckout('subtitle', v)} placeholder="Complete your order" />
                     </div>
                 </div>
-            </div>
+            </EditorCard>
 
             {/* Section Titles */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-5">
+            <EditorCard className="space-y-5">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Section Titles</h3>
                     <p className="text-xs text-gray-500 mb-4">Headings displayed above each checkout section.</p>
@@ -463,10 +447,10 @@ function ContentEditor({ checkout, updateCheckout }) {
                         <Field key={key} label={label} value={sections[key]?.title || ''} onChange={(v) => updateCheckout(`sections.${key}.title`, v)} placeholder={placeholder} />
                     ))}
                 </div>
-            </div>
+            </EditorCard>
 
             {/* Button Labels */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-5">
+            <EditorCard className="space-y-5">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Button Labels</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -474,10 +458,10 @@ function ContentEditor({ checkout, updateCheckout }) {
                         <Field label="Back to Cart" value={checkout?.button_labels?.back_to_cart || ''} onChange={(v) => updateCheckout('button_labels.back_to_cart', v)} placeholder="Back to Cart" />
                     </div>
                 </div>
-            </div>
+            </EditorCard>
 
             {/* Messages */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-5">
+            <EditorCard className="space-y-5">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Messages</h3>
                     <p className="text-xs text-gray-500 mb-4">Informational messages shown to customers during checkout.</p>
@@ -486,7 +470,7 @@ function ContentEditor({ checkout, updateCheckout }) {
                     <TextareaField label="Payment Verification Message" value={checkout?.messages?.payment_verification || ''} onChange={(v) => updateCheckout('messages.payment_verification', v)} placeholder="e.g. Your payment will be verified within 24 hours." />
                     <TextareaField label="Order Confirmation Message" value={checkout?.messages?.order_confirmation || ''} onChange={(v) => updateCheckout('messages.order_confirmation', v)} placeholder="e.g. Thank you! We'll process your order shortly." />
                 </div>
-            </div>
+            </EditorCard>
         </div>
     );
 }
@@ -497,13 +481,13 @@ function AppearanceEditor({ checkout, updateCheckout }) {
 
     return (
         <div className="space-y-8">
-            <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Appearance</h2>
-                <p className="text-sm text-gray-500 mt-1">Choose a design preset or fine-tune individual elements.</p>
-            </div>
+            <SectionHeader
+                title="Appearance"
+                description="Choose a design preset or fine-tune individual elements."
+            />
 
             {/* ── Presets ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Design Preset</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {['modern', 'minimal', 'elegant', 'compact', 'friendly'].map((preset) => {
@@ -524,7 +508,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Card Style ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Card Style</h3>
                 <p className="text-xs text-gray-500 mb-4">How section cards appear on the checkout page.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -549,7 +533,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Input Style ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Input Style</h3>
                 <p className="text-xs text-gray-500 mb-4">How form fields look in the checkout form.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -574,7 +558,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Button Style + Size ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Button</h3>
                 <p className="text-xs text-gray-500 mb-4">Style and size of checkout action buttons.</p>
                 <div className="space-y-5">
@@ -605,7 +589,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
                     {/* Button Size */}
                     <div>
                         <label className="text-xs font-medium text-gray-500 mb-2 block">Size</label>
-                        <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {[
                                 { value: 'sm', label: 'Small', cls: 'px-3 py-1 text-xs' },
                                 { value: 'md', label: 'Medium', cls: 'px-5 py-2 text-sm' },
@@ -628,7 +612,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Border Radius ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Border Radius</h3>
                 <p className="text-xs text-gray-500 mb-4">Corner roundness for cards, inputs, and buttons.</p>
                 <div className="grid grid-cols-4 gap-3">
@@ -653,7 +637,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Spacing ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Spacing</h3>
                 <p className="text-xs text-gray-500 mb-4">Vertical space between checkout sections.</p>
                 <div className="grid grid-cols-3 gap-3">
@@ -679,7 +663,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Section Style ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Section Style</h3>
                 <p className="text-xs text-gray-500 mb-4">How checkout sections are visually grouped.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -704,7 +688,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Order Summary Style ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:border-gray-100 mb-1">Order Summary</h3>
                 <p className="text-xs text-gray-500 mb-4">How the order summary appears during checkout.</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -728,7 +712,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Product Image Size ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Product Images</h3>
                 <p className="text-xs text-gray-500 mb-4">Size of product thumbnails in the order summary.</p>
                 <div className="grid grid-cols-3 gap-3">
@@ -754,7 +738,7 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Theme Color ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Accent Color</h3>
                 <p className="text-xs text-gray-500 mb-4">Primary color for checkout buttons and highlights.</p>
                 <div className="flex flex-wrap gap-3">
@@ -788,32 +772,32 @@ function AppearanceEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Misc ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <EditorCard>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Options</h3>
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Compact Mode</p>
-                            <p className="text-xs text-gray-500">Reduce padding and font sizes for a tighter layout</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Reduce padding and font sizes for a tighter layout</p>
                         </div>
-                        <Toggle checked={appearance.compact_mode || false} onChange={(v) => updateCheckout('appearance.compact_mode', v)} />
+                        <Switch label="Compact Mode" labelVisible={false} checked={appearance.compact_mode || false} onChange={(v) => updateCheckout('appearance.compact_mode', v)} />
                     </div>
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Show Store Logo</p>
-                            <p className="text-xs text-gray-500">Display the store logo in the checkout header</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Display the store logo in the checkout header</p>
                         </div>
-                        <Toggle checked={visual.show_store_logo !== false} onChange={(v) => updateCheckout('visual.show_store_logo', v)} />
+                        <Switch label="Show Store Logo" labelVisible={false} checked={visual.show_store_logo !== false} onChange={(v) => updateCheckout('visual.show_store_logo', v)} />
                     </div>
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Show Branding</p>
-                            <p className="text-xs text-gray-500">Display platform branding in the checkout footer</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Display platform branding in the checkout footer</p>
                         </div>
-                        <Toggle checked={checkout?.show_branding || false} onChange={(v) => updateCheckout('show_branding', v)} />
+                        <Switch label="Show Branding" labelVisible={false} checked={checkout?.show_branding || false} onChange={(v) => updateCheckout('show_branding', v)} />
                     </div>
                 </div>
-            </div>
+            </EditorCard>
 
             {/* ── Preview Summary ── */}
             <AppearanceSummary appearance={appearance} visual={visual} />
@@ -893,26 +877,26 @@ function AppearanceSummary({ appearance, visual }) {
 function LayoutEditor({ checkout, updateCheckout }) {
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Layout</h2>
-                <p className="text-sm text-gray-500 mt-1">Control the order summary position and display options.</p>
-            </div>
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-5">
+            <SectionHeader
+                title="Layout"
+                description="Control the order summary position and display options."
+            />
+            <EditorCard className="space-y-5">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Order Summary</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <SelectField label="Position" value={checkout?.layout?.order_summary_position || 'right'} options={['right', 'left', 'bottom']} onChange={(v) => updateCheckout('layout.order_summary_position', v)} />
-                        <Toggle label="Show on Mobile" checked={checkout?.layout?.show_order_summary_on_mobile !== false} onChange={(v) => updateCheckout('layout.show_order_summary_on_mobile', v)} />
+                        <Switch label="Show on Mobile" checked={checkout?.layout?.show_order_summary_on_mobile !== false} onChange={(v) => updateCheckout('layout.show_order_summary_on_mobile', v)} />
                     </div>
                 </div>
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-5">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Header</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Toggle label="Show Store Logo" checked={checkout?.visual?.show_store_logo !== false} onChange={(v) => updateCheckout('visual.show_store_logo', v)} />
-                        <Toggle label="Show Branding" checked={checkout?.show_branding || false} onChange={(v) => updateCheckout('show_branding', v)} />
+                        <Switch label="Show Store Logo" checked={checkout?.visual?.show_store_logo !== false} onChange={(v) => updateCheckout('visual.show_store_logo', v)} />
+                        <Switch label="Show Branding" checked={checkout?.show_branding || false} onChange={(v) => updateCheckout('show_branding', v)} />
                     </div>
                 </div>
-            </div>
+            </EditorCard>
         </div>
     );
 }
@@ -943,13 +927,13 @@ function ResponsiveEditor({ checkout, updateCheckout }) {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Responsive</h2>
-                <p className="text-sm text-gray-500 mt-1">Control how checkout behaves across different devices.</p>
-            </div>
+            <SectionHeader
+                title="Responsive"
+                description="Control how checkout behaves across different devices."
+            />
 
             {/* ── Device Preview Selector ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Preview Device</h3>
                 <p className="text-xs text-gray-500 mb-4">Select a device to see how settings affect that viewport.</p>
                 <div className="grid grid-cols-3 gap-3">
@@ -973,7 +957,7 @@ function ResponsiveEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Section Device Visibility ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Section Visibility</h3>
@@ -1023,7 +1007,7 @@ function ResponsiveEditor({ checkout, updateCheckout }) {
             </div>
 
             {/* ── Layout by Device ── */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Layout Settings</h3>
                 <p className="text-xs text-gray-500 mb-4">Configure layout behavior for the selected device.</p>
 
@@ -1132,34 +1116,27 @@ function DeliveryTab({ deliveryServices, cities }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delivery Services</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage delivery methods, fees, and city-specific pricing.</p>
-                </div>
-                <Link href={adminUrl('/admin/delivery-services/create')} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    Add Service
-                </Link>
-            </div>
+            <SectionHeader
+                title="Delivery Services"
+                description="Manage delivery methods, fees, and city-specific pricing."
+                actions={<PrimaryLink href={adminUrl('/admin/delivery-services/create')} size="sm">Add Service</PrimaryLink>}
+            />
 
             {!sorted.length ? (
-                <div className="text-center py-16 text-gray-500 dark:text-gray-400 text-sm rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                <EmptyState>
                     No delivery services configured yet.
                     <Link href={adminUrl('/admin/delivery-services/create')} className="block mt-2 text-blue-600 hover:underline">Create your first delivery service</Link>
-                </div>
+                </EmptyState>
             ) : (
                 <div className="space-y-2">
                     {sorted.map((service) => (
-                        <div key={service.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                        <div key={service.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{service.name}</span>
                                         <span className="text-xs text-gray-400 font-mono">{service.code}</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${service.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                            {service.is_active ? 'Active' : 'Inactive'}
-                                        </span>
+                                        <StatusPill size="xs" active={service.is_active} />
                                     </div>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
                                         <span>Base: <strong className="text-gray-700 dark:text-gray-300">{service.base_fee}</strong></span>
@@ -1169,7 +1146,7 @@ function DeliveryTab({ deliveryServices, cities }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                    <button type="button" onClick={() => handleToggle(service.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${service.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}>
+                                    <button type="button" onClick={() => handleToggle(service.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${service.is_active ? 'bg-green-50 dark:bg-emerald-900/20 text-green-700 dark:text-emerald-300 hover:bg-green-100 dark:hover:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'}`}>
                                         {service.is_active ? 'Deactivate' : 'Activate'}
                                     </button>
                                     <Link href={adminUrl(`/admin/delivery-services/${service.id}/edit`)} className="text-sm text-blue-600 hover:text-blue-800 font-medium">Edit</Link>
@@ -1192,34 +1169,27 @@ function PackagingTab({ packagingOptions }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Packaging Options</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage packaging types and fees offered during checkout.</p>
-                </div>
-                <Link href={adminUrl('/admin/packaging-options/create')} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    Add Packaging
-                </Link>
-            </div>
+            <SectionHeader
+                title="Packaging Options"
+                description="Manage packaging types and fees offered during checkout."
+                actions={<PrimaryLink href={adminUrl('/admin/packaging-options/create')} size="sm">Add Packaging</PrimaryLink>}
+            />
 
             {!sorted.length ? (
-                <div className="text-center py-16 text-gray-500 dark:text-gray-400 text-sm rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                <EmptyState>
                     No packaging options configured yet.
                     <Link href={adminUrl('/admin/packaging-options/create')} className="block mt-2 text-blue-600 hover:underline">Create your first packaging option</Link>
-                </div>
+                </EmptyState>
             ) : (
                 <div className="space-y-2">
                     {sorted.map((option) => (
-                        <div key={option.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                        <div key={option.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{option.name}</span>
                                         <span className="text-xs text-gray-400 font-mono">{option.code}</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${option.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                            {option.is_active ? 'Active' : 'Inactive'}
-                                        </span>
+                                        <StatusPill size="xs" active={option.is_active} />
                                     </div>
                                     <div className="flex items-center gap-x-4 mt-1.5 text-xs text-gray-500">
                                         <span>Fee: <strong className="text-gray-700 dark:text-gray-300">{option.fee}</strong></span>
@@ -1227,7 +1197,7 @@ function PackagingTab({ packagingOptions }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                    <button type="button" onClick={() => handleToggle(option.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${option.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}>
+                                    <button type="button" onClick={() => handleToggle(option.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${option.is_active ? 'bg-green-50 dark:bg-emerald-900/20 text-green-700 dark:text-emerald-300 hover:bg-green-100 dark:hover:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'}`}>
                                         {option.is_active ? 'Deactivate' : 'Activate'}
                                     </button>
                                     <Link href={adminUrl(`/admin/packaging-options/${option.id}/edit`)} className="text-sm text-blue-600 hover:text-blue-800 font-medium">Edit</Link>
@@ -1262,33 +1232,26 @@ function CodTab({ codRules, cities }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">COD Rules</h2>
-                    <p className="text-sm text-gray-500 mt-1">Configure Cash on Delivery eligibility, fees, and city restrictions.</p>
-                </div>
-                <Link href={adminUrl('/admin/cod-rules/create')} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    Add Rule
-                </Link>
-            </div>
+            <SectionHeader
+                title="COD Rules"
+                description="Configure Cash on Delivery eligibility, fees, and city restrictions."
+                actions={<PrimaryLink href={adminUrl('/admin/cod-rules/create')} size="sm">Add Rule</PrimaryLink>}
+            />
 
             {!codRules?.length ? (
-                <div className="text-center py-16 text-gray-500 dark:text-gray-400 text-sm rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                <EmptyState>
                     No COD rules configured yet.
                     <Link href={adminUrl('/admin/cod-rules/create')} className="block mt-2 text-blue-600 hover:underline">Create your first COD rule</Link>
-                </div>
+                </EmptyState>
             ) : (
                 <div className="space-y-2">
                     {codRules.map((rule) => (
-                        <div key={rule.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                        <div key={rule.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rule.name}</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${rule.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                            {rule.is_active ? 'Active' : 'Inactive'}
-                                        </span>
+                                        <StatusPill size="xs" active={rule.is_active} />
                                     </div>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
                                         <span>Fee: <strong className="text-gray-700 dark:text-gray-300">{rule.cod_fee}</strong></span>
@@ -1297,7 +1260,7 @@ function CodTab({ codRules, cities }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                    <button type="button" onClick={() => handleToggle(rule.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${rule.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}>
+                                    <button type="button" onClick={() => handleToggle(rule.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${rule.is_active ? 'bg-green-50 dark:bg-emerald-900/20 text-green-700 dark:text-emerald-300 hover:bg-green-100 dark:hover:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'}`}>
                                         {rule.is_active ? 'Deactivate' : 'Activate'}
                                     </button>
                                     <Link href={adminUrl(`/admin/cod-rules/${rule.id}/edit`)} className="text-sm text-blue-600 hover:text-blue-800 font-medium">Edit</Link>
@@ -1320,7 +1283,7 @@ function Field({ label, value, onChange, type = 'text', placeholder = '' }) {
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
             <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-                className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" />
+                className={FIELD_INPUT} />
         </label>
     );
 }
@@ -1330,7 +1293,7 @@ function TextareaField({ label, value, onChange, placeholder = '' }) {
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
             <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3}
-                className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal resize-none" />
+                className={`${FIELD_INPUT} resize-none`} />
         </label>
     );
 }
@@ -1340,18 +1303,9 @@ function SelectField({ label, value, options, onChange }) {
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
             <select value={value} onChange={(e) => onChange(e.target.value)}
-                className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal">
+                className={FIELD_SELECT}>
                 {options.map((opt) => <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>)}
             </select>
         </label>
-    );
-}
-
-function Toggle({ checked, onChange }) {
-    return (
-        <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
-        </button>
     );
 }

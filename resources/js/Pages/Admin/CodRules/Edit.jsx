@@ -1,9 +1,10 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { usePermission } from '@/Hooks/usePermission';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useState } from 'react';
+import { BackLink, CancelLink, CheckboxRow, FIELD_CHECKBOX, FormCard, FormGroup, Notice, PageHeader, PrimaryButton, TextInput, UnauthorizedState } from '@/Components/Admin/StorefrontUI';
 
 export default function CodRuleEdit({ codRule, cities }) {
     const { can } = usePermission();
@@ -41,11 +42,7 @@ export default function CodRuleEdit({ codRule, cities }) {
         return (
             <AdminLayout>
                 <Head title="Unauthorized" />
-                <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <p className="text-red-700 font-medium">You do not have permission to edit COD rules.</p>
-                    </div>
-                </div>
+                <UnauthorizedState message="You do not have permission to edit COD rules." />
             </AdminLayout>
         );
     }
@@ -53,115 +50,92 @@ export default function CodRuleEdit({ codRule, cities }) {
     return (
         <AdminLayout>
             <Head title={`Edit ${codRule.name}`} />
-            <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-6">
-                    <Link href={adminUrl('/admin/storefront/checkout')} className="text-sm text-blue-600 hover:underline">&larr; Back to Checkout</Link>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">Edit COD Rule</h1>
-                </div>
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                <BackLink href={adminUrl('/admin/storefront/checkout')}>Back to Checkout</BackLink>
+                <PageHeader eyebrow="COD Rules" title="Edit COD Rule" />
 
                 {flash?.success && (
-                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                        {flash.success}
-                    </div>
+                    <Notice tone="success" className="mb-4">{flash.success}</Notice>
                 )}
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                <FormCard>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                            <input id="name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)}
-                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-                        </div>
+                        <FormGroup title="Rule">
+                            <TextInput id="name" label="Name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} error={errors.name} required />
+                        </FormGroup>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="min_order_amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Order Amount</label>
-                                <input id="min_order_amount" type="number" min="0" step="0.01" value={data.min_order_amount} onChange={(e) => setData('min_order_amount', e.target.value)}
-                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                {errors.min_order_amount && <p className="mt-1 text-sm text-red-600">{errors.min_order_amount}</p>}
-                            </div>
+                        <FormGroup title="Order Amount" description="Eligible order total range. Leave empty for no limit.">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <TextInput id="min_order_amount" label="Min Order Amount" type="number" min="0" step="0.01" value={data.min_order_amount} onChange={(e) => setData('min_order_amount', e.target.value)} error={errors.min_order_amount} />
 
-                            <div>
-                                <label htmlFor="max_order_amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Order Amount</label>
-                                <input id="max_order_amount" type="number" min="0" step="0.01" value={data.max_order_amount} onChange={(e) => setData('max_order_amount', e.target.value)}
-                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                {errors.max_order_amount && <p className="mt-1 text-sm text-red-600">{errors.max_order_amount}</p>}
+                                <TextInput id="max_order_amount" label="Max Order Amount" type="number" min="0" step="0.01" value={data.max_order_amount} onChange={(e) => setData('max_order_amount', e.target.value)} error={errors.max_order_amount} />
                             </div>
-                        </div>
+                        </FormGroup>
 
                         {errors.city_restrictions && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-                                {errors.city_restrictions}
-                            </div>
+                            <Notice tone="error" className="p-3">{errors.city_restrictions}</Notice>
                         )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Allowed Cities</label>
-                                <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1">
-                                    {cities.length === 0 ? (
-                                        <p className="text-sm text-gray-500">No cities available</p>
-                                    ) : cities.map((city) => (
-                                        <label key={city.id} className="flex items-center gap-2 text-sm">
-                                            <input type="checkbox"
-                                                checked={selectedAllowed.includes(city.id)}
-                                                onChange={() => toggleCity(selectedAllowed, setSelectedAllowed, city.id)}
-                                                className="rounded border-gray-300 dark:border-gray-700" />
-                                            <span className="text-gray-700 dark:text-gray-300">{city.name}</span>
-                                        </label>
-                                    ))}
+                        <FormGroup title="Cities" description="Control which cities this rule applies to.">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Allowed Cities</label>
+                                    <div className="border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 max-h-48 overflow-y-auto space-y-1">
+                                        {cities.length === 0 ? (
+                                            <p className="text-sm text-gray-500">No cities available</p>
+                                        ) : cities.map((city) => (
+                                            <label key={city.id} className="flex items-center gap-2 text-sm rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                                <input type="checkbox"
+                                                    checked={selectedAllowed.includes(city.id)}
+                                                    onChange={() => toggleCity(selectedAllowed, setSelectedAllowed, city.id)}
+                                                    className={FIELD_CHECKBOX} />
+                                                <span className="text-gray-700 dark:text-gray-300">{city.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to allow all cities</p>
                                 </div>
-                                <p className="mt-1 text-xs text-gray-500">Leave empty to allow all cities</p>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Excluded Cities</label>
-                                <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1">
-                                    {cities.length === 0 ? (
-                                        <p className="text-sm text-gray-500">No cities available</p>
-                                    ) : cities.map((city) => (
-                                        <label key={city.id} className="flex items-center gap-2 text-sm">
-                                            <input type="checkbox"
-                                                checked={selectedExcluded.includes(city.id)}
-                                                onChange={() => toggleCity(selectedExcluded, setSelectedExcluded, city.id)}
-                                                className="rounded border-gray-300 dark:border-gray-700" />
-                                            <span className="text-gray-700 dark:text-gray-300">{city.name}</span>
-                                        </label>
-                                    ))}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Excluded Cities</label>
+                                    <div className="border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 max-h-48 overflow-y-auto space-y-1">
+                                        {cities.length === 0 ? (
+                                            <p className="text-sm text-gray-500">No cities available</p>
+                                        ) : cities.map((city) => (
+                                            <label key={city.id} className="flex items-center gap-2 text-sm rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                                <input type="checkbox"
+                                                    checked={selectedExcluded.includes(city.id)}
+                                                    onChange={() => toggleCity(selectedExcluded, setSelectedExcluded, city.id)}
+                                                    className={FIELD_CHECKBOX} />
+                                                <span className="text-gray-700 dark:text-gray-300">{city.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to exclude no cities</p>
                                 </div>
-                                <p className="mt-1 text-xs text-gray-500">Leave empty to exclude no cities</p>
                             </div>
-                        </div>
+                        </FormGroup>
 
-                        <div>
-                            <label htmlFor="cod_fee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">COD Fee</label>
-                            <input id="cod_fee" type="number" min="0" step="0.01" value={data.cod_fee} onChange={(e) => setData('cod_fee', parseFloat(e.target.value) || 0)}
-                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            {errors.cod_fee && <p className="mt-1 text-sm text-red-600">{errors.cod_fee}</p>}
-                        </div>
+                        <FormGroup title="Fee" description="Extra charge for cash-on-delivery orders.">
+                            <div className="space-y-4">
+                                <TextInput id="cod_fee" label="COD Fee" type="number" min="0" step="0.01" value={data.cod_fee} onChange={(e) => setData('cod_fee', parseFloat(e.target.value) || 0)} error={errors.cod_fee} required />
 
-                        <div className="flex items-center gap-2">
-                            <input id="apply_cod_fee_to_total" type="checkbox" checked={data.apply_cod_fee_to_total} onChange={(e) => setData('apply_cod_fee_to_total', e.target.checked)}
-                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
-                            <label htmlFor="apply_cod_fee_to_total" className="text-sm font-medium text-gray-700 dark:text-gray-300">Apply COD fee to total</label>
-                        </div>
+                                <CheckboxRow id="apply_cod_fee_to_total" label="Apply COD fee to total" checked={data.apply_cod_fee_to_total} onChange={(e) => setData('apply_cod_fee_to_total', e.target.checked)} />
+                            </div>
+                        </FormGroup>
 
-                        <div className="flex items-center gap-2">
-                            <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}
-                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
-                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
-                        </div>
+                        <FormGroup title="Visibility">
+                            <CheckboxRow id="is_active" label="Active" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
+                        </FormGroup>
 
-                        <div className="flex justify-end gap-3">
-                            <Link href={adminUrl('/admin/storefront/checkout')} className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200">Cancel</Link>
-                            <button type="submit" disabled={processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <CancelLink href={adminUrl('/admin/storefront/checkout')} />
+                            <PrimaryButton disabled={processing}>
                                 {processing ? 'Saving...' : 'Save Changes'}
-                            </button>
+                            </PrimaryButton>
                         </div>
                     </form>
-                </div>
+                </FormCard>
             </div>
         </AdminLayout>
     );

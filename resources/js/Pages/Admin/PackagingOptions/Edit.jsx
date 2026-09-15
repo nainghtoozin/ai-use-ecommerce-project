@@ -1,7 +1,8 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { usePermission } from '@/Hooks/usePermission';
+import { BackLink, CancelLink, CheckboxRow, FormCard, FormGroup, Notice, PageHeader, PrimaryButton, TextInput, TextareaInput, UnauthorizedState } from '@/Components/Admin/StorefrontUI';
 
 export default function PackagingOptionEdit({ packagingOption }) {
     const { can } = usePermission();
@@ -25,11 +26,7 @@ export default function PackagingOptionEdit({ packagingOption }) {
         return (
             <AdminLayout>
                 <Head title="Unauthorized" />
-                <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <p className="text-red-700 font-medium">You do not have permission to edit packaging options.</p>
-                    </div>
-                </div>
+                <UnauthorizedState message="You do not have permission to edit packaging options." />
             </AdminLayout>
         );
     }
@@ -37,72 +34,46 @@ export default function PackagingOptionEdit({ packagingOption }) {
     return (
         <AdminLayout>
             <Head title={`Edit ${packagingOption.name}`} />
-            <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-6">
-                    <Link href={adminUrl('/admin/storefront/checkout')} className="text-sm text-blue-600 hover:underline">&larr; Back to Checkout</Link>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">Edit Packaging Option</h1>
-                </div>
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                <BackLink href={adminUrl('/admin/storefront/checkout')}>Back to Checkout</BackLink>
+                <PageHeader eyebrow="Packaging Options" title="Edit Packaging Option" />
 
                 {flash?.success && (
-                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                        {flash.success}
-                    </div>
+                    <Notice tone="success" className="mb-4">{flash.success}</Notice>
                 )}
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                <FormCard>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                            <input id="name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)}
-                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-                        </div>
+                        <FormGroup title="General" description="Name, code, and description shown at checkout.">
+                            <div className="space-y-6">
+                                <TextInput id="name" label="Name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} error={errors.name} required />
 
-                        <div>
-                            <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
-                            <input id="code" type="text" value={data.code} onChange={(e) => setData('code', e.target.value.toUpperCase())}
-                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code}</p>}
-                        </div>
+                                <TextInput id="code" label="Code" type="text" value={data.code} onChange={(e) => setData('code', e.target.value.toUpperCase())} error={errors.code} required />
 
-                        <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (optional)</label>
-                            <textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)}
-                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" />
-                            {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="fee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fee</label>
-                                <input id="fee" type="number" min="0" value={data.fee} onChange={(e) => setData('fee', parseInt(e.target.value) || 0)}
-                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                                {errors.fee && <p className="mt-1 text-sm text-red-600">{errors.fee}</p>}
+                                <TextareaInput id="description" label="Description (optional)" value={data.description} onChange={(e) => setData('description', e.target.value)} error={errors.description} />
                             </div>
+                        </FormGroup>
 
-                            <div>
-                                <label htmlFor="sort_order" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort Order</label>
-                                <input id="sort_order" type="number" min="0" value={data.sort_order} onChange={(e) => setData('sort_order', parseInt(e.target.value) || 0)}
-                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                {errors.sort_order && <p className="mt-1 text-sm text-red-600">{errors.sort_order}</p>}
+                        <FormGroup title="Pricing & Order" description="Fee charged and display order at checkout.">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <TextInput id="fee" label="Fee" type="number" min="0" value={data.fee} onChange={(e) => setData('fee', parseInt(e.target.value) || 0)} error={errors.fee} required />
+
+                                <TextInput id="sort_order" label="Sort Order" type="number" min="0" value={data.sort_order} onChange={(e) => setData('sort_order', parseInt(e.target.value) || 0)} error={errors.sort_order} />
                             </div>
-                        </div>
+                        </FormGroup>
 
-                        <div className="flex items-center gap-2">
-                            <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}
-                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
-                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
-                        </div>
+                        <FormGroup title="Visibility">
+                            <CheckboxRow id="is_active" label="Active" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
+                        </FormGroup>
 
-                        <div className="flex justify-end gap-3">
-                            <Link href={adminUrl('/admin/packaging-options')} className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200">Cancel</Link>
-                            <button type="submit" disabled={processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <CancelLink href={adminUrl('/admin/packaging-options')} />
+                            <PrimaryButton disabled={processing}>
                                 {processing ? 'Saving...' : 'Save Changes'}
-                            </button>
+                            </PrimaryButton>
                         </div>
                     </form>
-                </div>
+                </FormCard>
             </div>
         </AdminLayout>
     );

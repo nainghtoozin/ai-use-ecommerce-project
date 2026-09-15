@@ -2,11 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, ChevronUp, ChevronDown, Eye, Search } from 'lucide-react';
+import { DraftBadge, EditorCard, FIELD_CHECKBOX, FIELD_INPUT, FIELD_SELECT, IconButton, LiveBadge, Notice, OutlineButton, PageHeader, PublishConfirmModal, SAVE_STATUS, SaveStatusText, SuccessButton, Switch } from '@/Components/Admin/StorefrontUI';
 
 const labels = { hero: 'Hero', promotion: 'Promotions', featured_categories: 'Featured Categories', featured_brands: 'Featured Brands', featured_products: 'Featured Products', product_showcase: 'Product Showcase', store_highlights: 'Store Highlights', brand_story: 'Brand Story', cta: 'Call to Action' };
 
-const SAVE_STATUS = { IDLE: 'idle', UNSAVED: 'unsaved', SAVING: 'saving', SAVED: 'saved', FAILED: 'failed' };
 const DEBOUNCE_MS = 1000;
 
 export default function StorefrontHomepage({ sections: initialSections = [], categories = [], brands = [], products = [], media = [], heroVariants = ['modern-split', 'full-background', 'centered-minimal', 'image-carousel', 'text-only'], revision = null }) {
@@ -18,12 +18,48 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
     const [saveSuccess, setSaveSuccess] = useState(null);
     const [saveError, setSaveError] = useState(null);
     const [saveStatus, setSaveStatus] = useState(SAVE_STATUS.IDLE);
+    const [activeSectionId, setActiveSectionId] = useState(initialSections[0]?.id ?? null);
     const hasUnpublished = revision?.has_unpublished_changes;
     const publishedRevision = revision?.published?.revision_number;
     const previewUrl = tenant?.slug ? `/store/${tenant.slug}/preview` : null;
 
-    const statusColor = { idle: 'text-emerald-600', unsaved: 'text-amber-600', saving: 'text-blue-600', saved: 'text-emerald-600', failed: 'text-red-600' };
-    const statusLabel = { idle: 'All changes saved', unsaved: 'Unsaved changes', saving: 'Saving…', saved: '✓ Draft saved', failed: 'Couldn\'t save changes' };
+    const formRef = useRef(null);
+    const navRef = useRef(null);
+    const navButtonRefs = useRef({});
+
+    const scrollToSection = useCallback((id) => {
+        setActiveSectionId(id);
+        const el = formRef.current?.querySelector(`[data-section-id="${id}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, []);
+
+    useEffect(() => {
+        const cards = formRef.current ? Array.from(formRef.current.querySelectorAll('[data-section-id]')) : [];
+        if (!cards.length) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visible = entries.filter((entry) => entry.isIntersecting);
+                if (!visible.length) return;
+                const topmost = visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+                const id = topmost.target.getAttribute('data-section-id');
+                if (id) setActiveSectionId((current) => current === id ? current : id);
+            },
+            { rootMargin: '-30% 0px -60% 0px' }
+        );
+        cards.forEach((card) => observer.observe(card));
+        return () => observer.disconnect();
+    }, [sections.length]);
+
+    useEffect(() => {
+        const container = navRef.current;
+        const button = navButtonRefs.current[activeSectionId];
+        if (!container || !button) return;
+        const outLeft = button.offsetLeft < container.scrollLeft;
+        const outRight = button.offsetLeft + button.offsetWidth > container.scrollLeft + container.clientWidth;
+        if (outLeft || outRight) {
+            container.scrollTo({ left: button.offsetLeft - container.clientWidth / 2 + button.offsetWidth / 2, behavior: 'smooth' });
+        }
+    }, [activeSectionId]);
 
     const dirtyRef = useRef(false);
     const timerRef = useRef(null);
@@ -161,64 +197,88 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
     return (
         <AdminLayout>
             <Head title="Homepage Sections" />
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
-                    <div>
-                        <p className="text-sm font-medium text-blue-600">Storefront</p>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">Homepage Sections</h1>
-                        <p className="text-sm text-gray-500 mt-1">Configure discovery and marketing sections. Empty sections stay hidden from customers.</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {hasUnpublished && <span className="px-3 py-2 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium">Unpublished draft</span>}
-                        {publishedRevision && <span className="px-3 py-2 rounded-lg bg-green-50 text-green-700 text-xs font-medium">Live revision #{publishedRevision}</span>}
-                        <Link href={adminUrl('/admin/storefront/revisions')} className="text-sm text-blue-600">History</Link>
-                    </div>
-                </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                <PageHeader
+                    eyebrow="Storefront"
+                    title="Homepage Sections"
+                    subtitle="Configure discovery and marketing sections. Empty sections stay hidden from customers."
+                    compact
+                    tight
+                    actions={<Link href={adminUrl('/admin/storefront/revisions')} className="text-sm text-blue-600">History</Link>}
+                />
 
-                {saveSuccess && <div role="status" className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{saveSuccess}</div>}
-                {saveError && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{saveError}</div>}
+                {saveSuccess && <Notice tone="success" dense className="mb-3">{saveSuccess}</Notice>}
+                {saveError && <Notice tone="error" dense className="mb-3">{saveError}</Notice>}
 
-                {hasUnpublished && <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"><strong>Unpublished changes.</strong> Your draft changes are not yet visible to customers.</div>}
+                {hasUnpublished && <Notice tone="warning" dense className="mb-3"><strong>Unpublished changes</strong> — draft not yet visible to customers.</Notice>}
 
-                {/* Save status + actions */}
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className={`font-medium ${statusColor[saveStatus]}`}>
-                            {saveStatus === SAVE_STATUS.FAILED ? (
-                                <button type="button" onClick={handleRetry} className="underline hover:no-underline">{statusLabel[saveStatus]} — Retry</button>
-                            ) : statusLabel[saveStatus]}
-                        </span>
+                {/* Compact status + action bar */}
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-4 py-2.5 mb-4">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <SaveStatusText status={saveStatus} onRetry={handleRetry} />
+                        {hasUnpublished && <DraftBadge>Unpublished draft</DraftBadge>}
+                        {publishedRevision && <LiveBadge>Live revision #{publishedRevision}</LiveBadge>}
                     </div>
                     <div className="flex items-center gap-2">
                         {previewUrl && hasUnpublished && (
-                            <button type="button" onClick={handlePreview} className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Preview Draft</button>
+                            <OutlineButton size="sm" onClick={handlePreview}><Eye className="w-3.5 h-3.5" />Preview Draft</OutlineButton>
                         )}
                         {hasUnpublished && (
-                            <button type="button" onClick={handlePublishClick} disabled={publishing} className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">{publishing ? 'Publishing…' : 'Publish'}</button>
+                            <SuccessButton size="sm" onClick={handlePublishClick} disabled={publishing}>{publishing ? 'Publishing…' : 'Publish'}</SuccessButton>
                         )}
                     </div>
                 </div>
 
-                <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                {/* Section jump navigation */}
+                {sections.length > 1 && (
+                    <nav aria-label="Homepage sections" className="sticky top-14 lg:top-[72px] z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-2 mb-4 bg-[#F1F5F9]/95 dark:bg-gray-800/95 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+                        <div ref={navRef} className="flex gap-1.5 overflow-x-auto">
+                            {sections.map((section, index) => {
+                                const isActive = String(activeSectionId) === String(section.id);
+                                return (
+                                    <button
+                                        key={section.id}
+                                        type="button"
+                                        ref={(el) => { if (el) navButtonRefs.current[section.id] = el; }}
+                                        onClick={() => scrollToSection(section.id)}
+                                        title={section.enabled ? (labels[section.type] || section.type) : `${labels[section.type] || section.type} (disabled)`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'} ${section.enabled ? '' : 'opacity-50'}`}
+                                    >
+                                        <span className={isActive ? 'text-white/70' : 'text-gray-400 dark:text-gray-500'}>{index + 1}</span>
+                                        {labels[section.type] || section.type}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </nav>
+                )}
+
+                <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-4">
                     {sections.map((section, index) => (
-                        <section key={section.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-6">
+                        <EditorCard
+                            key={section.id}
+                            dense
+                            id={`homepage-section-${section.id}`}
+                            data-section-id={section.id}
+                            className="scroll-mt-32 lg:scroll-mt-36"
+                        >
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                <div className="flex-1"><h2 className="font-semibold text-gray-900 dark:text-gray-100">{labels[section.type] || section.type}</h2><p className="text-xs text-gray-500 mt-1">{description(section.type)}</p></div>
-                                <Toggle label="Enabled" checked={section.enabled} onChange={(value) => update(section.id, { enabled: value })} />
-                                <div className="flex gap-1"><button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="px-2 py-1 rounded border text-xs disabled:opacity-30">Up</button><button type="button" onClick={() => move(index, 1)} disabled={index === sections.length - 1} className="px-2 py-1 rounded border text-xs disabled:opacity-30">Down</button></div>
+                                <div className="flex-1"><h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{labels[section.type] || section.type}</h2><p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description(section.type)}</p></div>
+                                <Switch label="Enabled" checked={section.enabled} onChange={(value) => update(section.id, { enabled: value })} />
+                                <div className="flex gap-1.5"><IconButton label="Move up" onClick={() => move(index, -1)} disabled={index === 0}><ChevronUp className="w-4 h-4" /></IconButton><IconButton label="Move down" onClick={() => move(index, 1)} disabled={index === sections.length - 1}><ChevronDown className="w-4 h-4" /></IconButton></div>
                             </div>
-                            <div className="flex flex-wrap items-end gap-4 mt-4">
-                                <Toggle label="Desktop" checked={section.desktop_visible} onChange={(value) => update(section.id, { desktop_visible: value })} />
-                                <Toggle label="Mobile" checked={section.mobile_visible} onChange={(value) => update(section.id, { mobile_visible: value })} />
+                            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3">
+                                <Switch label="Desktop" checked={section.desktop_visible} onChange={(value) => update(section.id, { desktop_visible: value })} />
+                                <Switch label="Mobile" checked={section.mobile_visible} onChange={(value) => update(section.id, { mobile_visible: value })} />
                                 <VariantField value={section.variant || 'modern-split'} options={variantOptions(section.type, heroVariants)} onChange={(value) => update(section.id, { variant: value })} />
                             </div>
                             <SectionConfig section={section} categories={categories} brands={brands} products={products} media={media} updateConfig={updateConfig} />
-                        </section>
+                        </EditorCard>
                     ))}
                 </form>
             </div>
 
-            {showPublishConfirm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl"><h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Publish homepage changes?</h2><p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Your draft changes will become visible to customers on the storefront. The previous published revision remains recoverable.</p><div className="flex justify-end gap-2 mt-6"><button type="button" onClick={() => setShowPublishConfirm(false)} className="px-4 py-2 rounded-lg border text-sm">Cancel</button><button type="button" onClick={confirmPublish} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold">Publish Changes</button></div></div></div>}
+            {showPublishConfirm && <PublishConfirmModal title="Publish homepage changes?" description="Your draft changes will become visible to customers on the storefront. The previous published revision remains recoverable." processing={publishing} onCancel={() => setShowPublishConfirm(false)} onConfirm={confirmPublish} />}
         </AdminLayout>
     );
 }
@@ -280,22 +340,53 @@ function HeroImages({ config, updateConfig, section, media }) {
 
 function SectionConfig({ section, categories, brands, products, media, updateConfig }) {
     const config = section.configuration || {};
-    if (section.type === 'hero') return <div className="mt-5 pt-4 border-t space-y-5"><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><Field label="Heading" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Button text" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><Field label="Subtitle" value={config.subtitle || ''} onChange={(value) => updateConfig(section.id, { subtitle: value })} /><Field label="Button link" value={config.button_link || ''} placeholder="/products" onChange={(value) => updateConfig(section.id, { button_link: value })} /></div><div className="border-t border-gray-100 dark:border-gray-800 pt-5"><HeroImages config={config} updateConfig={updateConfig} section={section} media={media} /></div></div>;
+    if (section.type === 'hero') return <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-5"><div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><Field label="Heading" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Button text" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><Field label="Subtitle" value={config.subtitle || ''} onChange={(value) => updateConfig(section.id, { subtitle: value })} /><Field label="Button link" value={config.button_link || ''} placeholder="/products" onChange={(value) => updateConfig(section.id, { button_link: value })} /></div><div className="border-t border-gray-100 dark:border-gray-800 pt-5"><HeroImages config={config} updateConfig={updateConfig} section={section} media={media} /></div></div>;
     if (section.type === 'promotion') return <p className="mt-5 pt-4 border-t text-sm text-gray-500">Create and schedule promotions from <Link href={adminUrl('/admin/storefront/promotions')} className="text-blue-600">Promotions & Campaigns</Link>.</p>;
-    if (section.type === 'featured_categories') return <div className="mt-5 pt-4 border-t"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-3">Only categories marked as <strong>Featured</strong> in the Category list will appear on the storefront. Select categories below to prioritize ordering when many are featured.</p><SelectionList title="Categories" items={categories} selected={config.category_ids || []} onChange={(ids) => updateConfig(section.id, { category_ids: ids, limit: config.limit || 6 })} /></div>;
-    if (section.type === 'featured_brands') return <div className="mt-5 pt-4 border-t"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-3">Only brands marked as <strong>Featured</strong> in the Brand list will appear on the storefront. Select brands below to prioritize ordering when many are featured.</p><SelectionList title="Brands" items={brands} selected={config.brand_ids || []} onChange={(ids) => updateConfig(section.id, { brand_ids: ids, limit: config.limit || 6 })} /></div>;
-    if (section.type === 'featured_products' || section.type === 'product_showcase') return <div className="mt-5 pt-4 border-t space-y-4"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2">Only products marked as <strong>Featured</strong> in the Product edit form will appear on the storefront. Select products below to prioritize ordering when many are featured.</p><Field label="Section title" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Description" value={config.description || ''} onChange={(value) => updateConfig(section.id, { description: value })} /><SelectionList title="Products" items={products} selected={config.product_ids || []} onChange={(ids) => updateConfig(section.id, { product_ids: ids, limit: config.limit || 8 })} /></div>;
+    if (section.type === 'featured_categories') return <div className="mt-5 pt-4 border-t"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-3">Only categories marked as <strong>Featured</strong> in the Category list will appear on the storefront. Select categories below to prioritize ordering when many are featured.</p><SelectionList title="Categories" items={categories} selected={config.category_ids || []} onChange={(ids) => updateConfig(section.id, { category_ids: ids, limit: config.limit || 6 })} searchable searchPlaceholder="Search categories…" /></div>;
+    if (section.type === 'featured_brands') return <div className="mt-5 pt-4 border-t"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mb-3">Only brands marked as <strong>Featured</strong> in the Brand list will appear on the storefront. Select brands below to prioritize ordering when many are featured.</p><SelectionList title="Brands" items={brands} selected={config.brand_ids || []} onChange={(ids) => updateConfig(section.id, { brand_ids: ids, limit: config.limit || 6 })} searchable searchPlaceholder="Search brands…" /></div>;
+    if (section.type === 'featured_products' || section.type === 'product_showcase') return <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-4"><p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2">Only products marked as <strong>Featured</strong> in the Product edit form will appear on the storefront. Select products below to prioritize ordering when many are featured.</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><Field label="Section title" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Description" value={config.description || ''} onChange={(value) => updateConfig(section.id, { description: value })} /></div><SelectionList title="Products" items={products} selected={config.product_ids || []} onChange={(ids) => updateConfig(section.id, { product_ids: ids, limit: config.limit || 8 })} searchable searchPlaceholder="Search products…" /></div>;
     if (section.type === 'store_highlights') return <Highlights items={config.items || []} onChange={(items) => updateConfig(section.id, { items })} />;
-    if (section.type === 'brand_story') return <div className="mt-5 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-4"><p className="sm:col-span-2 text-sm text-gray-500">Brand Story content comes from Website Settings → About Us. This section controls presentation, visibility, optional media, and the CTA.</p><Field label="Button label" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /><Field label="Button link" value={config.button_link || ''} onChange={(value) => updateConfig(section.id, { button_link: value })} /><MediaSelect config={config} media={media} onChange={(media_id) => updateConfig(section.id, { media_id })} /></div>;
-    if (section.type === 'cta') return <div className="mt-5 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-4"><Field label="Title" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Button label" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /><Field label="Description" value={config.description || ''} onChange={(value) => updateConfig(section.id, { description: value })} /><Field label="Button link" value={config.button_link || ''} onChange={(value) => updateConfig(section.id, { button_link: value })} /><MediaSelect config={config} media={media} onChange={(media_id) => updateConfig(section.id, { media_id })} /></div>;
+    if (section.type === 'brand_story') return <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-2 gap-5"><p className="sm:col-span-2 text-sm text-gray-500 dark:text-gray-400">Brand Story content comes from Website Settings → About Us. This section controls presentation, visibility, optional media, and the CTA.</p><Field label="Button label" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /><Field label="Button link" value={config.button_link || ''} onChange={(value) => updateConfig(section.id, { button_link: value })} /><MediaSelect config={config} media={media} onChange={(media_id) => updateConfig(section.id, { media_id })} /></div>;
+    if (section.type === 'cta') return <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-2 gap-5"><Field label="Title" value={config.title || ''} onChange={(value) => updateConfig(section.id, { title: value })} /><Field label="Button label" value={config.button_text || ''} onChange={(value) => updateConfig(section.id, { button_text: value })} /><Field label="Description" value={config.description || ''} onChange={(value) => updateConfig(section.id, { description: value })} /><Field label="Button link" value={config.button_link || ''} onChange={(value) => updateConfig(section.id, { button_link: value })} /><MediaSelect config={config} media={media} onChange={(media_id) => updateConfig(section.id, { media_id })} /></div>;
     return null;
 }
 
-function SelectionList({ title, items, selected, onChange }) { const values = selected.map(Number); const toggle = (id) => onChange(values.includes(Number(id)) ? values.filter((value) => value !== Number(id)) : [...values, Number(id)]); return <div className="mt-5 pt-4 border-t"><p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{title}</p><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto">{items.map((item) => <label key={item.id} className="flex items-center gap-2 rounded border border-gray-200 dark:border-gray-700 p-2 text-sm text-gray-600 dark:text-gray-300"><input type="checkbox" checked={values.includes(Number(item.id))} onChange={() => toggle(item.id)} className="rounded border-gray-300 text-blue-600" />{item.name}</label>)}</div></div>; }
-function Highlights({ items, onChange }) { const update = (index, key, value) => onChange(items.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item)); const add = () => onChange([...items, { icon: 'star', title: '', description: '' }]); return <div className="mt-5 pt-4 border-t space-y-3">{items.map((item, index) => <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-2"><select value={item.icon || 'star'} onChange={(event) => update(index, 'icon', event.target.value)} className="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm"><option value="star">Star</option><option value="truck">Delivery</option><option value="shield">Secure</option><option value="headset">Support</option><option value="heart">Care</option></select><input value={item.title || ''} onChange={(event) => update(index, 'title', event.target.value)} placeholder="Title" className="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm" /><input value={item.description || ''} onChange={(event) => update(index, 'description', event.target.value)} placeholder="Description" className="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm" /></div>)}<button type="button" onClick={add} disabled={items.length >= 6} className="text-sm text-blue-600 disabled:opacity-40">+ Add highlight</button></div>; }
-function Field({ label, value, onChange }) { return <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}<input value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal" /></label>; }
-function MediaSelect({ config, media, onChange }) { return <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Optional image<select value={config.media_id || ''} onChange={(event) => onChange(event.target.value || null)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal"><option value="">No image</option>{media.map((item) => <option key={item.id} value={item.id}>{item.alt_text || `Media #${item.id}`}</option>)}</select></label>; }
-function Toggle({ label, checked, onChange }) { return <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="rounded border-gray-300 text-blue-600" />{label}</label>; }
-function VariantField({ value, options, onChange }) { return <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Layout<select value={value} onChange={(event) => onChange(event.target.value)} className="block mt-1 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm"><option value="default">Theme default</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>; }
+function SelectionList({ title, items, selected, onChange, searchable = false, searchPlaceholder = 'Search…' }) {
+    const values = selected.map(Number);
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q ? items.filter((item) => (item.name || '').toLowerCase().includes(q)) : items;
+    const filteredIds = filtered.map((item) => Number(item.id));
+    const toggle = (id) => onChange(values.includes(Number(id)) ? values.filter((value) => value !== Number(id)) : [...values, Number(id)]);
+    const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => values.includes(id));
+    const selectAll = () => onChange([...new Set([...values, ...filteredIds])]);
+    const clearAll = () => onChange([]);
+    return <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}<span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[11px] font-semibold">{values.length} selected</span></p>
+            {searchable && <div className="flex items-center gap-3">
+                <button type="button" onClick={selectAll} disabled={allFilteredSelected} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-40 disabled:cursor-not-allowed">Select All</button>
+                <button type="button" onClick={clearAll} disabled={values.length === 0} className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">Clear All</button>
+            </div>}
+        </div>
+        {searchable && <div className="relative mb-2">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+        </div>}
+        {searchable && q && <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-2">{filtered.length} of {items.length} shown — selections outside this filter are kept.</p>}
+        {filtered.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 px-3 py-6 text-center">{q ? 'No matches for your search.' : `No ${title.toLowerCase()} available.`}</p>
+        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-0.5">{filtered.map((item) => {
+                const checked = values.includes(Number(item.id));
+                return <label key={item.id} title={item.name} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-colors ${checked ? 'border-blue-300 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-900/20 text-gray-900 dark:text-gray-100' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}`}><input type="checkbox" checked={checked} onChange={() => toggle(item.id)} className={FIELD_CHECKBOX} /><span className="truncate">{item.name}</span></label>;
+            })}</div>
+        )}
+    </div>;
+}
+function Highlights({ items, onChange }) { const update = (index, key, value) => onChange(items.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item)); const add = () => onChange([...items, { icon: 'star', title: '', description: '' }]); return <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">{items.map((item, index) => <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-2"><select value={item.icon || 'star'} onChange={(event) => update(index, 'icon', event.target.value)} className={FIELD_SELECT}><option value="star">Star</option><option value="truck">Delivery</option><option value="shield">Secure</option><option value="headset">Support</option><option value="heart">Care</option></select><input value={item.title || ''} onChange={(event) => update(index, 'title', event.target.value)} placeholder="Title" className={FIELD_INPUT} /><input value={item.description || ''} onChange={(event) => update(index, 'description', event.target.value)} placeholder="Description" className={FIELD_INPUT} /></div>)}<button type="button" onClick={add} disabled={items.length >= 6} className="text-sm text-blue-600 disabled:opacity-40">+ Add highlight</button></div>; }
+function Field({ label, value, onChange }) { return <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}<input value={value} onChange={(event) => onChange(event.target.value)} className={FIELD_INPUT} /></label>; }
+function MediaSelect({ config, media, onChange }) { return <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Optional image<select value={config.media_id || ''} onChange={(event) => onChange(event.target.value || null)} className={FIELD_SELECT}><option value="">No image</option>{media.map((item) => <option key={item.id} value={item.id}>{item.alt_text || `Media #${item.id}`}</option>)}</select></label>; }
+function VariantField({ value, options, onChange }) { return <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Layout<select value={value} onChange={(event) => onChange(event.target.value)} className={`block ${FIELD_SELECT}`}><option value="default">Theme default</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>; }
 function variantOptions(type, heroVariants = []) { return { hero: heroVariants, featured_categories: ['default', 'grid', 'horizontal', 'compact'], featured_brands: ['default', 'grid', 'horizontal', 'compact'], featured_products: ['default', 'grid', 'compact', 'image-focused', 'horizontal'], product_showcase: ['default', 'grid', 'compact', 'image-focused', 'horizontal'], brand_story: ['default', 'split', 'text-only'], cta: ['default', 'centered', 'full-width'] }[type] || []; }
 function description(type) { return { promotion: 'Display active scheduled campaigns.', featured_categories: 'Help customers discover collections.', featured_brands: 'Showcase selected brands.', featured_products: 'Show selected products near the top of the store.', product_showcase: 'Present a selected product group.', store_highlights: 'Explain why customers should shop with you.', brand_story: 'Tell your store story with an optional image.', cta: 'End the page with a clear next action.' }[type] || 'Configure this homepage section.'; }
