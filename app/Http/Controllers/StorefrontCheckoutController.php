@@ -156,6 +156,97 @@ class StorefrontCheckoutController extends Controller
         return $this->index($request);
     }
 
+    public function quote(Request $request)
+    {
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'city_id' => ['nullable', 'exists:cities,id'],
+            'township_id' => ['nullable', 'exists:townships,id'],
+            'delivery_service_id' => ['nullable', 'exists:delivery_services,id'],
+            'packaging_id' => ['nullable', 'exists:packaging_options,id'],
+            'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
+        ]);
+
+        $city = !empty($validated['city_id']) ? City::find($validated['city_id']) : null;
+        if (!empty($validated['township_id'])) {
+            $township = Township::find($validated['township_id']);
+            if (!$township || ($city && (int) $township->city_id !== (int) $city->id)) {
+                return response()->json(['message' => 'Invalid township for the chosen city.'], 422);
+            }
+        }
+
+        $cart = session()->get('cart', []);
+        $items = $this->filterCartByTenant($cart, $tenant);
+        $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
+
+        $discountData = $this->resolveDiscountsFromSession($items, 0.0);
+        $discount = (float) ($discountData['coupon_discount'] ?? 0)
+            + (float) ($discountData['promotion_discount'] ?? 0);
+
+        $deliveryService = null;
+        if (!empty($validated['delivery_service_id'])) {
+            $deliveryService = \App\Models\DeliveryService::find($validated['delivery_service_id']);
+            if (!$deliveryService || $deliveryService->tenant_id !== $tenant->id) {
+                return response()->json(['message' => 'Invalid delivery service.'], 422);
+            }
+        }
+
+        $deliveryFee = $this->deliveryFeeService->resolveDeliveryFee($city, $deliveryService?->id);
+        $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryService?->id, $city);
+
+        $packagingFee = 0;
+        $packagingName = null;
+        if (!empty($validated['packaging_id'])) {
+            $packaging = PackagingOption::find($validated['packaging_id']);
+            if (!$packaging || $packaging->tenant_id !== $tenant->id) {
+                return response()->json(['message' => 'Invalid packaging option.'], 422);
+            }
+            $packagingFee = (int) $packaging->fee;
+            $packagingName = $packaging->name;
+        }
+
+        $codFee = 0;
+        if (!empty($validated['payment_method_id'])) {
+            $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
+            if (!$paymentMethod || $paymentMethod->tenant_id !== $tenant->id) {
+                return response()->json(['message' => 'Invalid payment method.'], 422);
+            }
+            if ($paymentMethod->type === 'cod' && $city) {
+                $codFee = $this->codEligibilityService->getCodFee($city->id, ($subtotal + $deliveryFee + $packagingFee) - $discount);
+            }
+        }
+
+        $services = $this->deliveryFeeService->getServicesWithPricing($city)->map(fn($entry) => [
+            'id' => $entry['service']->id,
+            'name' => $entry['service']->name,
+            'fee' => $entry['fee'],
+            'eta_min' => $entry['eta_min'],
+            'eta_max' => $entry['eta_max'],
+            'eta_label' => $entry['eta_label'],
+        ])->values();
+
+        return response()->json([
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'delivery' => [
+                'fee' => $deliveryFee,
+                'service_id' => $deliveryService?->id,
+                'service_name' => $deliveryService?->name,
+                'city_rate_applied' => (bool) ($deliveryService && $city && $deliveryService->getFeeForCity($city) !== $deliveryService->base_fee),
+                'eta_min' => $deliveryDays['min'],
+                'eta_max' => $deliveryDays['max'],
+            ],
+            'services' => $services,
+            'packaging' => ['fee' => $packagingFee, 'name' => $packagingName],
+            'cod' => ['fee' => $codFee],
+            'total' => max(0, ($subtotal + $deliveryFee + $packagingFee + $codFee) - $discount),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $tenant = Tenant::getCurrent();
@@ -240,6 +331,7 @@ class StorefrontCheckoutController extends Controller
         foreach ($cartItems as $item) {
             $productId = (int) ($item['product_id'] ?? $item['id']);
             $itemData = [
+                'id' => $productId,
                 'product_id' => $productId,
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'price' => (float) ($item['price'] ?? 0),
@@ -382,6 +474,19 @@ class StorefrontCheckoutController extends Controller
                     throw new \App\Exceptions\CheckoutStockException(implode(' ', $flashSaleErrors));
                 }
 
+                $promoProducts = Product::whereIn('id', array_unique(array_column($items, 'product_id')))
+                    ->get(['id', 'category_id'])
+                    ->keyBy('id');
+                $orderPromotions = $this->promotionService->getValidAutomaticPromotions();
+                $manualPromotionValid = !empty($discountData['promotion']) && (float) ($discountData['promotion_discount'] ?? 0) > 0;
+                $orderSessionCoupon = session('applied_coupon');
+                $orderCouponPromotion = !empty($orderSessionCoupon['promotion_id'])
+                    ? \App\Models\Promotion::find($orderSessionCoupon['promotion_id'])
+                    : null;
+                if ($orderCouponPromotion && !$orderCouponPromotion->isCurrentlyActive()) {
+                    $orderCouponPromotion = null;
+                }
+
                 foreach ($items as &$item) {
                     $basePrice = (float) $item['price'];
                     $flashData = $this->flashSaleService->resolveEffectivePrice(
@@ -393,6 +498,19 @@ class StorefrontCheckoutController extends Controller
                     $item['original_price'] = $flashData['original_price'];
                     $item['flash_sale_id'] = $flashData['flash_sale_id'];
                     $item['is_flash_sale'] = $flashData['is_flash_sale'];
+                    $item['promotion_id'] = null;
+                    $item['promotion_discount'] = 0;
+                    if (!$flashData['is_flash_sale'] && !$manualPromotionValid) {
+                        $promoProduct = $promoProducts->get($item['product_id']);
+                        if ($promoProduct) {
+                            $promoResolution = $this->promotionService->resolveCartUnitPrice($promoProduct, $basePrice, $orderPromotions, $orderCouponPromotion);
+                            if ($promoResolution) {
+                                $item['price'] = $promoResolution['unit_price'];
+                                $item['promotion_id'] = $promoResolution['promotion']->id;
+                                $item['promotion_discount'] = $promoResolution['discount'];
+                            }
+                        }
+                    }
                 }
                 unset($item);
 
@@ -428,6 +546,31 @@ class StorefrontCheckoutController extends Controller
                     );
                 }
 
+                $autoPromotionTotals = [];
+                foreach ($items as $item) {
+                    if (!empty($item['promotion_id']) && isset($item['promotion_discount'])) {
+                        $pid = (int) $item['promotion_id'];
+                        $autoPromotionTotals[$pid] = ($autoPromotionTotals[$pid] ?? 0)
+                            + (float) $item['promotion_discount'] * (int) $item['quantity'];
+                    }
+                }
+                if (!empty($autoPromotionTotals)) {
+                    arsort($autoPromotionTotals);
+                    $firstAuto = true;
+                    foreach ($autoPromotionTotals as $pid => $amount) {
+                        $autoPromo = $orderPromotions->firstWhere('id', $pid);
+                        if (!$autoPromo || $amount <= 0) {
+                            continue;
+                        }
+                        if ($firstAuto) {
+                            $this->promotionService->applyPromotionToOrder($order, $autoPromo, $amount);
+                            $firstAuto = false;
+                        } else {
+                            $autoPromo->recordUsage($order, $order->user, $amount);
+                        }
+                    }
+                }
+
                 $orderItemsForFlashSale = [];
                 foreach ($items as $item) {
                     $orderItemData = [
@@ -442,6 +585,8 @@ class StorefrontCheckoutController extends Controller
 
                     if (!empty($item['flash_sale_id'])) {
                         $orderItemData['flash_sale_id'] = $item['flash_sale_id'];
+                        $orderItemData['original_price'] = $item['original_price'];
+                    } elseif (isset($item['original_price']) && (float) $item['original_price'] > (float) $item['price']) {
                         $orderItemData['original_price'] = $item['original_price'];
                     }
 
@@ -553,7 +698,7 @@ class StorefrontCheckoutController extends Controller
 
         $tenantProducts = Product::where('tenant_id', $tenantId)
             ->whereIn('id', $cartProductIds)
-            ->select(['id', 'name', 'price', 'type', 'photo1'])
+            ->select(['id', 'name', 'price', 'type', 'photo1', 'category_id'])
             ->get()
             ->keyBy('id');
 
@@ -573,6 +718,16 @@ class StorefrontCheckoutController extends Controller
             : collect();
 
         $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($cartProductIds);
+
+        $promotions = $this->promotionService->getValidAutomaticPromotions();
+        $skipAutoPromotion = (float) (session('applied_promotion')['discount'] ?? 0) > 0;
+        $sessionCoupon = session('applied_coupon');
+        $couponPromotion = !empty($sessionCoupon['promotion_id'])
+            ? \App\Models\Promotion::find($sessionCoupon['promotion_id'])
+            : null;
+        if ($couponPromotion && !$couponPromotion->isCurrentlyActive()) {
+            $couponPromotion = null;
+        }
 
         $items = [];
         foreach ($cart as $cartKey => $item) {
@@ -607,6 +762,14 @@ class StorefrontCheckoutController extends Controller
             }
 
             $price = $fs ? $fs['flash_price'] : $basePrice;
+            $promotionBadge = null;
+            if (!$fs) {
+                $promoResolution = $this->promotionService->resolveCartUnitPrice($product, $basePrice, $promotions, $couponPromotion, $skipAutoPromotion);
+                if ($promoResolution) {
+                    $price = $promoResolution['unit_price'];
+                    $promotionBadge = $promoResolution['badge'];
+                }
+            }
 
             $items[] = [
                 'cart_key' => $cartKey,
@@ -616,6 +779,7 @@ class StorefrontCheckoutController extends Controller
                 'variant_name' => $variantName,
                 'price' => $price,
                 'original_price' => $basePrice,
+                'promotion_badge' => $promotionBadge,
                 'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
                 'is_flash_sale' => $fs !== null,

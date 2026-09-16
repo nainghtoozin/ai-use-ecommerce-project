@@ -146,7 +146,7 @@ export default function OrderShow({ tenant, order }) {
                                             {order.items?.length ? order.items.map((item) => (
                                                 <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                                                     <td className="py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{item.product?.name || `Product #${item.product_id}`}</td>
-                                                    <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">{formatCurrency(item.price, cc)}</td>
+                                                    <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">{item.original_price != null && Number(item.original_price) > Number(item.price) ? (<><span className="text-xs text-gray-400 line-through mr-1">{formatCurrency(item.original_price, cc)}</span></>) : null}{formatCurrency(item.price, cc)}</td>
                                                     <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">{item.quantity}</td>
                                                     <td className="py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item.price * item.quantity, cc)}</td>
                                                 </tr>

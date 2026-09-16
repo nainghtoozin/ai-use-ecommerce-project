@@ -11,6 +11,7 @@ use App\Models\StorefrontRevision;
 use App\Models\WebsiteInfo;
 use App\Services\ProductService;
 use App\Services\FlashSaleService;
+use App\Services\PromotionService;
 use App\Services\WebsiteFaqService;
 use App\Services\StorefrontConfigurationResolver;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class StorefrontController extends Controller
         private readonly WebsiteFaqService $faqService,
         private readonly StorefrontConfigurationResolver $resolver,
         private readonly FlashSaleService $flashSaleService,
+        private readonly PromotionService $promotionService,
     ) {}
 
     public function index(Request $request)
@@ -518,17 +520,13 @@ class StorefrontController extends Controller
         $promotion = $this->findBestPromotionForProduct($product, $promotions);
         $detail = $this->productService->resolveForDetail($product);
 
-        if ($promotion && !empty($detail['variants'])) {
-            $detail['variants'] = collect($detail['variants'])->map(function ($variant) use ($promotion) {
-                $variantPrice = $variant['price'];
-                $discount = $promotion->type === Promotion::TYPE_PERCENTAGE
-                    ? $variantPrice * (float) $promotion->value / 100
-                    : (float) $promotion->value;
-                if ($promotion->max_discount_amount !== null) {
-                    $discount = min($discount, (float) $promotion->max_discount_amount);
+        if (!empty($detail['variants'])) {
+            $detail['variants'] = collect($detail['variants'])->map(function ($variant) use ($product, $promotions) {
+                $resolved = $this->promotionService->resolveUnitPromotionPrice($product, (float) $variant['price'], $promotions);
+                if ($resolved) {
+                    $variant['promotion_price'] = $resolved['unit_price'];
+                    $variant['original_price'] = $resolved['original_price'];
                 }
-                $variant['promotion_price'] = max(0, round($variantPrice - $discount, 2));
-                $variant['original_price'] = $variantPrice;
                 return $variant;
             });
         }
@@ -620,37 +618,35 @@ class StorefrontController extends Controller
 
     private function enrichProductWithPromotion($product, $promotions, string $currencySymbol = 'K', ?array $flashSaleData = null)
     {
-        $bestPromotion = $this->findBestPromotionForProduct($product, $promotions);
-        if ($bestPromotion) {
-            $product->promotion_badge = $this->formatPromotionBadge($bestPromotion, $currencySymbol);
-            $product->promotion_discount = (float) $bestPromotion->value;
-
-            if ($product->is_variable && $product->variants && $product->variants->count() > 0) {
-                $minPrice = null;
-                $maxPrice = null;
-                foreach ($product->variants as $variant) {
-                    $variantPrice = (float) ($variant->price ?? $product->price);
-                    $discount = $bestPromotion->type === Promotion::TYPE_PERCENTAGE
-                        ? $variantPrice * (float) $bestPromotion->value / 100
-                        : (float) $bestPromotion->value;
-                    if ($bestPromotion->max_discount_amount !== null) {
-                        $discount = min($discount, (float) $bestPromotion->max_discount_amount);
-                    }
-                    $discountedPrice = max(0, round($variantPrice - $discount, 2));
-                    $variant->promotion_price = $discountedPrice;
-                    $minPrice = $minPrice === null ? $discountedPrice : min($minPrice, $discountedPrice);
-                    $maxPrice = $maxPrice === null ? $discountedPrice : max($maxPrice, $discountedPrice);
+        if ($product->is_variable && $product->variants && $product->variants->count() > 0) {
+            $minPrice = null;
+            $maxPrice = null;
+            $badgePromotion = null;
+            foreach ($product->variants as $variant) {
+                $variantPrice = (float) ($variant->price ?? $product->price);
+                $resolved = $this->promotionService->resolveUnitPromotionPrice($product, $variantPrice, $promotions);
+                if (!$resolved) {
+                    continue;
                 }
+                $variant->promotion_price = $resolved['unit_price'];
+                if ($minPrice === null || $resolved['unit_price'] < $minPrice) {
+                    $minPrice = $resolved['unit_price'];
+                    $badgePromotion = $resolved['promotion'];
+                }
+                $maxPrice = $maxPrice === null ? $resolved['unit_price'] : max($maxPrice, $resolved['unit_price']);
+            }
+            if ($minPrice !== null && $badgePromotion) {
                 $product->promotion_price = $minPrice;
                 $product->promotion_price_max = $maxPrice;
-            } else {
-                $discount = $bestPromotion->type === Promotion::TYPE_PERCENTAGE
-                    ? $product->price * (float) $bestPromotion->value / 100
-                    : (float) $bestPromotion->value;
-                if ($bestPromotion->max_discount_amount !== null) {
-                    $discount = min($discount, (float) $bestPromotion->max_discount_amount);
-                }
-                $product->promotion_price = max(0, round($product->price - $discount, 2));
+                $product->promotion_badge = $this->formatPromotionBadge($badgePromotion, $currencySymbol);
+                $product->promotion_discount = (float) $badgePromotion->value;
+            }
+        } else {
+            $resolved = $this->promotionService->resolveUnitPromotionPrice($product, (float) $product->price, $promotions);
+            if ($resolved) {
+                $product->promotion_badge = $this->formatPromotionBadge($resolved['promotion'], $currencySymbol);
+                $product->promotion_discount = (float) $resolved['promotion']->value;
+                $product->promotion_price = $resolved['unit_price'];
             }
         }
 

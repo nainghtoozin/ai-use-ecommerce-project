@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Promotion;
 use App\Models\Tenant;
 use App\Services\FlashSaleService;
+use App\Services\PromotionService;
 use Inertia\Inertia;
 
 class StorefrontCartController extends Controller
 {
     public function __construct(
         private readonly FlashSaleService $flashSaleService,
+        private readonly PromotionService $promotionService,
     ) {}
 
     public function index()
@@ -76,7 +79,7 @@ class StorefrontCartController extends Controller
 
         $tenantProducts = Product::where('tenant_id', $tenantId)
             ->whereIn('id', $cartProductIds)
-            ->select(['id', 'name', 'price', 'type', 'photo1'])
+            ->select(['id', 'name', 'price', 'type', 'photo1', 'category_id'])
             ->get()
             ->keyBy('id');
 
@@ -96,6 +99,16 @@ class StorefrontCartController extends Controller
             : collect();
 
         $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($cartProductIds);
+
+        $promotions = $this->promotionService->getValidAutomaticPromotions();
+        $skipAutoPromotion = (float) (session('applied_promotion')['discount'] ?? 0) > 0;
+        $sessionCoupon = session('applied_coupon');
+        $couponPromotion = !empty($sessionCoupon['promotion_id'])
+            ? Promotion::find($sessionCoupon['promotion_id'])
+            : null;
+        if ($couponPromotion && !$couponPromotion->isCurrentlyActive()) {
+            $couponPromotion = null;
+        }
 
         $items = [];
         foreach ($cart as $cartKey => $item) {
@@ -130,6 +143,14 @@ class StorefrontCartController extends Controller
             }
 
             $price = $fs ? $fs['flash_price'] : $basePrice;
+            $promotionBadge = null;
+            if (!$fs && !$skipAutoPromotion) {
+                $promoResolution = $this->promotionService->resolveUnitPromotionPrice($product, $basePrice, $promotions);
+                if ($promoResolution) {
+                    $price = $promoResolution['unit_price'];
+                    $promotionBadge = $promoResolution['badge'];
+                }
+            }
 
             $items[] = [
                 'cart_key' => $cartKey,
@@ -139,6 +160,7 @@ class StorefrontCartController extends Controller
                 'variant_name' => $variantName,
                 'price' => $price,
                 'original_price' => $basePrice,
+                'promotion_badge' => $promotionBadge,
                 'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
                 'is_flash_sale' => $fs !== null,

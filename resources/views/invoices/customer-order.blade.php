@@ -128,7 +128,7 @@
                 @foreach($order->items as $item)
                 <tr>
                     <td>{{ $item->product->name ?? 'Product #' . $item->product_id }}</td>
-                    <td style="text-align:right">{{ number_format($item->price, 2) }}</td>
+                    <td style="text-align:right">@if($item->original_price !== null && (float) $item->original_price > (float) $item->price)<span style="text-decoration:line-through;color:#9ca3af;font-size:11px;">{{ number_format($item->original_price, 2) }}</span><br>@endif{{ number_format($item->price, 2) }}</td>
                     <td style="text-align:right">{{ $item->quantity }}</td>
                     <td style="text-align:right">{{ number_format($item->price * $item->quantity, 2) }}</td>
                 </tr>

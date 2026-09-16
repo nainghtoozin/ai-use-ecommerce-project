@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Promotion;
 use App\Services\FeatureGate;
 use App\Services\FlashSaleService;
 use App\Services\PromotionService;
@@ -108,10 +109,7 @@ class CartController extends Controller
             session()->save();
         }
 
-        $cartItems = $this->formatCartItems($cart);
-        $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
-        $count = array_sum(array_column($cart, 'quantity'));
-        return response()->json(['count' => $count, 'cartItems' => $cartItems, 'subtotal' => $subtotal]);
+        return response()->json($this->fullCartState($cart));
     }
 
     public function destroy(string $key)
@@ -121,10 +119,7 @@ class CartController extends Controller
         session()->put('cart', $cart);
         session()->save();
 
-        $cartItems = $this->formatCartItems($cart);
-        $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
-        $count = array_sum(array_column($cart, 'quantity'));
-        return response()->json(['count' => $count, 'cartItems' => $cartItems, 'subtotal' => $subtotal]);
+        return response()->json($this->fullCartState($cart));
     }
 
     public function clear()
@@ -134,7 +129,14 @@ class CartController extends Controller
         session()->forget('applied_coupon');
         session()->save();
 
-        return response()->json(['count' => 0, 'cartItems' => [], 'subtotal' => 0]);
+        return response()->json([
+            'count' => 0,
+            'cartItems' => [],
+            'subtotal' => 0,
+            'appliedPromotion' => null,
+            'appliedCoupon' => null,
+            'totalDiscount' => 0,
+        ]);
     }
 
     public function applyCoupon(Request $request)
@@ -166,6 +168,15 @@ class CartController extends Controller
             ], 422);
         }
 
+        $bestAutomatic = $this->promotionService->getBestPromotion($cartItems, $deliveryFee);
+        if ($bestAutomatic && !empty($bestAutomatic['promotion'])
+            && !$this->promotionService->canStackWith($result['promotion'], $bestAutomatic['promotion'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This coupon cannot be combined with the current automatic discount (' . $bestAutomatic['promotion']->name . ').',
+            ], 422);
+        }
+
         session()->put('applied_coupon', [
             'code' => $result['promotion']->code,
             'promotion_id' => $result['promotion']->id,
@@ -174,23 +185,23 @@ class CartController extends Controller
             'name' => $result['promotion']->name,
         ]);
 
-        return response()->json([
+        return response()->json(array_merge([
             'success' => true,
             'message' => $result['message'],
             'discount' => $result['discount'],
             'coupon_code' => $result['promotion']->code,
             'coupon_name' => $result['promotion']->name,
-        ]);
+        ], $this->fullCartState(session()->get('cart', []))));
     }
 
     public function removeCoupon()
     {
         session()->forget('applied_coupon');
 
-        return response()->json([
+        return response()->json(array_merge([
             'success' => true,
             'message' => 'Coupon removed.',
-        ]);
+        ], $this->fullCartState(session()->get('cart', []))));
     }
 
     public function applyPromotion(Request $request)
@@ -230,23 +241,44 @@ class CartController extends Controller
             'name' => $result['promotion']->name,
         ]);
 
-        return response()->json([
+        return response()->json(array_merge([
             'success' => true,
             'message' => $result['message'],
             'discount' => $result['discount'],
             'promotion_code' => $result['promotion']->code,
             'promotion_name' => $result['promotion']->name,
-        ]);
+        ], $this->fullCartState(session()->get('cart', []))));
     }
 
     public function removePromotion()
     {
         session()->forget('applied_promotion');
 
-        return response()->json([
+        return response()->json(array_merge([
             'success' => true,
             'message' => 'Promotion removed.',
-        ]);
+        ], $this->fullCartState(session()->get('cart', []))));
+    }
+
+    private function fullCartState(array $cart): array
+    {
+        $cartItems = $this->formatCartItems($cart);
+        $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
+
+        $appliedPromotion = session('applied_promotion');
+        $appliedCoupon = session('applied_coupon');
+
+        $promotionDiscount = (float) ($appliedPromotion['discount'] ?? 0);
+        $couponDiscount = (float) ($appliedCoupon['discount'] ?? 0);
+
+        return [
+            'count' => array_sum(array_column($cart, 'quantity')),
+            'cartItems' => $cartItems,
+            'subtotal' => $subtotal,
+            'appliedPromotion' => $appliedPromotion,
+            'appliedCoupon' => $appliedCoupon,
+            'totalDiscount' => $promotionDiscount + $couponDiscount,
+        ];
     }
 
     /**
@@ -273,7 +305,7 @@ class CartController extends Controller
             }
         }
 
-        $products = Product::select(['id', 'name', 'price', 'photo1', 'type'])
+        $products = Product::select(['id', 'name', 'price', 'photo1', 'type', 'category_id'])
             ->whereIn('id', array_unique($productIds))
             ->get()
             ->keyBy('id');
@@ -284,6 +316,16 @@ class CartController extends Controller
                 ->get()
                 ->keyBy('id')
             : collect();
+
+        $promotions = $this->promotionService->getValidAutomaticPromotions();
+        $skipAutoPromotion = (float) (session('applied_promotion')['discount'] ?? 0) > 0;
+        $sessionCoupon = session('applied_coupon');
+        $couponPromotion = !empty($sessionCoupon['promotion_id'])
+            ? Promotion::find($sessionCoupon['promotion_id'])
+            : null;
+        if ($couponPromotion && !$couponPromotion->isCurrentlyActive()) {
+            $couponPromotion = null;
+        }
 
         $items = [];
         foreach ($cart as $cartKey => $item) {
@@ -308,14 +350,25 @@ class CartController extends Controller
 
             $flashData = $this->flashSaleService->resolveEffectivePrice($productId, $variantId, $basePrice);
 
+            $unitPrice = $flashData['price'];
+            $promotionBadge = null;
+            if (!$flashData['is_flash_sale']) {
+                $promoResolution = $this->promotionService->resolveCartUnitPrice($product, $basePrice, $promotions, $couponPromotion, $skipAutoPromotion);
+                if ($promoResolution) {
+                    $unitPrice = $promoResolution['unit_price'];
+                    $promotionBadge = $promoResolution['badge'];
+                }
+            }
+
             $items[] = [
                 'cart_key' => $cartKey,
                 'id' => $product->id,
                 'variant_id' => $variantId,
                 'name' => $product->name,
                 'variant_name' => $variantName,
-                'price' => $flashData['price'],
+                'price' => $unitPrice,
                 'original_price' => $flashData['original_price'],
+                'promotion_badge' => $promotionBadge,
                 'photo1_url' => $product->photo1_url,
                 'quantity' => $item['quantity'],
                 'is_flash_sale' => $flashData['is_flash_sale'],

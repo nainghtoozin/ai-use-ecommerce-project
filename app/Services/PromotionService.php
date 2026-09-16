@@ -139,6 +139,108 @@ class PromotionService
         return Promotion::generateCode($length);
     }
 
+    public function getValidAutomaticPromotions(): Collection
+    {
+        return Promotion::valid()->automatic()
+            ->with(['products', 'categories'])
+            ->orderBy('priority', 'desc')
+            ->get();
+    }
+
+    public function resolveUnitPromotionPrice(Product $product, float $unitBasePrice, ?Collection $promotions = null): ?array
+    {
+        $promotions ??= $this->getValidAutomaticPromotions();
+
+        $bestPromotion = null;
+        $maxDiscount = 0.0;
+
+        foreach ($promotions as $promotion) {
+            if (!$promotion->isCurrentlyActive()) {
+                continue;
+            }
+
+            $applies = $promotion->applies_to === Promotion::APPLIES_ALL;
+
+            if (!$applies && $promotion->applies_to === Promotion::APPLIES_PRODUCTS) {
+                $applies = $promotion->products->contains($product->id);
+            }
+
+            if (!$applies && $promotion->applies_to === Promotion::APPLIES_CATEGORIES) {
+                $categoryId = $product->category_id ?? $product->category?->id;
+                $applies = $categoryId && $promotion->categories->contains($categoryId);
+            }
+
+            if (!$applies) {
+                continue;
+            }
+
+            $discount = $this->promotionDiscountForBase($promotion, $unitBasePrice);
+
+            if ($discount > $maxDiscount) {
+                $maxDiscount = $discount;
+                $bestPromotion = $promotion;
+            }
+        }
+
+        if (!$bestPromotion || $maxDiscount <= 0) {
+            return null;
+        }
+
+        return [
+            'promotion' => $bestPromotion,
+            'unit_price' => max(0, round($unitBasePrice - $maxDiscount, 2)),
+            'original_price' => $unitBasePrice,
+            'discount' => round($maxDiscount, 2),
+            'badge' => self::promotionBadge($bestPromotion->type, $bestPromotion->value),
+        ];
+    }
+
+    public function resolveCartUnitPrice(
+        Product $product,
+        float $unitBasePrice,
+        ?Collection $promotions = null,
+        ?Promotion $couponPromotion = null,
+        bool $skipAutomatic = false
+    ): ?array {
+        if ($skipAutomatic) {
+            return null;
+        }
+
+        $resolved = $this->resolveUnitPromotionPrice($product, $unitBasePrice, $promotions);
+        if (!$resolved) {
+            return null;
+        }
+
+        if ($couponPromotion && !$this->canStackWith($couponPromotion, $resolved['promotion'])) {
+            return null;
+        }
+
+        return $resolved;
+    }
+
+    public function promotionDiscountForBase(Promotion $promotion, float $basePrice): float
+    {
+        $discount = $promotion->type === Promotion::TYPE_PERCENTAGE
+            ? $basePrice * (float) $promotion->value / 100
+            : (float) $promotion->value;
+
+        if ($promotion->max_discount_amount !== null) {
+            $discount = min($discount, (float) $promotion->max_discount_amount);
+        }
+
+        return $discount;
+    }
+
+    public static function promotionBadge(string $type, mixed $value): string
+    {
+        return match ($type) {
+            Promotion::TYPE_PERCENTAGE => "-{$value}%",
+            Promotion::TYPE_FIXED => '-' . number_format((float) $value, 0),
+            Promotion::TYPE_FREE_SHIPPING => 'Free Shipping',
+            default => 'Sale',
+        };
+    }
+
     public function getAutoPromotionsForCheckout(array $cartItems, ?float $deliveryFee = 0): Collection
     {
         return $this->getApplicableAutoPromotions($cartItems, $deliveryFee)

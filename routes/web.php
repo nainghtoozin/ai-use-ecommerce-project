@@ -188,7 +188,10 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::delete('/cart/clear', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
     Route::get('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'index'])->name('checkout');
     Route::get('/checkout/preview', [\App\Http\Controllers\StorefrontCheckoutController::class, 'preview'])->name('checkout.preview')->middleware(['auth:web,accounts', 'role:admin', 'tenant.access']);
-    Route::post('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'store'])->name('checkout.store');
+        Route::post('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class,
+            'store'])->name('checkout.store');
+        Route::post('/checkout/quote', [\App\Http\Controllers\StorefrontCheckoutController::class,
+            'quote'])->name('checkout.quote');
 
     // Store-based customer area (authenticated)
     Route::middleware(['auth:web,accounts', 'tenant.access'])->prefix('customer')->name('customer.')->group(function () {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Zap } from 'lucide-react';
@@ -41,6 +41,7 @@ export default function StorefrontCheckoutV2({
   tenant, cartItems, subtotal, paymentMethods, cities,
   deliveryServices, packagingOptions = [], errors,
   appliedPromotion: initialAppliedPromotion,
+  appliedCoupon: initialCoupon,
   discountAmount: initialDiscountAmount, autoPromotions,
   addresses = [], defaultAddress = null, previewMode = null,
 }) {
@@ -57,8 +58,10 @@ export default function StorefrontCheckoutV2({
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false);
 
   const [localAppliedPromotion, setLocalAppliedPromotion] = useState(initialAppliedPromotion || null);
+  const [localAppliedCoupon, setLocalAppliedCoupon] = useState(initialCoupon || null);
   const [localDiscount, setLocalDiscount] = useState(initialDiscountAmount || 0);
   const [promotionCode, setPromotionCode] = useState('');
+  const [couponCode, setCouponCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMessage, setPromoMessage] = useState(null);
   const [promoError, setPromoError] = useState(false);
@@ -75,13 +78,52 @@ export default function StorefrontCheckoutV2({
 
   const [townships, setTownships] = useState([]);
   const [townshipsLoading, setTownshipsLoading] = useState(false);
+  const [selectedDeliveryService, setSelectedDeliveryService] = useState(null);
+  const [selectedPackaging, setSelectedPackaging] = useState(null);
+  const [quote, setQuote] = useState(null);
+  const [quoting, setQuoting] = useState(false);
+  const quoteTimerRef = useRef(null);
+
+  const quoteCityId = form.city_id || null;
+  const quoteTownshipId = form.township_id || null;
+  const quoteServiceId = selectedDeliveryService?.id || null;
+  const quotePackagingId = selectedPackaging?.id || null;
+  const quotePaymentId = form.payment_method_id || null;
+
+  const fetchQuote = useCallback(() => {
+    if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current);
+    quoteTimerRef.current = setTimeout(async () => {
+      setQuoting(true);
+      try {
+        const res = await axios.post(`/store/${tenant.slug}/checkout/quote`, {
+          city_id: quoteCityId,
+          township_id: quoteTownshipId,
+          delivery_service_id: quoteServiceId,
+          packaging_id: quotePackagingId,
+          payment_method_id: quotePaymentId,
+        });
+        if (res.data) setQuote(res.data);
+      } catch {
+        /* keep previous quote; local derivations cover display */
+      } finally {
+        setQuoting(false);
+      }
+    }, 400);
+  }, [tenant.slug, quoteCityId, quoteTownshipId, quoteServiceId, quotePackagingId, quotePaymentId]);
+
+  useEffect(() => {
+    fetchQuote();
+    return () => { if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current); };
+  }, [fetchQuote]);
+
+  useEffect(() => {
+    return () => { if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current); };
+  }, []);
   const [screenshotPreview, setScreenshotPreview] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState('');
   const [fileError, setFileError] = useState('');
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [selectedDeliveryService, setSelectedDeliveryService] = useState(null);
-  const [selectedPackaging, setSelectedPackaging] = useState(null);
 
   const cc = getCurrencyConfig(platform_setting, website_info);
 
@@ -113,8 +155,9 @@ export default function StorefrontCheckoutV2({
 
   useEffect(() => {
     setLocalAppliedPromotion(initialAppliedPromotion || null);
+    setLocalAppliedCoupon(initialCoupon || null);
     setLocalDiscount(initialDiscountAmount || 0);
-  }, [initialAppliedPromotion, initialDiscountAmount]);
+  }, [initialAppliedPromotion, initialCoupon, initialDiscountAmount]);
 
   useEffect(() => {
     if (form.payment_method_id) {
@@ -191,10 +234,12 @@ export default function StorefrontCheckoutV2({
     try {
       const res = await axios.post('/cart/apply-promotion', { code });
       if (res.data?.success) {
-        setLocalAppliedPromotion({ code: res.data.promotion_code, name: res.data.promotion_name, discount: res.data.discount });
-        setLocalDiscount(prev => Number(prev) + Number(res.data.discount));
+        if (res.data.appliedPromotion !== undefined) setLocalAppliedPromotion(res.data.appliedPromotion);
+        if (res.data.appliedCoupon !== undefined) setLocalAppliedCoupon(res.data.appliedCoupon);
+        if (res.data.totalDiscount !== undefined) setLocalDiscount(res.data.totalDiscount);
         setPromotionCode('');
         setPromoMessage(res.data.message || 'Promotion applied!');
+        fetchQuote();
       }
     } catch (err) {
       setPromoMessage(err.response?.data?.message || 'Failed to apply.');
@@ -210,12 +255,56 @@ export default function StorefrontCheckoutV2({
     try {
       const res = await axios.post('/cart/remove-promotion');
       if (res.data?.success) {
-        setLocalDiscount(prev => Math.max(0, Number(prev) - Number(localAppliedPromotion?.discount || 0)));
-        setLocalAppliedPromotion(null);
+        if (res.data.appliedPromotion !== undefined) setLocalAppliedPromotion(res.data.appliedPromotion);
+        if (res.data.appliedCoupon !== undefined) setLocalAppliedCoupon(res.data.appliedCoupon);
+        if (res.data.totalDiscount !== undefined) setLocalDiscount(res.data.totalDiscount);
         setPromoMessage(res.data.message || 'Promotion removed.');
+        fetchQuote();
       }
     } catch (err) {
       setPromoMessage('Failed to remove.');
+      setPromoError(true);
+    } finally {
+      setPromoLoading(false);
+      setTimeout(() => { setPromoMessage(null); setPromoError(false); }, 4000);
+    }
+  }
+
+  async function applyCoupon(code) {
+    if (!code?.trim()) return;
+    setPromoLoading(true); setPromoMessage(null); setPromoError(false);
+    try {
+      const res = await axios.post('/cart/apply-coupon', { code });
+      if (res.data?.success) {
+        if (res.data.appliedPromotion !== undefined) setLocalAppliedPromotion(res.data.appliedPromotion);
+        if (res.data.appliedCoupon !== undefined) setLocalAppliedCoupon(res.data.appliedCoupon);
+        if (res.data.totalDiscount !== undefined) setLocalDiscount(res.data.totalDiscount);
+        setCouponCode('');
+        setPromoMessage(res.data.message || 'Coupon applied!');
+        fetchQuote();
+      }
+    } catch (err) {
+      setPromoMessage(err.response?.data?.message || 'Failed to apply coupon.');
+      setPromoError(true);
+    } finally {
+      setPromoLoading(false);
+      setTimeout(() => { setPromoMessage(null); setPromoError(false); }, 4000);
+    }
+  }
+
+  async function removeCoupon() {
+    setPromoLoading(true); setPromoMessage(null); setPromoError(false);
+    try {
+      const res = await axios.post('/cart/remove-coupon');
+      if (res.data?.success) {
+        if (res.data.appliedPromotion !== undefined) setLocalAppliedPromotion(res.data.appliedPromotion);
+        if (res.data.appliedCoupon !== undefined) setLocalAppliedCoupon(res.data.appliedCoupon);
+        if (res.data.totalDiscount !== undefined) setLocalDiscount(res.data.totalDiscount);
+        setPromoMessage(res.data.message || 'Coupon removed.');
+        fetchQuote();
+      }
+    } catch (err) {
+      setPromoMessage('Failed to remove coupon.');
       setPromoError(true);
     } finally {
       setPromoLoading(false);
@@ -231,9 +320,10 @@ export default function StorefrontCheckoutV2({
 
   const city = cities?.find(c => c.id == form.city_id);
   const selectedPayment = paymentMethods?.find(pm => pm.id == form.payment_method_id);
-  const deliveryFee = selectedDeliveryService?.base_fee ?? city?.delivery_fee ?? 0;
-  const packagingFee = selectedPackaging?.fee || 0;
-  const codFee = selectedPayment?.type === 'cod' ? (selectedPayment?.cod_fee || 0) : 0;
+  const quotedService = (id) => quote?.services?.find(s => String(s.id) === String(id));
+  const deliveryFee = quote ? Number(quote.delivery?.fee || 0) : (selectedDeliveryService?.base_fee ?? city?.delivery_fee ?? 0);
+  const packagingFee = quote ? Number(quote.packaging?.fee || 0) : (selectedPackaging?.fee || 0);
+  const codFee = quote ? Number(quote.cod?.fee || 0) : (selectedPayment?.type === 'cod' ? (selectedPayment?.cod_fee || 0) : 0);
   const totalDiscount = Number(localDiscount) || 0;
   const totalBeforeCod = Number(subtotal) + Number(deliveryFee) + packagingFee - totalDiscount;
   const total = totalBeforeCod + codFee;
@@ -314,46 +404,60 @@ export default function StorefrontCheckoutV2({
     .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
   function OrderSummaryPanel() {
+    const originalSubtotal = cartItems.reduce((s, i) => s + Number(i.original_price ?? i.price) * Number(i.quantity), 0);
+    const promoUnitSavings = Math.max(0, originalSubtotal - Number(subtotal));
+    const manualPromoLump = Number(localAppliedPromotion?.discount) || 0;
+    const promotionRow = promoUnitSavings + manualPromoLump;
+    const couponRow = Number(localAppliedCoupon?.discount) || 0;
+    const previewName = [form.first_name, form.last_name].filter(Boolean).join(' ').trim();
+    const previewTownship = townships.find(tw => tw.id == form.township_id)?.name || '';
+    const hasDeliveryPreview = previewName || form.phone || form.address || previewTownship || city;
+
     return (
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Order Summary</h3>
           <span className="text-xs text-gray-500 dark:text-gray-400">{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
         </div>
 
-        <div className="max-h-44 overflow-y-auto space-y-3 mb-4 scrollbar-thin">
-          {cartItems.map(item => (
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Items</p>
+        <div className="max-h-48 overflow-y-auto space-y-3 mb-4 scrollbar-thin">
+          {cartItems.map(item => {
+            const lineOriginal = Number(item.original_price ?? item.price) * Number(item.quantity);
+            const lineTotal = Number(item.price) * Number(item.quantity);
+            const lineSave = Math.max(0, lineOriginal - lineTotal);
+            return (
             <div key={item.cart_key || item.id} className="flex gap-3">
               {item.photo1_url && (
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 border border-gray-100 dark:border-gray-800">
                   <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
-                {item.variant_name && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.variant_name}</p>}
+                {item.variant_name && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{item.variant_name}</p>}
                 {item.is_flash_sale && (
                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mt-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded text-[10px] font-bold">
                     <Zap className="w-2.5 h-2.5 fill-current" />
                     Flash Sale
                   </span>
                 )}
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-gray-400">Qty: {item.quantity}</span>
-                  <div className="text-right">
-                    {item.is_flash_sale ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-gray-400 line-through">{formatCurrency(Number(item.original_price) * Number(item.quantity), cc)}</span>
-                        <span className="text-sm font-semibold text-orange-600">{formatCurrency(Number(item.price) * Number(item.quantity), cc)}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(Number(item.price) * Number(item.quantity), cc)}</span>
+                <div className="flex items-center justify-between mt-1 gap-2">
+                  <span className="text-xs text-gray-400 flex-shrink-0">Qty: {item.quantity}</span>
+                  <div className="text-right min-w-0">
+                    {lineSave > 0 && (
+                      <span className="block text-[11px] text-gray-400 line-through">{formatCurrency(lineOriginal, cc)}</span>
+                    )}
+                    <span className={`text-sm font-semibold ${item.is_flash_sale ? 'text-orange-600' : 'text-gray-900 dark:text-gray-100'}`}>{formatCurrency(lineTotal, cc)}</span>
+                    {lineSave > 0 && !item.is_flash_sale && (
+                      <span className="block text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Save {formatCurrency(lineSave, cc)}</span>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {localAppliedPromotion && (
@@ -365,19 +469,71 @@ export default function StorefrontCheckoutV2({
           </div>
         )}
 
-        <div className="space-y-2.5 text-sm">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 text-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pricing</p>
+          {promoUnitSavings > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Original Subtotal</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(originalSubtotal, cc)}</span>
+            </div>
+          )}
+          {promotionRow > 0 && (
+            <div className="flex justify-between text-green-600 dark:text-green-400">
+              <span>Promotion Discount</span>
+              <span className="font-medium">-{formatCurrency(promotionRow, cc)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
             <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(subtotal, cc)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500 dark:text-gray-400">Delivery</span>
-            <span className="text-gray-900 dark:text-gray-100">{deliveryFee > 0 ? formatCurrency(deliveryFee, cc) : <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">TBD</span>}</span>
-          </div>
+          {couponRow > 0 && (
+            <div className="flex justify-between text-green-600 dark:text-green-400">
+              <span>Coupon Discount</span>
+              <span className="font-medium">-{formatCurrency(couponRow, cc)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 text-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Delivery</p>
+          {hasDeliveryPreview && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+              {previewName && <p className="font-medium text-gray-700 dark:text-gray-300">{previewName}</p>}
+              {form.phone && <p>{form.phone}</p>}
+              {form.address && <p className="truncate">{form.address}</p>}
+              {(previewTownship || city) && (
+                <p>{[previewTownship, city?.name].filter(Boolean).join(', ')}</p>
+              )}
+              {selectedDeliveryService && (
+                <p>via {selectedDeliveryService.name}</p>
+              )}
+            </div>
+          )}
+          {deliveryFee > 0 ? (
+            <div>
+              <div className="flex justify-between gap-2">
+                <span className="text-gray-500 dark:text-gray-400">Delivery Fee{selectedDeliveryService ? ` (${selectedDeliveryService.name})` : ''}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(deliveryFee, cc)}</span>
+              </div>
+              {(quote?.delivery?.city_rate_applied || quote?.delivery?.eta_min) && (
+                <p className="text-[11px] text-gray-400 text-right mt-0.5">
+                  {quote?.delivery?.city_rate_applied ? 'City rate applied' : ''}
+                  {quote?.delivery?.city_rate_applied && quote?.delivery?.eta_min ? ' · ' : ''}
+                  {quote?.delivery?.eta_min ? `${quote.delivery.eta_min}${quote.delivery.eta_max && quote.delivery.eta_max !== quote.delivery.eta_min ? `-${quote.delivery.eta_max}` : ''} days` : ''}
+                </p>
+              )}
+            </div>
+          ) : (!selectedDeliveryService && (
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Delivery Fee</span>
+              <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">Calculated at checkout</span>
+            </div>
+          ))}
           {packagingFee > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-500 dark:text-gray-400">Packaging</span>
-              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(packagingFee, cc)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Packing Fee{(quote?.packaging?.name || selectedPackaging?.name) ? ` (${quote?.packaging?.name || selectedPackaging?.name})` : ''}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(packagingFee, cc)}</span>
             </div>
           )}
           {isCod && codFee > 0 && (
@@ -386,16 +542,56 @@ export default function StorefrontCheckoutV2({
               <span>{formatCurrency(codFee, cc)}</span>
             </div>
           )}
-          {totalDiscount > 0 && (
-            <div className="flex justify-between text-green-600 dark:text-green-400">
-              <span>Discount</span>
-              <span>-{formatCurrency(totalDiscount, cc)}</span>
+        </div>
+
+        {!localAppliedCoupon ? (
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex gap-2">
+              <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)}
+                placeholder="Coupon code" maxLength={50}
+                aria-label="Coupon code"
+                className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]/30 focus:border-[var(--theme-color)]"
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyCoupon(couponCode))} />
+              <button type="button" onClick={() => applyCoupon(couponCode)} disabled={promoLoading || !couponCode.trim()}
+                className="px-5 py-2 bg-[var(--theme-color)] text-white text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+                {promoLoading ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> : 'Apply'}
+              </button>
             </div>
-          )}
-          <div className="flex justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total</span>
-            <span className="text-base font-bold text-[var(--theme-color)]">{formatCurrency(total, cc)}</span>
           </div>
+        ) : (
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between p-2.5 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/40">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <svg className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span className="text-sm font-medium text-green-800 dark:text-green-300 truncate">✓ {localAppliedCoupon.code}</span>
+                <span className="text-xs text-green-600 dark:text-green-400 font-semibold">-{formatCurrency(localAppliedCoupon.discount, cc)}</span>
+              </div>
+              <button type="button" onClick={removeCoupon} disabled={promoLoading}
+                className="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 px-2 py-1 disabled:opacity-50">
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 text-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Payment</p>
+          {selectedPayment ? (
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Payment Method</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{selectedPayment.name}</span>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">Not selected</p>
+          )}
+        </div>
+
+        <div className="mt-4 pt-4 border-t-2 border-gray-200 dark:border-gray-700 flex justify-between items-center text-gray-900 dark:text-gray-100">
+          <span className="text-base font-bold">Total</span>
+          <span className="text-xl font-extrabold text-[var(--theme-color)] inline-flex items-center gap-2">
+            {quoting && <svg className="animate-spin h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
+            {formatCurrency(total, cc)}
+          </span>
         </div>
 
         <button type="button" onClick={handleSubmit} disabled={!canPlaceOrder() || submitting}
@@ -680,7 +876,9 @@ export default function StorefrontCheckoutV2({
                 <div role="radiogroup" aria-label="Delivery service" className="space-y-2.5">
                   {deliveryServices.map(service => {
                     const isSelected = selectedDeliveryService?.id === service.id;
-                    const actualFee = service.base_fee;
+                    const quoted = quotedService(service.id);
+                    const actualFee = quoted ? quoted.fee : service.base_fee;
+                    const etaLabel = quoted?.eta_label || service.eta_label;
                     return (
                       <SelectionCard key={service.id} selected={isSelected} onClick={() => setSelectedDeliveryService(service)}>
                         <div className="flex items-center justify-between">
@@ -688,7 +886,7 @@ export default function StorefrontCheckoutV2({
                             <RadioButton selected={isSelected} />
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{service.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{service.eta_label}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{etaLabel}{quoted ? ' · city rate' : ''}</p>
                             </div>
                           </div>
                           <div className="text-right flex-shrink-0 ml-3">
