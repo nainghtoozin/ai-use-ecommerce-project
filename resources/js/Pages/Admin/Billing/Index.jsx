@@ -2,14 +2,12 @@ import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import StatusBadge from '@/Components/Billing/StatusBadge';
-import SubscriptionSummaryCard from '@/Components/Billing/SubscriptionSummaryCard';
 import UsageCard from '@/Components/Billing/UsageCard';
-import FeatureAvailability from '@/Components/Billing/FeatureAvailability';
-import QuickActions from '@/Components/Billing/QuickActions';
 import ActivityTimeline from '@/Components/Billing/ActivityTimeline';
-import PlanCards from '@/Components/Billing/PlanCards';
-import UpgradeDialog from '@/Components/Billing/UpgradeDialog';
+import CurrentPlanSummary from '@/Components/Billing/CurrentPlanSummary';
+import PlanPicker, { getRecommendedSlug } from '@/Components/Billing/PlanPicker';
 import { adminUrl } from '@/Utils/adminUrl';
+import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
 
 
@@ -29,73 +27,53 @@ const limitRows = [
     { key: 'flash_sale_limit', label: 'Flash Sales' },
 ];
 
-export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs }) {
+export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment }) {
     const { can } = usePermission();
+    const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [dialogTarget, setDialogTarget] = useState(null);
-    const [dialogFeatureKey, setDialogFeatureKey] = useState(null);
+    const [billingInterval, setBillingInterval] = useState(subscription?.billing_interval || 'monthly');
 
     const currentPlan = plans?.find(p => p.is_current) || null;
-
-    const openUpgradeDialog = (plan) => {
-        setDialogTarget(plan);
-        setDialogFeatureKey(null);
-        setDialogOpen(true);
-    };
-
-    const handleLockedFeature = (featureKey, planSlug) => {
-        const plan = plans?.find(p => p.slug === planSlug);
-        if (plan && !plan.is_current) {
-            const upgradeHint = allFeatureDefs?.find(f => f.key === featureKey)?.upgradeHint;
-            const betterPlan = upgradeHint
-                ? plans?.find(p => p.name === upgradeHint)
-                : plans?.find(p => !p.is_current && p.slug !== 'free');
-            setDialogTarget(betterPlan || plan);
-            setDialogFeatureKey(featureKey);
-            setDialogOpen(true);
-        }
-    };
+    const showRenew = subscription && ['expired', 'past_due', 'canceled'].includes(subscription.status) && can('billing.renew');
+    const recommendedSlug = getRecommendedSlug(usage, plans);
 
     const handleRenew = () => {
         router.post(adminUrl('/admin/billing/renew'), {}, { preserveScroll: true });
     };
 
-    const handleUpgrade = () => {
-        window.location.href = adminUrl('/admin/billing/upgrade');
+    const scrollToPlans = () => {
+        document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const handleChoose = (plan, { action, interval }) => {
+        if (action === 'upgrade') {
+            router.get(adminUrl(`/admin/billing/checkout/${plan.slug}`), { billing_cycle: interval });
+        } else {
+            router.post(adminUrl('/admin/billing/change-plan/preview'), { plan_id: plan.id, billing_interval: interval });
+        }
     };
 
     return (
         <AdminLayout>
             <Head title="Billing & Subscription" />
 
-            <div className="p-6 lg:p-8 space-y-6">
+            <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Billing & Subscription</h1>
                             {subscription && <StatusBadge status={subscription.status} />}
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your subscription plan, limits, and billing information</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your subscription plan and billing</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {currentPlan && currentPlan.slug !== 'free' && (
-                            <button
-                                onClick={handleUpgrade}
-                                className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                Upgrade Plan
-                            </button>
-                        )}
-                        {subscription && ['expired', 'past_due', 'canceled'].includes(subscription.status) && can('billing.renew') && (
-                            <button
-                                onClick={handleRenew}
-                                className="px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            >
-                                Renew Now
-                            </button>
-                        )}
-                    </div>
+                    {showRenew && (
+                        <button
+                            onClick={handleRenew}
+                            className="px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 self-start sm:self-auto"
+                        >
+                            Renew Now
+                        </button>
+                    )}
                 </div>
 
                 {subscription && subscription.on_trial && subscription.trial_days_remaining > 0 && (
@@ -104,23 +82,45 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                             <div className={`p-1.5 rounded-lg ${subscription.trial_days_remaining <= 3 ? 'bg-amber-100' : 'bg-blue-100'}`}>
                                 <svg className={`w-4 h-4 ${subscription.trial_days_remaining <= 3 ? 'text-amber-600' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <p className={`text-sm font-semibold ${subscription.trial_days_remaining <= 3 ? 'text-amber-800' : 'text-blue-800'}`}>
                                     Trial Period — {subscription.trial_days_remaining} day{subscription.trial_days_remaining !== 1 ? 's' : ''} remaining
                                 </p>
                                 <p className={`text-xs mt-0.5 ${subscription.trial_days_remaining <= 3 ? 'text-amber-600' : 'text-blue-600'}`}>
                                     {subscription.trial_ends_at ? `Your trial ends on ${subscription.trial_ends_at}. ` : ''}
-                                    Upgrade to a paid plan to continue using all features.
+                                    Choose a plan below to continue using all features.
                                 </p>
                             </div>
-                            {subscription.trial_days_remaining <= 3 && (
-                                <button
-                                    onClick={handleUpgrade}
-                                    className="ml-auto px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition-colors flex-shrink-0"
-                                >
-                                    Upgrade Now
-                                </button>
-                            )}
+                            <button
+                                onClick={scrollToPlans}
+                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors flex-shrink-0"
+                            >
+                                View Plans
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {pendingPayment && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <div className="flex items-start gap-3">
+                            <div className="p-1.5 rounded-lg bg-blue-100 flex-shrink-0">
+                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-blue-800">
+                                    {pendingPayment.status === 'waiting_review' ? 'Payment pending approval' : 'Payment in progress'}
+                                </p>
+                                <p className="text-xs text-blue-600 mt-0.5">
+                                    {pendingPayment.plan_name ? `${pendingPayment.plan_name} · ` : ''}{formatCurrency(pendingPayment.amount, pc)}{pendingPayment.reference_number ? ` · Ref ${pendingPayment.reference_number}` : ''}
+                                </p>
+                            </div>
+                            <a
+                                href={adminUrl(`/admin/billing/payment?intent=${pendingPayment.reference_number}`)}
+                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors flex-shrink-0"
+                            >
+                                View Payment
+                            </a>
                         </div>
                     </div>
                 )}
@@ -190,16 +190,28 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                     </div>
                 )}
 
-                <SubscriptionSummaryCard subscription={subscription} />
+                <CurrentPlanSummary
+                    subscription={subscription}
+                    primary={showRenew
+                        ? { label: 'Renew Now', tone: 'emerald', onClick: handleRenew }
+                        : subscription && !['suspended'].includes(subscription.status)
+                            ? { label: 'View Plans', tone: 'blue', onClick: scrollToPlans }
+                            : null}
+                    secondaryLinks={[
+                        { label: 'Payment history', href: adminUrl('/admin/billing/payment-history') },
+                        { label: 'Invoices', href: adminUrl('/admin/billing/invoices') },
+                    ]}
+                />
+
+                {showRenew && !subscription.extra_renewal_used_at && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 -mt-3">
+                        One-time free renewal available — renewing now requires no payment. After it is used, renewals follow the normal payment path.
+                    </p>
+                )}
 
                 {subscription && !['expired', 'past_due', 'canceled', 'suspended'].includes(subscription.status) && (
                     <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Usage & Limits</h2>
-                            {currentPlan && (
-                                <span className="text-xs text-gray-400 dark:text-gray-500">{currentPlan.name} plan</span>
-                            )}
-                        </div>
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Usage & Limits</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {limitRows.map(({ key, label, format }) => {
                                 const u = usage?.[key];
@@ -218,37 +230,25 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                     </div>
                 )}
 
-                {subscription && !['expired', 'past_due', 'canceled', 'suspended'].includes(subscription.status) && featureCategories && (
-                    <FeatureAvailability
-                        featureCategories={featureCategories}
-                        allFeatureDefs={allFeatureDefs}
-                        currentPlan={currentPlan}
-                    />
+                {plans && plans.length > 0 && (
+                    <div id="plans" className="scroll-mt-6">
+                        <PlanPicker
+                            plans={plans}
+                            subscription={subscription}
+                            currentPlan={currentPlan}
+                            interval={billingInterval}
+                            onIntervalChange={setBillingInterval}
+                            onChoose={handleChoose}
+                            recommendedSlug={recommendedSlug}
+                            allFeatureDefs={allFeatureDefs}
+                        />
+                    </div>
                 )}
-
-                <QuickActions subscription={subscription} onRenew={handleRenew} can={can} />
 
                 {subscription && (
                     <ActivityTimeline logs={auditLogs} />
                 )}
-
-                {plans && plans.length > 1 && (
-                    <div>
-                        <PlanCards plans={plans} onUpgrade={openUpgradeDialog} />
-                    </div>
-                )}
-
             </div>
-
-            <UpgradeDialog
-                isOpen={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                currentPlan={currentPlan}
-                targetPlan={dialogTarget}
-                featureKey={dialogFeatureKey}
-                allFeatureDefs={allFeatureDefs}
-                subscription={subscription}
-            />
         </AdminLayout>
     );
 }

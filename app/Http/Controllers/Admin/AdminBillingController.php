@@ -118,6 +118,12 @@ class AdminBillingController extends Controller
             });
         }
 
+        $pendingIntent = PaymentIntent::forTenant($tenant->id)
+            ->whereIn('status', ['waiting_payment', 'waiting_review'])
+            ->with('plan:id,name')
+            ->latest()
+            ->first();
+
         return Inertia::render('Admin/Billing/Index', [
             'subscription' => $subscription ? [
                 'id' => $subscription->id,
@@ -163,6 +169,7 @@ class AdminBillingController extends Controller
                     'slug' => $subscription->pendingPlan->slug,
                 ] : null,
                 'pending_plan_effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
+                'extra_renewal_used_at' => $subscription->extra_renewal_used_at?->toDateTimeString(),
                 'next_billing_date' => $subscription->expires_at?->isFuture()
                     ? $subscription->expires_at->toDateString()
                     : ($subscription->plan && !$subscription->plan->isFree()
@@ -171,6 +178,15 @@ class AdminBillingController extends Controller
             ] : null,
             'usage' => $usage,
             'plans' => $plans,
+            'pendingPayment' => $pendingIntent ? [
+                'reference_number' => $pendingIntent->reference_number,
+                'status' => $pendingIntent->status,
+                'amount' => $pendingIntent->amount,
+                'currency' => $pendingIntent->currency,
+                'billing_cycle' => $pendingIntent->billing_cycle,
+                'plan_name' => $pendingIntent->plan?->name,
+                'created_at' => $pendingIntent->created_at?->toDateTimeString(),
+            ] : null,
             'featureCategories' => $featureCategories,
             'allFeatureDefs' => $allFeatureDefs,
             'auditLogs' => $auditLogs,
@@ -482,14 +498,14 @@ class AdminBillingController extends Controller
 
         $subscription = $tenant->subscription;
         if (!$subscription || !$subscription->plan) {
-            return redirect()->route('admin.billing.upgrade')
+            return admin_redirect('admin.billing.upgrade')
                 ->with('error', 'No active subscription found.');
         }
 
         $targetPlan = Plan::active()->findOrFail($request->plan_id);
 
         if ($targetPlan->id === $subscription->plan_id) {
-            return redirect()->route('admin.billing.upgrade')
+            return admin_redirect('admin.billing.upgrade')
                 ->with('info', 'You are already on this plan.');
         }
 
@@ -543,14 +559,14 @@ class AdminBillingController extends Controller
 
         $subscription = $tenant->subscription;
         if (!$subscription || !$subscription->plan) {
-            return redirect()->route('admin.billing.upgrade')
+            return admin_redirect('admin.billing.upgrade')
                 ->with('error', 'No active subscription found.');
         }
 
         $targetPlan = Plan::active()->findOrFail($request->plan_id);
 
         if ($targetPlan->id === $subscription->plan_id) {
-            return redirect()->route('admin.billing')
+            return admin_redirect('admin.billing')
                 ->with('info', 'You are already on this plan.');
         }
 
@@ -564,7 +580,7 @@ class AdminBillingController extends Controller
 
         $action = $isUpgrade ? 'upgraded' : ($subscription->hasPendingDowngrade() ? 'downgrade scheduled' : 'changed');
 
-        return redirect()->route('admin.billing')
+        return admin_redirect('admin.billing')
             ->with('success', "Your plan has been {$action} successfully.");
     }
 
@@ -581,13 +597,13 @@ class AdminBillingController extends Controller
 
         $subscription = $tenant->subscription;
         if (!$subscription || !$subscription->hasPendingDowngrade()) {
-            return redirect()->route('admin.billing')
+            return admin_redirect('admin.billing')
                 ->with('info', 'No scheduled plan change found.');
         }
 
         $planChange->cancelScheduledChange($subscription);
 
-        return redirect()->route('admin.billing')
+        return admin_redirect('admin.billing')
             ->with('success', 'Scheduled plan change has been cancelled.');
     }
 
@@ -606,22 +622,52 @@ class AdminBillingController extends Controller
         $plan = Plan::active()->where('slug', $planSlug)->first();
 
         if (!$plan) {
-            return redirect()->route('storefront.admin.billing.upgrade', ['store_slug' => $tenant->slug])
+            return admin_redirect('admin.billing.upgrade')
                 ->with('error', 'The selected plan is not available.');
         }
 
         $subscription = $tenant->subscription;
 
         if ($subscription && $subscription->plan && $subscription->plan->id === $plan->id) {
-            return redirect()->route('storefront.admin.billing', ['store_slug' => $tenant->slug])
+            return admin_redirect('admin.billing')
                 ->with('info', 'You are already on this plan.');
         }
 
         $billingCycle = $request->validate(['billing_cycle' => ['nullable', 'in:monthly,yearly']])['billing_cycle'] ?? 'monthly';
 
-        try {
-            $intent = null;
+        $intentData = null;
+        $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
 
+        if ($amount > 0) {
+            try {
+                $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
+
+                $intent = app(CheckoutService::class)->initiateCheckout(
+                    tenant: $tenant,
+                    plan: $plan,
+                    billingCycle: $billingCycle,
+                    amount: $amount,
+                    currency: Currency::fromEnum($currencyCode),
+                    gateway: 'manual',
+                    metadata: ['source' => 'merchant_checkout'],
+                );
+
+                $intentData = [
+                    'id' => $intent->id,
+                    'reference_number' => $intent->reference_number,
+                    'amount' => $intent->amount,
+                    'currency' => $intent->currency,
+                    'status' => $intent->status,
+                    'billing_cycle' => $intent->billing_cycle,
+                    'expires_at' => $intent->expires_at?->toDateTimeString(),
+                    'created_at' => $intent->created_at->toDateTimeString(),
+                ];
+            } catch (\InvalidArgumentException $e) {
+                $intentData = null;
+            }
+        }
+
+        try {
             $allFeatureDefs = FeatureGate::getAllFeatureDefinitions();
             $featureKeys = array_column($allFeatureDefs, 'key');
 
@@ -671,7 +717,7 @@ class AdminBillingController extends Controller
                 ]);
 
             return Inertia::render('Admin/Billing/Checkout', [
-                'intent' => null,
+                'intent' => $intentData,
                 'billingCycle' => $billingCycle,
                 'selectedPlan' => [
                     'id' => $plan->id,
@@ -736,7 +782,7 @@ class AdminBillingController extends Controller
                 'paymentMethods' => $paymentMethods,
             ]);
         } catch (\Exception $e) {
-            return redirect()->route('storefront.admin.billing.upgrade', ['store_slug' => $tenant->slug])
+            return admin_redirect('admin.billing.upgrade')
                 ->with('error', 'Unable to prepare checkout. Please try again or contact support.');
         }
     }
@@ -895,8 +941,7 @@ class AdminBillingController extends Controller
                     ->exists();
 
             if ($sameSubmission) {
-                return redirect()->route('storefront.admin.billing.payment', [
-                    'store_slug' => $tenant->slug,
+                return admin_redirect('admin.billing.payment', [
                     'intent' => $intent->reference_number,
                     'submitted' => 'true',
                 ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
@@ -913,8 +958,7 @@ class AdminBillingController extends Controller
             app(ManualPaymentService::class)->confirmPayment($intent);
             app(\App\Services\InvoiceService::class)->generateFromPaymentIntent($intent->fresh());
 
-            return redirect()->route('storefront.admin.billing.payment', [
-                'store_slug' => $tenant->slug,
+            return admin_redirect('admin.billing.payment', [
                 'intent' => $intent->reference_number,
                 'submitted' => 'true',
             ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
@@ -947,8 +991,7 @@ class AdminBillingController extends Controller
 
             $intent->refresh();
 
-            return redirect()->route('storefront.admin.billing.payment', [
-                'store_slug' => $tenant->slug,
+            return admin_redirect('admin.billing.payment', [
                 'intent' => $intent->reference_number,
                 'submitted' => 'true',
             ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
@@ -998,6 +1041,8 @@ class AdminBillingController extends Controller
         }
 
         $subscription->renewFromInterval('Self-service renewal by merchant.');
+
+        $subscription->consumeExtraRenewal();
 
         // Only count as trial renewal if the subscription is still on trial
         if ($subscription->trial_ends_at && $subscription->onTrial()) {

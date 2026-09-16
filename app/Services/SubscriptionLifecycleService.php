@@ -39,7 +39,7 @@ class SubscriptionLifecycleService
 
         if ($subscription->isTrialing()) {
             $this->activateFromTrial($subscription, $plan, $intent);
-        } elseif ($subscription->isExpired() || $subscription->isPastDue() || $subscription->isCanceled()) {
+        } elseif ($subscription->isExpired() || $subscription->isPastDue() || $subscription->isCanceled() || $subscription->isSuspended()) {
             $this->renewSubscription($subscription, $plan, $intent);
         } elseif ($subscription->isActive() && $isUpgrade) {
             $this->upgradePlan($subscription, $plan, $intent);
@@ -147,6 +147,10 @@ class SubscriptionLifecycleService
         }
 
         $subscription->update($updateData);
+
+        if ($subscription->tenant->status === 'suspended') {
+            $subscription->tenant->update(['status' => 'active']);
+        }
 
         $subscription->tenant->unlock();
 

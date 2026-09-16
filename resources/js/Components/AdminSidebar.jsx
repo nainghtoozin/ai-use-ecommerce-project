@@ -229,11 +229,8 @@ export default function AdminSidebar() {
                 title: 'Billing',
                 items: [
                     ...(isVis('billing.overview') ? [{ label: 'Overview', href: '/admin/billing', icon: 'CreditCard' }] : []),
-                    ...(isVis('billing.subscription') ? [{ label: 'Subscription', href: '/admin/billing/subscription', icon: 'FileText' }] : []),
-                    ...(isVis('billing.upgrade') ? [{ label: 'Upgrade', href: '/admin/billing/upgrade', icon: 'ArrowUp' }] : []),
                     ...(isVis('billing.invoices') ? [{ label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' }] : []),
                     ...(isVis('billing.history') ? [{ label: 'Payment History', href: '/admin/billing/payment-history', icon: 'Clock' }] : []),
-                    ...(isVis('billing.settings') ? [{ label: t('navigation.settings'), href: '/admin/billing/settings', icon: 'Settings' }] : []),
                 ]
             }] : []),
             ...(can('reports.sales') && hasFeature('reports') ? [{

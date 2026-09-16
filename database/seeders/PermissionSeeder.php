@@ -67,6 +67,7 @@ class PermissionSeeder extends Seeder
 
             // Billing
             'billing.view',
+            'billing.manage',
             'billing.renew',
 
             // Dashboard

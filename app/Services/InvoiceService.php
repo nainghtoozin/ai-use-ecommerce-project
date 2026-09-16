@@ -6,17 +6,13 @@ use App\Models\Invoice;
 use App\Models\PaymentIntent;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceService
 {
     public function generateFromPaymentIntent(PaymentIntent $intent): Invoice
     {
-        $existing = Invoice::where('payment_intent_id', $intent->id)->first();
-        if ($existing) {
-            return $existing;
-        }
-
         $subscription = $intent->subscription ?? $intent->tenant?->subscription;
         $tenant = $intent->tenant;
 
@@ -26,7 +22,30 @@ class InvoiceService
             ));
         }
 
+        try {
+            return $this->createFromPaymentIntent($intent, $subscription, $tenant);
+        } catch (QueryException $e) {
+            if (!$this->isDuplicateKeyError($e)) {
+                throw $e;
+            }
+
+            $existing = Invoice::where('payment_intent_id', $intent->id)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            return $this->createFromPaymentIntent($intent, $subscription, $tenant);
+        }
+    }
+
+    private function createFromPaymentIntent(PaymentIntent $intent, Subscription $subscription, Tenant $tenant): Invoice
+    {
         return DB::transaction(function () use ($intent, $subscription, $tenant) {
+            $existing = Invoice::where('payment_intent_id', $intent->id)->lockForUpdate()->first();
+            if ($existing) {
+                return $existing;
+            }
+
             $amount = (float) $intent->amount;
             $total = $amount;
 
@@ -54,6 +73,11 @@ class InvoiceService
 
             return $invoice;
         });
+    }
+
+    private function isDuplicateKeyError(QueryException $e): bool
+    {
+        return (string) $e->getCode() === '23000';
     }
 
     public function generateForSubscription(Subscription $subscription, ?string $billingInterval = null): Invoice

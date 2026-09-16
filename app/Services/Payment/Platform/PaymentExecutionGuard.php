@@ -3,6 +3,7 @@
 namespace App\Services\Payment\Platform;
 
 use App\Models\PaymentIntent;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class PaymentExecutionGuard
@@ -17,39 +18,45 @@ class PaymentExecutionGuard
         callable $callback,
         ?callable $onDuplicate = null,
     ): mixed {
-        $metadata = $intent->metadata ?? [];
+        return DB::transaction(function () use ($intent, $action, $callback, $onDuplicate) {
+            $locked = PaymentIntent::query()->whereKey($intent->id)->lockForUpdate()->firstOrFail();
 
-        if ($this->idempotency->hasActionExecuted($metadata, $action)) {
-            if ($onDuplicate !== null) {
-                return $onDuplicate($intent, $action);
+            $metadata = $locked->metadata ?? [];
+
+            if ($this->idempotency->hasActionExecuted($metadata, $action)) {
+                if ($onDuplicate !== null) {
+                    return $onDuplicate($locked, $action);
+                }
+
+                throw new InvalidArgumentException(sprintf(
+                    'Action "%s" has already been executed for PaymentIntent #%d (%s).',
+                    $action,
+                    $locked->id,
+                    $locked->reference_number ?? $locked->idempotency_key,
+                ));
             }
 
-            throw new InvalidArgumentException(sprintf(
-                'Action "%s" has already been executed for PaymentIntent #%d (%s).',
+            if (empty($locked->idempotency_key)) {
+                throw new InvalidArgumentException(sprintf(
+                    'PaymentIntent #%d has no idempotency key.',
+                    $locked->id,
+                ));
+            }
+
+            $result = $callback($locked);
+
+            $locked->refresh();
+
+            $metadata = $this->idempotency->markActionExecuted(
+                $locked->metadata ?? [],
                 $action,
-                $intent->id,
-                $intent->reference_number ?? $intent->idempotency_key,
-            ));
-        }
+                is_string($result) ? $result : null,
+            );
 
-        if (empty($intent->idempotency_key)) {
-            throw new InvalidArgumentException(sprintf(
-                'PaymentIntent #%d has no idempotency key.',
-                $intent->id,
-            ));
-        }
+            $locked->update(['metadata' => $metadata]);
 
-        $result = $callback($intent);
-
-        $metadata = $this->idempotency->markActionExecuted(
-            $metadata,
-            $action,
-            is_string($result) ? $result : null,
-        );
-
-        $intent->update(['metadata' => $metadata]);
-
-        return $result;
+            return $result;
+        });
     }
 
     public function hasActionBeenExecuted(PaymentIntent $intent, string $action): bool

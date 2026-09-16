@@ -24,6 +24,7 @@ class Subscription extends Model
         'notes',
         'pending_plan_id',
         'pending_plan_effective_at',
+        'extra_renewal_used_at',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class Subscription extends Model
         'cancelled_at' => 'datetime',
         'suspended_at' => 'datetime',
         'pending_plan_effective_at' => 'datetime',
+        'extra_renewal_used_at' => 'datetime',
     ];
 
     /* ── Billing helpers ── */
@@ -253,7 +255,9 @@ class Subscription extends Model
         $interval = $billingInterval ?? $this->billing_interval ?? 'monthly';
         $oldPlanId = $this->plan_id;
 
-        $expiresAt = $newPlan->calculateExpiryDate($this->expires_at?->isFuture() ? $this->expires_at : now(), $interval);
+        $expiresAt = $this->expires_at?->isFuture()
+            ? $this->expires_at
+            : $newPlan->calculateExpiryDate(now(), $interval);
 
         $this->update([
             'plan_id' => $newPlan->id,
@@ -290,6 +294,29 @@ class Subscription extends Model
     public function hasPendingDowngrade(): bool
     {
         return $this->pending_plan_id !== null;
+    }
+
+    public function hasUsedExtraRenewal(): bool
+    {
+        return $this->extra_renewal_used_at !== null;
+    }
+
+    public function consumeExtraRenewal(): bool
+    {
+        if ($this->plan?->isFree()) {
+            return false;
+        }
+
+        $updated = static::whereKey($this->id)
+            ->whereNull('extra_renewal_used_at')
+            ->update(['extra_renewal_used_at' => now()]);
+
+        if ($updated) {
+            $this->refresh();
+            return true;
+        }
+
+        return false;
     }
 
     public function isUpgrade(Plan $targetPlan): bool
