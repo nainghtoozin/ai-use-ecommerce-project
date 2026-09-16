@@ -376,6 +376,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/products/search', [AdminProductController::class, 'search'])->name('products.search');
         Route::get('/categories/search', [AdminCategoryController::class, 'search'])->name('categories.search');
         Route::get('/orders/search', [AdminOrderController::class, 'search'])->name('orders.search');
+        Route::get('/orders/print', [AdminOrderController::class, 'print'])->name('orders.print');
         Route::get('/promotions/search', [AdminPromotionController::class, 'search'])->name('promotions.search');
         Route::get('/banners/search', [AdminPromotionBannerController::class, 'search'])->name('banners.search');
 
@@ -456,6 +457,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment');
         Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment');
         Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
+        Route::post('/orders/{order}/update-status', [AdminOrderController::class, 'updateOrderStatus'])->name('orders.update-status');
         Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status');
         Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment');
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');

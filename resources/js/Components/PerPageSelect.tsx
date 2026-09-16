@@ -38,7 +38,7 @@ export default function PerPageSelect({
                 <select
                     value={currentPerPage}
                     onChange={handleChange}
-                    className="block w-full border-gray-300 rounded-lg py-1.5 pl-3 pr-8 text-sm font-medium text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
+                    className="block w-full border-gray-300 rounded-lg py-1.5 pl-3 pr-8 text-sm font-medium text-gray-700 bg-white bg-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:border-gray-400 transition-colors"
                     style={{
                         appearance: 'none',
                         WebkitAppearance: 'none',

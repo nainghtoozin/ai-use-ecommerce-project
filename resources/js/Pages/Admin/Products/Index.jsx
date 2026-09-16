@@ -24,6 +24,9 @@ import {
     Download,
     FileSpreadsheet,
     History,
+    MoreHorizontal,
+    ChevronDown,
+    X,
 } from 'lucide-react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
@@ -60,6 +63,30 @@ const STOCK_STYLES = {
     low_stock: { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-600/10', dot: 'bg-amber-500', label: 'Low Stock' },
     out_of_stock: { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-600/10', dot: 'bg-red-500', label: 'Out of Stock' },
 };
+
+const SECONDARY_BTN = 'h-9 inline-flex items-center gap-1.5 px-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-[13px] font-medium whitespace-nowrap';
+
+function SecondaryAction({ icon: Icon, label, onClick, href }) {
+    const classes = SECONDARY_BTN;
+    const content = (<><Icon className="w-4 h-4 text-gray-400 dark:text-gray-500" />{label}</>);
+    if (href) {
+        return <Link href={href} className={classes}>{content}</Link>;
+    }
+    return <button type="button" onClick={onClick} className={classes}>{content}</button>;
+}
+
+function HeaderMenuItem({ icon: Icon, label, onClick, href, close }) {
+    const handleClick = (e) => {
+        if (onClick) onClick(e);
+        if (close) close();
+    };
+    const classes = 'w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left';
+    const content = (<><Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />{label}</>);
+    if (href) {
+        return <Link href={href} className={classes} onClick={() => close && close()}>{content}</Link>;
+    }
+    return <button type="button" onClick={handleClick} className={classes}>{content}</button>;
+}
 
 function InlineActions({ product, onDelete, can }) {
     return (
@@ -113,8 +140,11 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
     const [bulkAction, setBulkAction] = useState('');
     const [importOpen, setImportOpen] = useState(false);
     const [exportOpen, setExportOpen] = useState(false);
+    const [importMenuOpen, setImportMenuOpen] = useState(false);
+    const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
     const hasFilters = search || categoryId || brandId || type || status || stock;
+    const activeFilterCount = [search, categoryId, brandId, type, status, stock].filter(Boolean).length;
     const currentPageIds = products?.data?.map(p => p.id) || [];
     const allSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedIds.includes(id));
 
@@ -248,63 +278,83 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
         <AdminLayout>
             <Head title="Products" />
 
-            <div className="p-4 lg:p-6 space-y-6">
+            <div className="p-4 lg:p-6 space-y-4">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100">Products</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        <h1 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100">Products</h1>
+                        <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
                             {productCount} product{productCount !== 1 ? 's' : ''} · {activeCount} active
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Link
-                            href={adminUrl('/admin/inventory')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                        >
-                            <Archive className="w-4 h-4" />
-                            Inventory
-                        </Link>
-                        {can('products.view') && (
+                        <div className="hidden lg:flex items-center gap-2">
+                            <SecondaryAction icon={Archive} label="Inventory" href={adminUrl('/admin/inventory')} />
+                            {can('products.view') && (
+                                <SecondaryAction icon={Download} label="Export" onClick={() => setExportOpen(true)} />
+                            )}
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => { setImportMenuOpen((open) => !open); setMoreMenuOpen(false); }}
+                                    className={`${SECONDARY_BTN} ${importMenuOpen ? 'bg-gray-50 dark:bg-gray-800' : ''}`}
+                                    aria-haspopup="menu"
+                                    aria-expanded={importMenuOpen}
+                                >
+                                    <Upload className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                    Import
+                                    <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${importMenuOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                                {importMenuOpen && (
+                                    <>
+                                        <button type="button" aria-hidden tabIndex={-1} onClick={() => setImportMenuOpen(false)} className="fixed inset-0 z-10 cursor-default" />
+                                        <div role="menu" className="absolute right-0 z-20 mt-1.5 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-1.5">
+                                            {can('products.create') && (
+                                                <HeaderMenuItem icon={Upload} label="Import Products" close={() => setImportMenuOpen(false)} onClick={() => setImportOpen(true)} />
+                                            )}
+                                            <HeaderMenuItem icon={FileSpreadsheet} label="Download Template" close={() => setImportMenuOpen(false)} href={adminUrl('/admin/products/import/template')} />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            {can('products.view') && (
+                                <SecondaryAction icon={History} label="History" href={adminUrl('/admin/products/import/history/page')} />
+                            )}
+                        </div>
+                        <div className="relative lg:hidden">
                             <button
                                 type="button"
-                                onClick={() => setExportOpen(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                onClick={() => { setMoreMenuOpen((open) => !open); setImportMenuOpen(false); }}
+                                className={`${SECONDARY_BTN} px-2.5`}
+                                aria-haspopup="menu"
+                                aria-expanded={moreMenuOpen}
+                                aria-label="More actions"
                             >
-                                <Download className="w-4 h-4" />
-                                Export
+                                <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                             </button>
-                        )}
-                        <a
-                            href={adminUrl('/admin/products/import/template')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                        >
-                            <FileSpreadsheet className="w-4 h-4" />
-                            Download Product Template
-                        </a>
-                        {can('products.create') && (
-                            <button
-                                type="button"
-                                onClick={() => setImportOpen(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                            >
-                                <Upload className="w-4 h-4" />
-                                Import Products
-                            </button>
-                        )}
-                        {can('products.view') && (
-                            <Link
-                                href={adminUrl('/admin/products/import/history/page')}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                            >
-                                <History className="w-4 h-4" />
-                                History
-                            </Link>
-                        )}
+                            {moreMenuOpen && (
+                                <>
+                                    <button type="button" aria-hidden tabIndex={-1} onClick={() => setMoreMenuOpen(false)} className="fixed inset-0 z-10 cursor-default" />
+                                    <div role="menu" className="absolute right-0 z-20 mt-1.5 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-1.5">
+                                        <HeaderMenuItem icon={Archive} label="Inventory" close={() => setMoreMenuOpen(false)} href={adminUrl('/admin/inventory')} />
+                                        {can('products.view') && (
+                                            <HeaderMenuItem icon={Download} label="Export" close={() => setMoreMenuOpen(false)} onClick={() => setExportOpen(true)} />
+                                        )}
+                                        {can('products.create') && (
+                                            <HeaderMenuItem icon={Upload} label="Import Products" close={() => setMoreMenuOpen(false)} onClick={() => setImportOpen(true)} />
+                                        )}
+                                        <HeaderMenuItem icon={FileSpreadsheet} label="Download Template" close={() => setMoreMenuOpen(false)} href={adminUrl('/admin/products/import/template')} />
+                                        {can('products.view') && (
+                                            <HeaderMenuItem icon={History} label="Import History" close={() => setMoreMenuOpen(false)} href={adminUrl('/admin/products/import/history/page')} />
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
                         {can('products.create') && (
                             <Link
                                 href={adminUrl('/admin/products/type-select')}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                                className="inline-flex items-center gap-1.5 h-9 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-[13px] font-semibold shadow-sm whitespace-nowrap"
                             >
                                 <Plus className="w-4 h-4" />
                                 Add Product
@@ -313,39 +363,62 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-                    <button
-                        type="button"
-                        onClick={() => setFiltersOpen(!filtersOpen)}
-                        className="w-full px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 flex items-center justify-between hover:bg-gray-100/50 transition-colors"
-                    >
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</h3>
+                {/* Filter toolbar */}
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                    <div className="flex flex-wrap items-center gap-2 p-2.5">
+                        <div className="relative flex-1 min-w-[170px]">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search by name or ID..."
+                                className="w-full h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-8 pr-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
+                            />
                         </div>
-                        <svg className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${filtersOpen ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <div className={`transition-all duration-200 ease-in-out overflow-hidden ${filtersOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className="p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-                            <div className="lg:col-span-2 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search by name or ID..."
-                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-
+                        <button
+                            type="button"
+                            onClick={() => setFiltersOpen(!filtersOpen)}
+                            aria-expanded={filtersOpen}
+                            className={`h-9 inline-flex items-center gap-1.5 px-3 rounded-lg border text-[13px] font-medium transition-colors ${filtersOpen || hasFilters ? 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                        >
+                            <Filter className="w-4 h-4" />
+                            Filters
+                            {activeFilterCount > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[11px] font-semibold">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                            <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        {hasFilters && (
+                            <button
+                                type="button"
+                                onClick={resetFilters}
+                                className="h-9 inline-flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                Clear
+                            </button>
+                        )}
+                        {isFiltering && (
+                            <span className="inline-flex items-center gap-1.5 text-[13px] text-blue-600">
+                                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                Filtering...
+                            </span>
+                        )}
+                    </div>
+                    {filtersOpen && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 px-2.5 pb-2.5">
                             <select
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
-                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
+                                className="h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-2.5 pr-8 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Categories</option>
                                 {categories?.map((cat) => (
@@ -356,7 +429,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={brandId}
                                 onChange={(e) => setBrandId(e.target.value)}
-                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
+                                className="h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-2.5 pr-8 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Brands</option>
                                 {brands?.map((brand) => (
@@ -367,7 +440,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={type}
                                 onChange={(e) => setType(e.target.value)}
-                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
+                                className="h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-2.5 pr-8 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Types</option>
                                 <option value="single">Single</option>
@@ -378,7 +451,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
-                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
+                                className="h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-2.5 pr-8 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             >
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
@@ -388,7 +461,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                             <select
                                 value={stock}
                                 onChange={(e) => setStock(e.target.value)}
-                                className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
+                                className="h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-2.5 pr-8 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900 col-span-2 sm:col-span-1"
                             >
                                 <option value="">All Stock</option>
                                 <option value="out_of_stock">Out of Stock</option>
@@ -396,30 +469,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                 <option value="in_stock">In Stock (10+)</option>
                             </select>
                         </div>
-
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                            <div className="flex items-center gap-3">
-                                {isFiltering && (
-                    <div className="flex flex-wrap items-center gap-2">
-                                        <svg className="animate-spin h-3.5 w-3.5 text-blue-600" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        <span className="text-sm text-blue-600">Filtering...</span>
-                                    </div>
-                                )}
-                                {hasFilters && (
-                                    <button
-                                        onClick={resetFilters}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-md transition-colors"
-                                    >
-                                        Clear all filters
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Bulk Actions Bar */}
@@ -468,14 +518,14 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                 )}
 
                 {/* Per Page, Product Count & Warning */}
-                <div className="flex flex-wrap justify-between items-center gap-2">
-                    <div className="flex items-center gap-4">
+                <div className="flex flex-wrap justify-between items-center gap-2 px-0.5">
+                    <div className="flex items-center gap-3">
                         <PerPageSelect />
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="text-[13px] text-gray-500 dark:text-gray-400">
                             {productCount} product{productCount !== 1 ? 's' : ''}
                         </span>
                     </div>
-                    {warning && <p className="text-sm text-amber-600">{warning}</p>}
+                    {warning && <p className="text-[13px] text-amber-600">{warning}</p>}
                 </div>
 
                 {/* Products Table */}

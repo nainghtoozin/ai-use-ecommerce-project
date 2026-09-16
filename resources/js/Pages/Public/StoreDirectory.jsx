@@ -72,7 +72,7 @@ export default function StoreDirectory() {
                             <select
                                 value={categoryId}
                                 onChange={(e) => { setCategoryId(e.target.value); setTimeout(applyFilters, 0); }}
-                                className="appearance-none w-full sm:w-48 px-4 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="appearance-none w-full sm:w-48 px-4 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 bg-none text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
                                 <option value="">{t('landing.marketplace.all_categories')}</option>
                                 {categories?.map((cat) => (
@@ -86,7 +86,7 @@ export default function StoreDirectory() {
                             <select
                                 value={sort}
                                 onChange={(e) => { setSort(e.target.value); setTimeout(applyFilters, 0); }}
-                                className="appearance-none w-full sm:w-40 px-4 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="appearance-none w-full sm:w-40 px-4 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 bg-none text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
                                 <option value="newest">{t('landing.marketplace.sort_newest')}</option>
                                 <option value="name_az">{t('landing.marketplace.sort_name_az')}</option>

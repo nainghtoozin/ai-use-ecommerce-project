@@ -42,14 +42,8 @@ class AdminOrderController extends Controller
         return auth()->user()->tenant_id;
     }
 
-    public function index(Request $request)
+    private function baseOrderQuery(array $filters)
     {
-        if (!auth()->user()->can('orders.view')) {
-            abort(403, 'Unauthorized');
-        }
-
-        $filters = $request->only(['order_status', 'payment_status', 'search']);
-
         $ordersQuery = Order::query()->with([
             'user',
             'items.product',
@@ -81,6 +75,19 @@ class AdminOrderController extends Controller
                     });
             });
         }
+
+        return $ordersQuery;
+    }
+
+    public function index(Request $request)
+    {
+        if (!auth()->user()->can('orders.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $filters = $request->only(['order_status', 'payment_status', 'search']);
+
+        $ordersQuery = $this->baseOrderQuery($filters);
 
         $resolved = $this->resolvePerPage($request);
         $perPage = $resolved['per_page'];
@@ -148,13 +155,11 @@ class AdminOrderController extends Controller
                 ->findOrFail($id);
             $this->orderService->updateOrderStatus($order, $request->order_status);
 
-            return admin_redirect('admin.orders.show', $id)
-                ->with('success', 'Order status updated successfully.');
+            return back()->with('success', 'Order status updated successfully.');
         } catch (\Exception $e) {
             Log::error('Order status update failed: ' . $e->getMessage());
 
-            return admin_redirect('admin.orders.show', $id)
-                ->with('error', 'Failed to update order status.');
+            return back()->with('error', 'Failed to update order status.');
         }
     }
 
@@ -402,6 +407,32 @@ class AdminOrderController extends Controller
         return $this->index($request);
     }
 
+    public function print(Request $request)
+    {
+        if (!auth()->user()->can('orders.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $filters = $request->only(['order_status', 'payment_status', 'search']);
+
+        $orders = $this->baseOrderQuery($filters)->latest()->limit(1000)->get();
+
+        $tenantId = $this->tenantFilter() ?: null;
+        $websiteInfo = $tenantId
+            ? \App\Models\WebsiteInfo::firstWhere('tenant_id', $tenantId)
+            : null;
+
+        return response()->view('admin.orders.print', [
+            'orders' => $orders,
+            'filters' => array_filter($filters),
+            'truncated' => $orders->count() >= 1000,
+            'storeName' => \App\Models\Tenant::getCurrent()?->name ?? config('app.name'),
+            'currencySymbol' => $websiteInfo->currency_symbol ?? 'Ks',
+            'generatedAt' => now()->format('Y-m-d H:i'),
+            'autoprint' => $request->boolean('autoprint'),
+        ]);
+    }
+
     public function destroy(string $id)
     {
         if (!auth()->user()->can('orders.update-status')) {
@@ -411,9 +442,9 @@ class AdminOrderController extends Controller
         $order = Order::when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
             ->findOrFail($id);
 
-        if ($order->order_status !== Order::ORDER_STATUS_CANCELLED) {
+        if (!in_array($order->order_status, [Order::ORDER_STATUS_PENDING, Order::ORDER_STATUS_CANCELLED], true)) {
             return admin_redirect('admin.orders.index')
-                ->with('error', 'Only cancelled orders can be deleted.');
+                ->with('error', 'Only pending or cancelled orders can be deleted.');
         }
 
         $order->delete();

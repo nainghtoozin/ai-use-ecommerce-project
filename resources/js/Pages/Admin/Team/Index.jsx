@@ -540,7 +540,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                             if (inviteErrors.role_id) setInviteErrors({ ...inviteErrors, role_id: null });
                                         }}
                                         required
-                                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white dark:bg-gray-900 transition-colors ${
+                                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white dark:bg-gray-900 bg-none transition-colors ${
                                             inviteErrors.role_id ? 'border-red-300 bg-red-50' : 'border-gray-300'
                                         }`}
                                     >

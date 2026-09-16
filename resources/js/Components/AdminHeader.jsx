@@ -51,7 +51,7 @@ export default function AdminHeader() {
 
     const isSuperAdmin = auth?.user?.is_superadmin;
     const subscription = auth?.user?.subscription;
-    const showSubscriptionStatus = !isSuperAdmin && auth?.user?.is_owner && url?.includes('/dashboard') && subscription;
+    const showSubscriptionStatus = !isSuperAdmin && auth?.user?.is_owner && subscription;
     const subscriptionDays = Number(subscription?.days_until_expiry);
     const subscriptionState = subscription?.status === 'expired'
         ? 'expired'
@@ -133,10 +133,6 @@ export default function AdminHeader() {
                             <span>{subscriptionDetail}</span>
                         </Link>
                     )}
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-950 rounded-lg">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">Online</span>
-                    </div>
                     <NotificationBell isAdmin={true} />
                     <LanguageSwitcher />
                     <div className="flex items-center gap-2 border-l border-gray-200 dark:border-gray-800 pl-2 lg:pl-3">

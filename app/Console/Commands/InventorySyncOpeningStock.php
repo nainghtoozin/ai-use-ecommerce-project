@@ -35,11 +35,7 @@ class InventorySyncOpeningStock extends Command
 
             if ($hasMovement) {
                 $skipped++;
-                $bar->advance();
-                continue;
-            }
-
-            if ($product->stock > 0) {
+            } elseif ($product->stock > 0) {
                 if (!$dryRun) {
                     StockMovement::withoutTenantScope()->create([
                         'tenant_id' => $product->tenant_id,

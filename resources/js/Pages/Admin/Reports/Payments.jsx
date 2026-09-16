@@ -568,7 +568,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                             <span className="text-sm text-gray-500 dark:text-gray-400">Rows:</span>
                             <div className="relative">
                                 <select value={perPage} onChange={e => handlePerPage(e.target.value)}
-                                    className="border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 pl-3 pr-8 text-sm bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none">
+                                    className="border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 pl-3 pr-8 text-sm bg-white dark:bg-gray-900 bg-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none">
                                     {PER_PAGE_OPTIONS.map(n => (
                                         <option key={n} value={n}>{n}</option>
                                     ))}
