@@ -711,17 +711,6 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                             </div>
                         </div>
 
-                        {canSubmit && (
-                            <div className="bg-gray-50 dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Need help?</p>
-                                <button
-                                    onClick={() => window.location.href = '#'}
-                                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors mt-0.5"
-                                >
-                                    Contact Support
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

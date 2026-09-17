@@ -28,6 +28,7 @@ return [
     'view_invoice' => 'View Invoice',
     'payment_history' => 'Payment History',
     'payment_date' => 'Payment Date',
+    'payment_time' => 'Payment Time',
     'payment_amount' => 'Payment Amount',
     'payment_method' => 'Payment Method',
     'payment_status' => 'Payment Status',

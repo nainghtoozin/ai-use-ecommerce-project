@@ -22,19 +22,23 @@ class InvoiceService
             ));
         }
 
-        try {
-            return $this->createFromPaymentIntent($intent, $subscription, $tenant);
-        } catch (QueryException $e) {
-            if (!$this->isDuplicateKeyError($e)) {
-                throw $e;
-            }
+        $attempts = 0;
 
-            $existing = Invoice::where('payment_intent_id', $intent->id)->first();
-            if ($existing) {
-                return $existing;
-            }
+        while (true) {
+            $attempts++;
 
-            return $this->createFromPaymentIntent($intent, $subscription, $tenant);
+            try {
+                return $this->createFromPaymentIntent($intent, $subscription, $tenant);
+            } catch (QueryException $e) {
+                if (!$this->isDuplicateKeyError($e) || $attempts >= 3) {
+                    throw $e;
+                }
+
+                $existing = Invoice::where('payment_intent_id', $intent->id)->first();
+                if ($existing) {
+                    return $existing;
+                }
+            }
         }
     }
 

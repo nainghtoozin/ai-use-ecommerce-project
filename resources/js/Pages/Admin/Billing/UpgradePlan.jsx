@@ -6,7 +6,7 @@ import PlanPicker, { getRecommendedSlug } from '@/Components/Billing/PlanPicker'
 import { Zap, Calendar } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
 
-export default function AdminBillingUpgradePlan({ currentPlan, subscription, plans, usage, allFeatureDefs }) {
+export default function AdminBillingUpgradePlan({ currentPlan, subscription, plans, usage, allFeatureDefs, trialDays }) {
     const [billingInterval, setBillingInterval] = useState(subscription?.billing_interval || 'monthly');
     const recommendedSlug = getRecommendedSlug(usage, plans);
 
@@ -75,6 +75,7 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                     onChoose={handleChoose}
                     recommendedSlug={recommendedSlug}
                     allFeatureDefs={allFeatureDefs}
+                    trialDays={trialDays}
                 />
             </div>
         </AdminLayout>

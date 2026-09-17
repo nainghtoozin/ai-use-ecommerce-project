@@ -27,7 +27,7 @@ const limitRows = [
     { key: 'flash_sale_limit', label: 'Flash Sales' },
 ];
 
-export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment }) {
+export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment, trialDays }) {
     const { can } = usePermission();
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
@@ -241,6 +241,7 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                             onChoose={handleChoose}
                             recommendedSlug={recommendedSlug}
                             allFeatureDefs={allFeatureDefs}
+                            trialDays={trialDays}
                         />
                     </div>
                 )}

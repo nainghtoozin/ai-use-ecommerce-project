@@ -59,13 +59,13 @@ class Invoice extends Model
     public static function generateNumber(): string
     {
         $prefix = 'INV-' . now()->format('Y') . '-';
-        $last = static::withTrashed()->where('invoice_number', 'like', $prefix . '%')
-            ->orderBy('invoice_number', 'desc')
-            ->value('invoice_number');
+        $max = static::withoutTenantScope()->withTrashed()
+            ->where('invoice_number', 'like', $prefix . '%')
+            ->pluck('invoice_number')
+            ->map(fn ($number) => (int) Str::afterLast($number, '-'))
+            ->max();
 
-        $next = $last ? (int) Str::after($last, $prefix) + 1 : 1;
-
-        return $prefix . str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) (($max ?: 0) + 1), 5, '0', STR_PAD_LEFT);
     }
 
     public function tenant(): BelongsTo

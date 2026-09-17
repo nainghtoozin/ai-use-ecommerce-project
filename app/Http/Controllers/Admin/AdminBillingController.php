@@ -21,6 +21,7 @@ use App\Services\SubscriptionAuditService;
 use App\Services\SubscriptionLimitService;
 use App\Services\SubscriptionPlanChangeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class AdminBillingController extends Controller
@@ -190,6 +191,7 @@ class AdminBillingController extends Controller
             'featureCategories' => $featureCategories,
             'allFeatureDefs' => $allFeatureDefs,
             'auditLogs' => $auditLogs,
+            'trialDays' => (int) (PlatformSetting::current()->trial_days ?? 14),
         ]);
     }
 
@@ -341,6 +343,7 @@ class AdminBillingController extends Controller
             'usage' => $usage,
             'allFeatureDefs' => $allFeatureDefs,
             'featureCategories' => $featureCategories,
+            'trialDays' => (int) (PlatformSetting::current()->trial_days ?? 14),
         ]);
     }
 
@@ -894,6 +897,7 @@ class AdminBillingController extends Controller
             'transaction_reference' => ['required', 'string', 'max:255'],
             'transferred_amount' => ['required', 'numeric', 'gt:0'],
             'transfer_date' => ['required', 'date', 'before_or_equal:today'],
+            'transfer_time' => ['nullable', 'date_format:H:i'],
             'evidence' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'note' => ['nullable', 'string', 'max:500'],
             'payment_method_id' => ['nullable', 'exists:billing_payment_methods,id'],
@@ -941,6 +945,18 @@ class AdminBillingController extends Controller
                     ->exists();
 
             if ($sameSubmission) {
+                try {
+                    $this->ensureIntentInvoice($intent);
+                } catch (\Throwable $e) {
+                    Log::error('Payment submission recovery failed on retry path.', [
+                        'intent_id' => $intent->id,
+                        'reference_number' => $intent->reference_number,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    return redirect()->back()->with('error', 'Failed to submit payment. Please try again.');
+                }
+
                 return admin_redirect('admin.billing.payment', [
                     'intent' => $intent->reference_number,
                     'submitted' => 'true',
@@ -955,8 +971,23 @@ class AdminBillingController extends Controller
         $intent->update(['metadata' => $metadata]);
 
         if ($intent->evidences()->where('transaction_reference', $validated['transaction_reference'])->exists()) {
-            app(ManualPaymentService::class)->confirmPayment($intent);
-            app(\App\Services\InvoiceService::class)->generateFromPaymentIntent($intent->fresh());
+            try {
+                if ($intent->status === 'waiting_payment') {
+                    app(ManualPaymentService::class)->confirmPayment($intent);
+                    $intent->refresh();
+                }
+
+                $this->ensureIntentInvoice($intent);
+            } catch (\Throwable $e) {
+                Log::error('Payment submission failed on evidence-resubmit path.', [
+                    'intent_id' => $intent->id,
+                    'reference_number' => $intent->reference_number,
+                    'transaction_reference' => $validated['transaction_reference'] ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return redirect()->back()->with('error', 'Failed to submit payment. Please try again.');
+            }
 
             return admin_redirect('admin.billing.payment', [
                 'intent' => $intent->reference_number,
@@ -977,6 +1008,7 @@ class AdminBillingController extends Controller
                     'payment_method_id' => $validated['payment_method_id'],
                     'uploaded_by' => 'merchant',
                     'submitted_at' => now()->toDateTimeString(),
+                    'transfer_time' => $validated['transfer_time'] ?? null,
                 ],
                 senderName: $validated['sender_name'],
                 senderAccount: $validated['sender_account'],
@@ -997,7 +1029,31 @@ class AdminBillingController extends Controller
             ])->with('success', 'Payment submitted successfully! Your payment is now awaiting review.');
 
         } catch (\Exception $e) {
+            Log::error('Payment submission failed.', [
+                'intent_id' => $intent?->id,
+                'reference_number' => $intent?->reference_number,
+                'transaction_reference' => $validated['transaction_reference'] ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return redirect()->back()->with('error', 'Failed to submit payment. Please try again.');
+        }
+    }
+
+    private function ensureIntentInvoice(PaymentIntent $intent): void
+    {
+        try {
+            app(\App\Services\InvoiceService::class)->generateFromPaymentIntent($intent->fresh());
+        } catch (\Throwable $e) {
+            Log::error('Payment submission recovery failed: invoice could not be generated.', [
+                'intent_id' => $intent->id,
+                'reference_number' => $intent->reference_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new \RuntimeException('Failed to submit payment. Please try again.');
         }
     }
 

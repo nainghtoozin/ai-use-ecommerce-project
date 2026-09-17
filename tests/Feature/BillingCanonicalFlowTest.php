@@ -162,6 +162,35 @@ class BillingCanonicalFlowTest extends TestCase
         $this->assertTrue($subscription->hasPendingDowngrade());
     }
 
+    public function test_evidence_metadata_persists_transfer_time(): void
+    {
+        $tenant = $this->makeTenant();
+        $plan = $this->makePlan('evidence-time', 100, 1000);
+
+        $intent = app(\App\Services\Payment\Platform\ManualPaymentService::class)->initiate(
+            tenant: $tenant,
+            plan: $plan,
+            billingCycle: 'monthly',
+            amount: 100.00,
+            currency: \App\Data\Currency::fromCode('MMK'),
+        );
+
+        $evidence = app(\App\Services\Payment\Platform\PaymentEvidenceService::class)->store(
+            intent: $intent,
+            type: 'bank_transfer',
+            filePath: 'payment-evidence/test.png',
+            note: null,
+            metadata: ['transfer_time' => '14:30'],
+            senderName: 'Aung',
+            senderAccount: '09123456789',
+            transactionReference: 'TXN-1',
+            transferredAmount: 100.00,
+            transferDate: now()->toDateString(),
+        );
+
+        $this->assertSame('14:30', $evidence->fresh()->metadata['transfer_time']);
+    }
+
     private function checkout(): CheckoutService
     {
         return app(CheckoutService::class);
@@ -352,6 +381,24 @@ class BillingCanonicalFlowTest extends TestCase
                 $table->json('metadata')->nullable();
                 $table->timestamp('recorded_at');
                 $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('payment_evidences')) {
+            Schema::create('payment_evidences', function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('payment_intent_id');
+                $table->string('type');
+                $table->string('file_path')->nullable();
+                $table->text('note')->nullable();
+                $table->json('metadata')->nullable();
+                $table->string('sender_name')->nullable();
+                $table->string('sender_account')->nullable();
+                $table->string('transaction_reference')->nullable();
+                $table->decimal('transferred_amount', 10, 2)->nullable();
+                $table->date('transfer_date')->nullable();
+                $table->timestamps();
+                $table->index('payment_intent_id');
             });
         }
 

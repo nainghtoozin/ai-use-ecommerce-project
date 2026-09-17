@@ -310,7 +310,7 @@ class TenantBootstrapService
             return null;
         }
 
-        $trialEnabled = $settings->trial_enabled && !$plan->isFree();
+        $trialEnabled = $settings->trial_enabled;
 
         if ($trialEnabled) {
             $trialDays = max(1, $settings->trial_days ?? 14);
@@ -380,10 +380,10 @@ class TenantBootstrapService
         }
 
         if ($settings->trial_enabled) {
-            return Plan::where('status', 'active')
+            return Plan::free() ?? Plan::where('status', 'active')
                 ->where('monthly_price', '>', 0)
                 ->orderBy('monthly_price')
-                ->first() ?? Plan::free();
+                ->first();
         }
 
         return Plan::free();

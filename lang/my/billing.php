@@ -28,6 +28,7 @@ return [
     'view_invoice' => 'ငွေတောင်းခံလွှာကြည့်ရန်',
     'payment_history' => 'ငွေပေးချေမှုမှတ်တမ်း',
     'payment_date' => 'ငွေပေးချေမှုရက်စွဲ',
+    'payment_time' => 'ငွေပေးချေမှုအချိန်',
     'payment_amount' => 'ငွေပေးချေမှုပမာဏ',
     'payment_method' => 'ငွေပေးချေမှုနည်းလမ်း',
     'payment_status' => 'ငွေပေးချေမှုအခြေအနေ',
