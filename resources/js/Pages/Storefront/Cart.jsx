@@ -3,7 +3,6 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Zap } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { useCart } from '@/Hooks/useCart';
-import axios from 'axios';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
 function discountPercent(original, current) {
@@ -71,10 +70,7 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     const [appliedPromotion, setAppliedPromotion] = useState(initialPromotion || null);
     const [appliedCoupon, setAppliedCoupon] = useState(initialCoupon || null);
     const [totalDiscount, setTotalDiscount] = useState(initialDiscount || 0);
-    const [couponCode, setCouponCode] = useState('');
-    const [promoLoading, setPromoLoading] = useState(false);
-    const [promoMessage, setPromoMessage] = useState(null);
-    const [promoError, setPromoError] = useState(false);
+
 
     useEffect(() => {
         setCartItems(initialCartItems || []);
@@ -94,45 +90,6 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
         if ('appliedPromotion' in data) setAppliedPromotion(data.appliedPromotion || null);
         if ('appliedCoupon' in data) setAppliedCoupon(data.appliedCoupon || null);
         if (data.totalDiscount !== undefined) setTotalDiscount(data.totalDiscount);
-    }
-
-    async function applyCoupon(code) {
-        if (!code?.trim()) return;
-        setPromoLoading(true);
-        setPromoMessage(null);
-        setPromoError(false);
-        try {
-            const res = await axios.post('/cart/apply-coupon', { code });
-            if (res.data?.success) {
-                syncCartState(res.data);
-                setCouponCode('');
-                setPromoMessage(res.data.message || 'Coupon applied!');
-            }
-        } catch (err) {
-            const msg = err.response?.data?.message || 'Failed to apply coupon.';
-            setPromoMessage(msg);
-            setPromoError(true);
-        } finally {
-            setPromoLoading(false);
-            setTimeout(() => { setPromoMessage(null); setPromoError(false); }, 4000);
-        }
-    }
-
-    async function removeCoupon() {
-        setPromoLoading(true);
-        try {
-            const res = await axios.post('/cart/remove-coupon');
-            if (res.data?.success) {
-                syncCartState(res.data);
-                setPromoMessage(res.data.message || 'Coupon removed.');
-            }
-        } catch (err) {
-            setPromoMessage('Failed to remove coupon.');
-            setPromoError(true);
-        } finally {
-            setPromoLoading(false);
-            setTimeout(() => { setPromoMessage(null); setPromoError(false); }, 4000);
-        }
     }
 
     const originalSubtotal = cartItems.reduce((s, i) => s + Number(i.original_price ?? i.price) * Number(i.quantity), 0);
@@ -307,8 +264,13 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-4">
-                            <div className="hidden md:grid md:grid-cols-[5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <div className="lg:col-span-2 min-w-0">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Cart Items ({cartItems.reduce((s, i) => s + Number(i.quantity || 0), 0)})</h2>
+                                </div>
+                                <div className="max-h-[55vh] lg:max-h-[calc(100vh-15rem)] overflow-y-auto overscroll-contain divide-y divide-gray-100 dark:divide-gray-800 [scrollbar-width:thin] [scrollbar-color:var(--tw-scroll-thumb,#D1D5DB)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300/70 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/70 dark:[&::-webkit-scrollbar-thumb]:bg-gray-700/60 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-600/70">
+                            <div className="hidden md:grid md:grid-cols-[3.5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 px-4 py-2.5 sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                                 <div></div>
                                 <div>Product</div>
                                 <div className="text-center">Unit Price</div>
@@ -320,28 +282,26 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                             {cartItems.map((item) => {
                                 const lineSubtotal = item.line_total ?? Number(item.price) * Number(item.quantity);
                                 return (
-                                    <div key={item.cart_key} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4 hover:shadow-sm transition-shadow">
+                                    <div key={item.cart_key} className="px-4 py-3.5">
                                         <div className="md:hidden flex gap-3">
-                                            <div className="w-20 h-20 flex-shrink-0 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                            <div className="w-11 h-11 flex-shrink-0 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
                                                 {item.photo1_url ? (
                                                     <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full">
-                                                        <i className="bi bi-image text-gray-400 dark:text-gray-500 text-xl"></i>
+                                                        <i className="bi bi-image text-gray-400 dark:text-gray-500"></i>
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2">{item.name}</p>
+                                                <p className="text-[13px] font-medium leading-snug text-gray-900 dark:text-gray-100 line-clamp-2">{item.name}</p>
                                                 {item.variant_name && (
-                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-medium">
-                                                        {item.variant_name}
-                                                    </span>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{item.variant_name}</p>
                                                 )}
                                                 <div className="mt-2 space-y-1.5 text-sm">
-                                                    <div className="flex justify-between">
+                                                    <div className="flex justify-between gap-3">
                                                         <span className="text-gray-500 dark:text-gray-400">Unit Price</span>
-                                                        <div className="text-right">
+                                                        <div className="text-right flex-shrink-0">
                                                             <ItemPrice item={item} cc={cc} align="end" />
                                                         </div>
                                                     </div>
@@ -377,22 +337,20 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                             </div>
                                         </div>
 
-                                        <div className="hidden md:grid md:grid-cols-[5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 items-center">
-                                            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                        <div className="hidden md:grid md:grid-cols-[3.5rem_1fr_8rem_7rem_7rem_2.5rem] gap-4 items-center">
+                                            <div className="w-11 h-11 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
                                                 {item.photo1_url ? (
                                                     <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full">
-                                                        <i className="bi bi-image text-gray-400 dark:text-gray-500 text-xl"></i>
+                                                        <i className="bi bi-image text-gray-400 dark:text-gray-500"></i>
                                                     </div>
                                                 )}
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2">{item.name}</p>
+                                            <div className="min-w-0">
+                                                <p className="text-[13px] font-medium leading-snug text-gray-900 dark:text-gray-100 line-clamp-2">{item.name}</p>
                                                 {item.variant_name && (
-                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-medium">
-                                                        {item.variant_name}
-                                                    </span>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{item.variant_name}</p>
                                                 )}
                                             </div>
                                             <div className="text-center">
@@ -430,6 +388,8 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                     </div>
                                 );
                             })}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="lg:col-span-1">
@@ -487,58 +447,6 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
                                     <span className="text-base font-bold">Total</span>
                                     <span className="text-lg font-extrabold">{formatCurrency(finalTotal, cc)}</span>
                                 </div>
-                                </div>
-
-                                <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
-                                    {!appliedCoupon && (
-                                        <div>
-                                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Have a coupon?</p>
-                                            <div className="flex gap-2">
-                                                <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)}
-                                                    placeholder="Enter coupon code" maxLength={50}
-                                                    className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyCoupon(couponCode))} />
-                                                <button type="button" onClick={() => applyCoupon(couponCode)}
-                                                    disabled={promoLoading || !couponCode.trim()}
-                                                    style={primaryActionStyle}
-                                                    className="px-4 py-2 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                                                    Apply
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {appliedCoupon && (
-                                        <div className="bg-emerald-50/60 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/40 rounded-xl px-3 py-2.5">
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Applied Coupon</p>
-                                            <div className="mt-1 flex items-center justify-between gap-2">
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 truncate">{appliedCoupon.code}</p>
-                                                    </div>
-                                                    <p className="mt-0.5 ml-5 text-xs text-emerald-700 dark:text-emerald-300">
-                                                        {formatCurrency(appliedCoupon.discount, cc)} OFF
-                                                    </p>
-                                                </div>
-                                                <button type="button" onClick={removeCoupon} disabled={promoLoading}
-                                                    className="px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors shrink-0">
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {promoMessage && (
-                                        <div className={`text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 ${promoError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                {promoError ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />}
-                                            </svg>
-                                            {promoMessage}
-                                        </div>
-                                    )}
                                 </div>
 
                                 <Link href={`/store/${tenant.slug}/checkout`}

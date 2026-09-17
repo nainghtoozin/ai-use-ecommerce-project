@@ -60,7 +60,6 @@ export default function StorefrontCheckoutV2({
   const [localAppliedPromotion, setLocalAppliedPromotion] = useState(initialAppliedPromotion || null);
   const [localAppliedCoupon, setLocalAppliedCoupon] = useState(initialCoupon || null);
   const [localDiscount, setLocalDiscount] = useState(initialDiscountAmount || 0);
-  const [promotionCode, setPromotionCode] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMessage, setPromoMessage] = useState(null);
@@ -228,48 +227,6 @@ export default function StorefrontCheckoutV2({
     setScreenshotPreview(null); setSelectedFileName(''); setFileError('');
   }
 
-  async function applyPromotion(code) {
-    if (!code?.trim()) return;
-    setPromoLoading(true); setPromoMessage(null); setPromoError(false);
-    try {
-      const res = await axios.post('/cart/apply-promotion', { code });
-      if (res.data?.success) {
-        if (res.data.appliedPromotion !== undefined) setLocalAppliedPromotion(res.data.appliedPromotion);
-        if (res.data.appliedCoupon !== undefined) setLocalAppliedCoupon(res.data.appliedCoupon);
-        if (res.data.totalDiscount !== undefined) setLocalDiscount(res.data.totalDiscount);
-        setPromotionCode('');
-        setPromoMessage(res.data.message || 'Promotion applied!');
-        fetchQuote();
-      }
-    } catch (err) {
-      setPromoMessage(err.response?.data?.message || 'Failed to apply.');
-      setPromoError(true);
-    } finally {
-      setPromoLoading(false);
-      setTimeout(() => { setPromoMessage(null); setPromoError(false); }, 4000);
-    }
-  }
-
-  async function removePromotion() {
-    setPromoLoading(true); setPromoMessage(null); setPromoError(false);
-    try {
-      const res = await axios.post('/cart/remove-promotion');
-      if (res.data?.success) {
-        if (res.data.appliedPromotion !== undefined) setLocalAppliedPromotion(res.data.appliedPromotion);
-        if (res.data.appliedCoupon !== undefined) setLocalAppliedCoupon(res.data.appliedCoupon);
-        if (res.data.totalDiscount !== undefined) setLocalDiscount(res.data.totalDiscount);
-        setPromoMessage(res.data.message || 'Promotion removed.');
-        fetchQuote();
-      }
-    } catch (err) {
-      setPromoMessage('Failed to remove.');
-      setPromoError(true);
-    } finally {
-      setPromoLoading(false);
-      setTimeout(() => { setPromoMessage(null); setPromoError(false); }, 4000);
-    }
-  }
-
   async function applyCoupon(code) {
     if (!code?.trim()) return;
     setPromoLoading(true); setPromoMessage(null); setPromoError(false);
@@ -312,16 +269,12 @@ export default function StorefrontCheckoutV2({
     }
   }
 
-  function copyToClipboard(text, id) {
-    navigator.clipboard.writeText(text).then(() => {
-      setTimeout(() => copyToClipboard._copied = null, 2000);
-    }).catch(() => {});
-  }
-
   const city = cities?.find(c => c.id == form.city_id);
   const selectedPayment = paymentMethods?.find(pm => pm.id == form.payment_method_id);
   const quotedService = (id) => quote?.services?.find(s => String(s.id) === String(id));
-  const deliveryFee = quote ? Number(quote.delivery?.fee || 0) : (selectedDeliveryService?.base_fee ?? city?.delivery_fee ?? 0);
+  const deliveryFee = quote
+    ? Number(quote.delivery?.fee || 0)
+    : (Number(city?.delivery_fee) || 0) + (selectedDeliveryService ? Number(selectedDeliveryService.base_fee) || 0 : 0);
   const packagingFee = quote ? Number(quote.packaging?.fee || 0) : (selectedPackaging?.fee || 0);
   const codFee = quote ? Number(quote.cod?.fee || 0) : (selectedPayment?.type === 'cod' ? (selectedPayment?.cod_fee || 0) : 0);
   const totalDiscount = Number(localDiscount) || 0;
@@ -420,40 +373,38 @@ export default function StorefrontCheckoutV2({
           <span className="text-xs text-gray-500 dark:text-gray-400">{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
         </div>
 
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Items</p>
-        <div className="max-h-48 overflow-y-auto space-y-3 mb-4 scrollbar-thin">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Items</p>
+        <div className="max-h-60 overflow-y-auto overscroll-contain pr-3 mb-4 divide-y divide-gray-100 dark:divide-gray-800 [scrollbar-width:thin] [scrollbar-color:var(--tw-scroll-thumb,#D1D5DB)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300/70 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/70 dark:[&::-webkit-scrollbar-thumb]:bg-gray-700/60 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-600/70">
           {cartItems.map(item => {
             const lineOriginal = Number(item.original_price ?? item.price) * Number(item.quantity);
             const lineTotal = Number(item.price) * Number(item.quantity);
             const lineSave = Math.max(0, lineOriginal - lineTotal);
             return (
-            <div key={item.cart_key || item.id} className="flex gap-3">
+            <div key={item.cart_key || item.id} className="flex gap-3 py-2.5 first:pt-1 last:pb-1">
               {item.photo1_url && (
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 border border-gray-100 dark:border-gray-800">
+                <div className="w-11 h-11 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 border border-gray-100 dark:border-gray-800">
                   <img src={item.photo1_url} alt={item.name} className="w-full h-full object-cover" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
+                <p className="text-[13px] font-medium leading-snug text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
                 {item.variant_name && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{item.variant_name}</p>}
                 {item.is_flash_sale && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mt-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mt-1 bg-orange-50 text-orange-600 border border-orange-200 rounded text-[10px] font-bold">
                     <Zap className="w-2.5 h-2.5 fill-current" />
                     Flash Sale
                   </span>
                 )}
-                <div className="flex items-center justify-between mt-1 gap-2">
-                  <span className="text-xs text-gray-400 flex-shrink-0">Qty: {item.quantity}</span>
-                  <div className="text-right min-w-0">
-                    {lineSave > 0 && (
-                      <span className="block text-[11px] text-gray-400 line-through">{formatCurrency(lineOriginal, cc)}</span>
-                    )}
-                    <span className={`text-sm font-semibold ${item.is_flash_sale ? 'text-orange-600' : 'text-gray-900 dark:text-gray-100'}`}>{formatCurrency(lineTotal, cc)}</span>
-                    {lineSave > 0 && !item.is_flash_sale && (
-                      <span className="block text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Save {formatCurrency(lineSave, cc)}</span>
-                    )}
-                  </div>
-                </div>
+                <p className="text-xs text-gray-400 mt-1">Qty: {item.quantity}</p>
+              </div>
+              <div className="flex-shrink-0 pl-3 text-right whitespace-nowrap">
+                {lineSave > 0 && (
+                  <span className="block text-[11px] leading-tight text-gray-400 line-through">{formatCurrency(lineOriginal, cc)}</span>
+                )}
+                <span className={`block text-sm font-semibold leading-snug ${item.is_flash_sale ? 'text-orange-600' : 'text-gray-900 dark:text-gray-100'}`}>{formatCurrency(lineTotal, cc)}</span>
+                {lineSave > 0 && !item.is_flash_sale && (
+                  <span className="block text-[11px] leading-tight font-medium text-emerald-600 dark:text-emerald-400">Save {formatCurrency(lineSave, cc)}</span>
+                )}
               </div>
             </div>
             );
@@ -510,18 +461,41 @@ export default function StorefrontCheckoutV2({
               )}
             </div>
           )}
+          {city && (quote?.delivery?.city_fee ?? city.delivery_fee) != null && Number(quote?.delivery?.city_fee ?? city.delivery_fee) > 0 && (
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-500 dark:text-gray-400">City Delivery Fee</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(quote?.delivery?.city_fee ?? city.delivery_fee ?? 0, cc)}</span>
+            </div>
+          )}
+          {(selectedDeliveryService || (quote && quote?.delivery?.service_fee > 0)) && (
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-500 dark:text-gray-400">
+                {selectedDeliveryService?.name || 'Delivery Service'}
+                {quote?.delivery?.service_fallback && (
+                  <span className="ml-1.5 text-[10px] font-medium text-gray-400">cheapest available</span>
+                )}
+              </span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(quote?.delivery?.service_fee ?? selectedDeliveryService?.base_fee ?? 0, cc)}</span>
+            </div>
+          )}
+          {(quote?.delivery?.eta_min || selectedDeliveryService) && (
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-500 dark:text-gray-400">Estimated Delivery</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                {quote?.delivery?.eta_min
+                  ? `${quote.delivery.eta_min}${quote.delivery.eta_max && quote.delivery.eta_max !== quote.delivery.eta_min ? `-${quote.delivery.eta_max}` : ''} days`
+                  : (selectedDeliveryService?.eta_label || '—')}
+              </span>
+            </div>
+          )}
           {deliveryFee > 0 ? (
             <div>
-              <div className="flex justify-between gap-2">
-                <span className="text-gray-500 dark:text-gray-400">Delivery Fee{selectedDeliveryService ? ` (${selectedDeliveryService.name})` : ''}</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(deliveryFee, cc)}</span>
+              <div className="flex justify-between gap-2 pt-1 mt-1 border-t border-gray-100 dark:border-gray-800">
+                <span className="font-semibold text-gray-900 dark:text-gray-100">Delivery Total</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(deliveryFee, cc)}</span>
               </div>
-              {(quote?.delivery?.city_rate_applied || quote?.delivery?.eta_min) && (
-                <p className="text-[11px] text-gray-400 text-right mt-0.5">
-                  {quote?.delivery?.city_rate_applied ? 'City rate applied' : ''}
-                  {quote?.delivery?.city_rate_applied && quote?.delivery?.eta_min ? ' · ' : ''}
-                  {quote?.delivery?.eta_min ? `${quote.delivery.eta_min}${quote.delivery.eta_max && quote.delivery.eta_max !== quote.delivery.eta_min ? `-${quote.delivery.eta_max}` : ''} days` : ''}
-                </p>
+              {quote?.delivery?.city_rate_applied && (
+                <p className="text-[11px] text-gray-400 text-right mt-0.5">Service fee uses the city-specific rate</p>
               )}
             </div>
           ) : (!selectedDeliveryService && (
@@ -530,12 +504,6 @@ export default function StorefrontCheckoutV2({
               <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">Calculated at checkout</span>
             </div>
           ))}
-          {packagingFee > 0 && (
-            <div className="flex justify-between">
-              <span className="text-gray-500 dark:text-gray-400">Packing Fee{(quote?.packaging?.name || selectedPackaging?.name) ? ` (${quote?.packaging?.name || selectedPackaging?.name})` : ''}</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(packagingFee, cc)}</span>
-            </div>
-          )}
           {isCod && codFee > 0 && (
             <div className="flex justify-between text-orange-600 dark:text-orange-400">
               <span>COD Fee</span>
@@ -544,8 +512,19 @@ export default function StorefrontCheckoutV2({
           )}
         </div>
 
+        {packagingFee > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 text-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Packaging</p>
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-500 dark:text-gray-400">{quote?.packaging?.name || selectedPackaging?.name || 'Packaging'}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(packagingFee, cc)}</span>
+            </div>
+          </div>
+        )}
+
         {!localAppliedCoupon ? (
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Coupon</p>
             <div className="flex gap-2">
               <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)}
                 placeholder="Coupon code" maxLength={50}
@@ -560,17 +539,24 @@ export default function StorefrontCheckoutV2({
           </div>
         ) : (
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Coupon</p>
             <div className="flex items-center justify-between p-2.5 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/40">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <svg className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span className="text-sm font-medium text-green-800 dark:text-green-300 truncate">✓ {localAppliedCoupon.code}</span>
                 <span className="text-xs text-green-600 dark:text-green-400 font-semibold">-{formatCurrency(localAppliedCoupon.discount, cc)}</span>
               </div>
-              <button type="button" onClick={removeCoupon} disabled={promoLoading}
-                className="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 px-2 py-1 disabled:opacity-50">
-                Remove
-              </button>
+                <button type="button" onClick={removeCoupon} disabled={promoLoading}
+                  className="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 px-2 py-1 disabled:opacity-50">
+                  Remove
+                </button>
+              </div>
             </div>
+          )}
+
+        {promoMessage && (
+          <div className={`mt-3 text-xs px-3 py-2 rounded-xl ${promoError ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}>
+            {promoMessage}
           </div>
         )}
 
@@ -620,42 +606,6 @@ export default function StorefrontCheckoutV2({
             <span>{checkoutConfig.messages?.payment_verification || 'Order confirmed after payment verification'}</span>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  function PromoSection() {
-    return (
-      <div className="mt-3">
-        {!localAppliedPromotion ? (
-          <div className="flex gap-2">
-            <input type="text" value={promotionCode} onChange={e => setPromotionCode(e.target.value)}
-              placeholder={labels.promo_placeholder || 'Promo code'} maxLength={50}
-              className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]/30 focus:border-[var(--theme-color)]"
-              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyPromotion(promotionCode))} />
-            <button type="button" onClick={() => applyPromotion(promotionCode)} disabled={promoLoading || !promotionCode.trim()}
-              className="px-5 py-2 bg-[var(--theme-color)] text-white text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
-              {promoLoading ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> : 'Apply'}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between p-2.5 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/40">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <svg className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
-              <span className="text-sm font-medium text-green-800 dark:text-green-300 truncate">{localAppliedPromotion.code}</span>
-              <span className="text-xs text-green-600 dark:text-green-400 font-semibold">-{formatCurrency(localAppliedPromotion.discount, cc)}</span>
-            </div>
-            <button type="button" onClick={removePromotion} disabled={promoLoading}
-              className="text-xs font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 px-2 py-1 disabled:opacity-50">
-              Remove
-            </button>
-          </div>
-        )}
-        {promoMessage && (
-          <div className={`mt-1.5 text-xs px-3 py-2 rounded-xl ${promoError ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}>
-            {promoMessage}
-          </div>
-        )}
       </div>
     );
   }
@@ -846,9 +796,6 @@ export default function StorefrontCheckoutV2({
                   placeholder="Special instructions for your order..." />
               </div>
 
-              <div className="mt-3 sm:mt-4">
-                <PromoSection />
-              </div>
             </section>
 
             {/* Delivery Section */}

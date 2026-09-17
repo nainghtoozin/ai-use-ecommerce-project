@@ -103,25 +103,40 @@ class DeliveryFeeService
         return (int) ($city->delivery_fee ?? 0);
     }
 
-    public function resolveDeliveryFee(?City $city, ?int $deliveryServiceId = null): int
+    public function resolveDeliveryBreakdown(?City $city, ?int $deliveryServiceId = null): array
     {
-        if ($city === null) {
-            return 0;
-        }
+        $cityFee = $city ? (int) ($city->delivery_fee ?? 0) : 0;
+        $serviceFee = null;
+        $serviceFallback = false;
 
-        if ($deliveryServiceId !== null) {
-            $service = DeliveryService::forCurrentTenant()->find($deliveryServiceId);
-            if ($service) {
-                return $this->calculateFee($service, $city);
+        if ($city !== null) {
+            if ($deliveryServiceId !== null) {
+                $service = DeliveryService::forCurrentTenant()->find($deliveryServiceId);
+                if ($service) {
+                    $serviceFee = $this->calculateFee($service, $city);
+                }
+            }
+
+            if ($serviceFee === null) {
+                $cheapest = $this->getServicesWithPricing($city)->first();
+                if ($cheapest) {
+                    $serviceFee = $cheapest['fee'];
+                    $serviceFallback = true;
+                }
             }
         }
 
-        $servicesWithPricing = $this->getServicesWithPricing($city);
-        if ($servicesWithPricing->isNotEmpty()) {
-            return $servicesWithPricing->first()['fee'];
-        }
+        return [
+            'city_fee' => $city ? $cityFee : null,
+            'service_fee' => $serviceFee,
+            'service_fallback' => $serviceFallback,
+            'fee' => $cityFee + ($serviceFee ?? 0),
+        ];
+    }
 
-        return $this->getDeliveryFeeFallback($city);
+    public function resolveDeliveryFee(?City $city, ?int $deliveryServiceId = null): int
+    {
+        return $this->resolveDeliveryBreakdown($city, $deliveryServiceId)['fee'];
     }
 
     public function resolveDeliveryDays(?int $deliveryServiceId, ?City $city = null): array

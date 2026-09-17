@@ -195,7 +195,8 @@ class StorefrontCheckoutController extends Controller
             }
         }
 
-        $deliveryFee = $this->deliveryFeeService->resolveDeliveryFee($city, $deliveryService?->id);
+        $deliveryBreakdown = $this->deliveryFeeService->resolveDeliveryBreakdown($city, $deliveryService?->id);
+        $deliveryFee = $deliveryBreakdown['fee'];
         $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryService?->id, $city);
 
         $packagingFee = 0;
@@ -237,6 +238,10 @@ class StorefrontCheckoutController extends Controller
                 'service_id' => $deliveryService?->id,
                 'service_name' => $deliveryService?->name,
                 'city_rate_applied' => (bool) ($deliveryService && $city && $deliveryService->getFeeForCity($city) !== $deliveryService->base_fee),
+                'city_fee' => $deliveryBreakdown['city_fee'],
+                'service_fee' => $deliveryBreakdown['service_fee'],
+                'service_base_fee' => $deliveryService?->base_fee !== null ? (int) $deliveryService->base_fee : null,
+                'service_fallback' => $deliveryBreakdown['service_fallback'],
                 'eta_min' => $deliveryDays['min'],
                 'eta_max' => $deliveryDays['max'],
             ],

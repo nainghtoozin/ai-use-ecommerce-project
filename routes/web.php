@@ -184,8 +184,8 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/cart', [\App\Http\Controllers\StorefrontCartController::class, 'index'])->name('cart');
     Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.add');
     Route::patch('/cart/{id}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
-    Route::delete('/cart/{id}', [\App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
     Route::delete('/cart/clear', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
+    Route::delete('/cart/{id}', [\App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
     Route::get('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'index'])->name('checkout');
     Route::get('/checkout/preview', [\App\Http\Controllers\StorefrontCheckoutController::class, 'preview'])->name('checkout.preview')->middleware(['auth:web,accounts', 'role:admin', 'tenant.access']);
         Route::post('/checkout', [\App\Http\Controllers\StorefrontCheckoutController::class,
