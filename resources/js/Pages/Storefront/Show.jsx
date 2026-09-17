@@ -135,8 +135,22 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
         return Number(currentPrice).toLocaleString();
     })();
 
+    const selectionComplete = isVariable && optionKeys.length > 0 && optionKeys.every(key => selectedOptions[key]);
+
     function handleOptionChange(key, value) {
-        setSelectedOptions(prev => ({ ...prev, [key]: value }));
+        setSelectedOptions(prev => {
+            const next = { [key]: value };
+            for (const k of Object.keys(prev)) {
+                if (k === key || prev[k] === undefined) continue;
+                const trial = { ...next, [k]: prev[k] };
+                const completable = variants.some(v => {
+                    const attrs = v.attributes ?? {};
+                    return Object.entries(trial).every(([kk, vv]) => attrs[kk] === vv);
+                });
+                if (completable) next[k] = prev[k];
+            }
+            return next;
+        });
     }
 
     const handleAddToCart = async () => {
@@ -408,12 +422,14 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                         <div className="flex flex-wrap gap-1.5">
                                             {(optionValues[key] || []).map((value) => {
                                                 const isSel = selectedOptions[key] === value;
-                                                const hasCombination = variants.some(v => {
-                                                    const attrs = v.attributes ?? {};
-                                                    return Object.entries({ ...selectedOptions, [key]: value }).every(
-                                                        ([k, val]) => attrs[k] === val
-                                                    );
-                                                });
+                                                const hasCombination = !selectionComplete
+                                                    ? variants.some(v => {
+                                                        const attrs = v.attributes ?? {};
+                                                        return Object.entries({ ...selectedOptions, [key]: value }).every(
+                                                            ([k, val]) => attrs[k] === val
+                                                        );
+                                                    })
+                                                    : variants.some(v => (v.attributes ?? {})[key] === value);
                                                 return (
                                                     <button
                                                         key={value}
