@@ -450,7 +450,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
 
         setIsAdding(true);
         if (onAddToCart) {
-            await onAddToCart(product.id);
+            await onAddToCart(product.id, { name: product.name, image: product.photo1_url || null });
         }
         setIsAdding(false);
         setJustAdded(true);

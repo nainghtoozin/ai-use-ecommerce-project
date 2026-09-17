@@ -217,8 +217,8 @@ export default function WishlistIndex({ wishlistItems = [] }) {
     const [allMoved, setAllMoved] = useState(false);
     const [clearing, setClearing] = useState(false);
 
-    const handleAddToCart = useCallback(async (productId) => {
-        await addToCart(productId, 1);
+    const handleAddToCart = useCallback(async (productId, meta) => {
+        await addToCart(productId, 1, undefined, meta || null);
     }, [addToCart]);
 
     const handleRemove = useCallback(async (productId) => {

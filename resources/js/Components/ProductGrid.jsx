@@ -54,9 +54,9 @@ export default function ProductGrid({
 }) {
     const { storefront } = usePage().props;
     const labels = storefront?.content?.labels || {};
-    const handleAddToCart = useCallback(async (productId) => {
+    const handleAddToCart = useCallback(async (productId, meta) => {
         if (onAddToCart) {
-            await onAddToCart(productId);
+            await onAddToCart(productId, meta);
         }
     }, [onAddToCart]);
 

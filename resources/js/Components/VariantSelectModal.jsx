@@ -16,6 +16,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     const cc = getCurrencyConfig(platform_setting, website_info);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
     const [quantity, setQuantity] = useState(1);
+    const [adding, setAdding] = useState(false);
 
     useEffect(() => {
         const closeOnEscape = (event) => event.key === 'Escape' && onClose();
@@ -74,9 +75,17 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     const maxQuantity = selectedVariant ? Number(selectedVariant.stock ?? 0) : 1;
     const canAddToCart = selectedVariant && Number(selectedVariant.stock ?? 0) > 0;
 
-    const handleAdd = () => {
-        if (!canAddToCart) return;
-        onAddToCart(selectedVariant.id, quantity);
+    const handleAdd = async () => {
+        if (!canAddToCart || adding) return;
+        setAdding(true);
+        const result = await onAddToCart(selectedVariant.id, quantity, {
+            variantName: getVariantLabel(selectedVariant),
+            image: selectedVariant.image_url || product.photo1_url || null,
+        });
+        setAdding(false);
+        if (!result?.error) {
+            setQuantity(1);
+        }
     };
 
     const optionKeys = useMemo(() => {
@@ -251,10 +260,10 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
 
                             <button
                                 onClick={handleAdd}
-                                disabled={!canAddToCart}
+                                disabled={!canAddToCart || adding}
                                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                {labels.add_to_cart || 'Add to Cart'}
+                                {adding ? 'Adding...' : (labels.add_to_cart || 'Add to Cart')}
                             </button>
                         </div>
                     ) : (

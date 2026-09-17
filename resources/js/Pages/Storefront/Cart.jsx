@@ -115,7 +115,9 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
         setCartItems(optimisticItems);
         setSubtotal(optimisticSubtotal);
 
-        const result = await updateQuantity(cartKey, newQty);
+        const result = await updateQuantity(cartKey, newQty, {
+            message: `${item.name} quantity ${newQty > item.quantity ? 'increased' : 'decreased'} to ${newQty}.`,
+        });
 
         if (pendingOps.current[cartKey] !== opId) {
             return;
@@ -184,7 +186,10 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
         setCartItems(optimisticItems);
         setSubtotal(optimisticSubtotal);
 
-        const result = await removeItem(cartKey);
+        const removedName = prevItems.find(i => i.cart_key === cartKey)?.name;
+        const result = await removeItem(cartKey, removedName ? {
+            message: `${removedName} was removed from your cart.`,
+        } : null);
 
         if (result.error) {
             setCartItems(prevItems);

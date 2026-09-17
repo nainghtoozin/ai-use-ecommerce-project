@@ -22,18 +22,17 @@ export default function StoreIndex({ tenant, previewMode = null }) {
     const [variableProduct, setVariableProduct] = useState(null);
     const sections = storefront?.homepage?.sections || [];
 
-    const handleAddToCart = useCallback(async (productId) => {
-        await addToCart(productId, 1);
+    const handleAddToCart = useCallback(async (productId, meta) => {
+        await addToCart(productId, 1, undefined, meta || null);
     }, [addToCart]);
 
     const handleSelectVariant = useCallback((product) => {
         setVariableProduct(product);
     }, []);
 
-    const handleModalAddToCart = useCallback(async (variantId, quantity) => {
-        if (!variableProduct) return;
-        await addToCart(variableProduct.id, quantity, variantId);
-        setVariableProduct(null);
+    const handleModalAddToCart = useCallback(async (variantId, quantity, meta) => {
+        if (!variableProduct) return { error: 'No product selected.' };
+        return addToCart(variableProduct.id, quantity, variantId, { name: variableProduct.name, ...(meta || {}) });
     }, [variableProduct, addToCart]);
 
     const sortedSections = useMemo(

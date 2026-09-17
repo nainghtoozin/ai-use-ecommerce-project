@@ -27,6 +27,7 @@ export default function ShopNavbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [cartCount, setCartCount] = useState(serverCart?.count || 0);
+    const [cartBump, setCartBump] = useState(0);
     const [wishlistCount, setWishlistCount] = useState(props.wishlist_count || 0);
 
     const userMenuRef = useRef(null);
@@ -39,6 +40,7 @@ export default function ShopNavbar() {
     useEffect(() => {
         const handleCartUpdate = (e) => {
             setCartCount(e.detail.count);
+            setCartBump((k) => k + 1);
         };
         const handleWishlistUpdate = (e) => {
             setWishlistCount(e.detail.count);
@@ -105,6 +107,7 @@ export default function ShopNavbar() {
 
     return (
         <nav aria-label="Store navigation" style={{ backgroundColor: 'var(--storefront-color-surface, #FFFFFF)', borderColor: 'var(--storefront-color-border, #E5E7EB)', boxShadow: 'var(--storefront-shadow-card, 0 1px 3px rgb(0 0 0 / .1))' }} className="border-b sticky top-0 z-50">
+            <style>{`@keyframes cart-badge-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } } .cart-badge-pop { animation: cart-badge-pop 0.35s ease-out; } @media (prefers-reduced-motion: reduce) { .cart-badge-pop { animation: none; } }`}</style>
             <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
                 <div className="flex items-center justify-between h-14 lg:h-16 gap-2 lg:gap-4">
                     <Link href={storeUrl('/')} className="flex items-center gap-2 flex-shrink-0">
@@ -165,7 +168,7 @@ export default function ShopNavbar() {
                             >
                                 <i className="bi bi-cart3 text-xl"></i>
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                    <span key={cartBump} className="cart-badge-pop absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
                                         {cartCount > 99 ? '99+' : cartCount}
                                     </span>
                                 )}
@@ -326,7 +329,7 @@ export default function ShopNavbar() {
                                     <i className="bi bi-cart3"></i>
                                     Cart
                                     {cartCount > 0 && (
-                                        <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                        <span key={cartBump} className="cart-badge-pop bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
                                             {cartCount}
                                         </span>
                                     )}

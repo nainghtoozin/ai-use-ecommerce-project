@@ -154,7 +154,11 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     }
 
     const handleAddToCart = async () => {
-        await addToCart(product.id, quantity, selectedVariant?.id || undefined);
+        await addToCart(product.id, quantity, selectedVariant?.id || undefined, {
+            name: product.name,
+            variantName: selectedVariant?.label || null,
+            image: mainImage || null,
+        });
         setAdded(true);
         setTimeout(() => setAdded(false), 2000);
     };

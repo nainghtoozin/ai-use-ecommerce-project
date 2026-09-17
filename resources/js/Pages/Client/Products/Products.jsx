@@ -86,8 +86,8 @@ export default function ClientProducts({ products, categories, searchQuery, filt
         });
     }, []);
 
-    const handleAddToCart = useCallback(async (productId) => {
-        await addToCart(productId, 1);
+    const handleAddToCart = useCallback(async (productId, meta) => {
+        await addToCart(productId, 1, undefined, meta || null);
     }, [addToCart]);
 
     const hasMore = (products?.current_page ?? 1) < (products?.last_page ?? 1);

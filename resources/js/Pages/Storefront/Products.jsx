@@ -127,18 +127,17 @@ export default function StoreProducts({ tenant, products, categories, brands, se
         });
     }, [tenant.slug]);
 
-    const handleAddToCart = useCallback(async (productId) => {
-        await addToCart(productId, 1);
+    const handleAddToCart = useCallback(async (productId, meta) => {
+        await addToCart(productId, 1, undefined, meta || null);
     }, [addToCart]);
 
     const handleSelectVariant = useCallback((product) => {
         setVariableProduct(product);
     }, []);
 
-    const handleModalAddToCart = useCallback(async (variantId, quantity) => {
-        if (!variableProduct) return;
-        await addToCart(variableProduct.id, quantity, variantId);
-        setVariableProduct(null);
+    const handleModalAddToCart = useCallback(async (variantId, quantity, meta) => {
+        if (!variableProduct) return { error: 'No product selected.' };
+        return addToCart(variableProduct.id, quantity, variantId, { name: variableProduct.name, ...(meta || {}) });
     }, [variableProduct, addToCart]);
 
     const hasMore = (products?.current_page ?? 1) < (products?.last_page ?? 1);
