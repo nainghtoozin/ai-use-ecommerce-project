@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { useProductDisplay, formatUnits } from '@/Hooks/useProductDisplay';
 
 function safeNum(val) {
     const n = Number(val);
@@ -11,11 +12,14 @@ function safeNum(val) {
 function ProductCard({ product }) {
     const { storefront, tenant } = usePage().props;
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const pd = useProductDisplay();
     const price = safeNum(product.promotion_price ?? product.price);
     const originalPrice = safeNum(product.promotion?.original_price ?? 0);
     const hasDiscount = originalPrice > price && originalPrice > 0;
     const discountPct = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
     const effectiveStock = safeNum(product.effective_stock ?? product.stock ?? 0);
+    const threshold = pd.stock.low_stock_threshold;
+    const showStockBlock = pd.stock.display_mode !== 'hidden';
     const [imageError, setImageError] = useState(false);
 
     const imageUrl = product.photo1_url && !imageError ? assetUrl(product.photo1_url) : null;
@@ -40,26 +44,28 @@ function ProductCard({ product }) {
                         </svg>
                     </div>
                 )}
-                {hasDiscount && (
+                {pd.pricing.show_discount_percentage && hasDiscount && (
                     <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">
                         -{discountPct}%
                     </div>
                 )}
-                {product.is_combo && (
+                {pd.product_info.show_product_type && product.is_combo && (
                     <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-purple-500 text-white text-[10px] font-bold rounded">
                         Bundle
                     </div>
                 )}
-                {product.is_variable && !product.is_combo && (
+                {pd.product_info.show_product_type && product.is_variable && !product.is_combo && (
                     <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded">
                         Options
                     </div>
                 )}
             </div>
             <div className="p-3">
+                {pd.product_info.show_category && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 truncate">
                     {product.category?.name || 'Uncategorized'}
                 </p>
+                )}
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">
                     {product.name}
                 </h3>
@@ -68,27 +74,37 @@ function ProductCard({ product }) {
                         <span className={`text-sm font-bold ${hasDiscount ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
                             {formatCurrency(price, cc)}
                         </span>
-                        {hasDiscount && (
+                        {pd.pricing.show_original_price && hasDiscount && (
                             <span className="text-[11px] text-gray-400 line-through">
                                 {formatCurrency(originalPrice, cc)}
                             </span>
                         )}
                     </div>
-                    {hasDiscount && (
+                    {pd.pricing.show_discount_percentage && hasDiscount && (
                         <p className="text-[10px] font-medium text-green-600 dark:text-green-400 leading-tight">
                             Save {discountPct}%
                         </p>
                     )}
                 </div>
+                {showStockBlock && (
                 <div className="flex items-center mt-1">
                     {effectiveStock <= 0 ? (
-                        <span className="text-[10px] text-red-500 font-medium">Out of Stock</span>
-                    ) : effectiveStock < 10 ? (
-                        <span className="text-[10px] text-amber-500 font-medium">Only {effectiveStock} left</span>
+                        pd.stock.show_out_of_stock ? <span className="text-[11px] text-red-500 font-medium">Out of Stock</span> : null
+                    ) : pd.stock.display_mode === 'quantity' ? (
+                        <span className={`text-[11px] font-medium ${effectiveStock <= threshold ? 'text-amber-500' : 'text-green-500'}`}>
+                            {effectiveStock <= threshold ? `Only ${formatUnits(effectiveStock, product)} left` : `${formatUnits(effectiveStock, product)} available`}
+                        </span>
+                    ) : effectiveStock <= threshold ? (
+                        pd.stock.display_mode === 'status_quantity' ? (
+                            <span className="text-[11px] text-amber-500 font-medium">Low Stock · {formatUnits(effectiveStock, product)}</span>
+                        ) : (
+                            <span className="text-[11px] text-amber-500 font-medium">Only {formatUnits(effectiveStock, product)} left</span>
+                        )
                     ) : (
-                        <span className="text-[10px] text-green-500 font-medium">In Stock</span>
+                        <span className="text-[11px] text-green-500 font-medium">In Stock{pd.stock.display_mode === 'status_quantity' ? ` · ${formatUnits(effectiveStock, product)}` : ''}</span>
                     )}
                 </div>
+                )}
             </div>
         </Link>
     );

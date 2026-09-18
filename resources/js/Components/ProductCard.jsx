@@ -2,10 +2,16 @@ import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { Heart, Zap } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
+import { useProductDisplay, formatUnits } from '@/Hooks/useProductDisplay';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 
-const LOW_STOCK_THRESHOLD = 10;
+function getStockStatus(product, threshold = 10) {
+    const stock = getEffectiveStock(product);
+    if (stock <= 0) return 'out_of_stock';
+    if (stock <= threshold) return 'low_stock';
+    return 'in_stock';
+}
 
 function safeNumber(value) {
     const number = Number(value);
@@ -29,13 +35,6 @@ function getVariablePrice(product) {
 
 function getEffectiveStock(product) {
     return product.effective_stock ?? product.stock ?? 0;
-}
-
-function getStockStatus(product) {
-    const stock = getEffectiveStock(product);
-    if (stock <= 0) return 'out_of_stock';
-    if (stock < LOW_STOCK_THRESHOLD) return 'low_stock';
-    return 'in_stock';
 }
 
 function getDisplayPrice(product) {
@@ -145,9 +144,11 @@ const ProductTypeBadge = memo(function ProductTypeBadge({ isVariable, isCombo })
     );
 });
 
-const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
+const PriceDisplay = memo(function PriceDisplay({ product, displayPrice, pd }) {
     const { display, displayMax, original, originalMax, savings, label, isFlashSale, flashSaleDiscount, flashSaleEndsAt, flashSaleName, hasPromotion, promotionBadge } = displayPrice || {};
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const showOriginal = pd?.pricing?.show_original_price !== false;
+    const showSavings = pd?.pricing?.show_savings !== false;
 
     if (isFlashSale) {
         return (
@@ -162,7 +163,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
                         {cc.code}
                     </span>
-                    {original && (
+                    {showOriginal && original && (
                         <span
                             className="text-xs line-through w-full sm:w-auto block leading-tight"
                             style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
@@ -171,7 +172,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         </span>
                     )}
                 </div>
-                {savings > 0 && (
+                {showSavings && savings > 0 && (
                     <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: '#EA580C' }}>
                         <Zap className="w-3 h-3 fill-current" />
                         Save {formatCurrency(savings, cc)}
@@ -206,7 +207,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         {cc.code}
                     </span>
                 </div>
-                {(original || originalMax) && (
+                {showOriginal && (original || originalMax) && (
                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                         <span
                             className="text-[11px] line-through leading-tight"
@@ -218,7 +219,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                             }
                             <span className="text-[9px]"> {cc.code}</span>
                         </span>
-                        {savings > 0 && (
+                        {showSavings && savings > 0 && (
                             <span className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                                 Save {formatCurrency(savings, cc)}
                             </span>
@@ -260,7 +261,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         {cc.code}
                     </span>
                 </div>
-                {original && (
+                {showOriginal && original && (
                     <span
                         className="text-xs line-through w-full sm:w-auto block leading-tight"
                         style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
@@ -268,7 +269,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         {original} <span className="text-[10px]">{cc.code}</span>
                     </span>
                 )}
-                {savings > 0 && (
+                {showSavings && savings > 0 && (
                     <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -293,7 +294,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     <span className="text-[10px] font-medium" style={{ color: 'var(--storefront-color-muted, #6B7280)' }}>
                         {cc.code}
                     </span>
-                    {product.display_price_summary?.base_price > 0 && (
+                    {showOriginal && product.display_price_summary?.base_price > 0 && (
                         <span
                             className="text-xs line-through w-full sm:w-auto leading-tight"
                             style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
@@ -302,7 +303,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         </span>
                     )}
                 </div>
-                {product.display_price_summary?.savings > 0 && (
+                {showSavings && product.display_price_summary?.savings > 0 && (
                     <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -310,7 +311,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                         Bundle Save {formatCurrency(product.display_price_summary.savings, cc)}
                     </p>
                 )}
-                {savings > 0 && (
+                {showSavings && savings > 0 && (
                     <p className="text-[10px] font-semibold flex items-center gap-1 leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -335,7 +336,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     {cc.code}
                 </span>
             </div>
-            {hasPromotion && original && (
+            {showOriginal && hasPromotion && original && (
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                     <span
                         className="text-[11px] line-through leading-tight"
@@ -343,7 +344,7 @@ const PriceDisplay = memo(function PriceDisplay({ product, displayPrice }) {
                     >
                         {original} <span className="text-[9px]">{cc.code}</span>
                     </span>
-                    {savings > 0 && (
+                    {showSavings && savings > 0 && (
                         <span className="text-[10px] font-medium leading-tight" style={{ color: 'var(--storefront-color-success, #16A34A)' }}>
                             Save {formatCurrency(savings, cc)}
                         </span>
@@ -430,7 +431,12 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
         setOptimisticWishlisted(wishlisted_ids.includes(product.id));
     }, [wishlisted_ids, product.id]);
 
-    const stockStatus = getStockStatus(product);
+    const pd = useProductDisplay();
+    const stockThreshold = pd.stock.low_stock_threshold;
+    const stockStatus = getStockStatus(product, stockThreshold);
+    const stockUnits = getEffectiveStock(product);
+    const showStockBlock = pd.stock.display_mode !== 'hidden';
+    const showOos = pd.stock.show_out_of_stock;
     const isOutOfStock = stockStatus === 'out_of_stock';
     const displayPrice = getDisplayPrice(product);
     const isFlashSale = displayPrice?.isFlashSale;
@@ -553,29 +559,29 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                         <ProductImagePlaceholder className="absolute inset-0" />
                     )}
 
-                    <StockBadge status={stockStatus} labels={labels} />
+                    {showStockBlock && showOos && <StockBadge status={stockStatus} labels={labels} />}
 
                     <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
                         {isFlashSale && (
                             <div className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
                                 <Zap className="w-2.5 h-2.5 fill-current" />
-                                {displayPrice.flashSaleDiscount > 0 ? `-${displayPrice.flashSaleDiscount}%` : 'Flash'}
+                                {pd.pricing.show_discount_percentage && displayPrice.flashSaleDiscount > 0 ? `-${displayPrice.flashSaleDiscount}%` : 'Flash'}
                             </div>
                         )}
 
-                        {hasPromotion && (
+                        {hasPromotion && (pd.pricing.show_discount_percentage || !/%/.test(displayPrice.promotionBadge || product.promotion_badge || '')) && (
                             <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm">
                                 {displayPrice.promotionBadge || product.promotion_badge || 'Sale'}
                             </div>
                         )}
 
-                        {!hasPromotion && !isFlashSale && Number(product.discount_percentage ?? 0) > 0 && (
+                        {pd.pricing.show_discount_percentage && !hasPromotion && !isFlashSale && Number(product.discount_percentage ?? 0) > 0 && (
                             <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm">
                                 -{product.discount_percentage}%
                             </div>
                         )}
 
-                        {wishlistEnabled && (
+                        {wishlistEnabled && pd.actions.show_wishlist && (
                             <button
                                 onClick={handleWishlistToggle}
                                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
@@ -602,7 +608,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
 
             <div className="p-3 flex flex-col gap-0">
                 <Link href={productUrl}>
-                    {product.category?.name && (
+                    {pd.product_info.show_category && product.category?.name && (
                         <span
                             className="inline-block max-w-[8rem] truncate px-2 py-0.5 text-[10px] font-medium rounded-full mb-1.5"
                             style={{
@@ -619,7 +625,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                     >
                         {product.name}
                     </h3>
-                    {product.brand?.name && (
+                    {pd.product_info.show_brand && product.brand?.name && (
                         <p
                             className="text-[11px] mt-0.5 leading-tight"
                             style={{ color: 'var(--storefront-color-muted, #6B7280)' }}
@@ -629,18 +635,21 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                     )}
                 </Link>
 
+                {pd.product_info.show_product_type && (
                 <div className="flex items-center gap-1.5 mt-1">
                     <ProductTypeBadge isVariable={product.is_variable} isCombo={product.is_combo} />
                 </div>
+                )}
 
                 <div className="flex items-center gap-1 mt-1 min-h-[14px]">
                     {/* Rating placeholder — ready for future reviews */}
                 </div>
 
-                <PriceDisplay product={product} displayPrice={displayPrice} />
+                <PriceDisplay product={product} displayPrice={displayPrice} pd={pd} />
 
-                {!isOutOfStock && (
+                {showStockBlock && !isOutOfStock && (
                     <div className="flex items-center gap-1 mt-1.5">
+                        {pd.stock.display_mode !== 'quantity' && (
                         <span
                             className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
                             style={{
@@ -649,21 +658,25 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                                     : 'var(--storefront-color-success, #16A34A)',
                             }}
                         />
+                        )}
                         <p
-                            className="text-[11px] font-medium leading-tight"
+                            className="text-xs font-medium leading-tight"
                             style={{
                                 color: stockStatus === 'low_stock'
                                     ? 'var(--storefront-color-warning, #D97706)'
                                     : 'var(--storefront-color-success, #16A34A)',
                             }}
                         >
-                            {stockStatus === 'low_stock' ? 'Low Stock' : 'In Stock'}
+                            {pd.stock.display_mode === 'quantity'
+                                ? (stockStatus === 'low_stock' ? `Only ${formatUnits(stockUnits, product)} left` : `${formatUnits(stockUnits, product)} available`)
+                                : (stockStatus === 'low_stock' ? `Low Stock${pd.stock.display_mode === 'status_quantity' ? ` · ${formatUnits(stockUnits, product)}` : ''}` : `In Stock${pd.stock.display_mode === 'status_quantity' ? ` · ${formatUnits(stockUnits, product)}` : ''}`)}
                         </p>
                     </div>
                 )}
 
                 <div className="mt-3 space-y-1.5">
                     {isOutOfStock ? (
+                        showOos ? (
                         <button
                             disabled
                             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium cursor-not-allowed"
@@ -676,7 +689,9 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                             <i className="bi bi-x-circle text-xs"></i>
                             {labels.out_of_stock || 'Out of Stock'}
                         </button>
+                        ) : null
                     ) : (
+                        pd.actions.show_add_to_cart ? (
                         <button
                             onClick={handleAddToCart}
                             disabled={addingId === product.id || isAdding}
@@ -717,7 +732,9 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                 </>
             )}
                         </button>
+                        ) : null
                     )}
+                    {pd.actions.show_view_product && (
                     <Link
                         href={productUrl}
                         className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border text-xs font-semibold transition-all duration-200"
@@ -738,6 +755,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
                         <i className="bi bi-eye text-xs"></i>
                         {labels.view_product || 'View Product'}
                     </Link>
+                    )}
                 </div>
             </div>
         </div>

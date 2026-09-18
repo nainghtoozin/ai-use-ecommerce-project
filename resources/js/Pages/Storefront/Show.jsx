@@ -6,6 +6,7 @@ import ComboViewDetail from '@/Components/ProductView/ComboViewDetail';
 import RelatedProducts from '@/Components/Storefront/RelatedProducts';
 import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 import { useCart } from '@/Hooks/useCart';
+import { useProductDisplay, formatUnits } from '@/Hooks/useProductDisplay';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { sanitizeStorefrontHtml } from '@/Utils/sanitizeStorefrontHtml';
@@ -29,6 +30,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     const themeTokens = storefront?.design || {};
     const labels = storefront?.content?.labels || {};
     const { addToCart, addingId } = useCart();
+    const pd = useProductDisplay();
     const [selectedOptions, setSelectedOptions] = useState({});
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
@@ -166,6 +168,10 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
 
     const renderStockBadge = (compact = false) => {
+        const mode = pd.stock.display_mode;
+        if (mode === 'hidden') return null;
+        const threshold = pd.stock.low_stock_threshold;
+        const withUnits = mode === 'status_quantity' ? ` · ${formatUnits(availableStock, product)}` : '';
         if (isVariable && !selectedVariant && optionKeys.length > 0) {
             return (
                 <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full text-[11px] font-medium">
@@ -174,6 +180,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
             );
         }
         if (availableStock <= 0) {
+            if (!pd.stock.show_out_of_stock) return null;
             return (
                 <span className={`inline-flex items-center ${compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs'} bg-red-50 text-red-600 rounded-full font-medium`}>
                     <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -181,23 +188,33 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                 </span>
             );
         }
-        if (availableStock < 10) {
+        if (mode === 'quantity') {
+            const isLow = availableStock <= threshold;
+            return (
+                <span className={`inline-flex items-center ${compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs'} rounded-full font-medium ${isLow ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-600'}`}>
+                    {isLow ? `Only ${formatUnits(availableStock, product)} left` : `${formatUnits(availableStock, product)} available`}
+                </span>
+            );
+        }
+        if (availableStock <= threshold) {
             return (
                 <span className={`inline-flex items-center ${compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs'} bg-amber-50 text-amber-700 rounded-full font-medium`}>
                     <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Only {availableStock} left
+                    {mode === 'status_quantity' ? `Low Stock${withUnits}` : <>Only {formatUnits(availableStock, product)} left</>}
                 </span>
             );
         }
         return (
             <span className={`inline-flex items-center ${compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs'} bg-green-50 text-green-600 rounded-full font-medium`}>
                 <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                In Stock
+                In Stock{withUnits}
             </span>
         );
     };
 
-    const renderQuantityAndCart = (sticky = false) => (
+    const renderQuantityAndCart = (sticky = false) => {
+        if (!pd.actions.show_add_to_cart) return null;
+        return (
         <div className={`flex items-center gap-2 ${sticky ? '' : ''}`}>
             {availableStock > 0 && (
                 <div className="flex items-center border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden shrink-0">
@@ -255,7 +272,8 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                 )}
             </button>
         </div>
-    );
+        );
+    };
 
     return (
         <ShopLayout>
@@ -272,7 +290,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                 <nav className="flex flex-wrap items-center text-xs text-gray-400 dark:text-gray-500 mb-3 sm:mb-4 gap-1">
                     <Link href={`/store/${tenant.slug}`} className="hover:text-indigo-600 font-medium transition-colors">{tenant.name}</Link>
                     <svg className="w-3 h-3 mx-0.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    {product.category && (
+                    {pd.product_info.show_category && product.category && (
                         <>
                             <Link href={`/store/${tenant.slug}/products?category=${product.category.id}`} className="hover:text-indigo-600 transition-colors">{product.category.name}</Link>
                             <svg className="w-3 h-3 mx-0.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -295,12 +313,12 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                 <ProductImagePlaceholder className="h-full" />
                             )}
 
-                            {isCombo && (
+                            {pd.product_info.show_product_type && isCombo && (
                                 <div className="absolute top-3 left-3 px-2.5 py-1 bg-purple-600/90 backdrop-blur-sm text-white text-[11px] font-semibold rounded-md shadow-sm z-10">
                                     Bundle
                                 </div>
                             )}
-                            {isVariable && !isCombo && (
+                            {pd.product_info.show_product_type && isVariable && !isCombo && (
                                 <div className="absolute top-3 left-3 px-2.5 py-1 bg-blue-600/90 backdrop-blur-sm text-white text-[11px] font-semibold rounded-md shadow-sm z-10">
                                     Multiple Options
                                 </div>
@@ -308,10 +326,10 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                             {isFlashSale && (
                                 <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500/90 backdrop-blur-sm text-white text-[11px] font-semibold rounded-md shadow-sm z-10 flex items-center gap-1">
                                     <Zap className="w-3 h-3 fill-current" />
-                                    {discountPercent > 0 ? `-${discountPercent}%` : 'Flash Sale'}
+                                    {pd.pricing.show_discount_percentage && discountPercent > 0 ? `-${discountPercent}%` : 'Flash Sale'}
                                 </div>
                             )}
-                            {!isFlashSale && discountPercent > 0 && (
+                            {pd.pricing.show_discount_percentage && !isFlashSale && discountPercent > 0 && (
                                 <div className="absolute top-3 right-3 px-2.5 py-1 bg-red-500/90 backdrop-blur-sm text-white text-[11px] font-semibold rounded-md shadow-sm z-10">
                                     -{discountPercent}%
                                 </div>
@@ -351,34 +369,40 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                             </h1>
 
                             <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-                                <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded font-medium">
-                                    {product.category?.name || 'Uncategorized'}
-                                </span>
-                                <span className="text-gray-300">&middot;</span>
-                                {product.brand ? (
-                                    <Link
-                                        href={`/store/${tenant.slug}/brands/${product.brand.id}`}
-                                        className="hover:text-indigo-600 transition-colors"
-                                    >
-                                        {product.brand.name}
-                                    </Link>
-                                ) : (
-                                    <span>Generic Brand</span>
-                                )}
-                                <span className="text-gray-300">&middot;</span>
-                                <span>{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
-                                {!isVariable && product.sku && (
-                                    <>
-                                        <span className="text-gray-300">&middot;</span>
-                                        <span>SKU: <span className="font-medium text-gray-700 dark:text-gray-300">{product.sku}</span></span>
-                                    </>
-                                )}
-                                {product.unit?.name && (
-                                    <>
-                                        <span className="text-gray-300">&middot;</span>
-                                        <span>{product.unit.name}</span>
-                                    </>
-                                )}
+                                {[
+                                    pd.product_info.show_category ? (
+                                        <span key="category" className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded font-medium">
+                                            {product.category?.name || 'Uncategorized'}
+                                        </span>
+                                    ) : null,
+                                    pd.product_info.show_brand ? (
+                                        product.brand ? (
+                                            <Link
+                                                key="brand"
+                                                href={`/store/${tenant.slug}/brands/${product.brand.id}`}
+                                                className="hover:text-indigo-600 transition-colors"
+                                            >
+                                                {product.brand.name}
+                                            </Link>
+                                        ) : (
+                                            <span key="brand">Generic Brand</span>
+                                        )
+                                    ) : null,
+                                    pd.product_info.show_product_type ? (
+                                        <span key="type">{isCombo ? 'Bundle' : isVariable ? 'Variable' : 'Single'}</span>
+                                    ) : null,
+                                    pd.product_info.show_sku && !isVariable && product.sku ? (
+                                        <span key="sku">SKU: <span className="font-medium text-gray-700 dark:text-gray-300">{product.sku}</span></span>
+                                    ) : null,
+                                    product.unit?.name ? (
+                                        <span key="unit">{product.unit.name}</span>
+                                    ) : null,
+                                ].filter(Boolean).map((node, i, arr) => (
+                                    <span key={node.key || i} className="flex items-center gap-1.5">
+                                        {i > 0 && <span className="text-gray-300">&middot;</span>}
+                                        {node}
+                                    </span>
+                                ))}
                             </div>
 
                             <div className="flex items-center justify-between gap-3 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800">
@@ -391,13 +415,13 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                                 <span className={`text-xl sm:text-2xl font-extrabold ${isFlashSale ? 'text-orange-600' : (originalPrice > 0 && originalPrice > currentPrice ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100')}`}>
                                                     {formatCurrency(currentPrice, cc)}
                                                 </span>
-                                                {originalPrice > 0 && originalPrice > currentPrice && (
+                                                {pd.pricing.show_original_price && originalPrice > 0 && originalPrice > currentPrice && (
                                                     <span className="text-sm text-gray-400 dark:text-gray-500 line-through">
                                                         {formatCurrency(originalPrice, cc)}
                                                     </span>
                                                 )}
                                             </div>
-                                            {originalPrice > 0 && originalPrice > currentPrice && (
+                                            {pd.pricing.show_discount_percentage && originalPrice > 0 && originalPrice > currentPrice && (
                                                 <p className="text-xs font-medium mt-0.5" style={{ color: isFlashSale ? '#EA580C' : 'var(--storefront-color-success, #16A34A)' }}>
                                                     {isFlashSale && <Zap className="w-3 h-3 inline mr-0.5 fill-current" />}
                                                     Save {discountPercent}%

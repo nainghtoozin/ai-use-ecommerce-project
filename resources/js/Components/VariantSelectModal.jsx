@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { useProductDisplay } from '@/Hooks/useProductDisplay';
 
 function getVariantLabel(variant) {
     const attrs = variant.attributes;
@@ -17,6 +18,8 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     const [selectedVariantId, setSelectedVariantId] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
+    const pd = useProductDisplay();
+    const lowStockThreshold = pd.stock.low_stock_threshold;
 
     useEffect(() => {
         const closeOnEscape = (event) => event.key === 'Escape' && onClose();
@@ -69,7 +72,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
 
     const selectedStatus = useMemo(() => {
         if (!selectedVariant) return null;
-        return getStatusLabel(Number(selectedVariant.stock ?? 0), selectedVariant.low_stock_threshold ?? 5);
+        return getStatusLabel(Number(selectedVariant.stock ?? 0), selectedVariant.low_stock_threshold ?? lowStockThreshold);
     }, [selectedVariant]);
 
     const maxQuantity = selectedVariant ? Number(selectedVariant.stock ?? 0) : 1;
@@ -185,8 +188,8 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                                 {v.price != null ? formatCurrency(v.price, cc) : '—'}
                                                             </span>
                                                         )}
-                                                        <span className={`text-[10px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
-                                                            {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? 5) ? 'Low Stock' : 'In Stock') : (labels.out_of_stock || 'Out of Stock')}
+                                                        <span className={`text-[11px] font-medium ${inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? lowStockThreshold) ? 'text-orange-500' : 'text-green-600') : 'text-red-500'}`}>
+                                                            {inStock ? (Number(v.stock) <= (v.low_stock_threshold ?? lowStockThreshold) ? 'Low Stock' : 'In Stock') : (labels.out_of_stock || 'Out of Stock')}
                                                         </span>
                                                     </div>
                                                 </label>

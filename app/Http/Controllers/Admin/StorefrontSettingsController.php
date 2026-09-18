@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateProductDisplayConfigRequest;
 use App\Http\Requests\UpdateStorefrontConfigurationRequest;
 use App\Models\City;
 use App\Models\CodRule;
@@ -13,6 +14,7 @@ use App\Models\StorefrontCheckoutConfig;
 use App\Models\StorefrontContent;
 use App\Models\StorefrontDesignToken;
 use App\Models\StorefrontMedia;
+use App\Models\StorefrontProductDisplayConfig;
 use App\Models\StorefrontThemeConfig;
 use App\Models\Theme;
 use App\Models\WebsiteInfo;
@@ -188,6 +190,34 @@ class StorefrontSettingsController extends Controller
                 'configuration' => $merged,
             ],
         );
+    }
+
+    public function productDisplay()
+    {
+        $storefront = $this->storefront();
+        $contract = $this->resolver->resolve(null, 'draft');
+
+        return Inertia::render('Admin/Storefront/ProductDisplay', [
+            'storefront' => $contract,
+            'revision' => $this->revisionService->status($storefront),
+        ]);
+    }
+
+    public function updateProductDisplay(UpdateProductDisplayConfigRequest $request)
+    {
+        $storefront = $this->storefront();
+
+        $this->revisionService->prepareDraft($storefront);
+        StorefrontProductDisplayConfig::withoutTenantScope()->updateOrCreate(
+            ['storefront_id' => $storefront->id],
+            [
+                'tenant_id' => tenant()->id,
+                'configuration' => $request->validatedConfiguration(),
+            ],
+        );
+        $this->revisionService->syncDraft($storefront);
+
+        return back()->with('success', 'Product display settings saved to draft.');
     }
 
     private function ensureSections(Storefront $storefront): void

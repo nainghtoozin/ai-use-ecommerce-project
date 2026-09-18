@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Storefront;
 use App\Models\StorefrontCheckoutConfig;
+use App\Models\StorefrontProductDisplayConfig;
 use App\Models\StorefrontContent;
 use App\Models\StorefrontDesignToken;
 use App\Models\StorefrontHomepageSection;
@@ -206,6 +207,7 @@ class StorefrontConfigurationResolver
                 'homepageSections',
                 'content',
                 'checkoutConfig',
+                'productDisplayConfig',
             ];
             if (Schema::hasTable('storefront_navigations')) {
                 $relations[] = 'navigation.items';
@@ -290,6 +292,9 @@ class StorefrontConfigurationResolver
                 'guest_checkout_enabled' => (bool) ($legacy->guest_checkout_enabled ?? true),
                 'cod_enabled' => (bool) ($legacy->cod_enabled ?? true),
             ],
+            'product_display' => StorefrontProductDisplayConfig::resolveConfiguration(
+                $storefront?->productDisplayConfig?->configuration
+            ),
             'seo' => [
                 'title' => $legacy->meta_title ?: $legacy->site_name,
                 'description' => $legacy->meta_description ?: $legacy->site_description,
@@ -849,6 +854,7 @@ class StorefrontConfigurationResolver
                 ->with([
                     'category' => fn ($query) => $query->withoutGlobalScopes()->where('categories.tenant_id', $tenantId),
                     'brand' => fn ($query) => $query->withoutGlobalScopes()->where('brands.tenant_id', $tenantId),
+                    'unit' => fn ($query) => $query->withoutGlobalScopes()->where('units.tenant_id', $tenantId),
                     'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant',
                 ])->get()
                 ->sortBy(fn ($product) => array_search($product->id, $ids, true))
@@ -865,6 +871,7 @@ class StorefrontConfigurationResolver
             ->with([
                 'category' => fn ($query) => $query->withoutGlobalScopes()->where('categories.tenant_id', $tenantId),
                 'brand' => fn ($query) => $query->withoutGlobalScopes()->where('brands.tenant_id', $tenantId),
+                'unit' => fn ($query) => $query->withoutGlobalScopes()->where('units.tenant_id', $tenantId),
                 'variants', 'comboItems.comboProduct', 'comboItems.linkedVariant',
             ])
             ->limit($limit)
@@ -926,6 +933,10 @@ class StorefrontConfigurationResolver
         }
         unset($section);
 
+        $configuration['product_display'] = StorefrontProductDisplayConfig::resolveConfiguration(
+            $configuration['product_display'] ?? null
+        );
+
         return $configuration;
     }
 
@@ -944,6 +955,7 @@ class StorefrontConfigurationResolver
             'behavior' => ['allow_registration' => true, 'enable_reviews' => true, 'enable_wishlist' => true, 'enable_compare' => true],
             'shop' => [],
             'checkout' => ['guest_checkout_enabled' => true, 'cod_enabled' => true],
+            'product_display' => StorefrontProductDisplayConfig::getDefaults(),
             'seo' => [],
         ];
     }

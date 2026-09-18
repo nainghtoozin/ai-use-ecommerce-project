@@ -360,6 +360,8 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/storefront/homepage', [StorefrontHomepageController::class, 'update'])->name('storefront.homepage.update');
         Route::get('/storefront/checkout', [StorefrontSettingsController::class, 'checkout'])->name('storefront.checkout');
         Route::put('/storefront/checkout', [StorefrontSettingsController::class, 'updateCheckout'])->name('storefront.checkout.update');
+        Route::get('/storefront/product-display', [StorefrontSettingsController::class, 'productDisplay'])->name('storefront.product-display');
+        Route::put('/storefront/product-display', [StorefrontSettingsController::class, 'updateProductDisplay'])->name('storefront.product-display.update');
         Route::post('/storefront/publish', [StorefrontRevisionController::class, 'publish'])->name('storefront.publish');
         Route::get('/storefront/revisions', [StorefrontRevisionController::class, 'index'])->name('storefront.revisions.index');
         Route::post('/storefront/revisions/{revision}/restore', [StorefrontRevisionController::class, 'restore'])->name('storefront.revisions.restore')->whereNumber('revision');

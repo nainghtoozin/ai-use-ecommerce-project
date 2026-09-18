@@ -221,7 +221,7 @@ class StorefrontController extends Controller
         $inStock = $request->boolean('in_stock');
 
         $products = Product::active()
-            ->with(['category', 'brand'])
+            ->with(['category', 'brand', 'unit'])
             ->with(['variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
         if ($query !== '') {
@@ -424,7 +424,7 @@ class StorefrontController extends Controller
 
         $products = Product::active()
             ->where('brand_id', $brand->id)
-            ->with(['category', 'variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
+            ->with(['category', 'unit', 'variants' => fn($q) => $q->active(), 'comboItems.comboProduct', 'comboItems.linkedVariant']);
 
         if ($inStock) {
             $this->applyInStockFilter($products);
@@ -506,7 +506,7 @@ class StorefrontController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
-        $product->loadMissing(['category', 'brand']);
+        $product->loadMissing(['category', 'brand', 'unit']);
         if ($product->isVariable()) {
             $product->loadMissing(['variants' => fn($q) => $q->active()]);
         }
@@ -539,7 +539,7 @@ class StorefrontController extends Controller
             $relatedProducts = Product::active()
                 ->where('category_id', $product->category_id)
                 ->where('id', '!=', $product->id)
-                ->with(['category', 'brand'])
+                ->with(['category', 'brand', 'unit'])
                 ->limit(6)
                 ->get();
         }
@@ -549,7 +549,7 @@ class StorefrontController extends Controller
             $brandProducts = Product::active()
                 ->where('brand_id', $product->brand_id)
                 ->whereNotIn('id', $excludeIds)
-                ->with(['category', 'brand'])
+                ->with(['category', 'brand', 'unit'])
                 ->limit(6 - $relatedProducts->count())
                 ->get();
             $relatedProducts = $relatedProducts->merge($brandProducts);

@@ -70,4 +70,9 @@ class Storefront extends Model
     {
         return $this->hasOne(StorefrontCheckoutConfig::class);
     }
+
+    public function productDisplayConfig()
+    {
+        return $this->hasOne(StorefrontProductDisplayConfig::class);
+    }
 }
