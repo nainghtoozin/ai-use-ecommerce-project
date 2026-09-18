@@ -92,6 +92,12 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing/invoices/{invoice}/receipt', [InvoiceController::class, 'downloadReceipt'])->name('billing.invoices.receipt');
     Route::delete('/billing/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('billing.invoices.destroy');
 
+    // ── Billing document routes (standalone invoice/receipt pages, same tenant guards) ──
+    Route::get('/billing/documents/invoices/{invoice}', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'showInvoice'])->name('billing.documents.invoice');
+    Route::get('/billing/documents/invoices/{invoice}/pdf', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'invoicePdf'])->name('billing.documents.invoice.pdf');
+    Route::get('/billing/documents/receipts/{receipt}', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'showReceipt'])->name('billing.documents.receipt');
+    Route::get('/billing/documents/receipts/{receipt}/pdf', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'receiptPdf'])->name('billing.documents.receipt.pdf');
+
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

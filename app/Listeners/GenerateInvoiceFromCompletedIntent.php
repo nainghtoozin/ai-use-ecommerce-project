@@ -4,12 +4,14 @@ namespace App\Listeners;
 
 use App\Events\Payments\PaymentIntentCompleted;
 use App\Models\Invoice;
+use App\Services\BillingEmailService;
 use App\Services\InvoiceService;
 
 class GenerateInvoiceFromCompletedIntent
 {
     public function __construct(
-        private readonly InvoiceService $invoiceService
+        private readonly InvoiceService $invoiceService,
+        private readonly BillingEmailService $billingEmails,
     ) {}
 
     public function handle(PaymentIntentCompleted $event): void
@@ -25,9 +27,15 @@ class GenerateInvoiceFromCompletedIntent
                 'tax' => 0,
                 'total' => Invoice::where('payment_intent_id', $intent->id)->value('subtotal'),
             ]);
+
+            $invoice = Invoice::where('payment_intent_id', $intent->id)->first();
+
+            $this->billingEmails->sendInvoiceEmail($intent, $invoice);
             return;
         }
 
-        $this->invoiceService->generateFromPaymentIntent($intent);
+        $invoice = $this->invoiceService->generateFromPaymentIntent($intent);
+
+        $this->billingEmails->sendInvoiceEmail($intent, $invoice);
     }
 }

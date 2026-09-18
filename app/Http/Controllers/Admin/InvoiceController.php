@@ -158,7 +158,7 @@ class InvoiceController extends Controller
 
         $invoice->load(['plan', 'subscription', 'paymentIntent', 'tenant']);
 
-        return $documents->invoice($invoice);
+        return $documents->invoice($invoice, $request->boolean('view'));
     }
 
     public function downloadReceipt(Request $request, Invoice $invoice, ReceiptService $receipts, SubscriptionDocumentPdfService $documents)
@@ -179,7 +179,7 @@ class InvoiceController extends Controller
         $invoice->loadMissing('paymentIntent', 'receipt');
         $receipt = $receipts->createFromPaidInvoice($invoice);
 
-        return $documents->receipt($receipt);
+        return $documents->receipt($receipt, $request->boolean('view'));
     }
 
     public function markPaid(Request $request, Invoice $invoice)

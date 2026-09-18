@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Notification;
 
 class BillingNotificationService
 {
+    public function __construct(
+        private readonly BillingEmailService $billingEmails,
+    ) {}
+
     public function notifyPaymentSubmitted(PaymentIntent $intent): void
     {
         try {
@@ -23,6 +27,9 @@ class BillingNotificationService
             if ($superAdmins->isNotEmpty()) {
                 Notification::send($superAdmins, new BillingPaymentSubmittedAdminNotification($intent));
             }
+
+            $this->billingEmails->sendSubmittedEmail($intent);
+            $this->billingEmails->sendReviewEmail($intent);
 
             BroadcastService::fire(new BillingPaymentSubmitted($intent), [
                 'intent_id' => $intent->id,
@@ -65,6 +72,8 @@ class BillingNotificationService
             if ($tenant) {
                 $tenant->notifyAdmins(new BillingPaymentRejectedMerchantNotification($intent));
             }
+
+            $this->billingEmails->sendRejectedEmail($intent);
 
             BroadcastService::fire(new BillingPaymentRejected($intent), [
                 'intent_id' => $intent->id,

@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SubscriptionDocumentPdfService
 {
-    public function invoice(Invoice $invoice): Response
+    public function invoice(Invoice $invoice, bool $inline = false): Response
     {
         $invoice->loadMissing(['plan', 'subscription', 'tenant']);
         $owner = $this->owner($invoice->tenant);
@@ -54,10 +54,10 @@ class SubscriptionDocumentPdfService
             'Support: ' . ($platform->support_email ?? 'N/A'),
         ];
 
-        return $this->download($lines, $invoice->invoice_number . '.pdf');
+        return $this->download($lines, 'Invoice_' . $invoice->invoice_number . '.pdf', $inline);
     }
 
-    public function receipt(Receipt $receipt): Response
+    public function receipt(Receipt $receipt, bool $inline = false): Response
     {
         $receipt->loadMissing(['invoice.plan', 'invoice.subscription', 'tenant', 'paymentIntent']);
         $platform = PlatformSetting::current();
@@ -94,7 +94,7 @@ class SubscriptionDocumentPdfService
             'Support: ' . ($platform->support_email ?? 'N/A'),
         ];
 
-        return $this->download($lines, $receipt->receipt_number . '.pdf');
+        return $this->download($lines, 'Receipt_' . $receipt->receipt_number . '.pdf', $inline);
     }
 
     private function owner(?Tenant $tenant): array
@@ -112,7 +112,7 @@ class SubscriptionDocumentPdfService
         return ($start?->format('M d, Y') ?? 'N/A') . ' -> ' . ($end?->format('M d, Y') ?? 'N/A');
     }
 
-    private function download(array $lines, string $filename): Response
+    private function download(array $lines, string $filename, bool $inline = false): Response
     {
         $pdf = "%PDF-1.4\n";
         $objects = [
@@ -145,7 +145,7 @@ class SubscriptionDocumentPdfService
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => ($inline ? 'inline' : 'attachment') . '; filename="' . $filename . '"',
         ]);
     }
 
