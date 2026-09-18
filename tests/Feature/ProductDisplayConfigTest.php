@@ -22,6 +22,7 @@ class ProductDisplayConfigTest extends TestCase
             array_keys($defaults)
         );
         $this->assertTrue($defaults['pricing']['show_current_price']);
+        $this->assertTrue($defaults['actions']['show_buy_now']);
         $this->assertSame('status', $defaults['stock']['display_mode']);
         $this->assertSame(10, $defaults['stock']['low_stock_threshold']);
     }
@@ -40,12 +41,13 @@ class ProductDisplayConfigTest extends TestCase
     {
         $resolved = StorefrontProductDisplayConfig::resolveConfiguration([
             'stock' => ['display_mode' => 'hidden'],
-            'actions' => ['show_wishlist' => 'false'],
+            'actions' => ['show_wishlist' => 'false', 'show_buy_now' => 0],
         ]);
 
         $this->assertSame('hidden', $resolved['stock']['display_mode']);
         $this->assertSame(10, $resolved['stock']['low_stock_threshold']);
         $this->assertFalse($resolved['actions']['show_wishlist']);
+        $this->assertFalse($resolved['actions']['show_buy_now']);
         $this->assertTrue($resolved['actions']['show_add_to_cart']);
 
         $invalid = StorefrontProductDisplayConfig::resolveConfiguration([

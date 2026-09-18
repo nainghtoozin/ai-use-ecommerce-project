@@ -27,6 +27,7 @@ const PRICING_ROWS = [
 
 const ACTION_ROWS = [
     ['actions.show_add_to_cart', 'Add to Cart', 'Display preference only. Cart rules are unchanged.'],
+    ['actions.show_buy_now', 'Buy Now', 'Display preference only. Shows a direct-to-checkout button when implemented.'],
     ['actions.show_view_product', 'View Product', 'Display preference only. Product pages stay reachable.'],
     ['actions.show_wishlist', 'Wishlist', 'Display preference only. Wishlist rules are unchanged.'],
 ];

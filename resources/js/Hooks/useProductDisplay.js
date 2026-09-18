@@ -5,7 +5,7 @@ const DEFAULTS = {
     product_info: { show_category: true, show_brand: true, show_product_type: true, show_sku: true },
     pricing: { show_current_price: true, show_original_price: true, show_savings: true, show_discount_percentage: true },
     stock: { display_mode: 'status', low_stock_threshold: 10, show_out_of_stock: true },
-    actions: { show_add_to_cart: true, show_view_product: true, show_wishlist: true },
+    actions: { show_add_to_cart: true, show_buy_now: true, show_view_product: true, show_wishlist: true },
 };
 
 const STOCK_MODES = ['status', 'quantity', 'status_quantity', 'hidden'];

@@ -56,7 +56,7 @@ class StorefrontProductDisplayConfig extends Model
             ? array_replace_recursive($defaults, array_filter((array) $stored, fn ($group) => is_array($group)))
             : $defaults;
 
-        foreach (['product_info' => ['show_category', 'show_brand', 'show_product_type', 'show_sku'], 'pricing' => ['show_original_price', 'show_savings', 'show_discount_percentage'], 'actions' => ['show_add_to_cart', 'show_view_product', 'show_wishlist']] as $group => $keys) {
+        foreach (['product_info' => ['show_category', 'show_brand', 'show_product_type', 'show_sku'], 'pricing' => ['show_original_price', 'show_savings', 'show_discount_percentage'], 'actions' => ['show_add_to_cart', 'show_buy_now', 'show_view_product', 'show_wishlist']] as $group => $keys) {
             foreach ($keys as $key) {
                 $merged[$group][$key] = self::toBool($merged[$group][$key] ?? null, $defaults[$group][$key]);
             }
@@ -109,6 +109,7 @@ class StorefrontProductDisplayConfig extends Model
             ],
             'actions' => [
                 'show_add_to_cart' => true,
+                'show_buy_now' => true,
                 'show_view_product' => true,
                 'show_wishlist' => true,
             ],

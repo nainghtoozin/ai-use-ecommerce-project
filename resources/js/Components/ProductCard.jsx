@@ -3,6 +3,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { Heart, Zap } from 'lucide-react';
 import { useWishlist } from '@/Hooks/useWishlist';
 import { useProductDisplay, formatUnits } from '@/Hooks/useProductDisplay';
+import { useBuyNow, buyNowKey } from '@/Hooks/useBuyNow';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 
@@ -365,6 +366,7 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
     const cc = getCurrencyConfig(props.platform_setting, props.website_info);
     const wishlistEnabled = website_info?.enable_wishlist !== false;
     const { toggleWishlist } = useWishlist();
+    const { buyNow, buyingKey } = useBuyNow();
     const productUrl = tenant?.slug
         ? `/store/${tenant.slug}/products/${product.id}`
         : `/client/product/${product.id}`;
@@ -461,6 +463,21 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
         setIsAdding(false);
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 2000);
+    };
+
+    const handleBuyNow = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isOutOfStock) return;
+
+        if (product.is_variable) {
+            if (onSelectVariant) {
+                onSelectVariant(product);
+            }
+            return;
+        }
+
+        buyNow({ productId: product.id, quantity: 1 });
     };
 
     const handleWishlistToggle = (e) => {
@@ -733,6 +750,25 @@ const ProductCard = memo(function ProductCard({ product, variant = null, onAddTo
             )}
                         </button>
                         ) : null
+                    )}
+                    {!isOutOfStock && pd.actions.show_buy_now && (
+                        <button
+                            onClick={handleBuyNow}
+                            disabled={buyingKey === buyNowKey(product.id, null)}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border text-xs font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                                borderColor: 'var(--theme-color, #3B82F6)',
+                                color: 'var(--theme-color, #3B82F6)',
+                                borderRadius: 'var(--storefront-radius-button, 0.5rem)',
+                            }}
+                        >
+                            {buyingKey === buyNowKey(product.id, null) ? (
+                                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                            ) : (
+                                <i className="bi bi-lightning-charge text-xs"></i>
+                            )}
+                            {labels.buy_now || 'Buy Now'}
+                        </button>
                     )}
                     {pd.actions.show_view_product && (
                     <Link

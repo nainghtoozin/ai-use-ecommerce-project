@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useProductDisplay, formatUnits } from '@/Hooks/useProductDisplay';
+import { useBuyNow, buyNowKey } from '@/Hooks/useBuyNow';
 
 function safeNum(val) {
     const n = Number(val);
@@ -13,6 +14,8 @@ function ProductCard({ product }) {
     const { storefront, tenant } = usePage().props;
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
     const pd = useProductDisplay();
+    const { buyNow, buyingKey } = useBuyNow();
+    const labels = storefront?.content?.labels || {};
     const price = safeNum(product.promotion_price ?? product.price);
     const originalPrice = safeNum(product.promotion?.original_price ?? 0);
     const hasDiscount = originalPrice > price && originalPrice > 0;
@@ -104,6 +107,17 @@ function ProductCard({ product }) {
                         <span className="text-[11px] text-green-500 font-medium">In Stock{pd.stock.display_mode === 'status_quantity' ? ` · ${formatUnits(effectiveStock, product)}` : ''}</span>
                     )}
                 </div>
+                )}
+                {pd.actions.show_buy_now && !product.is_variable && effectiveStock > 0 && (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); buyNow({ productId: product.id, quantity: 1 }); }}
+                        disabled={buyingKey === buyNowKey(product.id, null)}
+                        className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 border text-[11px] font-semibold rounded-lg transition-colors disabled:opacity-50"
+                        style={{ borderColor: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' }}
+                    >
+                        {labels.buy_now || 'Buy Now'}
+                    </button>
                 )}
             </div>
         </Link>

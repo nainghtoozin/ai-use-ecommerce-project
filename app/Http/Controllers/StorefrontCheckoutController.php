@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Models\Township;
 use App\Services\CodEligibilityService;
 use App\Services\DeliveryFeeService;
+use App\Services\BuyNowService;
 use App\Services\FlashSaleService;
 use App\Services\ImageService;
 use App\Services\PromotionService;
@@ -33,6 +34,7 @@ class StorefrontCheckoutController extends Controller
         private readonly DeliveryFeeService $deliveryFeeService,
         private readonly CodEligibilityService $codEligibilityService,
         private readonly FlashSaleService $flashSaleService,
+        private readonly BuyNowService $buyNowService,
     ) {}
 
     public function index(Request $request)
@@ -51,8 +53,8 @@ class StorefrontCheckoutController extends Controller
                 ->with('error', 'Please login to continue checkout.');
         }
 
-        $cart = session()->get('cart', []);
-        $cartItems = $this->filterCartByTenant($cart, $tenant);
+        [$cart, $isBuyNow] = $this->resolveSourceCart($tenant);
+        $cartItems = $this->filterCartByTenant($cart, $tenant, $isBuyNow);
 
         if (empty($cartItems) && !$draftPreview) {
             return redirect()->route('storefront.cart', $tenant->slug)
@@ -88,10 +90,10 @@ class StorefrontCheckoutController extends Controller
             $defaultAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
         }
 
-        $appliedCoupon = session()->get('applied_coupon');
+        $appliedCoupon = $isBuyNow ? null : session()->get('applied_coupon');
         $couponDiscount = (float) ($appliedCoupon['discount'] ?? 0);
 
-        $appliedPromotion = session()->get('applied_promotion');
+        $appliedPromotion = $isBuyNow ? null : session()->get('applied_promotion');
         $promotionDiscount = (float) ($appliedPromotion['discount'] ?? 0);
 
         $totalDiscount = $couponDiscount + $promotionDiscount;
@@ -128,6 +130,7 @@ class StorefrontCheckoutController extends Controller
                 'admin_url' => route('storefront.admin.storefront.checkout', ['store_slug' => $tenant->slug]),
             ] : null,
             'cartItems' => array_values($cartItems),
+            'isBuyNow' => $isBuyNow,
             'subtotal' => $subtotal,
             'paymentMethods' => $paymentMethodsFiltered,
             'cities' => $cities,
@@ -179,11 +182,11 @@ class StorefrontCheckoutController extends Controller
             }
         }
 
-        $cart = session()->get('cart', []);
-        $items = $this->filterCartByTenant($cart, $tenant);
+        [$cart, $isBuyNow] = $this->resolveSourceCart($tenant);
+        $items = $this->filterCartByTenant($cart, $tenant, $isBuyNow);
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
 
-        $discountData = $this->resolveDiscountsFromSession($items, 0.0);
+        $discountData = $this->resolveDiscountsFromSession($items, 0.0, $isBuyNow);
         $discount = (float) ($discountData['coupon_discount'] ?? 0)
             + (float) ($discountData['promotion_discount'] ?? 0);
 
@@ -325,8 +328,8 @@ class StorefrontCheckoutController extends Controller
             $paymentScreenshotPath = $this->imageService->upload($request->file('payment_screenshot'), 'payment-proofs');
         }
 
-        $cart = session()->get('cart', []);
-        $cartItems = $this->filterCartByTenant($cart, $tenant);
+        [$cart, $isBuyNow] = $this->resolveSourceCart($tenant);
+        $cartItems = $this->filterCartByTenant($cart, $tenant, $isBuyNow);
 
         if (empty($cartItems)) {
             return back()->with('error', 'Cart is empty.');
@@ -386,7 +389,7 @@ class StorefrontCheckoutController extends Controller
             }
         }
 
-        $discountData = $this->resolveDiscountsFromSession($items, $deliveryFee);
+        $discountData = $this->resolveDiscountsFromSession($items, $deliveryFee, $isBuyNow);
         $couponDiscount = (float) ($discountData['coupon_discount'] ?? 0);
         $promotionDiscount = (float) ($discountData['promotion_discount'] ?? 0);
 
@@ -622,10 +625,15 @@ class StorefrontCheckoutController extends Controller
         ProcessOrderNotifications::dispatch($order, $paymentScreenshotPath)
             ->onQueue('default');
 
-        session()->forget('cart');
-        session()->forget('applied_coupon');
-        session()->forget('applied_promotion');
         session()->forget('checkout_idempotency_key');
+
+        if ($isBuyNow) {
+            $this->buyNowService->clear();
+        } else {
+            session()->forget('cart');
+            session()->forget('applied_coupon');
+            session()->forget('applied_promotion');
+        }
 
         return redirect()->route('storefront.customer.orders.show', [
             'store_slug' => $tenant->slug,
@@ -633,7 +641,17 @@ class StorefrontCheckoutController extends Controller
         ])->with('success', 'Order placed successfully!');
     }
 
-    private function resolveDiscountsFromSession(array $items, float $deliveryFee): array
+    private function resolveSourceCart(Tenant $tenant): array
+    {
+        $buyNow = $this->buyNowService->getActive($tenant);
+        if ($buyNow !== null) {
+            return [$buyNow['items'], true];
+        }
+
+        return [session()->get('cart', []), false];
+    }
+
+    private function resolveDiscountsFromSession(array $items, float $deliveryFee, bool $ignoreManual = false): array
     {
         $result = [
             'coupon_discount' => 0,
@@ -641,6 +659,9 @@ class StorefrontCheckoutController extends Controller
             'promotion' => null,
         ];
 
+        if ($ignoreManual) {
+            return $result;
+        }
         $appliedCoupon = session()->get('applied_coupon');
         if ($appliedCoupon && isset($appliedCoupon['promotion_id'])) {
             $promotion = \App\Models\Promotion::find($appliedCoupon['promotion_id']);
@@ -680,7 +701,7 @@ class StorefrontCheckoutController extends Controller
         return $result;
     }
 
-    private function filterCartByTenant(array $cart, Tenant $tenant): array
+    private function filterCartByTenant(array $cart, Tenant $tenant, bool $ignoreManual = false): array
     {
         if (empty($cart)) {
             return [];
@@ -725,8 +746,8 @@ class StorefrontCheckoutController extends Controller
         $flashSaleData = $this->flashSaleService->getFlashSalesForProducts($cartProductIds);
 
         $promotions = $this->promotionService->getValidAutomaticPromotions();
-        $skipAutoPromotion = (float) (session('applied_promotion')['discount'] ?? 0) > 0;
-        $sessionCoupon = session('applied_coupon');
+        $skipAutoPromotion = $ignoreManual ? false : (float) (session('applied_promotion')['discount'] ?? 0) > 0;
+        $sessionCoupon = $ignoreManual ? null : session('applied_coupon');
         $couponPromotion = !empty($sessionCoupon['promotion_id'])
             ? \App\Models\Promotion::find($sessionCoupon['promotion_id'])
             : null;

@@ -32,6 +32,7 @@ class UpdateProductDisplayConfigRequest extends FormRequest
             'stock.show_out_of_stock' => $boolean,
             'actions' => ['nullable', 'array'],
             'actions.show_add_to_cart' => $boolean,
+            'actions.show_buy_now' => $boolean,
             'actions.show_view_product' => $boolean,
             'actions.show_wishlist' => $boolean,
         ];

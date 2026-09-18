@@ -7,6 +7,7 @@ import RelatedProducts from '@/Components/Storefront/RelatedProducts';
 import ProductImagePlaceholder from '@/Components/ProductImagePlaceholder';
 import { useCart } from '@/Hooks/useCart';
 import { useProductDisplay, formatUnits } from '@/Hooks/useProductDisplay';
+import { useBuyNow, buyNowKey } from '@/Hooks/useBuyNow';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { sanitizeStorefrontHtml } from '@/Utils/sanitizeStorefrontHtml';
@@ -30,6 +31,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     const themeTokens = storefront?.design || {};
     const labels = storefront?.content?.labels || {};
     const { addToCart, addingId } = useCart();
+    const { buyNow, buyingKey } = useBuyNow();
     const pd = useProductDisplay();
     const [selectedOptions, setSelectedOptions] = useState({});
     const [quantity, setQuantity] = useState(1);
@@ -213,8 +215,15 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     };
 
     const renderQuantityAndCart = (sticky = false) => {
-        if (!pd.actions.show_add_to_cart) return null;
+        const showAdd = pd.actions.show_add_to_cart;
+        const showBuy = pd.actions.show_buy_now;
+        if (!showAdd && !showBuy) return null;
+        const buyKey = buyNowKey(product.id, selectedVariant?.id);
+        const buyingThis = buyingKey === buyKey;
+        const buyDisabled = !allOptionsSelected || availableStock <= 0 || buyingThis;
         return (
+        <div className="flex flex-col gap-2">
+        {showAdd && (
         <div className={`flex items-center gap-2 ${sticky ? '' : ''}`}>
             {availableStock > 0 && (
                 <div className="flex items-center border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden shrink-0">
@@ -271,6 +280,24 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                     </>
                 )}
             </button>
+        </div>
+        )}
+        {showBuy && (
+            <button
+                type="button"
+                onClick={() => buyNow({ productId: product.id, quantity, variantId: selectedVariant?.id || null })}
+                disabled={buyDisabled}
+                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold rounded-lg border transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ borderColor: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)', borderRadius: `var(--storefront-radius-button, ${themeTokens.radius?.button || '0.5rem'})` }}
+            >
+                {buyingThis ? (
+                    <svg className="animate-spin h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                ) : (
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                )}
+                {buyingThis ? 'Processing...' : (labels.buy_now || 'Buy Now')}
+            </button>
+        )}
         </div>
         );
     };

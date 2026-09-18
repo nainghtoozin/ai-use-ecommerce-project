@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { useProductDisplay } from '@/Hooks/useProductDisplay';
+import { useBuyNow, buyNowKey } from '@/Hooks/useBuyNow';
 
 function getVariantLabel(variant) {
     const attrs = variant.attributes;
@@ -19,6 +20,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
     const pd = useProductDisplay();
+    const { buyNow, buyingKey } = useBuyNow();
     const lowStockThreshold = pd.stock.low_stock_threshold;
 
     useEffect(() => {
@@ -268,6 +270,16 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                             >
                                 {adding ? 'Adding...' : (labels.add_to_cart || 'Add to Cart')}
                             </button>
+                            {pd.actions.show_buy_now && (
+                            <button
+                                type="button"
+                                onClick={() => buyNow({ productId: product.id, quantity, variantId: selectedVariant.id })}
+                                disabled={!canAddToCart || buyingKey === buyNowKey(product.id, selectedVariant.id)}
+                                className="w-full py-3 bg-white dark:bg-gray-900 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg font-semibold text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {labels.buy_now || 'Buy Now'}
+                            </button>
+                            )}
                         </div>
                     ) : (
                         <p className="text-sm text-center text-amber-600 py-2">

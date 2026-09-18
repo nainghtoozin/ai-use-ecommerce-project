@@ -192,6 +192,7 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
             'store'])->name('checkout.store');
         Route::post('/checkout/quote', [\App\Http\Controllers\StorefrontCheckoutController::class,
             'quote'])->name('checkout.quote');
+        Route::post('/checkout/buy-now', [\App\Http\Controllers\BuyNowController::class, 'store'])->name('checkout.buy-now');
 
     // Store-based customer area (authenticated)
     Route::middleware(['auth:web,accounts', 'tenant.access'])->prefix('customer')->name('customer.')->group(function () {
