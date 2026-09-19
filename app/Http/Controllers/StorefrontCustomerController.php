@@ -343,6 +343,7 @@ class StorefrontCustomerController extends Controller
         $user = $request->user();
 
         $addresses = $user->addresses()
+            ->where('tenant_id', $tenant->id)
             ->with(['city', 'township'])
             ->orderBy('is_default', 'desc')
             ->orderBy('created_at', 'desc')
@@ -388,7 +389,7 @@ class StorefrontCustomerController extends Controller
         $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
 
         if (!empty($validated['is_default'])) {
-            $user->addresses()->update(['is_default' => false]);
+            $user->addresses()->where('tenant_id', $tenant->id)->update(['is_default' => false]);
         }
 
         $user->addresses()->create($validated);
@@ -402,7 +403,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass()) {
+        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass() || (int) $address->tenant_id !== (int) $tenant->id) {
             abort(404);
         }
 
@@ -426,7 +427,7 @@ class StorefrontCustomerController extends Controller
         $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
 
         if (!empty($validated['is_default'])) {
-            $user->addresses()->where('id', '!=', $address->id)->update(['is_default' => false]);
+            $user->addresses()->where('tenant_id', $tenant->id)->where('id', '!=', $address->id)->update(['is_default' => false]);
         }
 
         $address->update($validated);
@@ -440,7 +441,7 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass()) {
+        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass() || (int) $address->tenant_id !== (int) $tenant->id) {
             abort(404);
         }
 
@@ -455,11 +456,11 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass()) {
+        if ($address->user_id !== $user->id || $address->user_type !== $user->getMorphClass() || (int) $address->tenant_id !== (int) $tenant->id) {
             abort(404);
         }
 
-        $user->addresses()->update(['is_default' => false]);
+        $user->addresses()->where('tenant_id', $tenant->id)->update(['is_default' => false]);
         $address->update(['is_default' => true]);
 
         return redirect()->route('storefront.customer.addresses', ['store_slug' => $tenant->slug])

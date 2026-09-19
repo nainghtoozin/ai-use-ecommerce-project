@@ -21,6 +21,7 @@ class PromotionUsage extends Model
     protected $fillable = [
         'promotion_id',
         'user_id',
+        'user_type',
         'order_id',
         'discount_amount',
         'used_at',

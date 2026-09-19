@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessOrderNotifications;
+use App\Models\Account;
 use App\Models\City;
 use App\Models\CustomerAddress;
+use App\Models\CustomerProfile;
 use App\Models\Order;
 use App\Models\PackagingOption;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\Township;
 use App\Services\CodEligibilityService;
 use App\Services\DeliveryFeeService;
@@ -82,12 +85,23 @@ class StorefrontCheckoutController extends Controller
 
         $addresses = collect();
         $defaultAddress = null;
+        $profilePhone = null;
         if (auth()->check()) {
             $addresses = auth()->user()->addresses()
+                ->where('tenant_id', $tenant->id)
                 ->orderBy('is_default', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->get();
             $defaultAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
+
+            if (!$defaultAddress && auth()->user() instanceof Account) {
+                $membership = TenantMembership::where('account_id', auth()->id())
+                    ->where('tenant_id', $tenant->id)
+                    ->first();
+                $profilePhone = $membership
+                    ? CustomerProfile::where('tenant_membership_id', $membership->id)->value('phone')
+                    : null;
+            }
         }
 
         $appliedCoupon = $isBuyNow ? null : session()->get('applied_coupon');
@@ -140,6 +154,7 @@ class StorefrontCheckoutController extends Controller
             'autoPromotions' => $autoPromotions,
             'addresses' => $addresses,
             'defaultAddress' => $defaultAddress,
+            'profilePhone' => $profilePhone,
             'deliveryServices' => $deliveryServices,
             'packagingOptions' => $packagingOptions,
         ]);

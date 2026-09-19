@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Auth\LoginRedirectResolver;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\City;
 use App\Models\CustomerProfile;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Models\Township;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -40,6 +42,7 @@ class RegisteredUserController extends Controller
                 'slug' => $tenant->slug,
                 'store_url' => $tenant->store_url,
             ],
+            'cities' => City::active()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -99,7 +102,14 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone' => ['nullable', 'string', 'max:20', 'required_with:address'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'city_id' => ['nullable', 'integer', 'exists:cities,id'],
+            'township_id' => ['nullable', 'integer', 'exists:townships,id'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
         ]);
+
+        [$cityId, $townshipId, $postalCode] = $this->resolveRegistrationLocation($request);
 
         $account = Account::where('email', $request->email)->first();
         $isNewAccount = false;
@@ -148,6 +158,8 @@ class RegisteredUserController extends Controller
             ['name' => $request->name]
         );
 
+        $this->saveRegistrationContact($account, $tenant, $membership, $request, $cityId, $townshipId, $postalCode);
+
         $account->assignRole($customerRole);
 
         if ($isNewAccount) {
@@ -159,5 +171,57 @@ class RegisteredUserController extends Controller
         Auth::guard('accounts')->login($account);
 
         return redirect()->to(app(LoginRedirectResolver::class)->resolveAfterRegistration($account, $tenant));
+    }
+
+    protected function resolveRegistrationLocation(Request $request): array
+    {
+        $cityId = $request->input('city_id') ?: null;
+        $townshipId = $request->input('township_id') ?: null;
+        $postalCode = trim((string) $request->input('postal_code', ''));
+
+        if ($townshipId) {
+            $township = Township::find($townshipId);
+            if ($township && $cityId && (int) $township->city_id !== (int) $cityId) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'township_id' => 'The selected township is not valid for the chosen city.',
+                ]);
+            }
+            if ($township) {
+                $cityId = $cityId ?: (int) $township->city_id;
+                $postalCode = $postalCode !== '' ? $postalCode : ($township->postal_code ?? '');
+            }
+        }
+
+        return [$cityId, $townshipId, $postalCode];
+    }
+
+    protected function saveRegistrationContact(Account $account, Tenant $tenant, TenantMembership $membership, Request $request, ?int $cityId, ?int $townshipId, string $postalCode): void
+    {
+        $phone = trim((string) $request->input('phone', ''));
+        $address = trim((string) $request->input('address', ''));
+
+        if ($phone !== '') {
+            CustomerProfile::where('tenant_membership_id', $membership->id)->update(['phone' => $phone]);
+        }
+
+        if ($address === '') {
+            return;
+        }
+
+        $parts = preg_split('/\s+/', trim($request->input('name', '')), 2);
+        $hasDefault = $account->addresses()->where('tenant_id', $tenant->id)->where('is_default', true)->exists();
+
+        $account->addresses()->create([
+            'tenant_id' => $tenant->id,
+            'label' => 'Home',
+            'first_name' => $parts[0] ?? $request->input('name', ''),
+            'last_name' => $parts[1] ?? $parts[0] ?? $request->input('name', ''),
+            'phone' => $phone,
+            'address_line' => $address,
+            'city_id' => $cityId,
+            'township_id' => $townshipId,
+            'postal_code' => $postalCode !== '' ? $postalCode : null,
+            'is_default' => !$hasDefault,
+        ]);
     }
 }

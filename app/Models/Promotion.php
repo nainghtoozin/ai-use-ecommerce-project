@@ -153,7 +153,7 @@ class Promotion extends Model
         return $this->usage_count >= $this->usage_limit;
     }
 
-    public function canBeUsedBy(User $user): bool
+    public function canBeUsedBy(User|Account $user): bool
     {
         if ($this->per_customer_limit === null) {
             return true;
@@ -161,6 +161,7 @@ class Promotion extends Model
 
         $count = $this->usages()
             ->where('user_id', $user->id)
+            ->where('user_type', $user->getMorphClass())
             ->count();
 
         return $count < $this->per_customer_limit;
@@ -247,10 +248,11 @@ class Promotion extends Model
         }
     }
 
-    public function recordUsage(Order $order, ?User $user, float $amount): PromotionUsage
+    public function recordUsage(Order $order, User|Account|null $user, float $amount): PromotionUsage
     {
         $usage = $this->usages()->create([
             'user_id' => $user?->id,
+            'user_type' => $user?->getMorphClass(),
             'order_id' => $order->id,
             'discount_amount' => $amount,
             'used_at' => now(),
@@ -280,7 +282,7 @@ class Promotion extends Model
         return $code;
     }
 
-    public function validateForUsage(?User $user = null, array $cart = [], ?float $deliveryFee = 0): array
+    public function validateForUsage(User|Account|null $user = null, array $cart = [], ?float $deliveryFee = 0): array
     {
         $errors = [];
 

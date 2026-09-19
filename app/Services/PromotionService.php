@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Promotion;
+use App\Models\Account;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -11,7 +12,19 @@ use Illuminate\Support\Facades\Log;
 
 class PromotionService
 {
-    public function validatePromotion(?string $code, array $cartItems, ?int $userId = null, ?float $deliveryFee = 0): array
+    private function resolveCustomer(?int $userId): User|Account|null
+    {
+        if (!$userId) {
+            return null;
+        }
+
+        $current = auth()->user();
+        if ($current && (int) $current->getKey() === (int) $userId) {
+            return $current;
+        }
+
+        return User::find($userId) ?? Account::find($userId);
+    }    public function validatePromotion(?string $code, array $cartItems, ?int $userId = null, ?float $deliveryFee = 0): array
     {
         if (empty($code)) {
             return ['valid' => false, 'message' => 'No promotion code provided.'];
@@ -24,7 +37,7 @@ class PromotionService
         }
 
         $errors = $promotion->validateForUsage(
-            $userId ? User::find($userId) : null,
+            $this->resolveCustomer($userId),
             $cartItems,
             $deliveryFee
         );
@@ -56,7 +69,7 @@ class PromotionService
         }
 
         $errors = $promotion->validateForUsage(
-            $userId ? User::find($userId) : null,
+            $this->resolveCustomer($userId),
             $cartItems->toArray(),
             $deliveryFee
         );

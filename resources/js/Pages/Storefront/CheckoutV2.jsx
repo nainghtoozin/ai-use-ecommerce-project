@@ -43,7 +43,7 @@ export default function StorefrontCheckoutV2({
   appliedPromotion: initialAppliedPromotion,
   appliedCoupon: initialCoupon,
   discountAmount: initialDiscountAmount, autoPromotions,
-  addresses = [], defaultAddress = null, previewMode = null,
+  addresses = [], defaultAddress = null, profilePhone = null, previewMode = null,
 }) {
   const { auth, platform_setting, website_info, storefront } = usePage().props;
   const labels = storefront?.content?.labels || {};
@@ -149,8 +149,10 @@ export default function StorefrontCheckoutV2({
           if (t?.postal_code) setForm(prev => ({ ...prev, postal_code: t.postal_code }));
         }
       });
+    } else if (profilePhone) {
+      setForm(prev => (prev.phone ? prev : { ...prev, phone: profilePhone }));
     }
-  }, [defaultAddress]);
+  }, [defaultAddress, profilePhone]);
 
   useEffect(() => {
     setLocalAppliedPromotion(initialAppliedPromotion || null);
@@ -680,6 +682,9 @@ export default function StorefrontCheckoutV2({
                 </SectionIcon>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Delivery Address</h2>
+                  {(defaultAddress || profilePhone) && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Your saved information has been filled in automatically. You can edit it before placing your order.</p>
+                  )}
                   {addresses.length > 0 && (
                     <button type="button" onClick={() => setShowAddressPicker(!showAddressPicker)}
                       className="text-xs font-medium text-[var(--theme-color)] hover:opacity-80 transition-opacity">
