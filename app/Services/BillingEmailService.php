@@ -8,8 +8,13 @@ use App\Mail\Billing\PaymentRejectedMail;
 use App\Mail\Billing\PaymentReviewMail;
 use App\Mail\Billing\PaymentSubmittedMail;
 use App\Mail\Billing\ReceiptIssuedMail;
+use App\Mail\Billing\SubscriptionRenewalReminderMail;
 use App\Models\Invoice;
 use App\Models\PaymentIntent;
+use App\Models\PlatformSetting;
+use App\Models\Subscription;
+use App\Models\SubscriptionAuditLog;
+use App\Models\Tenant;
 use App\Services\Payment\Platform\PaymentTimelineService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -24,8 +29,11 @@ class BillingEmailService
 
     public function resolveMerchantEmail(PaymentIntent $intent): ?string
     {
-        $tenant = $intent->tenant;
+        return $this->resolveTenantMerchantEmail($intent->tenant);
+    }
 
+    private function resolveTenantMerchantEmail(?Tenant $tenant): ?string
+    {
         if (!$tenant) {
             return null;
         }
@@ -163,6 +171,70 @@ class BillingEmailService
     }
 
     public const DOCUMENT_LINK_DAYS = 30;
+
+    public const RENEWAL_REMINDER_EVENT = 'renewal_reminder_email_sent';
+
+    public function renewalReminderDays(): int
+    {
+        try {
+            $days = (int) (PlatformSetting::current()->billing_renewal_reminder_days ?? 7);
+        } catch (\Throwable $e) {
+            return 7;
+        }
+
+        return max(1, min(30, $days));
+    }
+
+    public function sendRenewalReminder(Subscription $subscription): bool
+    {
+        try {
+            if ($subscription->status !== 'active' || !$subscription->expires_at) {
+                return false;
+            }
+
+            $daysRemaining = (int) now()->startOfDay()
+                ->diffInDays($subscription->expires_at->copy()->startOfDay(), false);
+
+            if ($daysRemaining < 0 || $daysRemaining > $this->renewalReminderDays()) {
+                return false;
+            }
+
+            $email = $this->resolveTenantMerchantEmail($subscription->tenant);
+
+            if (!$email) {
+                return false;
+            }
+
+            $anchor = $subscription->expires_at->toDateTimeString();
+
+            $alreadySent = SubscriptionAuditLog::where('subscription_id', $subscription->id)
+                ->where('event', self::RENEWAL_REMINDER_EVENT)
+                ->get()
+                ->contains(fn ($log) => ($log->metadata['expires_at'] ?? null) === $anchor);
+
+            if ($alreadySent) {
+                return false;
+            }
+
+            Mail::to($email)->queue(
+                new SubscriptionRenewalReminderMail($this->renewalReminderData($subscription, $daysRemaining))
+            );
+
+            \App\Services\SubscriptionAuditService::log($subscription, self::RENEWAL_REMINDER_EVENT, [
+                'reason' => "Renewal reminder email sent ({$daysRemaining} day(s) before expiry).",
+                'metadata' => ['expires_at' => $anchor, 'to' => $email, 'days_remaining' => $daysRemaining],
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Subscription renewal reminder email failed.', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
 
     public function resolveReviewerEmails(): array
     {
@@ -332,6 +404,37 @@ class BillingEmailService
             'evidence_count' => $intent->evidences()->count(),
             'review_url' => $this->reviewUrl($intent),
         ]);
+    }
+
+    private function renewalReminderData(Subscription $subscription, int $daysRemaining): array
+    {
+        $tenant = $subscription->tenant;
+        $plan = $subscription->plan;
+        $cycle = $subscription->billing_interval ?? 'monthly';
+        $amount = $cycle === 'yearly' ? $plan?->yearly_price : $plan?->monthly_price;
+
+        return [
+            'app_name' => (string) config('app.name'),
+            'store_name' => $tenant?->name ?? 'Your store',
+            'plan_name' => $plan?->name ?? 'your plan',
+            'billing_cycle' => $cycle,
+            'expires_at' => $subscription->expires_at?->toDateString(),
+            'days_remaining' => $daysRemaining,
+            'renewal_amount' => $this->formatAmount($amount, $plan?->currency ?? 'MMK'),
+            'subscription_reference' => 'SUB-' . str_pad((string) $subscription->id, 6, '0', STR_PAD_LEFT),
+            'billing_url' => $this->subscriptionBillingUrl($subscription),
+        ];
+    }
+
+    private function subscriptionBillingUrl(Subscription $subscription): string
+    {
+        $slug = $subscription->tenant?->slug;
+
+        if ($slug) {
+            return route('storefront.admin.billing', ['store_slug' => $slug]);
+        }
+
+        return route('admin.billing');
     }
 
     private function formatAmount($amount, ?string $currency): string

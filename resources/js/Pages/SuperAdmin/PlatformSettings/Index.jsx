@@ -14,6 +14,7 @@ export default function PlatformSettingsIndex({ settings }) {
     const [trialDays, setTrialDays] = useState(settings.trial_days ?? 14);
     const [allowTrialRenewal, setAllowTrialRenewal] = useState(settings.allow_trial_renewal ?? true);
     const [maxTrialRenewals, setMaxTrialRenewals] = useState(settings.max_trial_renewals ?? 0);
+    const [renewalReminderDays, setRenewalReminderDays] = useState(settings.billing_renewal_reminder_days ?? 7);
     const [currencyCode, setCurrencyCode] = useState(settings.platform_currency_code || 'MMK');
     const [currencySymbol, setCurrencySymbol] = useState(settings.platform_currency_symbol || 'Ks');
     const [currencyPosition, setCurrencyPosition] = useState(settings.platform_currency_position || 'before');
@@ -35,6 +36,7 @@ export default function PlatformSettingsIndex({ settings }) {
         formData.append('trial_days', trialDays.toString());
         formData.append('allow_trial_renewal', allowTrialRenewal ? '1' : '0');
         formData.append('max_trial_renewals', maxTrialRenewals.toString());
+        formData.append('billing_renewal_reminder_days', renewalReminderDays.toString());
         formData.append('platform_currency_code', currencyCode);
         formData.append('platform_currency_symbol', currencySymbol);
         formData.append('platform_currency_position', currencyPosition);
@@ -201,8 +203,29 @@ export default function PlatformSettingsIndex({ settings }) {
                                 </div>
                             </div>
 
-                            {/* Section 4: Currency Settings */}
+                            {/* Section 4: Billing Settings */}
                             <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Billing Reminders</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Renewal reminder email sent to merchants before their subscription expires.</p>
+                                <div>
+                                    <label htmlFor="billing_renewal_reminder_days" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Renewal Reminder (Days Before Expiry)
+                                    </label>
+                                    <input
+                                        id="billing_renewal_reminder_days"
+                                        type="number"
+                                        min="1"
+                                        max="30"
+                                        value={renewalReminderDays}
+                                        onChange={(e) => setRenewalReminderDays(e.target.value)}
+                                        className="w-full max-w-xs rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                    />
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Sent once per billing cycle when this many days remain.</p>
+                                    {errors.billing_renewal_reminder_days && <p className="text-xs text-red-600 mt-1">{errors.billing_renewal_reminder_days}</p>}
+                                </div>
+                            </div>
+
+                            {/* Section 4: Currency Settings */}                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Platform Currency</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Used across all SuperAdmin pages (Plans, Billing, Financial Console, etc.). Merchant stores use their own Website Settings currency.</p>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

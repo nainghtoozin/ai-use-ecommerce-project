@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Subscription;
 use App\Notifications\SubscriptionExpiringSoon;
+use App\Services\BillingEmailService;
 use App\Services\SubscriptionAuditService;
 use Illuminate\Console\Command;
 
@@ -11,6 +12,12 @@ class SendSubscriptionReminders extends Command
 {
     protected $signature = 'subscriptions:send-reminders';
     protected $description = 'Send renewal reminders and trial-ending notifications at configured intervals';
+
+    public function __construct(
+        private readonly BillingEmailService $billingEmails,
+    ) {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -30,7 +37,29 @@ class SendSubscriptionReminders extends Command
         $total = $sent['renewal'] + $sent['trial'];
         $this->info("Sent {$total} reminder(s) ({$sent['renewal']} renewal, {$sent['trial']} trial).");
 
+        $emails = $this->sendRenewalReminderEmails();
+        $this->info("Sent {$emails} renewal reminder email(s).");
+
         return self::SUCCESS;
+    }
+
+    private function sendRenewalReminderEmails(): int
+    {
+        $count = 0;
+        $targetDate = now()->addDays($this->billingEmails->renewalReminderDays())->toDateString();
+
+        Subscription::where('status', 'active')
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', $targetDate)
+            ->chunk(100, function ($subscriptions) use (&$count) {
+                foreach ($subscriptions as $sub) {
+                    if ($this->billingEmails->sendRenewalReminder($sub)) {
+                        $count++;
+                    }
+                }
+            });
+
+        return $count;
     }
 
     private function sendRenewalReminders(\Carbon\Carbon $targetDate, int $days): int

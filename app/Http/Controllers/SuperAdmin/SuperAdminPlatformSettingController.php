@@ -37,6 +37,7 @@ class SuperAdminPlatformSettingController extends Controller
             'trial_days' => 'nullable|integer|min:1|max:365',
             'allow_trial_renewal' => 'boolean',
             'max_trial_renewals' => 'nullable|integer|min:0|max:255',
+            'billing_renewal_reminder_days' => 'nullable|integer|min:1|max:30',
             'platform_currency_code' => 'required|string|max:10',
             'platform_currency_symbol' => 'required|string|max:10',
             'platform_currency_position' => 'required|in:before,after',
@@ -54,6 +55,9 @@ class SuperAdminPlatformSettingController extends Controller
             'trial_days' => $request->integer('trial_days'),
             'allow_trial_renewal' => $request->boolean('allow_trial_renewal'),
             'max_trial_renewals' => $request->integer('max_trial_renewals'),
+            'billing_renewal_reminder_days' => $request->filled('billing_renewal_reminder_days')
+                ? $request->integer('billing_renewal_reminder_days')
+                : 7,
             'platform_currency_code' => $validated['platform_currency_code'],
             'platform_currency_symbol' => $validated['platform_currency_symbol'],
             'platform_currency_position' => $validated['platform_currency_position'],
