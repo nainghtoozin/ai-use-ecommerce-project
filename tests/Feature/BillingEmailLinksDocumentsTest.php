@@ -25,6 +25,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class BillingEmailLinksDocumentsTest extends TestCase
@@ -159,6 +160,59 @@ class BillingEmailLinksDocumentsTest extends TestCase
         });
     }
 
+    public function test_review_email_link_opens_current_payment_state(): void
+    {
+        $roleId = DB::table('roles')->insertGetId([
+            'name' => 'superadmin',
+            'guard_name' => 'web',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $superadmin = \App\Models\User::create([
+            'name' => 'Console Admin',
+            'email' => 'console-admin-' . uniqid() . '@example.com',
+            'password' => 'secret',
+            'status' => 'active',
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id' => $roleId,
+            'model_type' => \App\Models\User::class,
+            'model_id' => $superadmin->id,
+        ]);
+        $superadmin = $superadmin->fresh();
+
+        [$tenant] = $this->makeStack('owner-stale-link@example.com');
+        $intent = $this->makeIntent($tenant);
+        $intent->update(['status' => 'waiting_review']);
+
+        $mail = null;
+        Mail::assertQueued(PaymentReviewMail::class, function ($m) use (&$mail) {
+            $mail = $m;
+
+            return true;
+        });
+
+        $url = $mail->data['review_url'];
+
+        $this->assertStringContainsString('/superadmin/billing', $url);
+        $this->assertStringNotContainsString('waiting_review', $url);
+        $this->assertStringNotContainsString('status=', $url);
+        $this->assertStringContainsString($intent->reference_number, $url);
+
+        app(ManualPaymentService::class)->approvePayment($intent->fresh());
+        $this->assertSame('completed', $intent->fresh()->status);
+
+        $this->actingAs($superadmin);
+
+        $target = parse_url($url, PHP_URL_PATH) . '?' . parse_url($url, PHP_URL_QUERY);
+        $response = $this->get($target);
+        $response->assertOk();
+        $response->assertSee($intent->reference_number, false);
+        $response->assertSee('completed', false);
+
+        $this->get('/superadmin/billing?status=waiting_review')->assertOk();
+    }
+
     public function test_review_email_is_not_duplicated(): void
     {
         config(['identity.use_accounts' => true]);
@@ -216,9 +270,9 @@ class BillingEmailLinksDocumentsTest extends TestCase
 
         app(BillingEmailService::class)->sendInvoiceEmail($intent, $invoice);
 
-        Mail::assertQueued(InvoiceIssuedMail::class, function ($mail) use ($tenant, $invoice) {
-            return str_contains($mail->data['invoice_url'], "/store/{$tenant->slug}/admin/billing/invoices/{$invoice->id}")
-                && str_contains($mail->data['invoice_download_url'], "/store/{$tenant->slug}/admin/billing/invoices/{$invoice->id}/download");
+        Mail::assertQueued(InvoiceIssuedMail::class, function ($mail) use ($invoice) {
+            return str_contains($mail->data['invoice_url'], "/billing/documents/invoices/{$invoice->id}")
+                && str_contains($mail->data['invoice_download_url'], "/billing/documents/invoices/{$invoice->id}/pdf");
         });
     }
 
@@ -556,5 +610,114 @@ class BillingEmailLinksDocumentsTest extends TestCase
                 $table->unique(['prefix', 'date']);
             });
         }
+    }
+
+    public function test_signed_invoice_view_opens_without_login(): void
+    {
+        [$tenant, $plan, $subscription] = $this->makeStack('owner-signed-inv@example.com');
+        $intent = $this->makeIntent($tenant, $plan, $subscription);
+        $invoice = app(InvoiceService::class)->generateFromPaymentIntent($intent);
+
+        $url = URL::temporarySignedRoute(
+            'billing.documents.invoice',
+            now()->addDays(30),
+            ['invoice' => $invoice->id]
+        );
+
+        $response = $this->get($url);
+
+        $response->assertStatus(200);
+        $response->assertSee($invoice->invoice_number, false);
+    }
+
+    public function test_signed_invoice_pdf_download_uses_correct_filename(): void
+    {
+        [$tenant, $plan, $subscription] = $this->makeStack('owner-signed-pdf@example.com');
+        $intent = $this->makeIntent($tenant, $plan, $subscription);
+        $invoice = app(InvoiceService::class)->generateFromPaymentIntent($intent);
+
+        $url = URL::temporarySignedRoute(
+            'billing.documents.invoice.pdf',
+            now()->addDays(30),
+            ['invoice' => $invoice->id]
+        );
+
+        $response = $this->get($url);
+
+        $response->assertStatus(200);
+        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString(
+            'Invoice_' . $invoice->invoice_number . '.pdf',
+            $response->headers->get('Content-Disposition')
+        );
+    }
+
+    public function test_signed_receipt_view_and_pdf(): void
+    {
+        [$tenant, $plan, $subscription] = $this->makeStack('owner-signed-rec@example.com');
+        $intent = $this->makeIntent($tenant, $plan, $subscription);
+
+        $manual = app(ManualPaymentService::class);
+        $manual->confirmPayment($intent);
+        $manual->approvePayment($intent->fresh());
+
+        $receipt = app(ReceiptService::class)->createFromCompletedIntent($intent->fresh());
+
+        $viewUrl = URL::temporarySignedRoute(
+            'billing.documents.receipt',
+            now()->addDays(30),
+            ['receipt' => $receipt->id]
+        );
+        $pdfUrl = URL::temporarySignedRoute(
+            'billing.documents.receipt.pdf',
+            now()->addDays(30),
+            ['receipt' => $receipt->id]
+        );
+
+        $view = $this->get($viewUrl);
+        $view->assertStatus(200);
+        $view->assertSee($receipt->receipt_number, false);
+
+        $pdf = $this->get($pdfUrl);
+        $pdf->assertStatus(200);
+        $this->assertStringContainsString(
+            'Receipt_' . $receipt->receipt_number . '.pdf',
+            $pdf->headers->get('Content-Disposition')
+        );
+    }
+
+    public function test_tampered_document_url_is_rejected(): void
+    {
+        [$tenant, $plan, $subscription] = $this->makeStack('owner-tamper@example.com');
+        $intent = $this->makeIntent($tenant, $plan, $subscription);
+        $invoice = app(InvoiceService::class)->generateFromPaymentIntent($intent);
+
+        $other = $this->makeStack('owner-tamper-b@example.com');
+
+        $url = URL::temporarySignedRoute(
+            'billing.documents.invoice',
+            now()->addDays(30),
+            ['invoice' => $invoice->id]
+        );
+
+        $tampered = preg_replace('/signature=[a-f0-9]+/', 'signature=0', $url);
+
+        $this->get($tampered)->assertStatus(403);
+        $this->get('/billing/documents/invoices/' . $invoice->id)->assertStatus(403);
+    }
+
+    public function test_expired_document_url_is_rejected(): void
+    {
+        [$tenant, $plan, $subscription] = $this->makeStack('owner-expired@example.com');
+        $intent = $this->makeIntent($tenant, $plan, $subscription);
+        $invoice = app(InvoiceService::class)->generateFromPaymentIntent($intent);
+
+        $url = URL::temporarySignedRoute(
+            'billing.documents.invoice',
+            now()->subMinute(),
+            ['invoice' => $invoice->id]
+        );
+
+        $this->get($url)->assertStatus(403);
     }
 }

@@ -6,7 +6,9 @@ use App\Auth\IdentityResolver;
 use App\Events\BillingPaymentApproved;
 use App\Events\BillingPaymentRejected;
 use App\Events\BillingPaymentSubmitted;
+use App\Models\Account;
 use App\Models\PaymentIntent;
+use App\Models\User;
 use App\Notifications\BillingPaymentApprovedMerchantNotification;
 use App\Notifications\BillingPaymentRejectedMerchantNotification;
 use App\Notifications\BillingPaymentSubmittedAdminNotification;
@@ -22,10 +24,16 @@ class BillingNotificationService
     public function notifyPaymentSubmitted(PaymentIntent $intent): void
     {
         try {
-            $superAdmins = IdentityResolver::resolveSuperAdmins();
+            $superAdminIds = IdentityResolver::resolveSuperAdmins();
 
-            if ($superAdmins->isNotEmpty()) {
-                Notification::send($superAdmins, new BillingPaymentSubmittedAdminNotification($intent));
+            if ($superAdminIds->isNotEmpty()) {
+                $superAdmins = config('identity.use_accounts')
+                    ? Account::whereIn('id', $superAdminIds)->get()
+                    : User::whereIn('id', $superAdminIds)->get();
+
+                if ($superAdmins->isNotEmpty()) {
+                    Notification::send($superAdmins, new BillingPaymentSubmittedAdminNotification($intent));
+                }
             }
 
             $this->billingEmails->sendSubmittedEmail($intent);

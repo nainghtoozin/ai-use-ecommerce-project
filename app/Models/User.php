@@ -15,7 +15,10 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 {
-    use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, HasRoles, SyncsIdentity;
+    use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, SyncsIdentity;
+    use HasRoles {
+        getAllPermissions as getSpatieAllPermissions;
+    }
 
     protected function getCounterpartClass(): string
     {
@@ -165,7 +168,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
             return \Spatie\Permission\Models\Permission::all();
         }
 
-        return parent::getAllPermissions();
+        return $this->getSpatieAllPermissions();
     }
 
     public function scopeOwners($query)

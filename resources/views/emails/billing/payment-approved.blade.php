@@ -18,5 +18,12 @@
 <tr><td style="padding:6px 0;color:#64748b;">Subscription period</td><td style="padding:6px 0;text-align:right;">{{ $subscription_period }}</td></tr>
 @endif
 </table>
-<p style="margin:16px 0 0;">@if(!empty($receipt_url))<a href="{{ $receipt_url }}" style="display:inline-block;padding:10px 20px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">View Receipt</a> @endif@if(!empty($invoice_url))<a href="{{ $invoice_url }}" style="display:inline-block;padding:10px 20px;border:1px solid #cbd5e1;color:#334155;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">View Invoice</a>@endif</p>
+<p style="margin:16px 0 0;">
+@if(!empty($receipt_url))
+<a href="{{ $receipt_url }}" style="display:inline-block;padding:10px 20px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">View Receipt</a>
+@endif
+@if(!empty($invoice_url))
+<a href="{{ $invoice_url }}" style="display:inline-block;padding:10px 20px;border:1px solid #cbd5e1;color:#334155;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">View Invoice</a>
+@endif
+</p>
 @endsection

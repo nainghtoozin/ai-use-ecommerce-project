@@ -253,7 +253,36 @@ class TenantBootstrapService
             ]
         );
 
+        $this->attachLegacyUserToTenant($tenant, $owner->email);
+
         return $owner;
+    }
+
+    /**
+     * Attach the same-email legacy User record to the tenant.
+     *
+     * In dual-identity mode the storefront guard resolves legacy User
+     * sessions via users.tenant_id, while ownership lives on the Account
+     * membership. Without this mapping a merchant authenticated through
+     * the web guard is denied access to their own store (403) even
+     * though their counterpart Account owns it.
+     *
+     * Only attaches users that currently belong to no tenant, so an
+     * existing mapping is never stolen or overwritten.
+     */
+    protected function attachLegacyUserToTenant(Tenant $tenant, ?string $email): void
+    {
+        if (empty($email)) {
+            return;
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if (!$user || !empty($user->tenant_id)) {
+            return;
+        }
+
+        $user->update(['tenant_id' => $tenant->id]);
     }
 
     /**

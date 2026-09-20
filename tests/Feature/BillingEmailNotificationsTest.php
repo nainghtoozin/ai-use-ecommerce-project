@@ -20,6 +20,7 @@ use App\Services\BillingEmailService;
 use App\Services\InvoiceService;
 use App\Services\Payment\Platform\ManualPaymentService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -132,12 +133,12 @@ class BillingEmailNotificationsTest extends TestCase
         $service->sendReceiptEmail($intent->fresh(), $receipt);
         $service->sendReceiptEmail($intent->fresh(), $receipt);
 
-        Mail::assertQueued(ReceiptIssuedMail::class, function ($mail) use ($tenant, $receipt) {
+        Mail::assertQueued(ReceiptIssuedMail::class, function ($mail) use ($receipt) {
             return $mail->hasTo('owner-receiptmail@example.com')
                 && $mail->envelope()->subject === 'Payment receipt — ' . $receipt->receipt_number
                 && $mail->data['receipt_number'] === $receipt->receipt_number
-                && str_contains($mail->data['receipt_url'], "/store/{$tenant->slug}/admin/billing/documents/receipts/{$receipt->id}")
-                && str_contains($mail->data['receipt_download_url'], "/store/{$tenant->slug}/admin/billing/documents/receipts/{$receipt->id}/pdf");
+                && str_contains($mail->data['receipt_url'], "/billing/documents/receipts/{$receipt->id}")
+                && str_contains($mail->data['receipt_download_url'], "/billing/documents/receipts/{$receipt->id}/pdf");
         });
         Mail::assertQueued(ReceiptIssuedMail::class, 1);
     }
@@ -186,6 +187,133 @@ class BillingEmailNotificationsTest extends TestCase
         app(BillingEmailService::class)->sendSubmittedEmail($intent);
 
         Mail::assertNothingQueued();
+    }
+
+    public function test_all_billing_mailables_render_without_errors(): void
+    {
+        $base = [
+            'app_name' => 'TestShop',
+            'store_name' => 'Email Shop',
+            'plan_name' => 'Pro',
+            'billing_cycle' => 'monthly',
+            'amount' => '50000.00 MMK',
+            'currency' => 'MMK',
+            'reference_number' => 'PAY-TEST123',
+            'billing_url' => 'https://example.com/store/demo/admin/billing',
+        ];
+
+        $cases = [
+            new PaymentSubmittedMail($base),
+            new PaymentApprovedMail(array_merge($base, [
+                'approval_status' => 'Approved',
+                'invoice_number' => 'INV-2026-00001',
+                'subscription_period' => '2026-09-01 → 2026-10-01',
+            ])),
+            new PaymentRejectedMail(array_merge($base, ['rejection_reason' => 'Blurry screenshot'])),
+            new ReceiptIssuedMail(array_merge($base, [
+                'receipt_number' => 'REC-2026-00001',
+                'receipt_total' => '50000.00 MMK',
+                'paid_at' => '2026-09-18',
+                'invoice_number' => 'INV-2026-00001',
+                'subscription_period' => '2026-09-01 → 2026-10-01',
+                'receipt_url' => 'https://example.com/receipt',
+                'receipt_download_url' => 'https://example.com/receipt.pdf',
+            ])),
+            new InvoiceIssuedMail(array_merge($base, [
+                'invoice_number' => 'INV-2026-00001',
+                'invoice_total' => '50000.00 MMK',
+                'invoice_status' => 'paid',
+                'billing_period' => '2026-09-01 → 2026-10-01',
+                'issued_at' => '2026-09-18',
+                'invoice_url' => 'https://example.com/invoice',
+                'invoice_download_url' => 'https://example.com/invoice.pdf',
+            ])),
+            new \App\Mail\Billing\PaymentReviewMail(array_merge($base, [
+                'merchant_name' => 'Email Shop',
+                'merchant_email' => 'owner@example.com',
+                'payment_method' => 'Manual transfer',
+                'transfer_date' => '2026-09-18',
+                'transfer_time' => '14:30',
+                'submitted_at' => '2026-09-18 10:00:00',
+                'evidence_count' => 1,
+                'review_url' => 'https://example.com/superadmin/billing',
+            ])),
+        ];
+
+        foreach ($cases as $mailable) {
+            $html = $mailable->render();
+            $this->assertStringContainsString('Pro', $html);
+        }
+
+        $this->assertStringContainsString('PAY-TEST123', (new PaymentSubmittedMail($base))->render());
+        $this->assertStringContainsString('INV-2026-00001', (new InvoiceIssuedMail(array_merge($base, [
+            'invoice_number' => 'INV-2026-00001', 'invoice_total' => '1.00 MMK', 'invoice_status' => 'paid',
+            'billing_period' => null, 'issued_at' => null, 'invoice_url' => null, 'invoice_download_url' => null,
+        ])))->render());
+    }
+
+    public function test_reviewer_resolution_finds_superadmin_account(): void
+    {
+        $role = \App\Models\Role::withoutTenantScope()->firstOrCreate([
+            'name' => 'superadmin', 'guard_name' => 'web', 'tenant_id' => null,
+        ]);
+
+        $account = \App\Models\Account::create([
+            'name' => 'Super Staff',
+            'email' => 'superstaff@example.com',
+            'password' => 'secret',
+            'status' => 'active',
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id' => $role->id,
+            'model_type' => \App\Models\Account::class,
+            'model_id' => $account->id,
+        ]);
+
+        $this->assertContains('superstaff@example.com', app(BillingEmailService::class)->resolveReviewerEmails());
+    }
+
+    public function test_reviewer_resolution_survives_active_merchant_tenant(): void
+    {
+        $role = \App\Models\Role::withoutTenantScope()->firstOrCreate([
+            'name' => 'superadmin', 'guard_name' => 'web', 'tenant_id' => null,
+        ]);
+
+        $email = 'tenant-proof-superadmin-' . uniqid() . '@example.com';
+        $account = Account::create([
+            'name' => 'Tenant Proof SuperAdmin',
+            'email' => $email,
+            'password' => 'secret',
+            'status' => 'active',
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id' => $role->id,
+            'model_type' => Account::class,
+            'model_id' => $account->id,
+        ]);
+
+        $merchant = Tenant::create([
+            'slug' => 'reviewer-tenant-' . uniqid(),
+            'name' => 'Reviewer Tenant',
+            'status' => 'active',
+        ]);
+        \App\Models\Role::withoutTenantScope()->create([
+            'name' => 'admin',
+            'guard_name' => 'web',
+            'tenant_id' => $merchant->id,
+        ]);
+
+        $this->assertSame([$email], app(BillingEmailService::class)->resolveReviewerEmails());
+
+        Tenant::setCurrent($merchant);
+        try {
+            $this->assertSame([$email], app(BillingEmailService::class)->resolveReviewerEmails());
+
+            $this->assertSame(0, \App\Models\Role::where('name', 'superadmin')->count());
+            $this->assertSame(1, \App\Models\Role::where('name', 'admin')->count());
+        } finally {
+            \Illuminate\Support\Facades\App::forgetInstance('current.tenant');
+        }
     }
 
     private function makeStack(string $ownerEmail): array

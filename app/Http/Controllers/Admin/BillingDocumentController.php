@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Receipt;
 use App\Models\Tenant;
+use App\Services\BillingEmailService;
 use App\Services\ReceiptService;
 use App\Services\SubscriptionDocumentPdfService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 class BillingDocumentController extends Controller
 {
@@ -29,10 +31,11 @@ class BillingDocumentController extends Controller
         return view('billing.documents.invoice', [
             'invoice' => $invoice,
             'tenant' => $tenant,
-            'downloadUrl' => route('storefront.admin.billing.documents.invoice.pdf', [
-                'store_slug' => $tenant->slug,
-                'invoice' => $invoice->id,
-            ]),
+            'downloadUrl' => URL::temporarySignedRoute(
+                'billing.documents.invoice.pdf',
+                now()->addDays(BillingEmailService::DOCUMENT_LINK_DAYS),
+                ['invoice' => $invoice->id]
+            ),
         ]);
     }
 
@@ -70,10 +73,11 @@ class BillingDocumentController extends Controller
         return view('billing.documents.receipt', [
             'receipt' => $receipt,
             'tenant' => $tenant,
-            'downloadUrl' => route('storefront.admin.billing.documents.receipt.pdf', [
-                'store_slug' => $tenant->slug,
-                'receipt' => $receipt->id,
-            ]),
+            'downloadUrl' => URL::temporarySignedRoute(
+                'billing.documents.receipt.pdf',
+                now()->addDays(BillingEmailService::DOCUMENT_LINK_DAYS),
+                ['receipt' => $receipt->id]
+            ),
         ]);
     }
 
@@ -92,5 +96,49 @@ class BillingDocumentController extends Controller
         $receipt->load(['invoice.plan', 'invoice.subscription', 'tenant', 'paymentIntent']);
 
         return $documents->receipt($receipt, $request->boolean('view'));
+    }
+
+    public function publicInvoice(Invoice $invoice)
+    {
+        $invoice->load(['plan', 'subscription', 'paymentIntent', 'receipt', 'tenant']);
+
+        return view('billing.documents.invoice', [
+            'invoice' => $invoice,
+            'tenant' => $invoice->tenant,
+            'downloadUrl' => URL::temporarySignedRoute(
+                'billing.documents.invoice.pdf',
+                now()->addDays(BillingEmailService::DOCUMENT_LINK_DAYS),
+                ['invoice' => $invoice->id]
+            ),
+        ]);
+    }
+
+    public function publicInvoicePdf(Invoice $invoice, SubscriptionDocumentPdfService $documents)
+    {
+        $invoice->load(['plan', 'subscription', 'paymentIntent', 'tenant']);
+
+        return $documents->invoice($invoice);
+    }
+
+    public function showReceiptPublic(Receipt $receipt)
+    {
+        $receipt->load(['invoice.plan', 'invoice.subscription', 'tenant', 'paymentIntent']);
+
+        return view('billing.documents.receipt', [
+            'receipt' => $receipt,
+            'tenant' => $receipt->tenant,
+            'downloadUrl' => URL::temporarySignedRoute(
+                'billing.documents.receipt.pdf',
+                now()->addDays(BillingEmailService::DOCUMENT_LINK_DAYS),
+                ['receipt' => $receipt->id]
+            ),
+        ]);
+    }
+
+    public function receiptPdfPublic(Receipt $receipt, SubscriptionDocumentPdfService $documents)
+    {
+        $receipt->load(['invoice.plan', 'invoice.subscription', 'tenant', 'paymentIntent']);
+
+        return $documents->receipt($receipt);
     }
 }

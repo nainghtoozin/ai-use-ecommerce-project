@@ -824,6 +824,19 @@ Route::prefix('payment')->name('payment.')->group(function () {
     });
 });
 
+// ============================================================
+// PUBLIC BILLING DOCUMENT ROUTES (signed email links — no login)
+// ============================================================
+// Read-only invoice/receipt views for emailed documents. Access is
+// granted solely by Laravel's signed-URL verification (tamper-proof
+// id + 30-day expiry). No approval/rejection actions live here.
+Route::prefix('billing/documents')->name('billing.documents.')->middleware('signed')->group(function () {
+    Route::get('/invoices/{invoice}', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'publicInvoice'])->name('invoice');
+    Route::get('/invoices/{invoice}/pdf', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'publicInvoicePdf'])->name('invoice.pdf');
+    Route::get('/receipts/{receipt}', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'showReceiptPublic'])->name('receipt');
+    Route::get('/receipts/{receipt}/pdf', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'receiptPdfPublic'])->name('receipt.pdf');
+});
+
 // Auth
 require __DIR__ . '/auth.php';
 

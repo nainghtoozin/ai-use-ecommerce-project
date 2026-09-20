@@ -15,5 +15,12 @@
 @endif
 <tr><td style="padding:6px 0;color:#64748b;">Status</td><td style="padding:6px 0;text-align:right;font-weight:bold;">{{ ucfirst($invoice_status) }}</td></tr>
 </table>
-<p style="margin:16px 0 0;">@if(!empty($invoice_url))<a href="{{ $invoice_url }}" style="display:inline-block;padding:10px 20px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">View Invoice</a> @endif@if(!empty($invoice_download_url))<a href="{{ $invoice_download_url }}" style="display:inline-block;padding:10px 20px;border:1px solid #cbd5e1;color:#334155;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">Download Invoice</a>@endif</p>
+<p style="margin:16px 0 0;">
+@if(!empty($invoice_url))
+<a href="{{ $invoice_url }}" style="display:inline-block;padding:10px 20px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">View Invoice</a>
+@endif
+@if(!empty($invoice_download_url))
+<a href="{{ $invoice_download_url }}" style="display:inline-block;padding:10px 20px;border:1px solid #cbd5e1;color:#334155;text-decoration:none;border-radius:8px;font-size:14px;font-weight:bold;">Download Invoice</a>
+@endif
+</p>
 @endsection

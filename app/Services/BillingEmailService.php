@@ -14,6 +14,7 @@ use App\Services\Payment\Platform\PaymentTimelineService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 class BillingEmailService
 {
@@ -135,72 +136,72 @@ class BillingEmailService
 
     public function sendReviewEmail(PaymentIntent $intent): void
     {
-        $recipients = $this->resolveReviewerEmails();
-
-        if (empty($recipients)) {
-            return;
-        }
-
-        $round = (string) ($intent->metadata['submission_key'] ?? 'once');
-        $lock = Cache::lock("billing-email:{$intent->id}:email.review:{$round}", 10);
-
-        if (!$lock->get()) {
-            return;
-        }
-
         try {
-            $alreadySent = $this->timeline->getByType($intent, 'email.review')
-                ->contains(function ($event) use ($round) {
-                    return ($event->metadata['submission_key'] ?? 'once') === $round;
-                });
+            $recipients = $this->resolveReviewerEmails();
 
-            if ($alreadySent) {
+            if (empty($recipients)) {
+                Log::warning('Billing review email skipped: no SuperAdmin recipients resolved.', [
+                    'intent_id' => $intent->id,
+                ]);
+
                 return;
             }
 
-            foreach ($recipients as $email) {
-                Mail::to($email)->queue(new PaymentReviewMail($this->reviewData($intent)));
-            }
+            $round = (string) ($intent->metadata['submission_key'] ?? 'once');
 
-            $this->timeline->record(
-                intent: $intent,
-                type: 'email.review',
-                description: 'Admin review email sent.',
-                metadata: ['submission_key' => $round],
-            );
+            foreach ($recipients as $email) {
+                $this->sendOnce($intent, 'email.review', $email, function () use ($intent) {
+                    return new PaymentReviewMail($this->reviewData($intent));
+                }, $round);
+            }
         } catch (\Throwable $e) {
             Log::warning('Billing review email failed.', [
                 'intent_id' => $intent->id,
                 'error' => $e->getMessage(),
             ]);
-        } finally {
-            $lock->release();
         }
     }
 
+    public const DOCUMENT_LINK_DAYS = 30;
+
     public function resolveReviewerEmails(): array
     {
-        $ids = \App\Auth\IdentityResolver::resolveSuperAdmins();
+        $emails = collect();
 
-        if ($ids->isEmpty()) {
-            return [];
+        try {
+            $emails = $emails->merge(
+                \App\Models\Account::whereHas('roles', function ($query) {
+                    $query->withoutTenantScope()->where('name', 'superadmin');
+                })->pluck('email')
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Billing reviewer account lookup failed.', ['error' => $e->getMessage()]);
         }
 
-        if (config('identity.use_accounts')) {
-            $emails = \App\Models\Account::whereIn('id', $ids)->pluck('email');
-        } else {
-            $emails = \App\Models\User::whereIn('id', $ids)->pluck('email');
+        try {
+            $emails = $emails->merge(
+                \App\Models\User::whereHas('roles', function ($query) {
+                    $query->withoutTenantScope()->where('name', 'superadmin');
+                })->pluck('email')
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Billing reviewer user lookup failed.', ['error' => $e->getMessage()]);
         }
 
         return $emails->filter()->unique()->values()->all();
     }
 
-    private function sendOnce(PaymentIntent $intent, string $type, string $email, callable $factory): void
+    private function sendOnce(PaymentIntent $intent, string $type, string $email, callable $factory, ?string $round = null): void
     {
-        $round = (string) ($intent->metadata['submission_key'] ?? 'once');
-        $lock = Cache::lock("billing-email:{$intent->id}:{$type}:{$round}", 10);
+        $round ??= (string) ($intent->metadata['submission_key'] ?? 'once');
 
-        if (!$lock->get()) {
+        try {
+            $lock = Cache::lock("billing-email:{$intent->id}:{$type}:{$round}", 10);
+        } catch (\Throwable $e) {
+            $lock = null;
+        }
+
+        if ($lock && !$lock->get()) {
             return;
         }
 
@@ -229,7 +230,13 @@ class BillingEmailService
                 'error' => $e->getMessage(),
             ]);
         } finally {
-            $lock->release();
+            if (isset($lock)) {
+                try {
+                    $lock->release();
+                } catch (\Throwable $e) {
+                    // Best effort only; the lock expires on its own.
+                }
+            }
         }
     }
 
@@ -323,13 +330,30 @@ class BillingEmailService
             'transfer_time' => $evidence?->metadata['transfer_time'] ?? null,
             'submitted_at' => $intent->created_at?->toDateTimeString(),
             'evidence_count' => $intent->evidences()->count(),
-            'review_url' => route('superadmin.billing.index', ['status' => 'waiting_review']),
+            'review_url' => $this->reviewUrl($intent),
         ]);
     }
 
     private function formatAmount($amount, ?string $currency): string
     {
         return number_format((float) $amount, 2) . ' ' . ($currency ?? 'MMK');
+    }
+
+    /**
+     * Link the SuperAdmin to the Billing Console focused on this payment.
+     *
+     * The console renders live database state, so the URL carries the
+     * payment reference as a search term and never a status filter.
+     * A stale status (e.g. waiting_review) would hide the payment after
+     * it is approved or rejected.
+     */
+    private function reviewUrl(PaymentIntent $intent): string
+    {
+        if ($intent->reference_number) {
+            return route('superadmin.billing.index', ['search' => $intent->reference_number]);
+        }
+
+        return route('superadmin.billing.index');
     }
 
     private function billingUrl(PaymentIntent $intent): string
@@ -345,57 +369,53 @@ class BillingEmailService
 
     private function invoiceUrl(PaymentIntent $intent, ?Invoice $invoice): ?string
     {
-        $slug = $intent->tenant?->slug;
-
-        if (!$slug || !$invoice) {
+        if (!$invoice) {
             return null;
         }
 
-        return route('storefront.admin.billing.invoices.show', [
-            'store_slug' => $slug,
-            'invoice' => $invoice->id,
-        ]);
+        return URL::temporarySignedRoute(
+            'billing.documents.invoice',
+            now()->addDays(self::DOCUMENT_LINK_DAYS),
+            ['invoice' => $invoice->id]
+        );
     }
 
     private function invoiceDownloadUrl(PaymentIntent $intent, ?Invoice $invoice): ?string
     {
-        $slug = $intent->tenant?->slug;
-
-        if (!$slug || !$invoice) {
+        if (!$invoice) {
             return null;
         }
 
-        return route('storefront.admin.billing.invoices.download', [
-            'store_slug' => $slug,
-            'invoice' => $invoice->id,
-        ]);
+        return URL::temporarySignedRoute(
+            'billing.documents.invoice.pdf',
+            now()->addDays(self::DOCUMENT_LINK_DAYS),
+            ['invoice' => $invoice->id]
+        );
     }
 
     private function receiptViewUrl(PaymentIntent $intent, $receipt): ?string
     {
-        $slug = $intent->tenant?->slug;
-
-        if (!$slug || !$receipt) {
+        if (!$receipt) {
             return null;
         }
 
-        return route('storefront.admin.billing.documents.receipt', [
-            'store_slug' => $slug,
-            'receipt' => $receipt->id,
-        ]);
+        return URL::temporarySignedRoute(
+            'billing.documents.receipt',
+            now()->addDays(self::DOCUMENT_LINK_DAYS),
+            ['receipt' => $receipt->id]
+        );
     }
 
     private function receiptDownloadUrl(PaymentIntent $intent, $receipt): ?string
     {
-        $slug = $intent->tenant?->slug;
-
-        if (!$slug || !$receipt) {
+        if (!$receipt) {
             return null;
         }
 
-        return route('storefront.admin.billing.documents.receipt.pdf', [
-            'store_slug' => $slug,
-            'receipt' => $receipt->id,
-        ]);
+        return URL::temporarySignedRoute(
+            'billing.documents.receipt.pdf',
+            now()->addDays(self::DOCUMENT_LINK_DAYS),
+            ['receipt' => $receipt->id]
+        );
     }
 }
