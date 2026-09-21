@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -17,12 +18,14 @@ class UserTyping implements ShouldBroadcastNow
         public int $senderId,
         public int $receiverId,
         public string $senderName,
-        public bool $isTyping = true
+        public bool $isTyping = true,
+        public ?string $senderType = null,
+        public ?string $receiverType = null
     ) {}
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('chat.' . $this->receiverId)];
+        return [new PrivateChannel(IdentityResolver::chatChannel($this->receiverId, $this->receiverType))];
     }
 
     public function broadcastAs(): string

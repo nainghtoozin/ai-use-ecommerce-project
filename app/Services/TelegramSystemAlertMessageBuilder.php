@@ -4,12 +4,208 @@ namespace App\Services;
 
 use App\Data\TelegramPayload;
 use App\Models\Order;
+use App\Models\PaymentIntent;
 use App\Models\Product;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class TelegramSystemAlertMessageBuilder
 {
+    public function billingPaymentSubmitted(PaymentIntent $intent): TelegramPayload
+    {
+        $intent->loadMissing('plan', 'tenant');
+
+        $lines = [];
+        $lines[] = "<b>💰 Billing Payment Submitted</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($intent->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($intent->plan?->name ?? 'N/A');
+        $lines[] = "💰 <b>Amount:</b> " . number_format((float) $intent->amount) . ' ' . ($intent->currency ?? '');
+        $lines[] = "🔄 <b>Cycle:</b> " . e($intent->billing_cycle ?? 'N/A');
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.payment_submitted',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.payment_submitted',
+                'tenant_id' => $intent->tenant_id,
+                'payment_intent_id' => $intent->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingPaymentApproved(PaymentIntent $intent): TelegramPayload
+    {
+        $intent->loadMissing('plan', 'tenant');
+
+        $lines = [];
+        $lines[] = "<b>✅ Billing Payment Approved</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($intent->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($intent->plan?->name ?? 'N/A');
+        $lines[] = "💰 <b>Amount:</b> " . number_format((float) $intent->amount) . ' ' . ($intent->currency ?? '');
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.payment_approved',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.payment_approved',
+                'tenant_id' => $intent->tenant_id,
+                'payment_intent_id' => $intent->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingPaymentRejected(PaymentIntent $intent, ?string $reason = null): TelegramPayload
+    {
+        $intent->loadMissing('plan', 'tenant');
+
+        $lines = [];
+        $lines[] = "<b>❌ Billing Payment Rejected</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($intent->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($intent->plan?->name ?? 'N/A');
+
+        if ($reason) {
+            $lines[] = "⚠️ <b>Reason:</b> " . e($reason);
+        }
+
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.payment_rejected',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.payment_rejected',
+                'tenant_id' => $intent->tenant_id,
+                'payment_intent_id' => $intent->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingSubscriptionExpiring(Subscription $subscription, int $days): TelegramPayload
+    {
+        $subscription->loadMissing('plan', 'tenant');
+        $planName = $subscription->plan?->name ?? 'Current';
+
+        $lines = [];
+        $lines[] = "<b>⏳ Subscription Expiring Soon</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($planName);
+        $lines[] = "📅 <b>Expires:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+        $lines[] = "⏱️ <b>Remaining:</b> {$days} day(s)";
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.subscription_expiring',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.subscription_expiring',
+                'tenant_id' => $subscription->tenant_id,
+                'subscription_id' => $subscription->id,
+                'days_remaining' => $days,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingSubscriptionPastDue(Subscription $subscription): TelegramPayload
+    {
+        $subscription->loadMissing('plan', 'tenant');
+        $planName = $subscription->plan?->name ?? 'Current';
+
+        $lines = [];
+        $lines[] = "<b>⚠️ Subscription Past Due</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($planName);
+        $lines[] = "📅 <b>Expired:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+        $lines[] = "Grace period ends soon — renew to avoid restriction.";
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.subscription_past_due',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.subscription_past_due',
+                'tenant_id' => $subscription->tenant_id,
+                'subscription_id' => $subscription->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingSubscriptionExpired(Subscription $subscription): TelegramPayload
+    {
+        $subscription->loadMissing('plan', 'tenant');
+        $planName = $subscription->plan?->name ?? 'Current';
+
+        $lines = [];
+        $lines[] = "<b>⛔ Subscription Expired</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($planName);
+        $lines[] = "Features are now restricted — renew to restore full access.";
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.subscription_expired',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.subscription_expired',
+                'tenant_id' => $subscription->tenant_id,
+                'subscription_id' => $subscription->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingSubscriptionRenewed(Subscription $subscription): TelegramPayload
+    {
+        $subscription->loadMissing('plan', 'tenant');
+        $planName = $subscription->plan?->name ?? 'Current';
+
+        $lines = [];
+        $lines[] = "<b>✅ Subscription Renewed</b>";
+        $lines[] = "";
+        $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+        $lines[] = "📦 <b>Plan:</b> " . e($planName);
+        $lines[] = "📅 <b>Next renewal:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+        $lines[] = "";
+        $lines[] = "🕐 " . now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.subscription_renewed',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.subscription_renewed',
+                'tenant_id' => $subscription->tenant_id,
+                'subscription_id' => $subscription->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
     public function paymentSuccess(Order $order): TelegramPayload
     {
         $order->loadMissing('paymentMethod', 'tenant');

@@ -24,6 +24,13 @@ function normalizeNotification(n, overrides = {}) {
     };
 }
 
+function reloadOnExpiredSession(err) {
+    if (err?.response?.status === 419 && !window.__csrfReloaded) {
+        window.__csrfReloaded = true;
+        window.location.reload();
+    }
+}
+
 function playNotificationSound() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -118,8 +125,9 @@ export default function usePusherNotifications() {
             return;
         }
         const userId = auth.user.id;
-        console.debug('[Pusher] Subscribing to private channel:', `notifications.user.${userId}`);
-        const channel = window.Echo.private(`notifications.user.${userId}`);
+        const channelName = `notifications.${auth.user?.identity_type === 'account' ? 'account' : 'user'}.${userId}`;
+        console.debug('[Pusher] Subscribing to private channel:', channelName);
+        const channel = window.Echo.private(channelName);
 
         channel.listen('.order.placed', (e) => {
             console.debug('[Pusher] Event received: .order.placed', e);
@@ -180,10 +188,10 @@ export default function usePusherNotifications() {
         });
 
         return () => {
-            window.Echo.leave(`notifications.user.${userId}`);
+            window.Echo.leave(channelName);
             Object.values(typingTimeouts.current).forEach(clearTimeout);
         };
-    }, [auth?.user?.id, addNotification, preferences]);
+    }, [auth?.user?.id, auth?.user?.identity_type, addNotification, preferences]);
 
     const navigateToNotification = useCallback((notification) => {
         if (notification.actionUrl) {
@@ -205,6 +213,7 @@ export default function usePusherNotifications() {
             } catch (err) {
                 setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)));
                 setUnreadCount((prev) => prev + 1);
+                reloadOnExpiredSession(err);
             }
         }
     }, [notifications]);
@@ -219,6 +228,7 @@ export default function usePusherNotifications() {
         } catch (err) {
             setNotifications(prevNotifications);
             setUnreadCount(prevCount);
+            reloadOnExpiredSession(err);
         }
     }, [notifications, unreadCount]);
 

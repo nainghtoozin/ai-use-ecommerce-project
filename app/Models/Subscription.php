@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Jobs\SendTelegramMessageJob;
 use App\Models\Traits\TenantAware;
 use App\Notifications\SubscriptionRenewed;
+use App\Services\NotificationPreferenceService;
+use App\Services\TelegramSystemAlertMessageBuilder;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
@@ -236,7 +239,13 @@ class Subscription extends Model
         }
 
         $this->tenant->unlock();
-        $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
+        if (app(NotificationPreferenceService::class)->tenantAllows($this->tenant_id)) {
+            $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
+        }
+        SendTelegramMessageJob::dispatchForTenant(
+            $this->tenant_id,
+            app(TelegramSystemAlertMessageBuilder::class)->billingSubscriptionRenewed($this),
+        );
     }
 
     public function cancelImmediately(): void
@@ -382,7 +391,13 @@ class Subscription extends Model
         }
 
         $this->tenant->unlock();
-        $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
+        if (app(NotificationPreferenceService::class)->tenantAllows($this->tenant_id)) {
+            $this->tenant->notifyAdmins(new SubscriptionRenewed($this));
+        }
+        SendTelegramMessageJob::dispatchForTenant(
+            $this->tenant_id,
+            app(TelegramSystemAlertMessageBuilder::class)->billingSubscriptionRenewed($this),
+        );
     }
 
     /**

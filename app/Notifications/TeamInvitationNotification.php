@@ -2,13 +2,14 @@
 
 namespace App\Notifications;
 
+use App\Contracts\HasDatabaseTenantId;
 use App\Models\PlatformSetting;
 use App\Models\TeamInvitation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class TeamInvitationNotification extends Notification implements ShouldQueue
+class TeamInvitationNotification extends Notification implements ShouldQueue, HasDatabaseTenantId
 {
     use Queueable;
 
@@ -19,6 +20,11 @@ class TeamInvitationNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    public function databaseTenantId(): ?int
+    {
+        return $this->invitation->tenant_id;
     }
 
     public function toArray(object $notifiable): array

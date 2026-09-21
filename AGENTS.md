@@ -257,8 +257,9 @@ During grace period, tenant is redirected to billing page (not blocked).
 php artisan subscriptions:process-expired
 # Options: --dry-run (preview without applying)
 
-# Daily: Send renewal reminders
+# Daily: Send renewal + trial reminders (14/7/3/1-day thresholds, per-cycle deduped)
 php artisan subscriptions:send-reminders
+# Options: --dry-run (preview without dispatching)
 
 # Hourly: Apply scheduled plan changes
 php artisan subscriptions:apply-scheduled-changes
@@ -266,7 +267,22 @@ php artisan subscriptions:apply-scheduled-changes
 
 Pre-existing (do NOT duplicate):
 - `subscriptions:process-expired` — full lifecycle (use this, NOT `subscriptions:process-expiry`)
-- `subscriptions:send-expiry-warnings` — 7/3/1 day warnings
+- `subscriptions:send-reminders` is the single canonical reminder command (`subscriptions:send-expiry-warnings` was removed as a 7/3-day duplicate)
+
+### Production Operations (Queue Worker Required)
+
+`QUEUE_CONNECTION=database`. All notification jobs (`ProcessOrderNotifications`, `ProcessOrderStatusChange`, `SendTelegramMessageJob`, queued mails) run on the `default` queue; `RetryBroadcast` runs on the `broadcasts` queue. Without a persistent worker, queued notifications, Telegram sends, and broadcast retries silently never run. Tests use `sync` — production must NOT.
+
+```bash
+# Cron (scheduler only — does NOT process queues):
+* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
+
+# Persistent worker (supervisor/systemd), restart on every deploy:
+php artisan queue:work --queue=default,broadcasts --sleep=3 --tries=3 --timeout=90 --max-time=3600
+php artisan queue:restart  # after each deploy
+```
+
+Rules: worker `--timeout` (90s) must stay >= longest job timeout (60s) and aligned with `DB_QUEUE_RETRY_AFTER` (90s); jobs declare `tries: 3` with backoff; triage poison pills via `failed_jobs` (`php artisan queue:failed`, `queue:retry`, `queue:flush`). Pusher delivery additionally requires `BROADCAST_CONNECTION=pusher` + `PUSHER_APP_*` + matching `VITE_PUSHER_APP_*` and a frontend rebuild.
 
 ---
 

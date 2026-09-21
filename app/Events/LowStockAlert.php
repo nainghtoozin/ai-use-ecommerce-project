@@ -25,7 +25,7 @@ class LowStockAlert implements ShouldBroadcast
         $channels = [];
         $admins = IdentityResolver::resolveTenantAdmins($this->product->tenant_id);
         foreach ($admins as $admin) {
-            $channels[] = new PrivateChannel('notifications.user.'.$admin->id);
+            $channels[] = new PrivateChannel(IdentityResolver::notificationChannelFor($admin));
         }
 
         return $channels;

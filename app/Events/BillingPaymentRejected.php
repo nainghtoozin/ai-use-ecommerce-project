@@ -21,7 +21,7 @@ class BillingPaymentRejected implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return IdentityResolver::resolveTenantOwnersAndAdmins($this->intent->tenant_id)
-            ->map(fn($id) => new PrivateChannel('notifications.user.' . $id))
+            ->map(fn($id) => new PrivateChannel(IdentityResolver::notificationChannel($id)))
             ->toArray();
     }
 

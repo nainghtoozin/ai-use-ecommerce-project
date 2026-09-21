@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Auth\IdentityResolver;
 use App\Services\ImageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -274,9 +275,7 @@ class Tenant extends Model
 
     public function notifyAdmins($notification): void
     {
-        $admins = $this->users()->whereHas('roles', function ($q) {
-            $q->where('name', 'admin');
-        })->get();
+        $admins = IdentityResolver::resolveTenantAdmins($this->id);
 
         Notification::send($admins, $notification);
     }

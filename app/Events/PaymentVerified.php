@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\Order;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -19,7 +20,9 @@ class PaymentVerified implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('notifications.user.'.$this->order->user_id)];
+        $channel = IdentityResolver::notificationChannelForOrderUser($this->order);
+
+        return $channel ? [new PrivateChannel($channel)] : [];
     }
 
     public function broadcastAs(): string

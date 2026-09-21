@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\ProcessOrderStatusChange;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentMethod;
@@ -561,6 +562,14 @@ class OrderService
     private function fireLowStockAlert($product, int $threshold): void
     {
         $tenantId = is_object($product) ? $product->tenant_id : null;
+        $itemKey = is_object($product) && (int) ($product->stock ?? 1) === 0
+            ? 'item_out_of_stock'
+            : 'item_low_stock';
+
+        if (!$this->preferenceService->tenantAllows($tenantId, 'notification_inventory_enabled', $itemKey)) {
+            return;
+        }
+
         $admins = $tenantId
             ? IdentityResolver::resolveTenantAdmins($tenantId)
             : collect();
@@ -607,6 +616,8 @@ class OrderService
 
         app(OrderStatusTransitionService::class)->transition($order, $newStatus);
 
+        $this->dispatchStatusChangeNotification($order->fresh(), $oldStatus, $newStatus);
+
         $order->loadMissing('user');
         if (!$order->user || $this->preferenceService->userWantsNotification($order->user, 'order_status_changed')) {
             BroadcastService::fire(new OrderStatusChanged($order->fresh(), $oldStatus, $newStatus), [
@@ -621,6 +632,25 @@ class OrderService
     {
         $order->update(['payment_status' => $status]);
         return $order->fresh();
+    }
+
+    private const STATUS_JOB_EVENTS = [
+        Order::ORDER_STATUS_CONFIRMED => 'confirmed',
+        Order::ORDER_STATUS_PROCESSING => 'processing',
+        Order::ORDER_STATUS_SHIPPED => 'shipped',
+        Order::ORDER_STATUS_DELIVERED => 'delivered',
+        Order::ORDER_STATUS_CANCELLED => 'cancelled_by_admin',
+    ];
+
+    private function dispatchStatusChangeNotification(Order $order, ?string $oldStatus, string $newStatus): void
+    {
+        $event = self::STATUS_JOB_EVENTS[$newStatus] ?? null;
+
+        if ($event === null || $oldStatus === $newStatus) {
+            return;
+        }
+
+        ProcessOrderStatusChange::dispatch($order, $event, $oldStatus);
     }
 
     public function getFilteredOrders(array $filters)

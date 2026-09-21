@@ -21,7 +21,7 @@ class BillingPaymentSubmitted implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return IdentityResolver::resolveSuperAdmins()
-            ->map(fn($id) => new PrivateChannel('notifications.user.' . $id))
+            ->map(fn($id) => new PrivateChannel(IdentityResolver::notificationChannel($id)))
             ->toArray();
     }
 

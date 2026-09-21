@@ -22,16 +22,19 @@ class OrderPlaced implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        $customerChannel = 'notifications.user.'.$this->order->user_id;
-        $channels = [new PrivateChannel($customerChannel)];
+        $channels = [];
+
+        if ($customerChannel = IdentityResolver::notificationChannelForOrderUser($this->order)) {
+            $channels[] = new PrivateChannel($customerChannel);
+        }
 
         $admins = IdentityResolver::resolveTenantAdmins($this->order->tenant_id);
         foreach ($admins as $admin) {
-            $channels[] = new PrivateChannel('notifications.user.'.$admin->id);
+            $channels[] = new PrivateChannel(IdentityResolver::notificationChannelFor($admin));
         }
 
         Log::debug('[OrderPlaced] Broadcasting to channels:', [
-            'customer_channel' => $customerChannel,
+            'customer_channel' => $customerChannel ?? null,
             'admin_channels' => $admins->pluck('id')->toArray(),
         ]);
 

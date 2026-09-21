@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Auth\IdentityResolver;
 use App\Models\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -22,10 +23,21 @@ class MessageSent implements ShouldBroadcast
     {
         $channels = [];
 
-        $channels[] = new PrivateChannel('chat.'.$this->message->receiver_id);
-        $channels[] = new PrivateChannel('chat.'.$this->message->sender_id);
+        foreach (['receiver', 'sender'] as $role) {
+            $party = $this->message->{$role};
 
-        return $channels;
+            $name = $party
+                ? IdentityResolver::chatChannelFor($party)
+                : ($this->message->{$role.'_id'}
+                    ? IdentityResolver::chatChannel((int) $this->message->{$role.'_id'}, $this->message->{$role.'_type'})
+                    : null);
+
+            if ($name) {
+                $channels[$name] = new PrivateChannel($name);
+            }
+        }
+
+        return array_values($channels);
     }
 
     public function broadcastAs(): string

@@ -9,6 +9,7 @@ use App\Events\BillingPaymentSubmitted;
 use App\Models\Account;
 use App\Models\PaymentIntent;
 use App\Models\User;
+use App\Jobs\SendTelegramMessageJob;
 use App\Notifications\BillingPaymentApprovedMerchantNotification;
 use App\Notifications\BillingPaymentRejectedMerchantNotification;
 use App\Notifications\BillingPaymentSubmittedAdminNotification;
@@ -19,6 +20,8 @@ class BillingNotificationService
 {
     public function __construct(
         private readonly BillingEmailService $billingEmails,
+        private readonly TelegramSystemAlertMessageBuilder $telegramBuilder,
+        private readonly NotificationPreferenceService $preferenceService,
     ) {}
 
     public function notifyPaymentSubmitted(PaymentIntent $intent): void
@@ -39,6 +42,13 @@ class BillingNotificationService
             $this->billingEmails->sendSubmittedEmail($intent);
             $this->billingEmails->sendReviewEmail($intent);
 
+            if ($this->preferenceService->tenantAllows($intent->tenant_id)) {
+                SendTelegramMessageJob::dispatchForTenant(
+                    $intent->tenant_id,
+                    $this->telegramBuilder->billingPaymentSubmitted($intent),
+                );
+            }
+
             BroadcastService::fire(new BillingPaymentSubmitted($intent), [
                 'intent_id' => $intent->id,
             ]);
@@ -53,6 +63,10 @@ class BillingNotificationService
     public function notifyPaymentApproved(PaymentIntent $intent): void
     {
         try {
+            if (!$this->preferenceService->tenantAllows($intent->tenant_id)) {
+                return;
+            }
+
             $tenant = $intent->tenant;
 
             if ($tenant) {
@@ -62,6 +76,11 @@ class BillingNotificationService
             BroadcastService::fire(new BillingPaymentApproved($intent), [
                 'intent_id' => $intent->id,
             ]);
+
+            SendTelegramMessageJob::dispatchForTenant(
+                $intent->tenant_id,
+                $this->telegramBuilder->billingPaymentApproved($intent),
+            );
         } catch (\Throwable $e) {
             Log::warning('Billing payment approved notification failed.', [
                 'intent_id' => $intent->id,
@@ -75,17 +94,29 @@ class BillingNotificationService
         try {
             $intent->loadMissing('reviews');
 
+            $merchantAlerts = $this->preferenceService->tenantAllows($intent->tenant_id);
+
             $tenant = $intent->tenant;
 
-            if ($tenant) {
+            if ($tenant && $merchantAlerts) {
                 $tenant->notifyAdmins(new BillingPaymentRejectedMerchantNotification($intent));
             }
 
             $this->billingEmails->sendRejectedEmail($intent);
 
-            BroadcastService::fire(new BillingPaymentRejected($intent), [
-                'intent_id' => $intent->id,
-            ]);
+            if ($merchantAlerts) {
+                SendTelegramMessageJob::dispatchForTenant(
+                    $intent->tenant_id,
+                    $this->telegramBuilder->billingPaymentRejected(
+                        $intent,
+                        $intent->reviews->first()?->reason
+                    ),
+                );
+
+                BroadcastService::fire(new BillingPaymentRejected($intent), [
+                    'intent_id' => $intent->id,
+                ]);
+            }
         } catch (\Throwable $e) {
             Log::warning('Billing payment rejected notification failed.', [
                 'intent_id' => $intent->id,

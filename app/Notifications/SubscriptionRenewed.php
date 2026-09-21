@@ -2,11 +2,12 @@
 
 namespace App\Notifications;
 
+use App\Contracts\HasDatabaseTenantId;
 use App\Models\Subscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class SubscriptionRenewed extends Notification
+class SubscriptionRenewed extends Notification implements HasDatabaseTenantId
 {
     use Queueable;
 
@@ -17,6 +18,11 @@ class SubscriptionRenewed extends Notification
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    public function databaseTenantId(): ?int
+    {
+        return $this->subscription->tenant_id;
     }
 
     public function toArray(object $notifiable): array

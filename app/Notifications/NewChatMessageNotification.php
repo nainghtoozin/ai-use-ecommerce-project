@@ -2,11 +2,12 @@
 
 namespace App\Notifications;
 
+use App\Contracts\HasDatabaseTenantId;
 use App\Models\Message;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class NewChatMessageNotification extends Notification
+class NewChatMessageNotification extends Notification implements HasDatabaseTenantId
 {
     use Queueable;
 
@@ -17,6 +18,11 @@ class NewChatMessageNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    public function databaseTenantId(): ?int
+    {
+        return $this->message->tenant_id;
     }
 
     public function toArray(object $notifiable): array

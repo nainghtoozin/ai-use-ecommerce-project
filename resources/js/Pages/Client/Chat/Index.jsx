@@ -29,7 +29,8 @@ export default function ChatIndex({ conversations = [] }) {
 
     useEffect(() => {
         if (auth?.user?.id) {
-            const channel = window.Echo.private(`chat.${auth.user.id}`);
+            const chatChannel = `chat.${auth.user?.identity_type === 'account' ? 'account' : 'user'}.${auth.user.id}`;
+            const channel = window.Echo.private(chatChannel);
             channel.listen('.message.sent', (e) => {
                 const msg = e;
                 if (selectedUser && (msg.sender_id === selectedUser.id || msg.receiver_id === selectedUser.id)) {
@@ -48,11 +49,11 @@ export default function ChatIndex({ conversations = [] }) {
                 }
             });
             return () => {
-                window.Echo.leave(`chat.${auth.user.id}`);
+                window.Echo.leave(chatChannel);
                 clearTimeout(typingTimeoutRef.current);
             };
         }
-    }, [selectedUser, auth?.user?.id, scrollToBottom]);
+    }, [selectedUser, auth?.user?.id, auth?.user?.identity_type, scrollToBottom]);
 
     async function loadMessages(userId, beforeId) {
         setLoading(true);

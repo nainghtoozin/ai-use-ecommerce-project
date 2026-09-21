@@ -2,11 +2,12 @@
 
 namespace App\Notifications;
 
+use App\Contracts\HasDatabaseTenantId;
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class PaymentConfirmedNotification extends Notification
+class PaymentConfirmedNotification extends Notification implements HasDatabaseTenantId
 {
     use Queueable;
 
@@ -20,6 +21,11 @@ class PaymentConfirmedNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    public function databaseTenantId(): ?int
+    {
+        return $this->order->tenant_id;
     }
 
     /**

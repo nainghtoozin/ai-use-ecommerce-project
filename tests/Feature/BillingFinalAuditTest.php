@@ -217,12 +217,13 @@ class BillingFinalAuditTest extends TestCase
 
         foreach ([
             'subscriptions:process-expired',
-            'subscriptions:send-expiry-warnings',
             'subscriptions:send-reminders',
             'subscriptions:apply-scheduled-changes',
         ] as $command) {
             $this->assertContains($command, $commands, "Missing command: {$command}");
         }
+
+        $this->assertNotContains('subscriptions:send-expiry-warnings', $commands, 'Duplicate reminder command was not removed');
     }
 
     private function makeTenant(array $overrides = []): Tenant

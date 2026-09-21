@@ -4,6 +4,7 @@ namespace App\Auth;
 
 use App\Contracts\ResolvesMembership;
 use App\Models\Account;
+use App\Models\Order;
 use App\Models\TenantMembership;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -183,5 +184,44 @@ class IdentityResolver
     public static function resolveModelClass(): string
     {
         return config('identity.use_accounts') ? Account::class : User::class;
+    }
+
+    public static function notificationChannel(int $id, ?string $modelClass = null): string
+    {
+        $modelClass ??= static::resolveModelClass();
+        $segment = $modelClass === Account::class ? 'account' : 'user';
+
+        return "notifications.{$segment}.{$id}";
+    }
+
+    public static function notificationChannelFor(object $notifiable): string
+    {
+        return static::notificationChannel($notifiable->id, $notifiable::class);
+    }
+
+    public static function notificationChannelForOrderUser(Order $order): ?string
+    {
+        if ($order->user) {
+            return static::notificationChannelFor($order->user);
+        }
+
+        if ($order->user_id) {
+            return static::notificationChannel((int) $order->user_id, $order->user_type);
+        }
+
+        return null;
+    }
+
+    public static function chatChannel(int $id, ?string $modelClass = null): string
+    {
+        $modelClass ??= static::resolveModelClass();
+        $segment = $modelClass === Account::class ? 'account' : 'user';
+
+        return "chat.{$segment}.{$id}";
+    }
+
+    public static function chatChannelFor(object $notifiable): string
+    {
+        return static::chatChannel($notifiable->id, $notifiable::class);
     }
 }

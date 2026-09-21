@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Auth\IdentityResolver;
 use App\Events\MessageSent;
 use App\Events\UserTyping;
+use App\Models\Account;
 use App\Models\Message;
 use App\Models\Tenant;
 use App\Models\User;
@@ -210,9 +211,12 @@ class ChatController extends Controller
         $senderName = method_exists($sender, 'getDisplayName') ? $sender->getDisplayName() : $sender->name;
         $receiverId = (int) $request->receiver_id;
         $isTyping = $request->is_typing ?? true;
+        $receiverType = User::whereKey($receiverId)->exists()
+            ? User::class
+            : (Account::whereKey($receiverId)->exists() ? Account::class : null);
 
         try {
-            event(new UserTyping($senderId, $receiverId, $senderName, $isTyping));
+            event(new UserTyping($senderId, $receiverId, $senderName, $isTyping, $sender->getMorphClass(), $receiverType));
         } catch (\Throwable $e) {
             Log::warning('Failed to broadcast UserTyping', [
                 'sender_id' => $senderId,

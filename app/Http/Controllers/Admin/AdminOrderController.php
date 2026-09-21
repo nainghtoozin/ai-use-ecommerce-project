@@ -6,8 +6,6 @@ use App\Auth\IdentityResolver;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessOrderStatusChange;
 use App\Models\Order;
-use App\Events\PaymentVerified;
-use App\Events\PaymentRejected;
 use App\Services\OrderService;
 use App\Services\OrderWorkflow;
 use App\Services\PerPageTrait;
@@ -178,8 +176,6 @@ class AdminOrderController extends Controller
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_CONFIRMED);
 
-            ProcessOrderStatusChange::dispatch($order, 'confirmed', 'pending');
-
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order confirmed. Stock has been deducted.');
         } catch (\Exception $e) {
@@ -202,8 +198,6 @@ class AdminOrderController extends Controller
             $this->orderWorkflow->assertCanProcessOrder($order);
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_PROCESSING);
-
-            ProcessOrderStatusChange::dispatch($order, 'processing');
 
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order is now being processed.');
@@ -228,8 +222,6 @@ class AdminOrderController extends Controller
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_SHIPPED);
 
-            ProcessOrderStatusChange::dispatch($order, 'shipped');
-
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order marked as shipped.');
         } catch (\Exception $e) {
@@ -252,8 +244,6 @@ class AdminOrderController extends Controller
             $this->orderWorkflow->assertCanDeliverOrder($order);
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_DELIVERED);
-
-            ProcessOrderStatusChange::dispatch($order, 'delivered');
 
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order marked as delivered.');
@@ -280,8 +270,6 @@ class AdminOrderController extends Controller
             }
 
             $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_CANCELLED);
-
-            ProcessOrderStatusChange::dispatch($order, 'cancelled_by_admin');
 
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Order cancelled. Stock has been restored.');
@@ -314,8 +302,6 @@ class AdminOrderController extends Controller
             ]);
 
             ProcessOrderStatusChange::dispatch($order, 'payment_verified');
-
-            event(new PaymentVerified($order));
 
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Payment verified successfully.');
@@ -351,8 +337,6 @@ class AdminOrderController extends Controller
             ]);
 
             ProcessOrderStatusChange::dispatch($order, 'payment_rejected', rejectionReason: $request->rejection_reason);
-
-            event(new PaymentRejected($order));
 
             return admin_redirect('admin.orders.show', $id)
                 ->with('success', 'Payment rejected.');

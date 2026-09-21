@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Auth\IdentityResolver;
 use App\Models\Order;
-use App\Models\Setting;
 use App\Services\TelegramNotificationRouter;
 use App\Services\TelegramOrderMessageBuilder;
 use App\Services\TelegramRecipientResolver;
@@ -51,9 +50,11 @@ class ProcessOrderStatusChange implements ShouldQueue
 
         $this->logActivity();
 
-        $notificationsEnabled = Setting::get('notifications_enabled', 'true', $this->order->tenant_id) === 'true';
+        $alertsAllowed = $preferenceService->tenantAllows(
+            $this->order->tenant_id, 'notification_orders_enabled', $this->getTenantSettingKey()
+        );
 
-        if ($notificationsEnabled) {
+        if ($alertsAllowed) {
             $userNotif = $this->getUserNotification();
             if ($userNotif && $this->order->user && $preferenceService->userWantsNotification($this->order->user, $userNotif['pref_key'])) {
                 try {
@@ -88,7 +89,7 @@ class ProcessOrderStatusChange implements ShouldQueue
             }
         }
 
-        $this->dispatchTelegramStatusChange();
+        $this->dispatchTelegramStatusChange($alertsAllowed);
     }
 
     public function failed(\Throwable $e): void
@@ -100,13 +101,17 @@ class ProcessOrderStatusChange implements ShouldQueue
         ]);
     }
 
-    private function dispatchTelegramStatusChange(): void
+    private function dispatchTelegramStatusChange(bool $allowed): void
     {
         try {
             Log::info('[ProcessOrderStatusChange] Status notification requested', [
                 'order_id' => $this->order->id,
                 'event' => $this->event,
             ]);
+
+            if (!$allowed) {
+                return;
+            }
 
             $resolver = app(TelegramRecipientResolver::class);
             $integrations = $resolver->resolve($this->order);
@@ -249,6 +254,15 @@ class ProcessOrderStatusChange implements ShouldQueue
             'cancelled_by_customer' => ['class' => OrderCancelledNotification::class, 'pref_key' => 'order_cancelled'],
             'payment_proof_uploaded' => ['class' => PaymentProofUploadedNotification::class, 'pref_key' => 'payment_proof_uploaded'],
             default => null,
+        };
+    }
+
+    private function getTenantSettingKey(): string
+    {
+        return match ($this->event) {
+            'cancelled_by_admin', 'cancelled_by_customer' => 'item_order_cancelled',
+            'payment_proof_uploaded' => 'item_payment_proof_uploaded',
+            default => 'item_order_status_changed',
         };
     }
 

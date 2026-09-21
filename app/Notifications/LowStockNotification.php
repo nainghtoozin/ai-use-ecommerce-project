@@ -2,11 +2,12 @@
 
 namespace App\Notifications;
 
+use App\Contracts\HasDatabaseTenantId;
 use App\Models\Product;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class LowStockNotification extends Notification
+class LowStockNotification extends Notification implements HasDatabaseTenantId
 {
     use Queueable;
 
@@ -18,6 +19,11 @@ class LowStockNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    public function databaseTenantId(): ?int
+    {
+        return $this->product->tenant_id;
     }
 
     public function toArray(object $notifiable): array

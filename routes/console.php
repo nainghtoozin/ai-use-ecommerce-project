@@ -13,6 +13,9 @@ Schedule::command('messages:cleanup')->daily();
 // ── Activity logs cleanup ──
 Schedule::command('activity-logs:cleanup')->dailyAt('03:00');
 
+// ── Database notifications retention ──
+Schedule::command('notifications:prune')->dailyAt('04:00');
+
 // ── Team invitations ──
 Schedule::command('invitations:expire')->everyFifteenMinutes();
 Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();
@@ -21,6 +24,5 @@ Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();
 // Process lifecycle transitions every 5 minutes during business hours,
 // hourly otherwise (prevents subscriptions lingering past thresholds).
 Schedule::command('subscriptions:process-expired')->everyFiveMinutes();
-Schedule::command('subscriptions:send-expiry-warnings')->dailyAt('08:00');
 Schedule::command('subscriptions:send-reminders')->dailyAt('09:00');
 Schedule::command('subscriptions:apply-scheduled-changes')->hourly();

@@ -11,8 +11,10 @@ use App\Listeners\GenerateInvoiceFromCompletedIntent;
 use App\Listeners\CreateReceiptFromCompletedIntent;
 use App\Listeners\MarkInvoiceRejected;
 use App\Listeners\PaymentTimelineEventSubscriber;
+use App\Listeners\StampDatabaseNotificationTenant;
 use App\Listeners\UpdateAccountLastLogin;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -33,6 +35,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         Verified::class => [
             ActivateTenantOnVerified::class,
+        ],
+        NotificationSent::class => [
+            StampDatabaseNotificationTenant::class,
         ],
     ];
 

@@ -9,8 +9,6 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\PaymentMethod;
 use App\Services\FeatureGate;
-use App\Events\PaymentVerified;
-use App\Events\PaymentRejected;
 use App\Jobs\ProcessOrderStatusChange;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -633,8 +631,6 @@ class AdminReportController extends Controller
 
             ProcessOrderStatusChange::dispatch($order, 'payment_verified');
 
-            event(new PaymentVerified($order));
-
             return redirect()->back()->with('success', "Payment for Order #{$order->id} verified successfully.");
         } catch (\Exception $e) {
             Log::error('Payment verification failed: ' . $e->getMessage());
@@ -674,8 +670,6 @@ class AdminReportController extends Controller
                 'payment_rejected',
                 rejectionReason: $validated['rejection_reason'] ?? null,
             );
-
-            event(new PaymentRejected($order));
 
             return redirect()->back()->with('success', "Payment for Order #{$order->id} rejected.");
         } catch (\Exception $e) {

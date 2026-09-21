@@ -2,7 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Data\TelegramPayload;
+use App\Models\Setting;
 use App\Models\TelegramIntegration;
+use App\Services\TelegramNotificationRouter;
+use App\Services\TelegramRecipientResolver;
 use App\Services\TelegramService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,6 +31,46 @@ class SendTelegramMessageJob implements ShouldQueue
         public ?string $chatId = null,
         public ?array $payload = null,
     ) {}
+
+    public static function dispatchForTenant(int $tenantId, TelegramPayload $payload): int
+    {
+        try {
+            if (Setting::get('notifications_enabled', 'true', $tenantId) !== 'true') {
+                return 0;
+            }
+
+            $integrations = app(TelegramRecipientResolver::class)->resolve(null, $tenantId);
+
+            if ($integrations->isEmpty()) {
+                return 0;
+            }
+
+            $router = app(TelegramNotificationRouter::class);
+            $dispatched = 0;
+
+            foreach ($integrations as $integration) {
+                foreach ($router->resolve($integration, $payload->destination ?? 'payment') as $target) {
+                    static::dispatch(
+                        $integration,
+                        $payload->message,
+                        $target['chat_id'],
+                        $payload->toArray(),
+                    )->onQueue('default');
+                    $dispatched++;
+                }
+            }
+
+            return $dispatched;
+        } catch (\Throwable $e) {
+            Log::warning('Telegram tenant dispatch failed', [
+                'tenant_id' => $tenantId,
+                'notification_type' => $payload->notificationType,
+                'error' => $e->getMessage(),
+            ]);
+
+            return 0;
+        }
+    }
 
     public function handle(TelegramService $telegramService): void
     {

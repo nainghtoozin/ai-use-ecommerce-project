@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+    use App\Jobs\SendTelegramMessageJob;
     use App\Models\Subscription;
     use App\Notifications\SubscriptionExpired;
+    use App\Notifications\SubscriptionPastDue;
     use App\Notifications\SubscriptionSuspended;
     use App\Services\SubscriptionAuditService;
     use Illuminate\Support\Facades\DB;
@@ -13,6 +15,11 @@ class SubscriptionExpiryService
 {
     public const GRACE_DAYS = 7;
     public const SUSPEND_DAYS_AFTER_EXPIRY = 1;
+
+    public function __construct(
+        private readonly TelegramSystemAlertMessageBuilder $telegramBuilder,
+        private readonly NotificationPreferenceService $preferenceService,
+    ) {}
 
     public function process(): array
     {
@@ -62,7 +69,13 @@ class SubscriptionExpiryService
                         : "[" . now() . "] Expired — entered 7-day grace period (past_due).",
                 ]);
 
-                $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+                if ($this->preferenceService->tenantAllows($sub->tenant_id)) {
+                    $sub->tenant->notifyAdmins(new SubscriptionPastDue($sub));
+                }
+                SendTelegramMessageJob::dispatchForTenant(
+                    $sub->tenant_id,
+                    $this->telegramBuilder->billingSubscriptionPastDue($sub),
+                );
                 return ['old_status' => $oldStatus, 'event' => 'past_due'];
             }
         );
@@ -86,6 +99,13 @@ class SubscriptionExpiryService
                 ]);
 
                 $sub->tenant->lock();
+                if ($this->preferenceService->tenantAllows($sub->tenant_id)) {
+                    $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+                }
+                SendTelegramMessageJob::dispatchForTenant(
+                    $sub->tenant_id,
+                    $this->telegramBuilder->billingSubscriptionExpired($sub),
+                );
 
                 return ['old_status' => $oldStatus, 'event' => 'expired'];
             }
@@ -111,7 +131,9 @@ class SubscriptionExpiryService
 
                 $sub->tenant->update(['status' => 'suspended']);
                 $sub->tenant->lock();
-                $sub->tenant->notifyAdmins(new SubscriptionSuspended($sub));
+                if ($this->preferenceService->tenantAllows($sub->tenant_id)) {
+                    $sub->tenant->notifyAdmins(new SubscriptionSuspended($sub));
+                }
 
                 return ['old_status' => $oldStatus, 'event' => 'suspended'];
             }
@@ -134,7 +156,9 @@ class SubscriptionExpiryService
                 ]);
 
                 $sub->tenant->lock();
-                $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+                if ($this->preferenceService->tenantAllows($sub->tenant_id)) {
+                    $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+                }
 
                 return ['old_status' => $oldStatus, 'event' => 'trial_ended'];
             }

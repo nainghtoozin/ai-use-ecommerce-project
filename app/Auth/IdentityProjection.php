@@ -64,6 +64,7 @@ class IdentityProjection
 
         return [
             'id' => $user->id,
+            'identity_type' => $user instanceof Account ? 'account' : 'user',
             'display_name' => $displayName,
             'name' => $displayName,
             'first_name' => $nameParts[0] ?? '',

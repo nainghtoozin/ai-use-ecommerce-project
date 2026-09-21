@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Auth\IdentityResolver;
 use App\Models\Order;
-use App\Models\Setting;
 use App\Services\TelegramNotificationRouter;
 use App\Services\TelegramOrderMessageBuilder;
 use App\Services\TelegramRecipientResolver;
@@ -47,7 +46,12 @@ class ProcessOrderNotifications implements ShouldQueue
         NotificationPreferenceService $preferenceService,
     ): void {
         try {
-            $notificationsEnabled = Setting::get('notifications_enabled', 'true', $this->order->tenant_id) === 'true';
+            $orderAlerts = $preferenceService->tenantAllows(
+                $this->order->tenant_id, 'notification_orders_enabled', 'item_new_order'
+            );
+            $proofAlerts = $preferenceService->tenantAllows(
+                $this->order->tenant_id, 'notification_orders_enabled', 'item_payment_proof_uploaded'
+            );
 
             $admins = IdentityResolver::resolveTenantAdmins($this->order->tenant_id);
 
@@ -58,13 +62,13 @@ class ProcessOrderNotifications implements ShouldQueue
                 ['order_id' => $this->order->id, 'total_amount' => $this->order->total_amount]
             );
 
-            BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
+            if ($orderAlerts) {
+                BroadcastService::fire(new OrderPlaced($this->order), ['order_id' => $this->order->id]);
 
-            if ($notificationsEnabled) {
                 $orderNotificationService->notifyOrderPlaced($this->order);
             }
 
-            if ($notificationsEnabled && $this->paymentScreenshotPath) {
+            if ($proofAlerts && $this->paymentScreenshotPath) {
                 $adminsWhoWantProof = $preferenceService->filterUsersByPreference($admins, 'payment_proof_uploaded');
                 if ($adminsWhoWantProof->isNotEmpty()) {
                     try {
@@ -83,7 +87,7 @@ class ProcessOrderNotifications implements ShouldQueue
                 }
             }
 
-            $this->dispatchTelegramOrderPlaced();
+            $this->dispatchTelegramOrderPlaced($orderAlerts);
         } catch (\Throwable $e) {
             Log::error('Order placed but notifications failed', [
                 'order_id' => $this->order->id,
@@ -100,12 +104,16 @@ class ProcessOrderNotifications implements ShouldQueue
         ]);
     }
 
-    private function dispatchTelegramOrderPlaced(): void
+    private function dispatchTelegramOrderPlaced(bool $allowed): void
     {
         try {
             Log::info('[ProcessOrderNotifications] Order notification requested', [
                 'order_id' => $this->order->id,
             ]);
+
+            if (!$allowed) {
+                return;
+            }
 
             if ($this->order->telegram_notified_at !== null) {
                 Log::info('[ProcessOrderNotifications] Telegram notification skipped - already notified', [

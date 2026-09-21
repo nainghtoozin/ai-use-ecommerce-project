@@ -9,18 +9,21 @@ use Illuminate\Support\Facades\Log;
 
 class TelegramRecipientResolver
 {
-    public function resolve(?Order $order = null): Collection
+    public function resolve(?Order $order = null, ?int $tenantId = null): Collection
     {
+        $tenantId ??= $order?->tenant_id;
+
         Log::info('[TelegramRecipientResolver] Starting recipient resolution', [
             'order_id' => $order?->id,
+            'tenant_id' => $tenantId,
         ]);
 
         $query = TelegramIntegration::query()
             ->where('is_enabled', true)
             ->anyVerified();
 
-        if ($order && $order->tenant_id) {
-            $query->where('tenant_id', $order->tenant_id);
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
         }
 
         $integrations = $query->get();

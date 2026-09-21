@@ -26,12 +26,13 @@ export default function AppLayout({ children, header = null }) {
     useEffect(() => {
         if (auth?.user) {
             fetchNotifications();
-            window.Echo.private(`chat.${auth.user.id}`)
+            const chatChannel = `chat.${auth.user?.identity_type === 'account' ? 'account' : 'user'}.${auth.user.id}`;
+            window.Echo.private(chatChannel)
                 .listen('.message.sent', () => setUnreadCount((p) => p + 1))
                 .listen('.typing', () => {});
-            return () => window.Echo.leave(`chat.${auth.user.id}`);
+            return () => window.Echo.leave(chatChannel);
         }
-    }, [auth?.user?.id, fetchNotifications]);
+    }, [auth?.user?.id, auth?.user?.identity_type, fetchNotifications]);
 
     const markAsRead = async (id) => {
         try {

@@ -2,11 +2,12 @@
 
 namespace App\Notifications;
 
+use App\Contracts\HasDatabaseTenantId;
 use App\Models\PaymentIntent;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class BillingPaymentApprovedMerchantNotification extends Notification
+class BillingPaymentApprovedMerchantNotification extends Notification implements HasDatabaseTenantId
 {
     use Queueable;
 
@@ -17,6 +18,11 @@ class BillingPaymentApprovedMerchantNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    public function databaseTenantId(): ?int
+    {
+        return $this->intent->tenant_id;
     }
 
     public function toArray(object $notifiable): array

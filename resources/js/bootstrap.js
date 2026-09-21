@@ -8,5 +8,8 @@ if (token) {
     window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
 }
 
+window.axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
+window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
+
 import { route } from './ziggy';
 window.route = route;

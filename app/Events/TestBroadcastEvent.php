@@ -19,7 +19,7 @@ class TestBroadcastEvent implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('notifications.user.'.$this->userId)];
+        return [new PrivateChannel(\App\Auth\IdentityResolver::notificationChannel($this->userId))];
     }
 
     public function broadcastAs(): string

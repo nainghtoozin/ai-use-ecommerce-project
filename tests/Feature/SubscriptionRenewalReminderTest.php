@@ -12,9 +12,11 @@ use App\Models\Receipt;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
+use App\Notifications\SubscriptionExpiringSoon;
 use App\Services\BillingEmailService;
 use App\Services\Payment\Platform\ManualPaymentService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -108,6 +110,101 @@ class SubscriptionRenewalReminderTest extends TestCase
         Mail::assertQueued(SubscriptionRenewalReminderMail::class, 2);
     }
 
+    public function test_db_reminders_cover_14_7_3_1_thresholds(): void
+    {
+        $cases = [];
+        foreach ([14, 7, 3, 1] as $days) {
+            [$tenant, $subscription] = $this->makeSubscription(
+                "owner-db-{$days}@example.com", now()->addDays($days)->startOfDay()
+            );
+            $cases[$days] = [$tenant, $subscription];
+        }
+
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+
+        foreach ($cases as $days => [$tenant, $subscription]) {
+            $accountId = Account::where('email', "owner-db-{$days}@example.com")->firstOrFail()->id;
+            $rows = DB::table('notifications')
+                ->where('notifiable_type', Account::class)
+                ->where('notifiable_id', $accountId)
+                ->where('type', SubscriptionExpiringSoon::class)
+                ->get();
+
+            $this->assertCount(1, $rows, "Expected one reminder at {$days} days");
+            $data = json_decode($rows->first()->data, true);
+            $this->assertSame($subscription->id, $data['subscription_id']);
+            $this->assertSame($days, $data['days_remaining']);
+        }
+    }
+
+    public function test_db_reminder_not_repeated_for_same_cycle(): void
+    {
+        $this->makeSubscription('owner-dedup-db@example.com', now()->addDays(3)->startOfDay());
+
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+
+        $accountId = Account::where('email', 'owner-dedup-db@example.com')->firstOrFail()->id;
+
+        $this->assertSame(1, DB::table('notifications')
+            ->where('notifiable_type', Account::class)
+            ->where('notifiable_id', $accountId)
+            ->where('type', SubscriptionExpiringSoon::class)
+            ->count());
+    }
+
+    public function test_db_reminder_sent_again_for_new_cycle(): void
+    {
+        [, $subscription] = $this->makeSubscription('owner-newcycle@example.com', now()->addDays(3)->startOfDay());
+
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+
+        $subscription->update(['expires_at' => now()->addDays(7)->startOfDay()]);
+
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+
+        $accountId = Account::where('email', 'owner-newcycle@example.com')->firstOrFail()->id;
+
+        $this->assertSame(2, DB::table('notifications')
+            ->where('notifiable_type', Account::class)
+            ->where('notifiable_id', $accountId)
+            ->where('type', SubscriptionExpiringSoon::class)
+            ->count());
+    }
+
+    public function test_trial_reminder_at_one_day(): void
+    {
+        $this->makeSubscription('owner-trial1@example.com', now()->addMonth(), 'trialing', now()->addDay()->startOfDay());
+
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+        $this->artisan('subscriptions:send-reminders')->assertSuccessful();
+
+        $accountId = Account::where('email', 'owner-trial1@example.com')->firstOrFail()->id;
+        $rows = DB::table('notifications')
+            ->where('notifiable_type', Account::class)
+            ->where('notifiable_id', $accountId)
+            ->where('type', SubscriptionExpiringSoon::class)
+            ->get();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(1, json_decode($rows->first()->data, true)['days_remaining']);
+    }
+
+    public function test_dry_run_sends_nothing(): void
+    {
+        $this->makeSubscription('owner-dryrun@example.com', now()->addDays(7)->startOfDay());
+
+        $this->artisan('subscriptions:send-reminders', ['--dry-run' => true])->assertSuccessful();
+
+        $accountId = Account::where('email', 'owner-dryrun@example.com')->firstOrFail()->id;
+
+        $this->assertSame(0, DB::table('notifications')
+            ->where('notifiable_type', Account::class)
+            ->where('notifiable_id', $accountId)
+            ->count());
+        Mail::assertNotQueued(SubscriptionRenewalReminderMail::class);
+    }
+
     public function test_reminder_creates_no_invoice(): void
     {
         $this->seedReminderDays(7);
@@ -176,7 +273,7 @@ class SubscriptionRenewalReminderTest extends TestCase
         PlatformSetting::clearCache();
     }
 
-    private function makeSubscription(string $ownerEmail, $expiresAt): array
+    private function makeSubscription(string $ownerEmail, $expiresAt, string $status = 'active', $trialEndsAt = null): array
     {
         $tenant = Tenant::create([
             'slug' => 'renew-' . uniqid(),
@@ -191,9 +288,10 @@ class SubscriptionRenewalReminderTest extends TestCase
         $subscription = new Subscription([
             'plan_id' => $plan->id,
             'billing_interval' => 'monthly',
-            'status' => 'active',
+            'status' => $status,
             'starts_at' => now()->subMonth(),
             'expires_at' => $expiresAt,
+            'trial_ends_at' => $trialEndsAt,
             'trial_renewals_count' => 0,
         ]);
         $subscription->tenant_id = $tenant->id;
@@ -455,6 +553,17 @@ class SubscriptionRenewalReminderTest extends TestCase
                 $table->string('status')->default('active');
                 $table->timestamps();
                 $table->index(['tenant_id', 'account_id']);
+            });
+        }
+
+        if (!Schema::hasTable('notifications')) {
+            Schema::create('notifications', function ($table) {
+                $table->uuid('id')->primary();
+                $table->string('type');
+                $table->morphs('notifiable');
+                $table->text('data');
+                $table->timestamp('read_at')->nullable();
+                $table->timestamps();
             });
         }
 
