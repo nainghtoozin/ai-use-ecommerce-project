@@ -51,7 +51,7 @@ class StorefrontRegistrationContactTest extends TestCase
     /** @test */
     public function required_only_registration_still_works(): void
     {
-        $this->register()->assertRedirect();
+        $this->register(['phone' => '09111111111'])->assertRedirect();
 
         $account = Account::where('email', 'rg-customer@test.com')->first();
         $this->assertNotNull($account);
@@ -100,16 +100,19 @@ class StorefrontRegistrationContactTest extends TestCase
     }
 
     /** @test */
-    public function street_address_requires_phone(): void
+    public function missing_phone_is_rejected(): void
     {
         $this->register(['address' => 'No. 123, Test Street'])
             ->assertSessionHasErrors('phone');
+
+        $this->assertNull(Account::where('email', 'rg-customer@test.com')->first());
     }
 
     /** @test */
     public function city_only_without_street_registers_without_address_row(): void
     {
         $this->register([
+            'phone' => '09222222222',
             'city_id' => $this->city->id,
             'township_id' => $this->township->id,
         ])->assertRedirect();
@@ -122,13 +125,14 @@ class StorefrontRegistrationContactTest extends TestCase
     /** @test */
     public function duplicate_store_registration_is_rejected(): void
     {
-        $this->register()->assertRedirect();
+        $this->register(['phone' => '09333333333'])->assertRedirect();
 
         $this->post("/store/{$this->tenant->slug}/register", [
             'name' => 'RG Customer',
             'email' => 'rg-customer@test.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'phone' => '09333333333',
         ])->assertSessionHasErrors('email');
     }
 }

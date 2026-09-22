@@ -102,7 +102,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'phone' => ['nullable', 'string', 'max:20', 'required_with:address'],
+            'phone' => ['required', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:500'],
             'city_id' => ['nullable', 'integer', 'exists:cities,id'],
             'township_id' => ['nullable', 'integer', 'exists:townships,id'],

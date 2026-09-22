@@ -84,8 +84,13 @@ export default function StorefrontRegister() {
     };
 
     const handleCityChange = (cityId) => {
-        setData({ ...data, city_id: cityId, township_id: '' });
+        setData({ ...data, city_id: cityId, township_id: '', postal_code: '' });
         fetchTownships(cityId);
+    };
+
+    const handleTownshipChange = (townshipId) => {
+        const selected = townships.find((t) => String(t.id) === String(townshipId));
+        setData({ ...data, township_id: townshipId, postal_code: selected?.postal_code || '' });
     };
 
     const submit = (e) => {
@@ -100,7 +105,7 @@ export default function StorefrontRegister() {
         >
             <Head title={`Register - ${storeName}`} />
 
-            <div className="mx-auto w-full max-w-[760px] px-4 sm:px-6 pt-8 sm:pt-12 pb-10 sm:pb-14">
+            <div className="mx-auto w-full max-w-[760px] px-3 sm:px-6 pt-4 sm:pt-6 pb-8 sm:pb-10">
                 <div className="flex items-center justify-center gap-2.5">
                     {logoUrl ? (
                         <img src={logoUrl} alt={storeName} className="h-8 w-auto rounded-lg" />
@@ -116,7 +121,7 @@ export default function StorefrontRegister() {
                     <span className="text-base font-bold text-gray-900 dark:text-gray-100">{tenant.name}</span>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-[0_2px_16px_rgb(0_0_0/0.06)] px-5 py-6 sm:px-10 sm:py-8">
+                <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-[0_2px_16px_rgb(0_0_0/0.06)] px-4 py-5 sm:px-8 sm:py-7">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                         Create your account
                     </h2>
@@ -124,9 +129,11 @@ export default function StorefrontRegister() {
                         Create your account to shop faster and check out more easily.
                     </p>
 
-                <form onSubmit={submit} noValidate className="mt-6">
+                <form onSubmit={submit} noValidate className="mt-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+                    <section aria-label="Account Information">
                     <SectionHeading>Account Information</SectionHeading>
-                    <div className="mt-4 space-y-4">
+                    <div className="mt-3 space-y-3">
                         <div>
                             <label htmlFor="name" className={labelClass}><span>Name <RequiredMark /></span></label>
                             <input
@@ -149,8 +156,8 @@ export default function StorefrontRegister() {
                             <FieldError message={errors.email} />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="min-w-0">
+                        <div className="space-y-3">
+                            <div>
                                 <label htmlFor="password" className={labelClass}><span>Password <RequiredMark /></span></label>
                                 <div className="relative">
                                     <input
@@ -164,7 +171,7 @@ export default function StorefrontRegister() {
                                 <FieldError message={errors.password} />
                             </div>
 
-                            <div className="min-w-0">
+                            <div>
                                 <label htmlFor="password_confirmation" className={labelClass}><span>Confirm Password <RequiredMark /></span></label>
                                 <div className="relative">
                                     <input
@@ -179,20 +186,21 @@ export default function StorefrontRegister() {
                             </div>
                         </div>
                     </div>
+                    </section>
 
-                    <div className="mt-6">
-                        <SectionHeading>Delivery Information</SectionHeading>
-                    </div>
-                    <div className="mt-4 space-y-4">
-                        <div>
-                            <label htmlFor="phone" className={labelClass}><span>Phone Number</span><OptionalText /></label>
-                            <input
-                                id="phone" type="tel" name="phone" value={data.phone}
-                                className={`${inputClass} ${inputHeight}`} autoComplete="tel" placeholder="09xxxxxxxxx"
-                                onChange={(e) => setData('phone', e.target.value)}
-                            />
-                            <FieldError message={errors.phone} />
-                        </div>
+                    <section aria-label="Delivery Information">
+                    <SectionHeading>Delivery Information</SectionHeading>
+                    <div className="mt-3 space-y-3">
+                            <div>
+                                <label htmlFor="phone" className={labelClass}><span>Phone Number <RequiredMark /></span></label>
+                                <input
+                                    id="phone" type="tel" name="phone" value={data.phone}
+                                    className={`${inputClass} ${inputHeight}`} autoComplete="tel" placeholder="09xxxxxxxxx"
+                                    onChange={(e) => setData('phone', e.target.value)}
+                                    required aria-required="true"
+                                />
+                                <FieldError message={errors.phone} />
+                            </div>
 
                         <div>
                             <label htmlFor="address" className={labelClass}><span>Delivery Address</span><OptionalText /></label>
@@ -204,8 +212,8 @@ export default function StorefrontRegister() {
                             <FieldError message={errors.address} />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="min-w-0">
+                        <div className="space-y-3">
+                            <div>
                                 <label htmlFor="city_id" className={labelClass}><span>City</span><OptionalText /></label>
                                 <select
                                     id="city_id" name="city_id" value={data.city_id}
@@ -220,13 +228,13 @@ export default function StorefrontRegister() {
                                 <FieldError message={errors.city_id} />
                             </div>
 
-                            <div className="min-w-0">
+                            <div>
                                 <label htmlFor="township_id" className={labelClass}><span>Township</span><OptionalText /></label>
                                 <select
                                     id="township_id" name="township_id" value={data.township_id}
                                     disabled={!data.city_id || townshipsLoading}
                                     className={`${inputClass} ${inputHeight} pr-9 disabled:opacity-50 disabled:cursor-not-allowed`}
-                                    onChange={(e) => setData('township_id', e.target.value)}
+                                    onChange={(e) => handleTownshipChange(e.target.value)}
                                 >
                                     <option value="">{townshipsLoading ? 'Loading townships...' : data.city_id ? 'Select township' : 'Select a city first'}</option>
                                     {townships.map((township) => (
@@ -234,26 +242,23 @@ export default function StorefrontRegister() {
                                     ))}
                                 </select>
                                 <FieldError message={errors.township_id} />
+                                {data.postal_code !== '' && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5" aria-live="polite">
+                                        Postal Code: <span className="font-semibold text-gray-700 dark:text-gray-300">{data.postal_code}</span>
+                                    </p>
+                                )}
                             </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="postal_code" className={labelClass}><span>Postal Code</span><OptionalText /></label>
-                            <input
-                                id="postal_code" type="text" name="postal_code" value={data.postal_code}
-                                className={`${inputClass} ${inputHeight}`} autoComplete="postal-code" placeholder="e.g. 11041"
-                                onChange={(e) => setData('postal_code', e.target.value)}
-                            />
-                            <FieldError message={errors.postal_code} />
-                        </div>
-
-                        <p className="flex items-start gap-2 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">
-                            <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="flex items-start gap-1.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                            <svg className="w-3.5 h-3.5 shrink-0 mt-px" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             <span>Save your delivery information here to have it filled automatically at checkout. You can still edit it before placing an order.</span>
                         </p>
                     </div>
+                    </section>
+                    </div>
 
-                    <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-4 md:flex-row md:items-center">
+                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-3 md:flex-row md:items-center">
                         <div className="flex items-center gap-4 text-sm order-2 md:order-1">
                             <Link
                                 href={route('storefront.index', { store_slug: tenant.slug })}
