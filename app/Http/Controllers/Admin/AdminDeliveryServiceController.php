@@ -67,14 +67,12 @@ class AdminDeliveryServiceController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $deliveryService->load('pricing.city');
-        $cities = City::where('is_active', true)->orderBy('name')->get();
-        $citiesWithoutPricing = $this->deliveryServiceService->getCitiesWithoutPricing($deliveryService);
+        $deliveryService->load('pricing.township.city');
+        $townshipsWithoutPricing = $this->deliveryServiceService->getTownshipsWithoutPricing($deliveryService);
 
         return Inertia::render('Admin/DeliveryServices/Edit', [
             'deliveryService' => $deliveryService,
-            'cities' => $cities,
-            'citiesWithoutPricing' => $citiesWithoutPricing,
+            'townshipsWithoutPricing' => $townshipsWithoutPricing,
         ]);
     }
 
@@ -126,7 +124,7 @@ class AdminDeliveryServiceController extends Controller
         ]);
     }
 
-    public function addCityPricing(\Illuminate\Http\Request $request, \App\Models\DeliveryService $deliveryService): RedirectResponse
+    public function addTownshipPricing(\Illuminate\Http\Request $request, \App\Models\DeliveryService $deliveryService): RedirectResponse
     {
         if (!auth()->user()->can('delivery-services.update')) {
             abort(403, 'Unauthorized');
@@ -134,12 +132,12 @@ class AdminDeliveryServiceController extends Controller
 
         $validated = $request->validate($this->deliveryServiceService->pricingRules());
 
-        $this->deliveryServiceService->addCityPricing($deliveryService, $validated);
+        $this->deliveryServiceService->addTownshipPricing($deliveryService, $validated);
 
-        return back()->with('success', 'City pricing added successfully.');
+        return back()->with('success', 'Township delivery rule added successfully.');
     }
 
-    public function removeCityPricing(DeliveryPricing $pricing): RedirectResponse
+    public function removeTownshipPricing(DeliveryPricing $pricing): RedirectResponse
     {
         if (!auth()->user()->can('delivery-services.update')) {
             abort(403, 'Unauthorized');
@@ -150,8 +148,56 @@ class AdminDeliveryServiceController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $this->deliveryServiceService->removeCityPricing($pricing);
+        $this->deliveryServiceService->removeTownshipPricing($pricing);
 
-        return back()->with('success', 'City pricing removed successfully.');
+        return back()->with('success', 'Township delivery rule removed successfully.');
+    }
+
+    public function bulkPricingStatus(\Illuminate\Http\Request $request): RedirectResponse
+    {
+        if (!auth()->user()->can('delivery-services.update')) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to update delivery rules.');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1|max:2000',
+            'ids.*' => 'integer|min:1',
+            'is_active' => 'required|boolean',
+        ]);
+
+        $result = $this->deliveryServiceService->bulkSetPricingActive($validated['ids'], (bool) $validated['is_active']);
+        $action = $validated['is_active'] ? 'activated' : 'deactivated';
+
+        return back()->with('success', "{$result['affected']} of " . count($validated['ids']) . " delivery rules {$action}.");
+    }
+
+    public function bulkPricingDays(\Illuminate\Http\Request $request): RedirectResponse
+    {
+        if (!auth()->user()->can('delivery-services.update')) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to update delivery rules.');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1|max:2000',
+            'ids.*' => 'integer|min:1',
+            'min_days' => 'nullable|integer|min:0',
+            'max_days' => 'nullable|integer|min:0|gte:min_days',
+        ]);
+
+        $result = $this->deliveryServiceService->bulkSetPricingDays(
+            $validated['ids'],
+            isset($validated['min_days']) ? (int) $validated['min_days'] : null,
+            isset($validated['max_days']) ? (int) $validated['max_days'] : null
+        );
+
+        return back()->with('success', "Updated delivery days for {$result['affected']} of " . count($validated['ids']) . " delivery rules.");
     }
 }

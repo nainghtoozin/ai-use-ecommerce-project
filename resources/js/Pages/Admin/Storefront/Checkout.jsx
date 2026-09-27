@@ -1118,7 +1118,7 @@ function DeliveryTab({ deliveryServices, cities }) {
         <div className="space-y-6">
             <SectionHeader
                 title="Delivery Services"
-                description="Manage delivery methods, fees, and city-specific pricing."
+                description="Manage delivery methods, base fees, and township delivery rules."
                 actions={<PrimaryLink href={adminUrl('/admin/delivery-services/create')} size="sm">Add Service</PrimaryLink>}
             />
 

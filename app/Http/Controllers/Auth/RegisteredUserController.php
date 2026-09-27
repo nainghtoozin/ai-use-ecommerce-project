@@ -9,7 +9,6 @@ use App\Models\City;
 use App\Models\CustomerProfile;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
-use App\Models\Township;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -179,15 +178,17 @@ class RegisteredUserController extends Controller
         $townshipId = $request->input('township_id') ?: null;
         $postalCode = trim((string) $request->input('postal_code', ''));
 
-        if ($townshipId) {
-            $township = Township::find($townshipId);
-            if ($township && $cityId && (int) $township->city_id !== (int) $cityId) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'township_id' => 'The selected township is not valid for the chosen city.',
-                ]);
-            }
+        if ($townshipId || $cityId) {
+            $tenant = Tenant::getCurrent();
+            $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+                $cityId ? (int) $cityId : null,
+                $townshipId ? (int) $townshipId : null,
+                $tenant
+            );
+            $township = $location['township'];
+            $cityId = $location['city']?->id;
+            $townshipId = $township?->id;
             if ($township) {
-                $cityId = $cityId ?: (int) $township->city_id;
                 $postalCode = $postalCode !== '' ? $postalCode : ($township->postal_code ?? '');
             }
         }

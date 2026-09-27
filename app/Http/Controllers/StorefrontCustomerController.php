@@ -8,7 +8,6 @@ use App\Models\City;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\Tenant;
-use App\Models\Township;
 use App\Services\ImageService;
 use App\Services\OrderService;
 use App\Services\OrderStatusTransitionService;
@@ -382,11 +381,14 @@ class StorefrontCustomerController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $township = Township::find($validated['township_id']);
-        if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
-            return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
-        }
-        $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
+        $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+            (int) $validated['city_id'],
+            (int) $validated['township_id'],
+            $tenant
+        );
+        $township = $location['township'];
+        $validated['city_id'] = $location['city']?->id ?? $validated['city_id'];
+        $validated['postal_code'] = $township->postal_code ?? ($validated['postal_code'] ?? null);
 
         if (!empty($validated['is_default'])) {
             $user->addresses()->where('tenant_id', $tenant->id)->update(['is_default' => false]);
@@ -420,11 +422,14 @@ class StorefrontCustomerController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $township = Township::find($validated['township_id']);
-        if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
-            return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
-        }
-        $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
+        $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+            (int) $validated['city_id'],
+            (int) $validated['township_id'],
+            $tenant
+        );
+        $township = $location['township'];
+        $validated['city_id'] = $location['city']?->id ?? $validated['city_id'];
+        $validated['postal_code'] = $township->postal_code ?? ($validated['postal_code'] ?? null);
 
         if (!empty($validated['is_default'])) {
             $user->addresses()->where('tenant_id', $tenant->id)->where('id', '!=', $address->id)->update(['is_default' => false]);

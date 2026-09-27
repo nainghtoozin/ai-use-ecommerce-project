@@ -49,9 +49,10 @@ class CheckoutIntegrationTest extends TestCase
             'status' => 'active',
         ]);
 
+        Tenant::setCurrent($this->tenant);
+
         $this->city = City::create([
             'name' => 'Yangon',
-            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
 
@@ -59,6 +60,7 @@ class CheckoutIntegrationTest extends TestCase
             'city_id' => $this->city->id,
             'name' => 'Hlaing',
             'postal_code' => '11041',
+            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
 
@@ -141,8 +143,9 @@ class CheckoutIntegrationTest extends TestCase
 
         DeliveryPricing::create([
             'delivery_service_id' => $service->id,
-            'city_id' => $this->city->id,
-            'fee' => 2500,
+            'township_id' => $this->township->id,
+            'min_days' => 1,
+            'max_days' => 1,
             'is_active' => true,
         ]);
 
@@ -158,15 +161,16 @@ class CheckoutIntegrationTest extends TestCase
 
         DeliveryPricing::create([
             'delivery_service_id' => $service2->id,
-            'city_id' => $this->city->id,
-            'fee' => 4000,
+            'township_id' => $this->township->id,
+            'min_days' => 1,
+            'max_days' => 2,
             'is_active' => true,
         ]);
 
         $feeService = new DeliveryFeeService();
-        $fee = $feeService->resolveDeliveryFee($this->city, $service->id);
+        $fee = $feeService->resolveDeliveryFee($this->township, $service->id);
 
-        $this->assertEquals(2500, $fee);
+        $this->assertEquals(4000, $fee);
     }
 
     /** @test */
@@ -193,7 +197,6 @@ class CheckoutIntegrationTest extends TestCase
     {
         $inactiveCity = City::create([
             'name' => 'Inactive City',
-            'delivery_fee' => 9999,
             'is_active' => false,
         ]);
 
@@ -292,7 +295,6 @@ class CheckoutIntegrationTest extends TestCase
     {
         $otherCity = City::create([
             'name' => 'Mandalay',
-            'delivery_fee' => 1500,
             'is_active' => true,
         ]);
 
@@ -324,7 +326,6 @@ class CheckoutIntegrationTest extends TestCase
     {
         $otherCity = City::create([
             'name' => 'Mandalay',
-            'delivery_fee' => 1500,
             'is_active' => true,
         ]);
 
@@ -352,7 +353,7 @@ class CheckoutIntegrationTest extends TestCase
         ]);
 
         $feeService = new DeliveryFeeService();
-        $fee = $feeService->calculateFee($service, null, 2.5);
+        $fee = $feeService->calculateFee($service, 2.5);
 
         $this->assertEquals(2250, $fee);
     }

@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\City;
 use App\Models\DeliveryPricing;
 use App\Models\DeliveryService;
+use App\Models\Township;
 use Illuminate\Validation\Rule;
 
 class DeliveryServiceService
@@ -91,23 +91,27 @@ class DeliveryServiceService
     public function pricingRules(): array
     {
         return [
-            'city_id' => ['required', 'exists:cities,id'],
-            'fee' => ['nullable', 'integer', 'min:0'],
+            'township_id' => ['required', Rule::exists('townships', 'id')->where('tenant_id', tenant()?->id)],
             'min_days' => ['nullable', 'integer', 'min:0'],
             'max_days' => ['nullable', 'integer', 'min:0', 'gte:min_days'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }
 
-    public function addCityPricing(DeliveryService $deliveryService, array $data): DeliveryPricing
+    public function addTownshipPricing(DeliveryService $deliveryService, array $data): DeliveryPricing
     {
+        $township = Township::whereKey($data['township_id'])->firstOrFail();
+
+        if ((int) $township->city->tenant_id !== (int) $township->tenant_id) {
+            throw new \InvalidArgumentException('The selected township does not belong to its city.');
+        }
+
         $existing = DeliveryPricing::where('delivery_service_id', $deliveryService->id)
-            ->where('city_id', $data['city_id'])
+            ->where('township_id', $township->id)
             ->first();
 
         if ($existing) {
             $existing->update([
-                'fee' => $data['fee'] ?? null,
                 'min_days' => $data['min_days'] ?? null,
                 'max_days' => $data['max_days'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
@@ -116,25 +120,63 @@ class DeliveryServiceService
         }
 
         return $deliveryService->pricing()->create([
-            'city_id' => $data['city_id'],
-            'fee' => $data['fee'] ?? null,
+            'township_id' => $township->id,
             'min_days' => $data['min_days'] ?? null,
             'max_days' => $data['max_days'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
     }
 
-    public function removeCityPricing(DeliveryPricing $pricing): bool
+    public function removeTownshipPricing(DeliveryPricing $pricing): bool
     {
         return $pricing->delete();
     }
 
-    public function getCitiesWithoutPricing(DeliveryService $deliveryService): array
+    public function bulkSetPricingActive(array $ids, bool $active): array
     {
-        $usedCityIds = $deliveryService->pricing()->pluck('city_id')->toArray();
+        $ids = $this->cleanIds($ids);
+        $tenantId = tenant()?->id;
+        $affected = $this->scopedPricingQuery($ids, $tenantId)->update(['is_active' => $active]);
+        return ['affected' => $affected, 'invalid' => count($ids) - $affected];
+    }
 
-        return City::where('is_active', true)
-            ->whereNotIn('id', $usedCityIds)
+    public function bulkSetPricingDays(array $ids, ?int $minDays, ?int $maxDays): array
+    {
+        $ids = $this->cleanIds($ids);
+        $tenantId = tenant()?->id;
+        $affected = $this->scopedPricingQuery($ids, $tenantId)->update([
+            'min_days' => $minDays,
+            'max_days' => $maxDays,
+        ]);
+        return ['affected' => $affected, 'invalid' => count($ids) - $affected];
+    }
+
+    private function scopedPricingQuery(array $ids, $tenantId)
+    {
+        return DeliveryPricing::whereIn('id', $ids)
+            ->whereHas('deliveryService', function ($q) use ($tenantId) {
+                $q->where('tenant_id', $tenantId);
+            });
+    }
+
+    private function cleanIds(array $ids): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map('intval', $ids),
+            fn ($id) => $id > 0
+        )));
+    }
+
+    public function getTownshipsWithoutPricing(DeliveryService $deliveryService): array
+    {
+        $usedTownshipIds = $deliveryService->pricing()
+            ->whereNotNull('township_id')
+            ->pluck('township_id')
+            ->toArray();
+
+        return Township::active()
+            ->with('city:id,name')
+            ->whereNotIn('id', $usedTownshipIds)
             ->orderBy('name')
             ->get()
             ->toArray();

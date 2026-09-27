@@ -42,9 +42,9 @@ class CustomerAddressDefaultTest extends TestCase
             'category_id' => $category->id, 'status' => Product::STATUS_ACTIVE,
         ]);
 
-        $this->city = City::create(['name' => 'Yangon', 'delivery_fee' => 3000, 'is_active' => true]);
+        $this->city = City::create(['name' => 'Yangon', 'is_active' => true]);
         $this->township = Township::create([
-            'city_id' => $this->city->id, 'name' => 'Kamaryut', 'postal_code' => '11041', 'is_active' => true,
+            'city_id' => $this->city->id, 'name' => 'Kamaryut', 'postal_code' => '11041', 'delivery_fee' => 3000, 'is_active' => true,
         ]);
 
         $this->account = Account::create([
@@ -161,6 +161,14 @@ class CustomerAddressDefaultTest extends TestCase
     {
         $this->makeAddress($this->tenantA, true);
 
+        $cityB = City::withoutTenantScope()->create([
+            'tenant_id' => $this->tenantB->id, 'name' => 'Yangon', 'is_active' => true,
+        ]);
+        $townshipB = Township::withoutTenantScope()->create([
+            'tenant_id' => $this->tenantB->id, 'city_id' => $cityB->id,
+            'name' => 'Kamaryut', 'postal_code' => '11041', 'delivery_fee' => 3000, 'is_active' => true,
+        ]);
+
         Auth::guard('accounts')->logout();
 
         $this->post("/store/{$this->tenantB->slug}/register", [
@@ -170,8 +178,8 @@ class CustomerAddressDefaultTest extends TestCase
             'password_confirmation' => 'password',
             'phone' => '09911122233',
             'address' => 'No. 9, New Road',
-            'city_id' => $this->city->id,
-            'township_id' => $this->township->id,
+            'city_id' => $cityB->id,
+            'township_id' => $townshipB->id,
         ])->assertRedirect();
 
         app()->forgetInstance('current.tenant');

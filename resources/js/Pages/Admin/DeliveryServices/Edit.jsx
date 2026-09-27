@@ -5,11 +5,97 @@ import { usePermission } from '@/Hooks/usePermission';
 import { useState } from 'react';
 import { BackLink, CancelLink, CheckboxRow, FormCard, FormGroup, Notice, OutlineButton, PageHeader, PrimaryButton, SectionHeader, SelectInput, StatusPill, SuccessButton, TH, TextInput, TextareaInput, UnauthorizedState } from '@/Components/Admin/StorefrontUI';
 
-export default function DeliveryServiceEdit({ deliveryService, cities, citiesWithoutPricing }) {
+const RULE_PAGE_SIZES = ['25', '50', '100', 'all'];
+
+export default function DeliveryServiceEdit({ deliveryService, townshipsWithoutPricing = [] }) {
     const { can } = usePermission();
     const { flash } = usePage().props;
     const [showAddPricing, setShowAddPricing] = useState(false);
-    const [newPricing, setNewPricing] = useState({ city_id: '', fee: '', min_days: '', max_days: '', is_active: true });
+    const [newPricing, setNewPricing] = useState({ township_id: '', min_days: '', max_days: '', is_active: true });
+    const [ruleSearch, setRuleSearch] = useState('');
+    const [ruleCity, setRuleCity] = useState('');
+    const [ruleStatus, setRuleStatus] = useState('');
+    const [rulePage, setRulePage] = useState(1);
+    const [rulePerPage, setRulePerPage] = useState('25');
+    const [ruleSelected, setRuleSelected] = useState([]);
+    const [selectAllMatching, setSelectAllMatching] = useState(false);
+    const [daysOpen, setDaysOpen] = useState(false);
+    const [daysMin, setDaysMin] = useState('');
+    const [daysMax, setDaysMax] = useState('');
+
+    const townshipRules = (deliveryService.pricing || []).filter(p => p.township_id);
+    const ruleCities = [...new Set(townshipRules.map(p => p.township?.city?.name).filter(Boolean))].sort();
+    const filteredRules = townshipRules.filter(p => {
+        if (ruleSearch && !(p.township?.name || '').toLowerCase().includes(ruleSearch.toLowerCase())) return false;
+        if (ruleCity && (p.township?.city?.name || '') !== ruleCity) return false;
+        if (ruleStatus === 'active' && !p.is_active) return false;
+        if (ruleStatus === 'inactive' && p.is_active) return false;
+        return true;
+    });
+    const rulePerPageNum = rulePerPage === 'all' ? Math.max(filteredRules.length, 1) : parseInt(rulePerPage, 10);
+    const ruleTotalPages = Math.max(1, Math.ceil(filteredRules.length / rulePerPageNum));
+    const rulePageSafe = Math.min(rulePage, ruleTotalPages);
+    const rulePageIds = filteredRules.slice((rulePageSafe - 1) * rulePerPageNum, rulePageSafe * rulePerPageNum).map(p => p.id);
+    const ruleAllSelected = rulePageIds.length > 0 && rulePageIds.every(id => ruleSelected.includes(id));
+
+    function clearRuleSelection() {
+        setRuleSelected([]);
+        setSelectAllMatching(false);
+        setDaysOpen(false);
+    }
+
+    function handleSelectAllMatching() {
+        setRuleSelected(filteredRules.map(p => p.id));
+        setSelectAllMatching(true);
+        setDaysOpen(false);
+    }
+
+    function resetRuleFilters(search, city, status, perPage) {
+        setRuleSearch(search); setRuleCity(city); setRuleStatus(status);
+        if (perPage) setRulePerPage(perPage);
+        setRulePage(1);
+        clearRuleSelection();
+    }
+
+    function handleRuleSelectAll() {
+        setSelectAllMatching(false);
+        if (ruleAllSelected) {
+            setRuleSelected(ruleSelected.filter(id => !rulePageIds.includes(id)));
+        } else {
+            setRuleSelected([...new Set([...ruleSelected, ...rulePageIds])]);
+        }
+    }
+
+    function handleRuleSelectOne(id) {
+        setSelectAllMatching(false);
+        if (ruleSelected.includes(id)) {
+            setRuleSelected(ruleSelected.filter(i => i !== id));
+        } else {
+            setRuleSelected([...ruleSelected, id]);
+        }
+    }
+
+    function handleRuleBulkStatus(isActive) {
+        router.post(adminUrl('/admin/delivery-services/pricing/bulk-status'), { ids: ruleSelected, is_active: isActive }, {
+            preserveScroll: true,
+            onSuccess: () => clearRuleSelection(),
+        });
+    }
+
+    function applyRuleBulkDays() {
+        const min = daysMin === '' ? null : parseInt(daysMin, 10);
+        const max = daysMax === '' ? null : parseInt(daysMax, 10);
+        if ((min !== null && (isNaN(min) || min < 0)) || (max !== null && (isNaN(max) || max < 0))) return;
+        if (min !== null && max !== null && max < min) return;
+        if (ruleSelected.length === 0) return;
+        const payload = { ids: ruleSelected };
+        if (min !== null) payload.min_days = min;
+        if (max !== null) payload.max_days = max;
+        router.post(adminUrl('/admin/delivery-services/pricing/bulk-days'), payload, {
+            preserveScroll: true,
+            onSuccess: () => { clearRuleSelection(); setDaysMin(''); setDaysMax(''); },
+        });
+    }
 
     const { data, setData, put, processing, errors } = useForm({
         name: deliveryService.name || '',
@@ -30,16 +116,16 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
 
     function handleAddPricing(e) {
         e.preventDefault();
-        router.post(adminUrl(`/admin/delivery-services/${deliveryService.id}/add-city-pricing`), newPricing, {
+        router.post(adminUrl(`/admin/delivery-services/${deliveryService.id}/add-township-pricing`), newPricing, {
             onSuccess: () => {
                 setShowAddPricing(false);
-                setNewPricing({ city_id: '', fee: '', min_days: '', max_days: '', is_active: true });
+                setNewPricing({ township_id: '', min_days: '', max_days: '', is_active: true });
             }
         });
     }
 
     function handleRemovePricing(pricingId) {
-        if (confirm('Remove this city pricing?')) {
+        if (confirm('Remove this township delivery rule?')) {
             router.delete(adminUrl(`/admin/delivery-services/pricing/${pricingId}`));
         }
     }
@@ -113,26 +199,133 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
 
                 <FormCard>
                     <SectionHeader
-                        title="City-Specific Pricing"
-                        description="Override fees and delivery windows per city."
-                        actions={!showAddPricing && citiesWithoutPricing?.length > 0 && (
+                        title="Township Delivery Rules"
+                        description="Choose which townships this service delivers to and their delivery windows."
+                        actions={!showAddPricing && townshipsWithoutPricing?.length > 0 && (
                             <PrimaryButton size="sm" type="button" onClick={() => setShowAddPricing(true)}>
-                                Add City Pricing
+                                Add Township Rule
                             </PrimaryButton>
                         )}
                     />
                     <div className="mt-4">
 
+                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                        <input
+                            type="text"
+                            value={ruleSearch}
+                            onChange={e => { setRuleSearch(e.target.value); setRulePage(1); clearRuleSelection(); }}
+                            placeholder="Search townships..."
+                            className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <select
+                            value={ruleCity}
+                            onChange={e => { setRuleCity(e.target.value); setRulePage(1); clearRuleSelection(); }}
+                            className="w-full sm:w-48 border border-gray-300 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Cities</option>
+                            {ruleCities.map(name => (
+                                <option key={name} value={name}>{name}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={ruleStatus}
+                            onChange={e => { setRuleStatus(e.target.value); setRulePage(1); clearRuleSelection(); }}
+                            className="w-full sm:w-48 border border-gray-300 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <select
+                            value={rulePerPage}
+                            onChange={e => { setRulePerPage(e.target.value); setRulePage(1); clearRuleSelection(); }}
+                            aria-label="Rows per page"
+                            className="w-full sm:w-auto border border-gray-300 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            {RULE_PAGE_SIZES.map(size => (
+                                <option key={size} value={size}>{size === 'all' ? 'All' : `${size} / page`}</option>
+                            ))}
+                        </select>
+                        {(ruleSearch || ruleCity || ruleStatus) && (
+                            <button onClick={() => resetRuleFilters('', '', '', null)} className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200 text-sm">Clear</button>
+                        )}
+                    </div>
+
+                    {(ruleSelected.length > 0 || selectAllMatching) && (
+                        <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/40 rounded-lg px-4 py-3 flex flex-col gap-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                    {selectAllMatching ? (
+                                        <>All {filteredRules.length} matching rule{filteredRules.length !== 1 ? 's' : ''} selected. </>
+                                    ) : (
+                                        <>{ruleSelected.length} selected on this page (of {filteredRules.length} matching). </>
+                                    )}
+                                    {!selectAllMatching && filteredRules.length > ruleSelected.length && (
+                                        <button onClick={handleSelectAllMatching}
+                                            className="underline underline-offset-2 hover:text-blue-900">
+                                            {`Select all ${filteredRules.length} matching`}
+                                        </button>
+                                    )}
+                                </span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button onClick={() => handleRuleBulkStatus(true)}
+                                        className="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-md hover:bg-emerald-200">
+                                        Activate
+                                    </button>
+                                    <button onClick={() => handleRuleBulkStatus(false)}
+                                        className="px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200">
+                                        Deactivate
+                                    </button>
+                                    <button onClick={() => { setDaysOpen(v => !v); setDaysMin(''); setDaysMax(''); }}
+                                        className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                        Set Days
+                                    </button>
+                                    <button onClick={clearRuleSelection}
+                                        className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800">
+                                        Clear selection
+                                    </button>
+                                </div>
+                            </div>
+                            {daysOpen && (
+                                <div className="flex flex-col sm:flex-row gap-2 sm:items-end bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-900/40 p-3">
+                                    <div>
+                                        <label htmlFor="bulk-min-days" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Min Days</label>
+                                        <input id="bulk-min-days" type="number" min="0" value={daysMin}
+                                            onChange={e => setDaysMin(e.target.value)}
+                                            placeholder="4"
+                                            className="w-full sm:w-28 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="bulk-max-days" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Max Days</label>
+                                        <input id="bulk-max-days" type="number" min="0" value={daysMax}
+                                            onChange={e => setDaysMax(e.target.value)}
+                                            placeholder="7"
+                                            className="w-full sm:w-28 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={applyRuleBulkDays}
+                                            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                            Apply
+                                        </button>
+                                        <button onClick={() => setDaysOpen(false)}
+                                            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-200">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {showAddPricing && (
                         <form onSubmit={handleAddPricing} className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                <SelectInput id="city_id" label="City" value={newPricing.city_id} onChange={(e) => setNewPricing({ ...newPricing, city_id: e.target.value })} required>
-                                    <option value="">Select City</option>
-                                    {citiesWithoutPricing.map(city => (
-                                        <option key={city.id} value={city.id}>{city.name}</option>
+                                <SelectInput id="township_id" label="Township" value={newPricing.township_id} onChange={(e) => setNewPricing({ ...newPricing, township_id: e.target.value })} required>
+                                    <option value="">Select Township</option>
+                                    {townshipsWithoutPricing.map(township => (
+                                        <option key={township.id} value={township.id}>{township.city?.name ? `${township.city.name} — ${township.name}` : township.name}</option>
                                     ))}
                                 </SelectInput>
-                                <TextInput id="fee" label="Fee Override" type="number" min="0" value={newPricing.fee} onChange={(e) => setNewPricing({ ...newPricing, fee: e.target.value ? parseInt(e.target.value) : '' })} />
                                 <TextInput id="min_days" label="Min Days" type="number" min="0" value={newPricing.min_days} onChange={(e) => setNewPricing({ ...newPricing, min_days: e.target.value ? parseInt(e.target.value) : '' })} />
                                 <TextInput id="max_days" label="Max Days" type="number" min="0" value={newPricing.max_days} onChange={(e) => setNewPricing({ ...newPricing, max_days: e.target.value ? parseInt(e.target.value) : '' })} />
                             </div>
@@ -143,23 +336,33 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
                         </form>
                     )}
 
-                    {deliveryService.pricing?.length > 0 ? (
-                        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                    {filteredRules.length > 0 ? (
+                        <div className="overflow-auto max-h-[60vh] md:max-h-[540px] -mx-4 px-4 sm:mx-0 sm:px-0 rounded-lg border border-gray-200 dark:border-gray-800">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                            <thead className="bg-gray-50 dark:bg-gray-950">
+                            <thead className="bg-gray-50 dark:bg-gray-950 sticky top-0 z-10 shadow-sm">
                                 <tr>
+                                    <TH>
+                                        <input type="checkbox" checked={ruleAllSelected} onChange={handleRuleSelectAll}
+                                            aria-label="Select all rules on this page"
+                                            className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
+                                    </TH>
+                                    <TH>Township</TH>
                                     <TH>City</TH>
-                                    <TH>Fee Override</TH>
                                     <TH>Days</TH>
                                     <TH align="center">Active</TH>
                                     <TH align="right">Actions</TH>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                {deliveryService.pricing.map(pricing => (
+                                {filteredRules.slice((rulePageSafe - 1) * rulePerPageNum, rulePageSafe * rulePerPageNum).map(pricing => (
                                     <tr key={pricing.id}>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{pricing.city?.name || `City #${pricing.city_id}`}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{pricing.fee ?? '-'}</td>
+                                        <td className="px-4 py-4">
+                                            <input type="checkbox" checked={ruleSelected.includes(pricing.id)} onChange={() => handleRuleSelectOne(pricing.id)}
+                                                aria-label={`Select rule for ${pricing.township?.name || pricing.id}`}
+                                                className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{pricing.township?.name || `Township #${pricing.township_id}`}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{pricing.township?.city?.name || '-'}</td>
                                         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                                             {pricing.min_days || deliveryService.min_days}-{pricing.max_days || deliveryService.max_days}
                                         </td>
@@ -175,7 +378,21 @@ export default function DeliveryServiceEdit({ deliveryService, cities, citiesWit
                         </table>
                         </div>
                     ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No city-specific pricing configured. This service uses base fees for all cities.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No township delivery rules configured. This service is not offered for any township yet.</p>
+                    )}
+                    {filteredRules.length > rulePerPageNum && (
+                        <div className="mt-4 flex items-center justify-between">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Showing {((rulePageSafe - 1) * rulePerPageNum) + 1} to {Math.min(rulePageSafe * rulePerPageNum, filteredRules.length)} of {filteredRules.length} rules
+                            </p>
+                            <div className="flex gap-1">
+                                <button onClick={() => setRulePage(p => Math.max(1, p - 1))} disabled={rulePageSafe <= 1}
+                                    className="px-3 py-1 text-sm rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-40">«</button>
+                                <span className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300">{rulePageSafe} / {ruleTotalPages}</span>
+                                <button onClick={() => setRulePage(p => Math.min(ruleTotalPages, p + 1))} disabled={rulePageSafe >= ruleTotalPages}
+                                    className="px-3 py-1 text-sm rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-40">»</button>
+                            </div>
+                        </div>
                     )}
                     </div>
                 </FormCard>

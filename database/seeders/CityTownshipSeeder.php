@@ -2,36 +2,27 @@
 
 namespace Database\Seeders;
 
-use App\Models\City;
-use App\Models\Township;
+use App\Models\Tenant;
+use App\Services\MyanmarLocationImportService;
 use Illuminate\Database\Seeder;
 
 class CityTownshipSeeder extends Seeder
 {
     public function run(): void
     {
-        $locations = require database_path('data/myanmar_locations.php');
+        $tenants = Tenant::all();
 
-        foreach ($locations as $cityData) {
-            $city = City::firstOrCreate(
-                ['name' => $cityData['name']],
-                [
-                    'delivery_fee' => $cityData['delivery_fee'] ?? 0,
-                    'is_active' => true,
-                ]
-            );
-
-            foreach ($cityData['townships'] as $townshipData) {
-                Township::firstOrCreate(
-                    ['city_id' => $city->id, 'name' => $townshipData['name']],
-                    [
-                        'postal_code' => $townshipData['postal_code'] ?? null,
-                        'is_active' => true,
-                    ]
-                );
-            }
+        if ($tenants->isEmpty()) {
+            $this->command->warn('No tenants found. Skipping location seeding.');
+            return;
         }
 
-        $this->command->info('Global cities and townships seeded successfully.');
+        $importer = app(MyanmarLocationImportService::class);
+
+        foreach ($tenants as $tenant) {
+            $importer->import($tenant);
+        }
+
+        $this->command->info('Tenant locations seeded successfully for all tenants.');
     }
 }

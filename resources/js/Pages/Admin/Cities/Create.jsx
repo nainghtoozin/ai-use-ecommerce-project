@@ -5,7 +5,6 @@ import { adminUrl } from '@/Utils/adminUrl';
 export default function CityCreate() {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        delivery_fee: '',
         is_active: true,
     });
 
@@ -30,13 +29,6 @@ export default function CityCreate() {
                             <input id="name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)}
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-                        </div>
-
-                        <div>
-                            <label htmlFor="delivery_fee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delivery Fee</label>
-                            <input id="delivery_fee" type="number" step="0.01" min="0" value={data.delivery_fee} onChange={(e) => setData('delivery_fee', e.target.value)}
-                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            {errors.delivery_fee && <p className="mt-1 text-sm text-red-600">{errors.delivery_fee}</p>}
                         </div>
 
                         <div className="flex items-center gap-2">

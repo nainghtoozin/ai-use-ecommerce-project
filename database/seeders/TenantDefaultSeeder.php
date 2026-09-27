@@ -20,11 +20,14 @@ class TenantDefaultSeeder extends Seeder
             return;
         }
 
+        $locations = app(\App\Services\MyanmarLocationImportService::class);
+
         foreach ($tenants as $tenant) {
             $this->seedPaymentMethods($tenant);
             $this->seedWebsiteInfo($tenant);
             $this->seedFaqs($tenant);
             $this->seedCodRules($tenant);
+            $locations->import($tenant);
         }
 
         $this->command->info('Tenant defaults seeded successfully for all tenants.');

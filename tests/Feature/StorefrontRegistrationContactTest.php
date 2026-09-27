@@ -26,15 +26,16 @@ class StorefrontRegistrationContactTest extends TestCase
         parent::setUp();
 
         $this->tenant = Tenant::create(['name' => 'RG Store', 'slug' => 'rg-store', 'status' => 'active']);
+        Tenant::setCurrent($this->tenant);
 
-        $this->city = City::create(['name' => 'Yangon', 'delivery_fee' => 3000, 'is_active' => true]);
-        $otherCity = City::create(['name' => 'Mandalay', 'delivery_fee' => 4000, 'is_active' => true]);
+        $this->city = City::create(['tenant_id' => $this->tenant->id, 'name' => 'Yangon', 'is_active' => true]);
+        $otherCity = City::create(['tenant_id' => $this->tenant->id, 'name' => 'Mandalay', 'is_active' => true]);
 
         $this->township = Township::create([
-            'city_id' => $this->city->id, 'name' => 'Kamaryut', 'postal_code' => '11041', 'is_active' => true,
+            'tenant_id' => $this->tenant->id, 'city_id' => $this->city->id, 'name' => 'Kamaryut', 'postal_code' => '11041', 'delivery_fee' => 3000, 'is_active' => true,
         ]);
         $this->otherTownship = Township::create([
-            'city_id' => $otherCity->id, 'name' => 'Chanmyathazi', 'postal_code' => '05001', 'is_active' => true,
+            'tenant_id' => $this->tenant->id, 'city_id' => $otherCity->id, 'name' => 'Chanmyathazi', 'postal_code' => '05001', 'delivery_fee' => 4000, 'is_active' => true,
         ]);
     }
 

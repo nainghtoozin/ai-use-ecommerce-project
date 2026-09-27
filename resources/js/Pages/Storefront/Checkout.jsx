@@ -223,8 +223,9 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
     }
 
     const city = cities?.find((c) => c.id == form.city_id);
+    const township = townships?.find((t) => t.id == form.township_id);
     const selectedPaymentMethod = paymentMethods?.find((pm) => pm.id == form.payment_method_id);
-    const deliveryFee = city?.delivery_fee || 0;
+    const deliveryFee = township?.delivery_fee || 0;
     const totalDiscount = Number(localDiscount) || 0;
     const total = Number(subtotal) + Number(deliveryFee) - totalDiscount;
     const totalItems = Array.isArray(cartItems) ? cartItems.reduce((s, i) => s + i.quantity, 0) : 0;
@@ -410,7 +411,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City *</label>
                                     <select value={form.city_id} onChange={(e) => { updateField('city_id', e.target.value); fetchTownships(e.target.value); setForm((p) => ({ ...p, township_id: '', postal_code: '' })); }} className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">Select City</option>
-                                        {cities?.map((c) => <option key={c.id} value={c.id}>{c.name} ({formatCurrency(c.delivery_fee, cc)})</option>)}
+                                        {cities?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                     {formErrors.city_id && <p className="text-red-500 text-xs mt-1">{formErrors.city_id}</p>}
                                 </div>
@@ -418,7 +419,7 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Township *</label>
                                     <select value={form.township_id} onChange={(e) => { updateField('township_id', e.target.value); const t = townships.find(t => t.id == e.target.value); setForm((p) => ({ ...p, postal_code: t?.postal_code || '' })); }} disabled={!form.city_id} className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:bg-gray-950 disabled:text-gray-400 dark:text-gray-500 disabled:cursor-not-allowed">
                                         <option value="">{form.city_id ? 'Select Township' : 'Select a City first'}</option>
-                                        {townships.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                        {townships.map((t) => <option key={t.id} value={t.id}>{t.name}{t.delivery_fee ? ` (${formatCurrency(t.delivery_fee, cc)})` : ''}</option>)}
                                     </select>
                                 </div>
                                 <div>

@@ -29,6 +29,7 @@ class OrderController extends Controller
         private readonly PromotionService $promotionService,
         private readonly StockCalculationService $stockCalculationService,
         private readonly FlashSaleService $flashSaleService,
+        private readonly \App\Services\DeliveryFeeService $deliveryFeeService,
     ) {}
 
     public function index(Request $request): \Inertia\Response
@@ -80,15 +81,26 @@ class OrderController extends Controller
             'payment_screenshot' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        if (!empty($validated['city_id']) && !empty($validated['township_id'])) {
-            $township = Township::find($validated['township_id']);
-            if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
-                return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
+        if (!empty($validated['city_id']) || !empty($validated['township_id'])) {
+            $tenant = \App\Models\Tenant::getCurrent();
+            $user = auth()->user();
+            if (!$tenant && $user instanceof \App\Models\User && $user->tenant) {
+                $tenant = $user->tenant;
             }
-            if (!empty($validated['postal_code']) && $township->postal_code && $validated['postal_code'] !== $township->postal_code) {
-                return back()->withErrors(['postal_code' => 'The postal code does not match the selected township.'])->withInput();
+            $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+                !empty($validated['city_id']) ? (int) $validated['city_id'] : null,
+                !empty($validated['township_id']) ? (int) $validated['township_id'] : null,
+                $tenant
+            );
+            $validated['city_id'] = $location['city']?->id ?? $validated['city_id'] ?? null;
+            $validated['township_id'] = $location['township']?->id ?? $validated['township_id'] ?? null;
+            $township = $location['township'];
+            if ($township) {
+                if (!empty($validated['postal_code']) && $township->postal_code && $validated['postal_code'] !== $township->postal_code) {
+                    return back()->withErrors(['postal_code' => 'The postal code does not match the selected township.'])->withInput();
+                }
+                $validated['postal_code'] = $township->postal_code ?? ($validated['postal_code'] ?? null);
             }
-            $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
         }
 
         if (auth()->check()) {
@@ -152,9 +164,10 @@ class OrderController extends Controller
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $items));
 
         $deliveryFee = (float) 0;
-        if ($validated['city_id']) {
-            $city = \App\Models\City::find($validated['city_id']);
-            if ($city) $deliveryFee = (float) $city->delivery_fee;
+        if (!empty($validated['township_id'])) {
+            $deliveryFee = (float) $this->deliveryFeeService->getTownshipFee(
+                \App\Models\Township::find($validated['township_id'])
+            );
         }
 
         $discountData = $this->resolveDiscountsFromSession($items, $deliveryFee);

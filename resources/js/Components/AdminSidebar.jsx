@@ -17,7 +17,8 @@ import {
     Rocket, HelpCircle,
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
-    Activity, Shield, UserPlus, ArrowUp, Truck,
+    Activity, Shield, UserPlus, ArrowUp,
+    Truck,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {

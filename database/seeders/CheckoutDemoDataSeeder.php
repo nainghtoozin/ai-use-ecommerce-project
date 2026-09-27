@@ -9,6 +9,7 @@ use App\Models\DeliveryService;
 use App\Models\PackagingOption;
 use App\Models\PaymentMethod;
 use App\Models\Tenant;
+use App\Models\Township;
 use Illuminate\Database\Seeder;
 
 class CheckoutDemoDataSeeder extends Seeder
@@ -58,27 +59,14 @@ class CheckoutDemoDataSeeder extends Seeder
 
     private function seedDeliveryPricing(Tenant $tenant): void
     {
-        $cities = City::all();
+        $townships = Township::withoutTenantScope()->where('tenant_id', $tenant->id)->get();
+        $services = DeliveryService::withoutTenantScope()->where('tenant_id', $tenant->id)->get();
 
-        foreach ($cities as $city) {
-            $cityKey = strtolower($city->name);
-
-            $prices = match (true) {
-                str_contains($cityKey, 'yangon') => ['economy' => 1000, 'standard' => 2000, 'express' => 4000],
-                str_contains($cityKey, 'mandalay') || str_contains($cityKey, 'naypyidaw') => ['economy' => 1500, 'standard' => 2500, 'express' => 4500],
-                default => ['economy' => 2000, 'standard' => 3500, 'express' => 5500],
-            };
-
-            $services = DeliveryService::withoutTenantScope()->where('tenant_id', $tenant->id)->get()->keyBy('code');
-
-            foreach ($prices as $code => $fee) {
-                $service = $services->get($code);
-                if (!$service) continue;
-
+        foreach ($townships as $township) {
+            foreach ($services as $service) {
                 DeliveryPricing::firstOrCreate(
-                    ['delivery_service_id' => $service->id, 'city_id' => $city->id],
+                    ['delivery_service_id' => $service->id, 'township_id' => $township->id],
                     [
-                        'fee' => $fee,
                         'min_days' => $service->min_days,
                         'max_days' => $service->max_days,
                         'is_active' => true,
@@ -112,7 +100,7 @@ class CheckoutDemoDataSeeder extends Seeder
 
     private function seedCodRules(Tenant $tenant): void
     {
-        $yangon = City::where('name', 'Yangon')->first();
+        $yangon = City::withoutTenantScope()->where('tenant_id', $tenant->id)->where('name', 'Yangon')->first();
 
         // Replace old default rule with Standard COD
         CodRule::withoutTenantScope()->where('tenant_id', $tenant->id)->where('name', 'Default COD Rule')->delete();

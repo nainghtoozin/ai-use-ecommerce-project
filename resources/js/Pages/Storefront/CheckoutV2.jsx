@@ -272,11 +272,16 @@ export default function StorefrontCheckoutV2({
   }
 
   const city = cities?.find(c => c.id == form.city_id);
+  const township = townships?.find(t => t.id == form.township_id);
   const selectedPayment = paymentMethods?.find(pm => pm.id == form.payment_method_id);
   const quotedService = (id) => quote?.services?.find(s => String(s.id) === String(id));
+  const quotedServiceIds = quote?.services ? new Set(quote.services.map(s => String(s.id))) : null;
+  const visibleServices = (form.township_id && quotedServiceIds)
+    ? (deliveryServices || []).filter(s => quotedServiceIds.has(String(s.id)))
+    : (deliveryServices || []);
   const deliveryFee = quote
     ? Number(quote.delivery?.fee || 0)
-    : (Number(city?.delivery_fee) || 0) + (selectedDeliveryService ? Number(selectedDeliveryService.base_fee) || 0 : 0);
+    : (Number(township?.delivery_fee) || 0) + (selectedDeliveryService ? Number(selectedDeliveryService.base_fee) || 0 : 0);
   const packagingFee = quote ? Number(quote.packaging?.fee || 0) : (selectedPackaging?.fee || 0);
   const codFee = quote ? Number(quote.cod?.fee || 0) : (selectedPayment?.type === 'cod' ? (selectedPayment?.cod_fee || 0) : 0);
   const totalDiscount = Number(localDiscount) || 0;
@@ -287,7 +292,7 @@ export default function StorefrontCheckoutV2({
 
   const isAddressValid = form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.city_id;
   const isDeliveryReady = isAddressValid;
-  const isPaymentReady = isAddressValid && (selectedDeliveryService || (deliveryServices && deliveryServices.length === 0));
+  const isPaymentReady = isAddressValid && (selectedDeliveryService || (visibleServices && visibleServices.length === 0));
 
   function canPlaceOrder() {
     return !!(form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.payment_method_id && form.city_id);
@@ -463,19 +468,16 @@ export default function StorefrontCheckoutV2({
               )}
             </div>
           )}
-          {city && (quote?.delivery?.city_fee ?? city.delivery_fee) != null && Number(quote?.delivery?.city_fee ?? city.delivery_fee) > 0 && (
+          {(township || city) && (quote?.delivery?.township_fee ?? township?.delivery_fee) != null && Number(quote?.delivery?.township_fee ?? township?.delivery_fee) > 0 && (
             <div className="flex justify-between gap-2">
-              <span className="text-gray-500 dark:text-gray-400">City Delivery Fee</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(quote?.delivery?.city_fee ?? city.delivery_fee ?? 0, cc)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Township Delivery Fee</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(quote?.delivery?.township_fee ?? township?.delivery_fee ?? 0, cc)}</span>
             </div>
           )}
           {(selectedDeliveryService || (quote && quote?.delivery?.service_fee > 0)) && (
             <div className="flex justify-between gap-2">
               <span className="text-gray-500 dark:text-gray-400">
                 {selectedDeliveryService?.name || 'Delivery Service'}
-                {quote?.delivery?.service_fallback && (
-                  <span className="ml-1.5 text-[10px] font-medium text-gray-400">cheapest available</span>
-                )}
               </span>
               <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(quote?.delivery?.service_fee ?? selectedDeliveryService?.base_fee ?? 0, cc)}</span>
             </div>
@@ -496,9 +498,6 @@ export default function StorefrontCheckoutV2({
                 <span className="font-semibold text-gray-900 dark:text-gray-100">Delivery Total</span>
                 <span className="font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(deliveryFee, cc)}</span>
               </div>
-              {quote?.delivery?.city_rate_applied && (
-                <p className="text-[11px] text-gray-400 text-right mt-0.5">Service fee uses the city-specific rate</p>
-              )}
             </div>
           ) : (!selectedDeliveryService && (
             <div className="flex justify-between">
@@ -771,18 +770,18 @@ export default function StorefrontCheckoutV2({
                     aria-describedby={formErrors.city_id ? 'err-ci' : undefined}
                     className={`${inputClass('city_id')} appearance-none`}>
                     <option value="">Select city</option>
-                    {cities?.map(c => <option key={c.id} value={c.id}>{c.name} ({formatCurrency(c.delivery_fee || 0, cc)})</option>)}
+                    {cities?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   {formErrors.city_id && <p id="err-ci" role="alert" className="text-red-500 text-xs mt-1">{formErrors.city_id}</p>}
                 </div>
                 <div>
                   <label htmlFor="checkout-township" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Township</label>
                   <select id="checkout-township" value={form.township_id}
-                    onChange={e => { updateField('township_id', e.target.value); const t = townships.find(tw => tw.id == e.target.value); setForm(p => ({ ...p, postal_code: t?.postal_code || '' })); }}
+                    onChange={e => { updateField('township_id', e.target.value); const t = townships.find(tw => tw.id == e.target.value); setForm(p => ({ ...p, postal_code: t?.postal_code || '' })); setSelectedDeliveryService(null); }}
                     disabled={!form.city_id} aria-busy={townshipsLoading}
                     className={`${inputClass('township_id')} appearance-none ${!form.city_id ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''}`}>
                     <option value="">{form.city_id ? (townshipsLoading ? 'Loading...' : 'Select township') : 'Select city first'}</option>
-                    {!townshipsLoading && townships.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    {!townshipsLoading && townships.map(t => <option key={t.id} value={t.id}>{t.name}{t.delivery_fee ? ` (${formatCurrency(t.delivery_fee, cc)})` : ''}</option>)}
                   </select>
                 </div>
                 <div>
@@ -824,9 +823,9 @@ export default function StorefrontCheckoutV2({
                 </div>
               )}
 
-              {isDeliveryReady && deliveryServices?.length > 0 && (
+              {isDeliveryReady && visibleServices?.length > 0 && (
                 <div role="radiogroup" aria-label="Delivery service" className="space-y-2.5">
-                  {deliveryServices.map(service => {
+                  {visibleServices.map(service => {
                     const isSelected = selectedDeliveryService?.id === service.id;
                     const quoted = quotedService(service.id);
                     const actualFee = quoted ? quoted.fee : service.base_fee;
@@ -838,7 +837,7 @@ export default function StorefrontCheckoutV2({
                             <RadioButton selected={isSelected} />
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{service.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{etaLabel}{quoted ? ' · city rate' : ''}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{etaLabel}</p>
                             </div>
                           </div>
                           <div className="text-right flex-shrink-0 ml-3">
@@ -851,10 +850,17 @@ export default function StorefrontCheckoutV2({
                 </div>
               )}
 
+              {isDeliveryReady && form.township_id && visibleServices?.length === 0 && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No delivery services available</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">This township is not covered by any delivery service yet.</p>
+                </div>
+              )}
+
               {isDeliveryReady && (!deliveryServices || deliveryServices.length === 0) && (
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Standard Delivery</p>
-                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(city?.delivery_fee || 0, cc)}</p>
+                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(township?.delivery_fee || 0, cc)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Estimated 2–5 business days</p>
                 </div>
               )}

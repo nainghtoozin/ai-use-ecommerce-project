@@ -14,15 +14,13 @@ class DeliveryPricing extends Model
 
     protected $fillable = [
         'delivery_service_id',
-        'city_id',
-        'fee',
+        'township_id',
         'min_days',
         'max_days',
         'is_active',
     ];
 
     protected $casts = [
-        'fee' => 'integer',
         'min_days' => 'integer',
         'max_days' => 'integer',
         'is_active' => 'boolean',
@@ -33,9 +31,9 @@ class DeliveryPricing extends Model
         return $this->belongsTo(DeliveryService::class);
     }
 
-    public function city(): BelongsTo
+    public function township(): BelongsTo
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(Township::class);
     }
 
     public function scopeActive($query)

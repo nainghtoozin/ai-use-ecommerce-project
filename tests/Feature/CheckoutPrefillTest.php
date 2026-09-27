@@ -39,9 +39,9 @@ class CheckoutPrefillTest extends TestCase
             'category_id' => $category->id, 'status' => Product::STATUS_ACTIVE,
         ]);
 
-        $this->city = City::create(['name' => 'Yangon', 'delivery_fee' => 3000, 'is_active' => true]);
+        $this->city = City::create(['name' => 'Yangon', 'is_active' => true]);
         $this->township = Township::create([
-            'city_id' => $this->city->id, 'name' => 'Kamaryut', 'postal_code' => '11041', 'is_active' => true,
+            'city_id' => $this->city->id, 'name' => 'Kamaryut', 'postal_code' => '11041', 'delivery_fee' => 3000, 'is_active' => true,
         ]);
 
         $this->account = Account::create([

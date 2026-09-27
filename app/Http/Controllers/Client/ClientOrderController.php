@@ -30,6 +30,7 @@ class ClientOrderController extends Controller
         CouponService $couponService,
         PromotionService $promotionService,
         protected OrderStatusTransitionService $transitionService,
+        protected \App\Services\DeliveryFeeService $deliveryFeeService,
     ) {
         $this->orderService = $orderService;
         $this->imageService = $imageService;
@@ -169,14 +170,28 @@ class ClientOrderController extends Controller
             return response()->json(['message' => 'Payment method is required'], 422);
         }
 
+        if (!empty($orderData['city_id']) || !empty($orderData['township_id'])) {
+            try {
+                $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+                    !empty($orderData['city_id']) ? (int) $orderData['city_id'] : null,
+                    !empty($orderData['township_id']) ? (int) $orderData['township_id'] : null,
+                    \App\Models\Tenant::getCurrent()
+                );
+                $orderData['city_id'] = $location['city']?->id ?? $orderData['city_id'];
+                $orderData['township_id'] = $location['township']?->id ?? $orderData['township_id'];
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json(['message' => $e->errors()['city_id'][0] ?? $e->errors()['township_id'][0] ?? 'Invalid location.'], 422);
+            }
+        }
+
         if ($request->hasFile('payment_proof')) {
             $request->validate(['payment_proof' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
             $path = $this->imageService->upload($request->file('payment_proof'), 'payment-proofs');
             $orderData['payment_proof'] = $path;
         }
 
-        $couponData = $this->resolveCouponFromSession($items, $orderData['city_id'] ?? null);
-        $promotionData = $this->resolvePromotionFromSession($items, $orderData['city_id'] ?? null);
+        $couponData = $this->resolveCouponFromSession($items, $orderData['city_id'] ?? null, $orderData['township_id'] ?? null);
+        $promotionData = $this->resolvePromotionFromSession($items, $orderData['city_id'] ?? null, $orderData['township_id'] ?? null);
         $orderData['discount_amount'] = ($couponData['discount'] ?? 0) + ($promotionData['discount'] ?? 0);
 
         try {
@@ -215,18 +230,16 @@ class ClientOrderController extends Controller
         }
     }
 
-    private function resolveCouponFromSession(array $items, $cityId = null): array
+    private function resolveCouponFromSession(array $items, $cityId = null, $townshipId = null): array
     {
         $appliedCoupon = session()->get('applied_coupon');
 
         if ($appliedCoupon && isset($appliedCoupon['coupon_id'])) {
             $coupon = Coupon::find($appliedCoupon['coupon_id']);
             if ($coupon && $coupon->isValid()) {
-                $deliveryFee = 0;
-                if ($cityId) {
-                    $city = \App\Models\City::find($cityId);
-                    if ($city) $deliveryFee = (float) $city->delivery_fee;
-                }
+                $deliveryFee = $townshipId
+                    ? (float) $this->deliveryFeeService->getTownshipFee(\App\Models\Township::find($townshipId))
+                    : 0;
                 $cartItems = collect($items);
                 $result = $this->couponService->validateCoupon(
                     $coupon->code,
@@ -246,18 +259,16 @@ class ClientOrderController extends Controller
         return [];
     }
 
-    private function resolvePromotionFromSession(array $items, $cityId = null): array
+    private function resolvePromotionFromSession(array $items, $cityId = null, $townshipId = null): array
     {
         $appliedPromotion = session()->get('applied_promotion');
 
         if ($appliedPromotion && isset($appliedPromotion['promotion_id'])) {
             $promotion = \App\Models\Promotion::find($appliedPromotion['promotion_id']);
             if ($promotion && $promotion->isCurrentlyActive()) {
-                $deliveryFee = 0;
-                if ($cityId) {
-                    $city = \App\Models\City::find($cityId);
-                    if ($city) $deliveryFee = (float) $city->delivery_fee;
-                }
+                $deliveryFee = $townshipId
+                    ? (float) $this->deliveryFeeService->getTownshipFee(\App\Models\Township::find($townshipId))
+                    : 0;
                 $result = $this->promotionService->validatePromotion(
                     $promotion->code,
                     $items,

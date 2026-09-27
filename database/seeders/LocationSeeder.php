@@ -374,19 +374,19 @@ class LocationSeeder extends Seeder
 
         foreach ($tenants as $tenant) {
             foreach ($this->locations as $cityData) {
-                $city = City::firstOrCreate(
+                $city = City::withoutTenantScope()->firstOrCreate(
                     ['tenant_id' => $tenant->id, 'name' => $cityData['name']],
                     [
-                        'delivery_fee' => $cityData['delivery_fee'],
                         'is_active' => true,
                     ]
                 );
 
                 foreach ($cityData['townships'] as $townshipData) {
-                    Township::firstOrCreate(
-                        ['city_id' => $city->id, 'name' => $townshipData['name']],
+                    Township::withoutTenantScope()->firstOrCreate(
+                        ['tenant_id' => $tenant->id, 'city_id' => $city->id, 'name' => $townshipData['name']],
                         [
                             'postal_code' => $townshipData['postal_code'],
+                            'delivery_fee' => $cityData['delivery_fee'],
                             'is_active' => true,
                         ]
                     );

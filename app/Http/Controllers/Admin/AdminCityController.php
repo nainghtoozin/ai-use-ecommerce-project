@@ -58,6 +58,10 @@ class AdminCityController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to create a city.');
+        }
+
         $this->locationService->createCity($request->validated());
         return admin_redirect('admin.cities.index')
             ->with('success', 'City created successfully.');
@@ -109,10 +113,36 @@ class AdminCityController extends Controller
         ]);
     }
 
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        if (!auth()->user()->can('cities.update')) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to update cities.');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1|max:200',
+            'ids.*' => 'integer|min:1',
+            'is_active' => 'required|boolean',
+        ]);
+
+        $result = $this->locationService->bulkSetCityActive($validated['ids'], (bool) $validated['is_active']);
+        $action = $validated['is_active'] ? 'activated' : 'deactivated';
+
+        return back()->with('success', "{$result['affected']} of " . count($validated['ids']) . " cities {$action}.");
+    }
+
     public function importMyanmar(MyanmarLocationImportService $service): RedirectResponse
     {
         if (!auth()->user()->can('cities.create')) {
             abort(403, 'Unauthorized');
+        }
+
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to import locations.');
         }
 
         $stats = $service->import();

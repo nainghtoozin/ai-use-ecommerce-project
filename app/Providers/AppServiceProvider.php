@@ -70,7 +70,8 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(\App\Services\StockMovementService::class),
                 $app->make(\App\Services\StockCalculationService::class),
                 $app->make(\App\Services\WarehouseService::class),
-                $app->make(\App\Services\FlashSaleService::class)
+                $app->make(\App\Services\FlashSaleService::class),
+                $app->make(\App\Services\DeliveryFeeService::class)
             );
         });
 

@@ -53,14 +53,16 @@ class CodRuleService
 
     public function rules(?CodRule $codRule = null): array
     {
+        $tenantId = tenant()?->id;
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'min_order_amount' => ['nullable', 'numeric', 'min:0'],
             'max_order_amount' => ['nullable', 'numeric', 'min:0', 'gte:min_order_amount'],
             'allowed_city_ids' => ['nullable', 'array'],
-            'allowed_city_ids.*' => ['integer', 'exists:cities,id'],
+            'allowed_city_ids.*' => ['integer', Rule::exists('cities', 'id')->where('tenant_id', $tenantId)],
             'excluded_city_ids' => ['nullable', 'array'],
-            'excluded_city_ids.*' => ['integer', 'exists:cities,id'],
+            'excluded_city_ids.*' => ['integer', Rule::exists('cities', 'id')->where('tenant_id', $tenantId)],
             'cod_fee' => ['required', 'numeric', 'min:0'],
             'apply_cod_fee_to_total' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],

@@ -7,6 +7,7 @@ export default function TownshipEdit({ township, cities = [] }) {
         city_id: township.city_id || '',
         name: township.name || '',
         postal_code: township.postal_code || '',
+        delivery_fee: township.delivery_fee ?? '',
         is_active: township.is_active ?? true,
     });
 
@@ -50,6 +51,13 @@ export default function TownshipEdit({ township, cities = [] }) {
                             <input id="postal_code" type="text" value={data.postal_code} onChange={(e) => setData('postal_code', e.target.value)}
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             {errors.postal_code && <p className="mt-1 text-sm text-red-600">{errors.postal_code}</p>}
+                        </div>
+
+                        <div>
+                            <label htmlFor="delivery_fee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delivery Fee</label>
+                            <input id="delivery_fee" type="number" step="0.01" min="0" value={data.delivery_fee} onChange={(e) => setData('delivery_fee', e.target.value)}
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            {errors.delivery_fee && <p className="mt-1 text-sm text-red-600">{errors.delivery_fee}</p>}
                         </div>
 
                         <div className="flex items-center gap-2">

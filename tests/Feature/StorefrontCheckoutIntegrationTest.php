@@ -76,17 +76,16 @@ class StorefrontCheckoutIntegrationTest extends TestCase
         ]);
 
         $this->city = City::create([
-            'tenant_id' => null,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Yangon',
-            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
 
         $this->township = Township::create([
-            'tenant_id' => null,
             'city_id' => $this->city->id,
             'name' => 'Hlaing',
             'postal_code' => '11041',
+            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
 

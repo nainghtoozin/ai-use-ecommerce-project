@@ -10,7 +10,6 @@ use App\Models\Product;
 use App\Auth\IdentityResolver;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
-use App\Models\City;
 use App\Models\Township;
 use App\Models\Coupon;
 use App\Models\Promotion;
@@ -35,6 +34,7 @@ class OrderService
         private readonly StockCalculationService $stockCalculationService,
         private readonly WarehouseService $warehouseService,
         private readonly FlashSaleService $flashSaleService,
+        private readonly DeliveryFeeService $deliveryFeeService,
     ) {}
 
     public function createOrder(array $orderData, array $items, ?array $couponData = null, ?array $promotionData = null): Order
@@ -251,11 +251,8 @@ class OrderService
 
     private function getDeliveryFee($cityId, $townshipId): float
     {
-        if ($cityId) {
-            $city = City::find($cityId);
-            if ($city) {
-                return (float) $city->delivery_fee;
-            }
+        if ($townshipId) {
+            return (float) $this->deliveryFeeService->getTownshipFee(Township::find($townshipId));
         }
 
         return 0;

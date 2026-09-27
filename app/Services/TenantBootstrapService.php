@@ -74,6 +74,7 @@ class TenantBootstrapService
                 $this->createDefaultPaymentMethods($tenant);
                 $this->createDefaultWarehouse($tenant);
                 $this->seedDefaultFaqs($tenant);
+                $this->provisionLocations($tenant);
 
                 if (Schema::hasTable('storefronts')) {
                     app(StorefrontConfigurationResolver::class)->provision($tenant);
@@ -459,6 +460,19 @@ class TenantBootstrapService
             $warehouse->is_active = true;
             $warehouse->save();
         }
+    }
+
+    protected function provisionLocations(Tenant $tenant): void
+    {
+        $exists = \App\Models\City::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        app(\App\Services\MyanmarLocationImportService::class)->import($tenant);
     }
 
     protected function seedDefaultFaqs(Tenant $tenant): void

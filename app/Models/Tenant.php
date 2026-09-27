@@ -119,6 +119,16 @@ class Tenant extends Model
         return $this->hasMany(Brand::class);
     }
 
+    public function cities()
+    {
+        return $this->hasMany(City::class);
+    }
+
+    public function townships()
+    {
+        return $this->hasMany(Township::class);
+    }
+
     public function storefront()
     {
         return $this->hasOne(Storefront::class);

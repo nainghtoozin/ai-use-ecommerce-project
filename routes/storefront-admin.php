@@ -330,6 +330,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/cities/{city}', [AdminCityController::class, 'update'])->name('cities.update')->whereNumber('city');
         Route::delete('/cities/{city}', [AdminCityController::class, 'destroy'])->name('cities.destroy')->whereNumber('city');
         Route::post('/cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle')->whereNumber('city');
+        Route::post('/cities/bulk-status', [AdminCityController::class, 'bulkStatus'])->name('cities.bulk-status');
         Route::post('/locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
 
         // Townships
@@ -340,6 +341,10 @@ Route::prefix('store/{store_slug}/admin')
         Route::put('/townships/{township}', [AdminTownshipController::class, 'update'])->name('townships.update')->whereNumber('township');
         Route::delete('/townships/{township}', [AdminTownshipController::class, 'destroy'])->name('townships.destroy')->whereNumber('township');
         Route::post('/townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle')->whereNumber('township');
+        Route::post('/townships/bulk-status', [AdminTownshipController::class, 'bulkStatus'])->name('townships.bulk-status');
+        Route::post('/townships/bulk-destroy', [AdminTownshipController::class, 'bulkDestroy'])->name('townships.bulk-destroy');
+        Route::post('/townships/update-fees', [AdminTownshipController::class, 'updateFees'])->name('townships.update-fees');
+        Route::get('/townships/matching-ids', [AdminTownshipController::class, 'matchingIds'])->name('townships.matching-ids');
 
         // Website Info
         Route::get('website-info/edit', [SettingsController::class, 'edit'])->name('website-info.edit');
@@ -456,8 +461,10 @@ Route::prefix('store/{store_slug}/admin')
         // Delivery Services
         Route::resource('delivery-services', \App\Http\Controllers\Admin\AdminDeliveryServiceController::class)->except(['show']);
         Route::post('delivery-services/{delivery_service}/toggle', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'toggle'])->name('delivery-services.toggle')->whereNumber('delivery_service');
-        Route::post('delivery-services/{delivery_service}/add-city-pricing', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'addCityPricing'])->name('delivery-services.add-city-pricing')->whereNumber('delivery_service');
-        Route::delete('delivery-services/pricing/{pricing}', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'removeCityPricing'])->name('delivery-services.remove-city-pricing')->whereNumber('pricing');
+        Route::post('delivery-services/{delivery_service}/add-township-pricing', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'addTownshipPricing'])->name('delivery-services.add-township-pricing')->whereNumber('delivery_service');
+        Route::delete('delivery-services/pricing/{pricing}', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'removeTownshipPricing'])->name('delivery-services.remove-township-pricing')->whereNumber('pricing');
+        Route::post('delivery-services/pricing/bulk-status', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'bulkPricingStatus'])->name('delivery-services.pricing.bulk-status');
+        Route::post('delivery-services/pricing/bulk-days', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'bulkPricingDays'])->name('delivery-services.pricing.bulk-days');
 
         // Packaging Options
         Route::resource('packaging-options', \App\Http\Controllers\Admin\AdminPackagingOptionController::class)->except(['show']);

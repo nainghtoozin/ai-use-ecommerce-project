@@ -56,20 +56,18 @@ class DeliveryService extends Model
         return $this->min_days . '-' . $this->max_days . ' days';
     }
 
-    public function getFeeForCity(City $city): int
+    public function getFeeForTownship(Township $township): int
     {
-        $pricing = $this->pricing()->where('city_id', $city->id)->active()->first();
-
-        if ($pricing && $pricing->fee !== null) {
-            return $pricing->fee;
-        }
+        $this->assertSameTenant($township);
 
         return $this->base_fee;
     }
 
-    public function getDaysForCity(City $city): array
+    public function getDaysForTownship(Township $township): array
     {
-        $pricing = $this->pricing()->where('city_id', $city->id)->active()->first();
+        $this->assertSameTenant($township);
+
+        $pricing = $this->pricing()->where('township_id', $township->id)->active()->first();
 
         if ($pricing && $pricing->min_days !== null) {
             return [
@@ -82,5 +80,12 @@ class DeliveryService extends Model
             'min' => $this->min_days,
             'max' => $this->max_days,
         ];
+    }
+
+    private function assertSameTenant(Township $township): void
+    {
+        if ((int) $township->tenant_id !== (int) $this->tenant_id) {
+            throw new \InvalidArgumentException('Delivery service and township belong to different tenants.');
+        }
     }
 }

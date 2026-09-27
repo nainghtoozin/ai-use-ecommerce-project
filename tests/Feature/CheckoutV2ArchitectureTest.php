@@ -75,17 +75,16 @@ class CheckoutV2ArchitectureTest extends TestCase
         ]);
 
         $this->city = City::create([
-            'tenant_id' => null,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Yangon',
-            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
 
         $this->township = Township::create([
-            'tenant_id' => null,
             'city_id' => $this->city->id,
             'name' => 'Hlaing',
             'postal_code' => '11041',
+            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
 
@@ -210,7 +209,7 @@ class CheckoutV2ArchitectureTest extends TestCase
     }
 
     /** @test */
-    public function delivery_pricing_overrides_base_fee_per_city(): void
+    public function delivery_pricing_sets_township_days_with_base_fee(): void
     {
         $service = DeliveryService::create([
             'tenant_id' => $this->tenant->id,
@@ -224,15 +223,15 @@ class CheckoutV2ArchitectureTest extends TestCase
 
         DeliveryPricing::create([
             'delivery_service_id' => $service->id,
-            'city_id' => $this->city->id,
+            'township_id' => $this->township->id,
             'fee' => 2000,
             'min_days' => 1,
             'max_days' => 3,
             'is_active' => true,
         ]);
 
-        $this->assertEquals(2000, $service->getFeeForCity($this->city));
-        $this->assertEquals(['min' => 1, 'max' => 3], $service->getDaysForCity($this->city));
+        $this->assertEquals(1500, $service->getFeeForTownship($this->township));
+        $this->assertEquals(['min' => 1, 'max' => 3], $service->getDaysForTownship($this->township));
     }
 
     /** @test */
@@ -249,13 +248,19 @@ class CheckoutV2ArchitectureTest extends TestCase
         ]);
 
         $otherCity = City::create([
-            'tenant_id' => null,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Mandalay',
+            'is_active' => true,
+        ]);
+        $otherTownship = Township::create([
+            'city_id' => $otherCity->id,
+            'name' => 'Chanmyathazi',
             'delivery_fee' => 2000,
             'is_active' => true,
         ]);
 
-        $this->assertEquals(1500, $service->getFeeForCity($otherCity));
+        $this->assertEquals(1500, $service->getFeeForTownship($otherTownship));
+        $this->assertEquals(['min' => 2, 'max' => 5], $service->getDaysForTownship($otherTownship));
     }
 
     /** @test */
@@ -336,9 +341,8 @@ class CheckoutV2ArchitectureTest extends TestCase
         ]);
 
         $otherCity = City::create([
-            'tenant_id' => null,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Mandalay',
-            'delivery_fee' => 2000,
             'is_active' => true,
         ]);
 
@@ -351,9 +355,8 @@ class CheckoutV2ArchitectureTest extends TestCase
     public function cod_rule_excluded_cities_work(): void
     {
         $otherCity = City::create([
-            'tenant_id' => null,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Mandalay',
-            'delivery_fee' => 2000,
             'is_active' => true,
         ]);
 
@@ -477,14 +480,14 @@ class CheckoutV2ArchitectureTest extends TestCase
     {
         $service = app(DeliveryFeeService::class);
 
-        $fee = $service->resolveDeliveryFee($this->city);
+        $fee = $service->resolveDeliveryFee($this->township);
         $this->assertEquals(1000, $fee);
     }
 
     /** @test */
-    public function delivery_fee_service_uses_service_when_available(): void
+    public function delivery_fee_service_does_not_auto_add_cheapest_service(): void
     {
-        $deliveryService = DeliveryService::create([
+        DeliveryService::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Express',
             'code' => 'express',
@@ -496,12 +499,12 @@ class CheckoutV2ArchitectureTest extends TestCase
 
         $service = app(DeliveryFeeService::class);
 
-        $fee = $service->resolveDeliveryFee($this->city);
-        $this->assertEquals(2500, $fee);
+        $fee = $service->resolveDeliveryFee($this->township);
+        $this->assertEquals(1000, $fee);
     }
 
     /** @test */
-    public function delivery_fee_service_uses_pricing_overrides(): void
+    public function delivery_fee_service_adds_selected_service_base_fee(): void
     {
         $deliveryService = DeliveryService::create([
             'tenant_id' => $this->tenant->id,
@@ -515,15 +518,15 @@ class CheckoutV2ArchitectureTest extends TestCase
 
         DeliveryPricing::create([
             'delivery_service_id' => $deliveryService->id,
-            'city_id' => $this->city->id,
+            'township_id' => $this->township->id,
             'fee' => 3000,
             'is_active' => true,
         ]);
 
         $service = app(DeliveryFeeService::class);
 
-        $fee = $service->resolveDeliveryFee($this->city);
-        $this->assertEquals(3000, $fee);
+        $fee = $service->resolveDeliveryFee($this->township, $deliveryService->id);
+        $this->assertEquals(3500, $fee);
     }
 
     /** @test */
@@ -677,9 +680,8 @@ class CheckoutV2ArchitectureTest extends TestCase
         \App\Models\Tenant::setCurrent($this->tenant);
 
         $otherCity = City::create([
-            'tenant_id' => null,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Mandalay',
-            'delivery_fee' => 2000,
             'is_active' => true,
         ]);
 

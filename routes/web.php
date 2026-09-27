@@ -631,6 +631,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         // Cities
         Route::resource('cities', AdminCityController::class)->except(['show']);
         Route::post('cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle');
+        Route::post('cities/bulk-status', [AdminCityController::class, 'bulkStatus'])->name('cities.bulk-status');
 
         // Myanmar locations import
         Route::post('locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
@@ -638,12 +639,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         // Townships
         Route::resource('townships', AdminTownshipController::class)->except(['show']);
         Route::post('townships/{township}/toggle', [AdminTownshipController::class, 'toggle'])->name('townships.toggle');
+        Route::post('townships/bulk-status', [AdminTownshipController::class, 'bulkStatus'])->name('townships.bulk-status');
+        Route::post('townships/bulk-destroy', [AdminTownshipController::class, 'bulkDestroy'])->name('townships.bulk-destroy');
+        Route::post('townships/update-fees', [AdminTownshipController::class, 'updateFees'])->name('townships.update-fees');
+        Route::get('townships/matching-ids', [AdminTownshipController::class, 'matchingIds'])->name('townships.matching-ids');
 
         // Delivery Services
         Route::resource('delivery-services', \App\Http\Controllers\Admin\AdminDeliveryServiceController::class)->except(['show']);
         Route::post('delivery-services/{delivery_service}/toggle', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'toggle'])->name('delivery-services.toggle');
-        Route::post('delivery-services/{delivery_service}/add-city-pricing', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'addCityPricing'])->name('delivery-services.add-city-pricing');
-        Route::delete('delivery-services/pricing/{pricing}', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'removeCityPricing'])->name('delivery-services.remove-city-pricing');
+        Route::post('delivery-services/{delivery_service}/add-township-pricing', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'addTownshipPricing'])->name('delivery-services.add-township-pricing');
+        Route::delete('delivery-services/pricing/{pricing}', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'removeTownshipPricing'])->name('delivery-services.remove-township-pricing');
+        Route::post('delivery-services/pricing/bulk-status', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'bulkPricingStatus'])->name('delivery-services.pricing.bulk-status');
+        Route::post('delivery-services/pricing/bulk-days', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'bulkPricingDays'])->name('delivery-services.pricing.bulk-days');
 
         // Packaging Options
         Route::resource('packaging-options', \App\Http\Controllers\Admin\AdminPackagingOptionController::class)->except(['show']);
@@ -864,6 +871,7 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 
 Route::get('/api/locations', [App\Http\Controllers\Api\LocationController::class, 'getCities']);
 Route::get('/api/townships/{cityId}', [App\Http\Controllers\Api\LocationController::class, 'getTownships']);
+Route::get('/api/township-fee/{townshipId}', [App\Http\Controllers\Api\LocationController::class, 'getTownshipDeliveryFee']);
 
 // Storefront Admin (safe migration — runs alongside /admin/*)
 require __DIR__ . '/storefront-admin.php';

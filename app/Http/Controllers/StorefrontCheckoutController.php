@@ -189,13 +189,17 @@ class StorefrontCheckoutController extends Controller
             'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
         ]);
 
-        $city = !empty($validated['city_id']) ? City::find($validated['city_id']) : null;
-        if (!empty($validated['township_id'])) {
-            $township = Township::find($validated['township_id']);
-            if (!$township || ($city && (int) $township->city_id !== (int) $city->id)) {
-                return response()->json(['message' => 'Invalid township for the chosen city.'], 422);
-            }
+        try {
+            $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+                !empty($validated['city_id']) ? (int) $validated['city_id'] : null,
+                !empty($validated['township_id']) ? (int) $validated['township_id'] : null,
+                $tenant
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => $e->errors()['city_id'][0] ?? $e->errors()['township_id'][0] ?? 'Invalid location.'], 422);
         }
+        $city = $location['city'];
+        $township = $location['township'];
 
         [$cart, $isBuyNow] = $this->resolveSourceCart($tenant);
         $items = $this->filterCartByTenant($cart, $tenant, $isBuyNow);
@@ -207,15 +211,19 @@ class StorefrontCheckoutController extends Controller
 
         $deliveryService = null;
         if (!empty($validated['delivery_service_id'])) {
-            $deliveryService = \App\Models\DeliveryService::find($validated['delivery_service_id']);
-            if (!$deliveryService || $deliveryService->tenant_id !== $tenant->id) {
-                return response()->json(['message' => 'Invalid delivery service.'], 422);
+            try {
+                $deliveryService = $this->deliveryFeeService->resolveAvailableService(
+                    (int) $validated['delivery_service_id'],
+                    $township ?? null
+                );
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json(['message' => $e->errors()['delivery_service_id'][0] ?? 'Invalid delivery service.'], 422);
             }
         }
 
-        $deliveryBreakdown = $this->deliveryFeeService->resolveDeliveryBreakdown($city, $deliveryService?->id);
+        $deliveryBreakdown = $this->deliveryFeeService->resolveDeliveryBreakdown($township ?? null, $deliveryService?->id);
         $deliveryFee = $deliveryBreakdown['fee'];
-        $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryService?->id, $city);
+        $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryService?->id, $township ?? null);
 
         $packagingFee = 0;
         $packagingName = null;
@@ -239,7 +247,7 @@ class StorefrontCheckoutController extends Controller
             }
         }
 
-        $services = $this->deliveryFeeService->getServicesWithPricing($city)->map(fn($entry) => [
+        $services = $this->deliveryFeeService->getServicesWithPricing($township ?? null)->map(fn($entry) => [
             'id' => $entry['service']->id,
             'name' => $entry['service']->name,
             'fee' => $entry['fee'],
@@ -255,8 +263,7 @@ class StorefrontCheckoutController extends Controller
                 'fee' => $deliveryFee,
                 'service_id' => $deliveryService?->id,
                 'service_name' => $deliveryService?->name,
-                'city_rate_applied' => (bool) ($deliveryService && $city && $deliveryService->getFeeForCity($city) !== $deliveryService->base_fee),
-                'city_fee' => $deliveryBreakdown['city_fee'],
+                'township_fee' => $deliveryBreakdown['township_fee'],
                 'service_fee' => $deliveryBreakdown['service_fee'],
                 'service_base_fee' => $deliveryService?->base_fee !== null ? (int) $deliveryService->base_fee : null,
                 'service_fallback' => $deliveryBreakdown['service_fallback'],
@@ -304,15 +311,21 @@ class StorefrontCheckoutController extends Controller
             'packaging_id' => ['nullable', 'exists:packaging_options,id'],
         ]);
 
-        if (!empty($validated['city_id']) && !empty($validated['township_id'])) {
-            $township = Township::find($validated['township_id']);
-            if (!$township || (int) $township->city_id !== (int) $validated['city_id']) {
-                return back()->withErrors(['township_id' => 'The selected township is not valid for the chosen city.'])->withInput();
+        if (!empty($validated['city_id']) || !empty($validated['township_id'])) {
+            $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+                !empty($validated['city_id']) ? (int) $validated['city_id'] : null,
+                !empty($validated['township_id']) ? (int) $validated['township_id'] : null,
+                $tenant
+            );
+            $validated['city_id'] = $location['city']?->id ?? $validated['city_id'] ?? null;
+            $validated['township_id'] = $location['township']?->id ?? $validated['township_id'] ?? null;
+            $township = $location['township'];
+            if ($township) {
+                if (!empty($validated['postal_code']) && $township->postal_code && $validated['postal_code'] !== $township->postal_code) {
+                    return back()->withErrors(['postal_code' => 'The postal code does not match the selected township.'])->withInput();
+                }
+                $validated['postal_code'] = $township->postal_code ?? ($validated['postal_code'] ?? null);
             }
-            if (!empty($validated['postal_code']) && $township->postal_code && $validated['postal_code'] !== $township->postal_code) {
-                return back()->withErrors(['postal_code' => 'The postal code does not match the selected township.'])->withInput();
-            }
-            $validated['postal_code'] = $township->postal_code ?? $validated['postal_code'];
         }
 
         if ($tenant->subscriptionExpired()) {
@@ -386,22 +399,32 @@ class StorefrontCheckoutController extends Controller
         $deliveryServiceId = $validated['delivery_service_id'] ?? null;
         $deliveryDaysMin = null;
         $deliveryDaysMax = null;
+        $city = null;
+        $township = null;
+
+        if (!empty($validated['city_id']) || !empty($validated['township_id'])) {
+            $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
+                !empty($validated['city_id']) ? (int) $validated['city_id'] : null,
+                !empty($validated['township_id']) ? (int) $validated['township_id'] : null,
+                $tenant
+            );
+            $city = $location['city'];
+            $township = $location['township'];
+        }
 
         if ($deliveryServiceId) {
-            $deliveryService = \App\Models\DeliveryService::find($deliveryServiceId);
-            if (!$deliveryService || $deliveryService->tenant_id !== $tenant->id) {
-                return back()->withErrors(['delivery_service_id' => 'Invalid delivery service.'])->withInput();
+            try {
+                $this->deliveryFeeService->resolveAvailableService((int) $deliveryServiceId, $township);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return back()->withErrors($e->errors())->withInput();
             }
         }
 
-        if (!empty($validated['city_id'])) {
-            $city = City::find($validated['city_id']);
-            if ($city) {
-                $deliveryFee = $this->deliveryFeeService->resolveDeliveryFee($city, $deliveryServiceId);
-                $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryServiceId, $city);
-                $deliveryDaysMin = $deliveryDays['min'];
-                $deliveryDaysMax = $deliveryDays['max'];
-            }
+        if ($city || $township) {
+            $deliveryFee = $this->deliveryFeeService->resolveDeliveryFee($township, $deliveryServiceId);
+            $deliveryDays = $this->deliveryFeeService->resolveDeliveryDays($deliveryServiceId, $township);
+            $deliveryDaysMin = $deliveryDays['min'];
+            $deliveryDaysMax = $deliveryDays['max'];
         }
 
         $discountData = $this->resolveDiscountsFromSession($items, $deliveryFee, $isBuyNow);

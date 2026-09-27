@@ -19,7 +19,10 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         $useAccounts = config('identity.use_accounts');
-        $cities = City::pluck('id')->toArray();
+        $defaultTenant = Tenant::where('slug', 'default')->first();
+        $cities = $defaultTenant
+            ? City::withoutTenantScope()->where('tenant_id', $defaultTenant->id)->pluck('id')->toArray()
+            : City::pluck('id')->toArray();
         $paymentMethods = PaymentMethod::where('is_active', true)->pluck('id')->toArray();
 
         if (empty($cities) || empty($paymentMethods)) {
@@ -35,12 +38,15 @@ class OrderFactory extends Factory
 
         $customerId = $this->faker->randomElement($customerIds);
         $cityId = $this->faker->randomElement($cities);
-        $city = City::find($cityId);
-        $townships = Township::where('city_id', $cityId)->pluck('id')->toArray();
-        $townshipId = !empty($townships) ? $this->faker->randomElement($townships) : null;
+        $township = Township::withoutTenantScope()
+            ->where('city_id', $cityId)
+            ->when($defaultTenant, fn ($q) => $q->where('tenant_id', $defaultTenant->id))
+            ->inRandomOrder()
+            ->first();
+        $townshipId = $township?->id;
 
         $subtotal = $this->faker->numberBetween(10000, 500000);
-        $deliveryFee = $city->delivery_fee ?? 2000;
+        $deliveryFee = $township->delivery_fee ?? 2000;
         $totalAmount = $subtotal + $deliveryFee;
 
         $paymentStatuses = ['unpaid', 'paid', 'verified', 'rejected'];

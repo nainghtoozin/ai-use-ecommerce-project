@@ -36,9 +36,10 @@ class CodRuleArchitectureTest extends TestCase
             'status' => 'active',
         ]);
 
+        Tenant::setCurrent($this->tenant);
+
         $this->city = City::create([
             'name' => 'Yangon',
-            'delivery_fee' => 1000,
             'is_active' => true,
         ]);
     }
@@ -112,7 +113,6 @@ class CodRuleArchitectureTest extends TestCase
     {
         $otherCity = City::create([
             'name' => 'Mandalay',
-            'delivery_fee' => 1500,
             'is_active' => true,
         ]);
 
@@ -134,7 +134,6 @@ class CodRuleArchitectureTest extends TestCase
     {
         $otherCity = City::create([
             'name' => 'Mandalay',
-            'delivery_fee' => 1500,
             'is_active' => true,
         ]);
 

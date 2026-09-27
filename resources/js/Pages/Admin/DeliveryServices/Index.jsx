@@ -26,7 +26,7 @@ export default function DeliveryServicesIndex({ deliveryServices, cities }) {
                 <PageHeader
                     eyebrow="Checkout"
                     title="Delivery Services"
-                    subtitle="Manage delivery methods, fees, and city-specific pricing."
+                    subtitle="Manage delivery methods, base fees, and township delivery rules."
                     actions={can('delivery-services.create') && (
                         <PrimaryLink href={adminUrl('/admin/delivery-services/create')}>Add Delivery Service</PrimaryLink>
                     )}
