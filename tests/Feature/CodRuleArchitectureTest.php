@@ -287,4 +287,77 @@ class CodRuleArchitectureTest extends TestCase
 
         $this->assertEquals(300, $fee);
     }
+
+    /** @test */
+    public function allowed_cities_list_returns_tenant_scoped_collection(): void
+    {
+        Tenant::setCurrent($this->tenant);
+
+        $foreignCity = City::withoutTenantScope()->create([
+            'tenant_id' => $this->otherTenant->id, 'name' => 'Foreign City', 'is_active' => true,
+        ]);
+
+        $rule = CodRule::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Scoped Rule',
+            'allowed_city_ids' => [$this->city->id, $foreignCity->id],
+            'cod_fee' => 500,
+            'is_active' => true,
+        ]);
+
+        $list = $rule->allowedCitiesList();
+
+        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $list);
+        $this->assertTrue($list->has($this->city->id));
+        $this->assertFalse($list->has($foreignCity->id));
+    }
+
+    /** @test */
+    public function excluded_cities_list_returns_tenant_scoped_collection(): void
+    {
+        Tenant::setCurrent($this->tenant);
+
+        $rule = CodRule::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Excluded Rule',
+            'excluded_city_ids' => [$this->city->id],
+            'cod_fee' => 500,
+            'is_active' => true,
+        ]);
+
+        $list = $rule->excludedCitiesList();
+
+        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $list);
+        $this->assertTrue($list->has($this->city->id));
+        $this->assertEquals(['type' => 'excluded'], $list->get($this->city->id)->pivot);
+    }
+
+    /** @test */
+    public function cod_rule_edit_page_renders(): void
+    {
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'cod-rules.update', 'guard_name' => 'web']);
+        $role = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $this->tenant->id,
+        ]);
+
+        $admin = User::create([
+            'tenant_id' => $this->tenant->id, 'name' => 'COD Admin',
+            'email' => 'cod-admin@test.com', 'password' => bcrypt('password'), 'status' => 'active',
+        ]);
+        $admin->assignRole($role);
+        $admin->givePermissionTo('cod-rules.update');
+
+        $rule = CodRule::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Editable Rule',
+            'allowed_city_ids' => [$this->city->id],
+            'cod_fee' => 500,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/store/test-store/admin/cod-rules/{$rule->id}/edit")
+            ->assertOk();
+    }
 }

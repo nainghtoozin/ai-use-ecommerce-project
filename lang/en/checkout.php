@@ -60,4 +60,6 @@ return [
     'order_confirmation_message' => 'Your order has been placed successfully. We will process it shortly.',
     'view_order' => 'View Order',
     'continue_to_shop' => 'Continue Shopping',
+    'other' => 'Other',
+    'other_location_warning' => 'Other location selected. Please enter your complete and accurate delivery address in the Address or Order Note field, including useful details such as ward/village, street, house number, and nearby landmark.',
 ];

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TownshipStoreRequest;
 use App\Http\Requests\TownshipUpdateRequest;
 use App\Models\City;
+use App\Models\Setting;
 use App\Models\Township;
+use App\Services\DeliveryFeeService;
 use App\Services\LocationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +17,8 @@ use Inertia\Inertia;
 class AdminTownshipController extends Controller
 {
     public function __construct(
-        private LocationService $locationService
+        private LocationService $locationService,
+        private DeliveryFeeService $deliveryFeeService
     ) {}
 
     public function index(Request $request): \Inertia\Response
@@ -36,7 +39,31 @@ class AdminTownshipController extends Controller
             'townships' => $townships,
             'cities' => $cities,
             'filters' => array_merge($request->only(['search', 'city_id', 'status']), ['per_page' => $request->per_page ?? '25']),
+            'other_location' => $this->deliveryFeeService->getOtherLocationSettings(),
         ]);
+    }
+
+    public function updateOtherSettings(Request $request): RedirectResponse
+    {
+        if (!auth()->user()->can('townships.update')) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to update Other location settings.');
+        }
+
+        $validated = $request->validate([
+            'delivery_fee' => 'required|numeric|min:0',
+            'min_days' => 'required|integer|min:0',
+            'max_days' => 'required|integer|min:0|gte:min_days',
+        ]);
+
+        Setting::set('other_location.delivery_fee', (string) $validated['delivery_fee']);
+        Setting::set('other_location.min_days', (string) $validated['min_days']);
+        Setting::set('other_location.max_days', (string) $validated['max_days']);
+
+        return back()->with('success', 'Other location settings updated.');
     }
 
     public function matchingIds(Request $request): \Illuminate\Http\JsonResponse

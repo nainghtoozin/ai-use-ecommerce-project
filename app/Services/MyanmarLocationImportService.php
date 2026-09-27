@@ -67,14 +67,6 @@ class MyanmarLocationImportService
                         $township->save();
                         $stats['townships_created']++;
                     } else {
-                        if ($postalCode) {
-                            Township::withoutTenantScope()
-                                ->where('tenant_id', $tenant->id)
-                                ->where('city_id', $city->id)
-                                ->where('name', $name)
-                                ->whereNull('postal_code')
-                                ->update(['postal_code' => $postalCode]);
-                        }
                         $stats['townships_skipped']++;
                     }
                 }
@@ -84,5 +76,56 @@ class MyanmarLocationImportService
         City::forgetLocationCacheFor($tenant->id);
 
         return $stats;
+    }
+
+    public function preview(?Tenant $tenant = null): array
+    {
+        $tenant ??= Tenant::getCurrent();
+
+        if (!$tenant) {
+            throw new \RuntimeException('Myanmar location preview requires a current tenant.');
+        }
+
+        $locations = collect(require database_path('data/myanmar_locations.php'));
+
+        $preview = [
+            'cities_to_add' => 0,
+            'townships_to_add' => 0,
+            'existing_cities' => 0,
+            'existing_townships' => 0,
+        ];
+
+        foreach ($locations as $item) {
+            $city = City::withoutTenantScope()
+                ->where('tenant_id', $tenant->id)
+                ->where('name', $item['name'])
+                ->first(['id']);
+
+            if (!$city) {
+                $preview['cities_to_add']++;
+                $preview['townships_to_add'] += count($item['townships']);
+                continue;
+            }
+
+            $preview['existing_cities']++;
+
+            foreach ($item['townships'] as $townshipData) {
+                $name = is_array($townshipData) ? $townshipData['name'] : $townshipData;
+
+                $exists = Township::withoutTenantScope()
+                    ->where('tenant_id', $tenant->id)
+                    ->where('city_id', $city->id)
+                    ->where('name', $name)
+                    ->exists();
+
+                if ($exists) {
+                    $preview['existing_townships']++;
+                } else {
+                    $preview['townships_to_add']++;
+                }
+            }
+        }
+
+        return $preview;
     }
 }

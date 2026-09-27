@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\Traits\TenantAware;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 class CodRule extends Model
 {
@@ -38,7 +38,7 @@ class CodRule extends Model
         return $query->where('is_active', true);
     }
 
-    public function allowedCities(): BelongsToMany
+    public function allowedCitiesList(): Collection
     {
         return City::whereIn('id', $this->allowed_city_ids ?? [])->get()->map(function ($city) {
             $city->pivot = ['type' => 'allowed'];
@@ -46,7 +46,7 @@ class CodRule extends Model
         })->keyBy('id');
     }
 
-    public function excludedCities(): BelongsToMany
+    public function excludedCitiesList(): Collection
     {
         return City::whereIn('id', $this->excluded_city_ids ?? [])->get()->map(function ($city) {
             $city->pivot = ['type' => 'excluded'];

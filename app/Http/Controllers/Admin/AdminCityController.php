@@ -135,6 +135,19 @@ class AdminCityController extends Controller
         return back()->with('success', "{$result['affected']} of " . count($validated['ids']) . " cities {$action}.");
     }
 
+    public function previewImportMyanmar(MyanmarLocationImportService $service): JsonResponse
+    {
+        if (!auth()->user()->can('cities.create')) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!tenant()) {
+            abort(422, 'A tenant context is required to preview the import.');
+        }
+
+        return response()->json($service->preview());
+    }
+
     public function importMyanmar(MyanmarLocationImportService $service): RedirectResponse
     {
         if (!auth()->user()->can('cities.create')) {

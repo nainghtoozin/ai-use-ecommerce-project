@@ -331,6 +331,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::delete('/cities/{city}', [AdminCityController::class, 'destroy'])->name('cities.destroy')->whereNumber('city');
         Route::post('/cities/{city}/toggle', [AdminCityController::class, 'toggle'])->name('cities.toggle')->whereNumber('city');
         Route::post('/cities/bulk-status', [AdminCityController::class, 'bulkStatus'])->name('cities.bulk-status');
+        Route::get('/locations/import-myanmar/preview', [AdminCityController::class, 'previewImportMyanmar'])->name('locations.import-myanmar-preview');
         Route::post('/locations/import-myanmar', [AdminCityController::class, 'importMyanmar'])->name('locations.import-myanmar');
 
         // Townships
@@ -344,6 +345,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/townships/bulk-status', [AdminTownshipController::class, 'bulkStatus'])->name('townships.bulk-status');
         Route::post('/townships/bulk-destroy', [AdminTownshipController::class, 'bulkDestroy'])->name('townships.bulk-destroy');
         Route::post('/townships/update-fees', [AdminTownshipController::class, 'updateFees'])->name('townships.update-fees');
+        Route::post('/townships/other-settings', [AdminTownshipController::class, 'updateOtherSettings'])->name('townships.other-settings');
         Route::get('/townships/matching-ids', [AdminTownshipController::class, 'matchingIds'])->name('townships.matching-ids');
 
         // Website Info

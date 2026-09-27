@@ -45,7 +45,8 @@ export default function StorefrontCheckoutV2({
   discountAmount: initialDiscountAmount, autoPromotions,
   addresses = [], defaultAddress = null, profilePhone = null, previewMode = null,
 }) {
-  const { auth, platform_setting, website_info, storefront } = usePage().props;
+  const { auth, platform_setting, website_info, storefront, translations } = usePage().props;
+  const tr = (key, fallback) => translations?.checkout?.[key] ?? fallback;
   const labels = storefront?.content?.labels || {};
   const checkoutConfig = storefront?.checkout || {};
   const checkoutTitle = checkoutConfig.title || 'Checkout';
@@ -273,6 +274,9 @@ export default function StorefrontCheckoutV2({
 
   const city = cities?.find(c => c.id == form.city_id);
   const township = townships?.find(t => t.id == form.township_id);
+  const isOtherCity = form.city_id === 'other';
+  const isOtherTownship = form.township_id === 'other';
+  const isOtherLocation = isOtherCity || isOtherTownship;
   const selectedPayment = paymentMethods?.find(pm => pm.id == form.payment_method_id);
   const quotedService = (id) => quote?.services?.find(s => String(s.id) === String(id));
   const quotedServiceIds = quote?.services ? new Set(quote.services.map(s => String(s.id))) : null;
@@ -281,7 +285,9 @@ export default function StorefrontCheckoutV2({
     : (deliveryServices || []);
   const deliveryFee = quote
     ? Number(quote.delivery?.fee || 0)
-    : (Number(township?.delivery_fee) || 0) + (selectedDeliveryService ? Number(selectedDeliveryService.base_fee) || 0 : 0);
+    : isOtherTownship
+      ? 5000
+      : (Number(township?.delivery_fee) || 0) + (selectedDeliveryService ? Number(selectedDeliveryService.base_fee) || 0 : 0);
   const packagingFee = quote ? Number(quote.packaging?.fee || 0) : (selectedPackaging?.fee || 0);
   const codFee = quote ? Number(quote.cod?.fee || 0) : (selectedPayment?.type === 'cod' ? (selectedPayment?.cod_fee || 0) : 0);
   const totalDiscount = Number(localDiscount) || 0;
@@ -292,7 +298,7 @@ export default function StorefrontCheckoutV2({
 
   const isAddressValid = form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.city_id;
   const isDeliveryReady = isAddressValid;
-  const isPaymentReady = isAddressValid && (selectedDeliveryService || (visibleServices && visibleServices.length === 0));
+  const isPaymentReady = isAddressValid && (isOtherTownship || selectedDeliveryService || (visibleServices && visibleServices.length === 0));
 
   function canPlaceOrder() {
     return !!(form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.payment_method_id && form.city_id);
@@ -370,7 +376,7 @@ export default function StorefrontCheckoutV2({
     const promotionRow = promoUnitSavings + manualPromoLump;
     const couponRow = Number(localAppliedCoupon?.discount) || 0;
     const previewName = [form.first_name, form.last_name].filter(Boolean).join(' ').trim();
-    const previewTownship = townships.find(tw => tw.id == form.township_id)?.name || '';
+    const previewTownship = isOtherTownship ? tr('other', 'Other') : (townships.find(tw => tw.id == form.township_id)?.name || '');
     const hasDeliveryPreview = previewName || form.phone || form.address || previewTownship || city;
 
     return (
@@ -468,9 +474,9 @@ export default function StorefrontCheckoutV2({
               )}
             </div>
           )}
-          {(township || city) && (quote?.delivery?.township_fee ?? township?.delivery_fee) != null && Number(quote?.delivery?.township_fee ?? township?.delivery_fee) > 0 && (
+          {(township || city || isOtherTownship) && (quote?.delivery?.township_fee ?? township?.delivery_fee) != null && Number(quote?.delivery?.township_fee ?? township?.delivery_fee) > 0 && (
             <div className="flex justify-between gap-2">
-              <span className="text-gray-500 dark:text-gray-400">Township Delivery Fee</span>
+              <span className="text-gray-500 dark:text-gray-400">{isOtherTownship ? 'Other Location Delivery' : 'Township Delivery Fee'}</span>
               <span className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(quote?.delivery?.township_fee ?? township?.delivery_fee ?? 0, cc)}</span>
             </div>
           )}
@@ -765,12 +771,24 @@ export default function StorefrontCheckoutV2({
                 <div>
                   <label htmlFor="checkout-city" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">City <span className="text-red-400">*</span></label>
                   <select id="checkout-city" value={form.city_id}
-                    onChange={e => { updateField('city_id', e.target.value); fetchTownships(e.target.value); setForm(p => ({ ...p, township_id: '', postal_code: '' })); setSelectedDeliveryService(null); }}
+                    onChange={e => {
+                      const value = e.target.value;
+                      updateField('city_id', value);
+                      if (value === 'other') {
+                        setTownships([]);
+                        setForm(p => ({ ...p, township_id: 'other', postal_code: '' }));
+                      } else {
+                        fetchTownships(value);
+                        setForm(p => ({ ...p, township_id: '', postal_code: '' }));
+                      }
+                      setSelectedDeliveryService(null);
+                    }}
                     aria-required="true" aria-invalid={!!formErrors.city_id}
                     aria-describedby={formErrors.city_id ? 'err-ci' : undefined}
                     className={`${inputClass('city_id')} appearance-none`}>
                     <option value="">Select city</option>
                     {cities?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    <option value="other">{tr('other', 'Other')}</option>
                   </select>
                   {formErrors.city_id && <p id="err-ci" role="alert" className="text-red-500 text-xs mt-1">{formErrors.city_id}</p>}
                 </div>
@@ -778,19 +796,28 @@ export default function StorefrontCheckoutV2({
                   <label htmlFor="checkout-township" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Township</label>
                   <select id="checkout-township" value={form.township_id}
                     onChange={e => { updateField('township_id', e.target.value); const t = townships.find(tw => tw.id == e.target.value); setForm(p => ({ ...p, postal_code: t?.postal_code || '' })); setSelectedDeliveryService(null); }}
-                    disabled={!form.city_id} aria-busy={townshipsLoading}
-                    className={`${inputClass('township_id')} appearance-none ${!form.city_id ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''}`}>
-                    <option value="">{form.city_id ? (townshipsLoading ? 'Loading...' : 'Select township') : 'Select city first'}</option>
-                    {!townshipsLoading && townships.map(t => <option key={t.id} value={t.id}>{t.name}{t.delivery_fee ? ` (${formatCurrency(t.delivery_fee, cc)})` : ''}</option>)}
+                    disabled={!form.city_id || isOtherCity} aria-busy={townshipsLoading}
+                    className={`${inputClass('township_id')} appearance-none ${(!form.city_id || isOtherCity) ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''}`}>
+                    <option value="">{isOtherCity ? tr('other', 'Other') : (form.city_id ? (townshipsLoading ? 'Loading...' : 'Select township') : 'Select city first')}</option>
+                    {!townshipsLoading && !isOtherCity && townships.map(t => <option key={t.id} value={t.id}>{t.name}{t.delivery_fee ? ` (${formatCurrency(t.delivery_fee, cc)})` : ''}</option>)}
+                    {!townshipsLoading && !isOtherCity && <option value="other">{tr('other', 'Other')}</option>}
                   </select>
                 </div>
+                {!isOtherTownship && (
                 <div>
                   <label htmlFor="checkout-postal" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Postal code</label>
                   <input id="checkout-postal" type="text" value={form.postal_code} readOnly tabIndex={-1}
                     aria-readonly="true"
                     className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
                 </div>
+                )}
               </div>
+
+              {isOtherTownship && (
+                <div role="alert" className="mt-3 sm:mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">{tr('other_location_warning', 'Other location selected. Please enter your complete and accurate delivery address in the Address or Order Note field, including useful details such as ward/village, street, house number, and nearby landmark.')}</p>
+                </div>
+              )}
 
               <div className="mt-3 sm:mt-4">
                 <label htmlFor="checkout-notes" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Order notes <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -823,7 +850,17 @@ export default function StorefrontCheckoutV2({
                 </div>
               )}
 
-              {isDeliveryReady && visibleServices?.length > 0 && (
+              {isDeliveryReady && isOtherTownship && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Other Location Delivery</p>
+                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(quote?.delivery?.township_fee ?? 5000, cc)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Estimated {quote?.delivery?.eta_min ? `${quote.delivery.eta_min}${quote.delivery.eta_max && quote.delivery.eta_max !== quote.delivery.eta_min ? `-${quote.delivery.eta_max}` : ''}` : '1-7'} business days
+                  </p>
+                </div>
+              )}
+
+              {isDeliveryReady && !isOtherTownship && visibleServices?.length > 0 && (
                 <div role="radiogroup" aria-label="Delivery service" className="space-y-2.5">
                   {visibleServices.map(service => {
                     const isSelected = selectedDeliveryService?.id === service.id;
@@ -850,17 +887,17 @@ export default function StorefrontCheckoutV2({
                 </div>
               )}
 
-              {isDeliveryReady && form.township_id && visibleServices?.length === 0 && (
+              {isDeliveryReady && !isOtherTownship && form.township_id && visibleServices?.length === 0 && (
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No delivery services available</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">This township is not covered by any delivery service yet.</p>
                 </div>
               )}
 
-              {isDeliveryReady && (!deliveryServices || deliveryServices.length === 0) && (
+              {isDeliveryReady && !isOtherTownship && (!deliveryServices || deliveryServices.length === 0) && (
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Standard Delivery</p>
-                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(township?.delivery_fee || 0, cc)}</p>
+                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(isOtherTownship ? 5000 : (township?.delivery_fee || 0), cc)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Estimated 2–5 business days</p>
                 </div>
               )}

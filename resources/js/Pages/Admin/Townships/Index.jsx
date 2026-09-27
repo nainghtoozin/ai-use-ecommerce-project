@@ -6,8 +6,28 @@ import { adminUrl } from '@/Utils/adminUrl';
 
 const PAGE_SIZES = ['25', '50', '100', '1000', 'all'];
 
-export default function TownshipsIndex({ townships, cities = [], filters = {} }) {
+export default function TownshipsIndex({ townships, cities = [], filters = {}, other_location = {} }) {
     const { flash } = usePage().props;
+    const [otherFee, setOtherFee] = useState(other_location?.delivery_fee ?? 5000);
+    const [otherMinDays, setOtherMinDays] = useState(other_location?.min_days ?? 1);
+    const [otherMaxDays, setOtherMaxDays] = useState(other_location?.max_days ?? 7);
+    const [otherSettingsOpen, setOtherSettingsOpen] = useState(false);
+
+    function openOtherSettings() {
+        setOtherFee(other_location?.delivery_fee ?? 5000);
+        setOtherMinDays(other_location?.min_days ?? 1);
+        setOtherMaxDays(other_location?.max_days ?? 7);
+        setOtherSettingsOpen(true);
+    }
+
+    function handleOtherSettings(e) {
+        e.preventDefault();
+        router.post(adminUrl('/admin/townships/other-settings'), {
+            delivery_fee: otherFee,
+            min_days: otherMinDays,
+            max_days: otherMaxDays,
+        }, { preserveScroll: true, onSuccess: () => setOtherSettingsOpen(false) });
+    }
     const [search, setSearch] = useState(filters.search || '');
     const [cityFilter, setCityFilter] = useState(filters.city_id || '');
     const [status, setStatus] = useState(filters.status || '');
@@ -158,6 +178,64 @@ export default function TownshipsIndex({ townships, cities = [], filters = {} })
                         Add Township
                     </Link>
                 </div>
+
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Other Location</p>
+                            <button onClick={openOtherSettings}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-800">
+                                Edit
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Fallback delivery for locations not in your list</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+                            {other_location?.delivery_fee ?? 5000} · {other_location?.min_days ?? 1}–{other_location?.max_days ?? 7} days
+                        </p>
+                    </div>
+                </div>
+
+                {otherSettingsOpen && (
+                    <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/40" onClick={() => setOtherSettingsOpen(false)} />
+                        <div role="dialog" aria-modal="true" aria-label="Other location settings"
+                            className="relative bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xl max-w-sm w-full p-6">
+                            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Other Location Settings</h2>
+                            <form onSubmit={handleOtherSettings} className="space-y-4">
+                                <div>
+                                    <label htmlFor="other-fee" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Delivery Fee</label>
+                                    <input id="other-fee" type="number" step="0.01" min="0" value={otherFee}
+                                        onChange={e => setOtherFee(e.target.value)}
+                                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label htmlFor="other-min-days" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Min Delivery Days</label>
+                                        <input id="other-min-days" type="number" min="0" value={otherMinDays}
+                                            onChange={e => setOtherMinDays(e.target.value)}
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="other-max-days" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Max Delivery Days</label>
+                                        <input id="other-max-days" type="number" min="0" value={otherMaxDays}
+                                            onChange={e => setOtherMaxDays(e.target.value)}
+                                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button type="button" onClick={() => setOtherSettingsOpen(false)}
+                                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-200">
+                                        Cancel
+                                    </button>
+                                    <button type="submit"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                                        Save
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 mb-4">
                     <div className="flex flex-col sm:flex-row gap-3">

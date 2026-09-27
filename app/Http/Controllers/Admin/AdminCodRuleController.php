@@ -64,7 +64,6 @@ class AdminCodRuleController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $codRule->load('allowedCities', 'excludedCities');
         $cities = $this->codRuleService->getActiveCities();
 
         return Inertia::render('Admin/CodRules/Edit', [

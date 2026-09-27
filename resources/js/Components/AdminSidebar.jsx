@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Fragment } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
@@ -26,7 +26,7 @@ const SECTION_VIS_KEY = {
     'Catalog': 'catalog',
     'Sales': 'sales',
     'Store': 'store',
-    'Fulfillment': 'storefront',
+    'DELIVERY': 'storefront',
     'Website': 'website',
     'Business': 'business',
     'Billing': 'billing',
@@ -34,7 +34,6 @@ const SECTION_VIS_KEY = {
     'Analytics': 'analytics',
     'Orders & Payments': 'sales',
     'Marketing': 'marketing',
-    'Locations': 'locations',
     'Team': 'staff',
     'Content': 'content',
 };
@@ -205,18 +204,18 @@ export default function AdminSidebar() {
                 ]
             },
             {
-                title: 'Fulfillment',
+                title: 'DELIVERY',
                 items: [
                     ...(can('delivery-services.view') && isVis('storefront.checkout') ? [{ label: 'Delivery Services', href: '/admin/delivery-services', icon: 'Truck' }] : []),
+                    ...((can('cities.view') && isVis('locations.cities')) || (can('townships.view') && isVis('locations.townships')) ? [{
+                        label: 'Delivery Locations', icon: 'MapPin',
+                        children: [
+                            ...(can('cities.view') && isVis('locations.cities') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
+                            ...(can('townships.view') && isVis('locations.townships') ? [{ label: t('navigation.townships'), href: '/admin/townships', icon: 'MapPin' }] : []),
+                        ],
+                    }] : []),
                     ...(can('packaging-options.view') && isVis('storefront.checkout') ? [{ label: 'Packaging', href: '/admin/packaging-options', icon: 'Package' }] : []),
                     ...(can('cod-rules.view') && isVis('storefront.checkout') ? [{ label: 'COD Rules', href: '/admin/cod-rules', icon: 'Receipt' }] : []),
-                ]
-            },
-            {
-                title: 'Locations',
-                items: [
-                    ...(can('cities.view') && isVis('locations.cities') ? [{ label: t('navigation.cities'), href: '/admin/cities', icon: 'Building2' }] : []),
-                    ...(can('townships.view') && isVis('locations.townships') ? [{ label: t('navigation.townships'), href: '/admin/townships', icon: 'MapPin' }] : []),
                 ]
             },
             {
@@ -273,7 +272,8 @@ export default function AdminSidebar() {
     function findActiveItem(items) {
         let best = null;
         let bestLen = 0;
-        for (const item of items) {
+        for (const item of flatItems(items)) {
+            if (!item.href) continue;
             const len = matchPath(item.href);
             if (len > bestLen) {
                 bestLen = len;
@@ -287,8 +287,12 @@ export default function AdminSidebar() {
         return matchPath(href) > 0;
     }
 
+    function flatItems(items) {
+        return (items || []).flatMap(item => item.children ? [{ ...item, isParent: true }, ...item.children] : [item]);
+    }
+
     function sectionHasActiveItem(section) {
-        return section.items.some(item => isActive(item.href));
+        return flatItems(section.items).some(item => item.href && isActive(item.href));
     }
 
     const storeSlug = tenant?.slug;
@@ -322,6 +326,31 @@ export default function AdminSidebar() {
     const handleToggleGroup = useCallback((title) => {
         userToggledRef.current = true;
         setOpenGroup(prev => prev === title ? null : title);
+    }, []);
+
+    const [openSub, setOpenSub] = useState({});
+
+    useEffect(() => {
+        setOpenSub((prev) => {
+            const next = { ...prev };
+            let changed = false;
+            for (const section of visibleSections) {
+                for (const item of (section.items || [])) {
+                    if (!item.children) continue;
+                    const key = `${section.title}::${item.label}`;
+                    const hasActive = (item.children || []).some(child => child.href && matchPath(child.href) > 0);
+                    if (hasActive && !next[key]) {
+                        next[key] = true;
+                        changed = true;
+                    }
+                }
+            }
+            return changed ? next : prev;
+        });
+    }, [url, visibleSections]);
+
+    const handleToggleSub = useCallback((key) => {
+        setOpenSub(prev => ({ ...prev, [key]: !prev[key] }));
     }, []);
 
     useEffect(() => {
@@ -425,43 +454,99 @@ export default function AdminSidebar() {
                                 <SubmenuHeight open={isGroupOpen}>
                                     <div className="space-y-0.5">
                                         {section.items.map((item) => {
-                                            const active = activeItem?.href === item.href;
                                             const accentColor = 'var(--theme-color, #3B82F6)';
-                                            return (
-                                                <Link
-                                                    key={item.href}
-                                                    href={adminUrl(item.href)}
-                                                    onClick={() => setSidebarOpen(false)}
-                                                    style={active && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 10%, transparent)` } : undefined}
-                                                    className={`flex items-center gap-2.5 ${collapsed ? 'justify-center px-2' : 'px-3 pl-4'} h-[38px] rounded-lg text-[14px] transition-colors duration-150 group relative ${
-                                                        active
-                                                            ? merchant ? 'font-semibold' : 'text-white bg-white/[0.08] font-semibold'
-                                                            : merchant ? 'font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100/60' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
-                                                    }`}
-                                                    title={collapsed ? item.label : undefined}
-                                                >
-                                                    {/* Active accent indicator */}
-                                                    {active && (
-                                                        <span
-                                                            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
-                                                            style={{ backgroundColor: accentColor }}
-                                                        />
-                                                    )}
-                                                    <Icon
-                                                        name={item.icon}
-                                                        strokeWidth={active ? 2.2 : 1.8}
-                                                        className={`flex-shrink-0 ${
-                                                            active
-                                                                ? ''
-                                                                : merchant ? 'text-slate-500 group-hover:text-slate-700' : 'text-gray-400 group-hover:text-gray-300'
+
+                                            const renderNavLink = (linkItem, indented = false) => {
+                                                const linkActive = activeItem?.href === linkItem.href;
+                                                return (
+                                                    <Link
+                                                        key={linkItem.href}
+                                                        href={adminUrl(linkItem.href)}
+                                                        onClick={() => setSidebarOpen(false)}
+                                                        style={linkActive && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 10%, transparent)` } : undefined}
+                                                        className={`flex items-center gap-2.5 ${collapsed ? 'justify-center px-2' : indented ? 'px-3 pl-9' : 'px-3 pl-4'} h-[38px] rounded-lg text-[14px] transition-colors duration-150 group relative ${
+                                                            linkActive
+                                                                ? merchant ? 'font-semibold' : 'text-white bg-white/[0.08] font-semibold'
+                                                                : merchant ? 'font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100/60' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
                                                         }`}
-                                                        {...(active ? { style: { color: accentColor } } : {})}
-                                                    />
-                                                    {!collapsed && (
-                                                        <span className="truncate" style={active && merchant ? { color: accentColor } : undefined}>{item.label}</span>
-                                                    )}
-                                                </Link>
-                                            );
+                                                        title={collapsed ? linkItem.label : undefined}
+                                                    >
+                                                        {/* Active accent indicator */}
+                                                        {linkActive && (
+                                                            <span
+                                                                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
+                                                                style={{ backgroundColor: accentColor }}
+                                                            />
+                                                        )}
+                                                        <Icon
+                                                            name={linkItem.icon}
+                                                            strokeWidth={linkActive ? 2.2 : 1.8}
+                                                            className={`flex-shrink-0 ${
+                                                                linkActive
+                                                                    ? ''
+                                                                    : merchant ? 'text-slate-500 group-hover:text-slate-700' : 'text-gray-400 group-hover:text-gray-300'
+                                                            }`}
+                                                            {...(linkActive ? { style: { color: accentColor } } : {})}
+                                                        />
+                                                        {!collapsed && (
+                                                            <span className="truncate" style={linkActive && merchant ? { color: accentColor } : undefined}>{linkItem.label}</span>
+                                                        )}
+                                                    </Link>
+                                                );
+                                            };
+
+                                            if (item.children) {
+                                                const subKey = `${section.title}::${item.label}`;
+                                                const hasActiveChild = (item.children || []).some(child => child.href && isActive(child.href));
+                                                const subOpen = collapsed || !!openSub[subKey];
+
+                                                if (collapsed) {
+                                                    return (
+                                                        <Fragment key={subKey}>
+                                                            {item.children.map(child => renderNavLink(child))}
+                                                        </Fragment>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div key={subKey}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleToggleSub(subKey)}
+                                                            aria-expanded={subOpen}
+                                                            className={`w-full flex items-center gap-2.5 px-3 pl-4 h-[38px] rounded-lg text-[14px] transition-colors duration-150 group ${
+                                                                hasActiveChild
+                                                                    ? merchant ? 'font-semibold text-slate-800' : 'font-semibold text-white/90'
+                                                                    : merchant ? 'font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100/60' : 'font-medium text-gray-300 hover:text-gray-100 hover:bg-white/[0.05]'
+                                                            }`}
+                                                        >
+                                                            <Icon
+                                                                name={item.icon}
+                                                                strokeWidth={hasActiveChild ? 2.2 : 1.8}
+                                                                className={`flex-shrink-0 ${
+                                                                    hasActiveChild
+                                                                        ? ''
+                                                                        : merchant ? 'text-slate-500 group-hover:text-slate-700' : 'text-gray-400 group-hover:text-gray-300'
+                                                                }`}
+                                                                {...(hasActiveChild ? { style: { color: accentColor } } : {})}
+                                                            />
+                                                            <span className="truncate flex-1 text-left" style={hasActiveChild && merchant ? { color: accentColor } : undefined}>{item.label}</span>
+                                                            <ChevronDown
+                                                                className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-150 ${
+                                                                    subOpen ? 'rotate-0' : '-rotate-90'
+                                                                }`}
+                                                            />
+                                                        </button>
+                                                        {subOpen && (
+                                                            <div className="space-y-0.5">
+                                                                {item.children.map(child => renderNavLink(child, true))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
+
+                                            return renderNavLink(item);
                                         })}
                                     </div>
                                 </SubmenuHeight>

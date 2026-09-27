@@ -140,12 +140,40 @@ class LocationService
         )));
     }
 
-    public function resolveTenantLocation(?int $cityId, ?int $townshipId, ?Tenant $tenant = null): array
+    public const OTHER_LOCATION = 'other';
+
+    public function isOtherLocation(mixed $value): bool
+    {
+        return is_string($value) && strtolower(trim($value)) === self::OTHER_LOCATION;
+    }
+
+    public function resolveTenantLocation(mixed $cityId, mixed $townshipId, ?Tenant $tenant = null): array
     {
         $tenant ??= Tenant::getCurrent();
 
         if ($tenant && Tenant::getCurrent()?->id !== $tenant->id) {
             Tenant::setCurrent($tenant);
+        }
+
+        $cityId = $this->normalizeLocationId($cityId, 'city_id');
+        $townshipId = $this->normalizeLocationId($townshipId, 'township_id');
+
+        $isOtherCity = $cityId === self::OTHER_LOCATION;
+        $isOtherTownship = $townshipId === self::OTHER_LOCATION;
+
+        if ($isOtherCity && $townshipId !== null && !$isOtherTownship) {
+            throw ValidationException::withMessages([
+                'township_id' => 'The selected township is not valid for the chosen city.',
+            ]);
+        }
+
+        if ($isOtherCity || ($townshipId !== null && $isOtherTownship && $cityId === null)) {
+            return [
+                'city' => null,
+                'township' => null,
+                'is_other_city' => true,
+                'is_other_township' => true,
+            ];
         }
 
         $city = null;
@@ -160,27 +188,61 @@ class LocationService
 
         $township = null;
         if ($townshipId) {
-            $township = Township::active()->find($townshipId);
-            if (!$township) {
-                throw ValidationException::withMessages([
-                    'township_id' => 'The selected township is invalid or unavailable.',
-                ]);
-            }
+            if ($isOtherTownship) {
+                if (!$city) {
+                    throw ValidationException::withMessages([
+                        'city_id' => 'The selected city is invalid or unavailable.',
+                    ]);
+                }
+            } else {
+                $township = Township::active()->find($townshipId);
+                if (!$township) {
+                    throw ValidationException::withMessages([
+                        'township_id' => 'The selected township is invalid or unavailable.',
+                    ]);
+                }
 
-            if ($city && (int) $township->city_id !== (int) $city->id) {
-                throw ValidationException::withMessages([
-                    'township_id' => 'The selected township is not valid for the chosen city.',
-                ]);
-            }
+                if ($city && (int) $township->city_id !== (int) $city->id) {
+                    throw ValidationException::withMessages([
+                        'township_id' => 'The selected township is not valid for the chosen city.',
+                    ]);
+                }
 
-            $city ??= $township->city && $township->city->is_active ? $township->city : null;
-            if (!$city) {
-                throw ValidationException::withMessages([
-                    'city_id' => 'The selected city is invalid or unavailable.',
-                ]);
+                $city ??= $township->city && $township->city->is_active ? $township->city : null;
+                if (!$city) {
+                    throw ValidationException::withMessages([
+                        'city_id' => 'The selected city is invalid or unavailable.',
+                    ]);
+                }
             }
         }
 
-        return ['city' => $city, 'township' => $township];
+        return [
+            'city' => $city,
+            'township' => $township,
+            'is_other_city' => false,
+            'is_other_township' => $isOtherTownship && $city !== null,
+        ];
+    }
+
+    private function normalizeLocationId(mixed $value, string $field): int|string|null
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($this->isOtherLocation($value)) {
+            return self::OTHER_LOCATION;
+        }
+
+        if (is_int($value) || (is_string($value) && ctype_digit(trim($value)))) {
+            return (int) $value;
+        }
+
+        throw ValidationException::withMessages([
+            $field => $field === 'city_id'
+                ? 'The selected city is invalid or unavailable.'
+                : 'The selected township is invalid or unavailable.',
+        ]);
     }
 }

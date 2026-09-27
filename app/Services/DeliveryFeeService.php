@@ -4,12 +4,18 @@ namespace App\Services;
 
 use App\Models\DeliveryPricing;
 use App\Models\DeliveryService;
+use App\Models\Setting;
+use App\Models\Tenant;
 use App\Models\Township;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class DeliveryFeeService
 {
+    public const OTHER_DELIVERY_FEE = 5000;
+    public const OTHER_DELIVERY_DAYS_MIN = 1;
+    public const OTHER_DELIVERY_DAYS_MAX = 7;
+
     public function getAvailableServices(?Township $township = null): Collection
     {
         $query = DeliveryService::forCurrentTenant()
@@ -91,6 +97,36 @@ class DeliveryFeeService
     public function getTownshipFee(?Township $township): int
     {
         return $township ? (int) ($township->delivery_fee ?? 0) : 0;
+    }
+
+    public function getOtherLocationSettings(?Tenant $tenant = null): array
+    {
+        $tenant ??= Tenant::getCurrent();
+        $tenantId = $tenant?->id;
+
+        $minDays = (int) Setting::get('other_location.min_days', self::OTHER_DELIVERY_DAYS_MIN, $tenantId);
+        $maxDays = (int) Setting::get('other_location.max_days', self::OTHER_DELIVERY_DAYS_MAX, $tenantId);
+
+        return [
+            'delivery_fee' => (float) Setting::get('other_location.delivery_fee', self::OTHER_DELIVERY_FEE, $tenantId),
+            'min_days' => max(0, $minDays),
+            'max_days' => max(max(0, $minDays), $maxDays),
+        ];
+    }
+
+    public function resolveOtherLocationFee(?DeliveryService $service, ?Tenant $tenant = null): array
+    {
+        $settings = $this->getOtherLocationSettings($tenant);
+        $serviceFee = $service ? (int) $service->base_fee : 0;
+
+        return [
+            'township_fee' => $settings['delivery_fee'],
+            'service_fee' => $service ? $serviceFee : null,
+            'service_fallback' => false,
+            'fee' => $settings['delivery_fee'] + $serviceFee,
+            'min_days' => $settings['min_days'],
+            'max_days' => $settings['max_days'],
+        ];
     }
 
     public function resolveAvailableService(?int $deliveryServiceId, ?Township $township): ?DeliveryService
