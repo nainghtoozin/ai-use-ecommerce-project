@@ -870,6 +870,7 @@ Route::prefix('wishlist')->name('wishlist.')->middleware('auth:web,accounts')->g
 // API
 // Checkout (public — guest checkout gate handled in controller)
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::get('/checkout/cod-quote', [CheckoutController::class, 'codQuote'])->name('checkout.cod-quote');
 
 Route::get('/api/locations', [App\Http\Controllers\Api\LocationController::class, 'getCities']);
 Route::get('/api/townships/{cityId}', [App\Http\Controllers\Api\LocationController::class, 'getTownships']);

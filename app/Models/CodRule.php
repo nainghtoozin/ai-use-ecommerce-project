@@ -19,8 +19,6 @@ class CodRule extends Model
         'max_order_amount',
         'allowed_city_ids',
         'excluded_city_ids',
-        'cod_fee',
-        'apply_cod_fee_to_total',
     ];
 
     protected $casts = [
@@ -29,8 +27,6 @@ class CodRule extends Model
         'max_order_amount' => 'decimal:2',
         'allowed_city_ids' => 'array',
         'excluded_city_ids' => 'array',
-        'cod_fee' => 'decimal:2',
-        'apply_cod_fee_to_total' => 'boolean',
     ];
 
     public function scopeActive($query)

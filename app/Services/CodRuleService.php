@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\City;
 use App\Models\CodRule;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CodRuleService
 {
@@ -29,6 +30,12 @@ class CodRuleService
 
     public function create(array $data): CodRule
     {
+        if (tenant() && CodRule::forCurrentTenant()->exists()) {
+            throw ValidationException::withMessages([
+                'name' => 'This store already has a COD rule. Edit the existing rule instead.',
+            ]);
+        }
+
         $this->normalizeCityIds($data);
         return CodRule::create($this->prepareData($data));
     }
@@ -63,8 +70,6 @@ class CodRuleService
             'allowed_city_ids.*' => ['integer', Rule::exists('cities', 'id')->where('tenant_id', $tenantId)],
             'excluded_city_ids' => ['nullable', 'array'],
             'excluded_city_ids.*' => ['integer', Rule::exists('cities', 'id')->where('tenant_id', $tenantId)],
-            'cod_fee' => ['required', 'numeric', 'min:0'],
-            'apply_cod_fee_to_total' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }
@@ -103,10 +108,6 @@ class CodRuleService
     {
         if (!isset($data['is_active'])) {
             $data['is_active'] = true;
-        }
-
-        if (!isset($data['apply_cod_fee_to_total'])) {
-            $data['apply_cod_fee_to_total'] = false;
         }
 
         return $data;

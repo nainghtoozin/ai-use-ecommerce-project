@@ -66,15 +66,7 @@ class StorefrontCheckoutController extends Controller
 
         $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
 
-        if (auth()->check()) {
-            $user = auth()->user();
-            $paymentMethods = $paymentMethods->filter(function ($pm) use ($user) {
-                if ($pm->type === 'cod') {
-                    return $user->allow_cod;
-                }
-                return true;
-            })->values();
-        } else {
+        if (!auth()->check()) {
             $paymentMethods = $paymentMethods->reject(function ($pm) {
                 return $pm->type === 'cod';
             })->values();
@@ -86,7 +78,7 @@ class StorefrontCheckoutController extends Controller
         $addresses = collect();
         $defaultAddress = null;
         $profilePhone = null;
-        if (auth()->check()) {
+        if (auth()->check() && auth()->user() instanceof Account) {
             $addresses = auth()->user()->addresses()
                 ->where('tenant_id', $tenant->id)
                 ->orderBy('is_default', 'desc')
@@ -252,14 +244,32 @@ class StorefrontCheckoutController extends Controller
             $packagingName = $packaging->name;
         }
 
-        $codFee = 0;
         if (!empty($validated['payment_method_id'])) {
             $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
             if (!$paymentMethod || $paymentMethod->tenant_id !== $tenant->id) {
                 return response()->json(['message' => 'Invalid payment method.'], 422);
             }
-            if ($paymentMethod->type === 'cod' && $city) {
-                $codFee = $this->codEligibilityService->getCodFee($city->id, ($subtotal + $deliveryFee + $packagingFee) - $discount);
+        }
+
+        $codAvailable = null;
+        $codUnavailableReason = null;
+        $tenantCodMethod = PaymentMethod::active()->orderBy('name')->get()->firstWhere('type', 'cod');
+        if ($tenantCodMethod) {
+            $quoteUser = auth()->check() ? auth()->user() : null;
+            $quoteTotal = ($subtotal + $deliveryFee + $packagingFee) - $discount;
+            $codAvailable = $this->codEligibilityService->isCodAvailable(
+                $tenantCodMethod,
+                $quoteUser,
+                $city?->id,
+                $quoteTotal
+            );
+            if (!$codAvailable) {
+                $codUnavailableReason = $this->codEligibilityService->getIneligibilityReason(
+                    $tenantCodMethod,
+                    $quoteUser,
+                    $city?->id,
+                    $quoteTotal
+                );
             }
         }
 
@@ -289,8 +299,8 @@ class StorefrontCheckoutController extends Controller
             ],
             'services' => $services,
             'packaging' => ['fee' => $packagingFee, 'name' => $packagingName],
-            'cod' => ['fee' => $codFee],
-            'total' => max(0, ($subtotal + $deliveryFee + $packagingFee + $codFee) - $discount),
+            'cod' => ['available' => $codAvailable, 'unavailable_reason' => $codUnavailableReason],
+            'total' => max(0, ($subtotal + $deliveryFee + $packagingFee) - $discount),
         ]);
     }
 
@@ -465,7 +475,6 @@ class StorefrontCheckoutController extends Controller
         $totalDiscount = $couponDiscount + $promotionDiscount;
         $totalBeforeCod = ($subtotal + $deliveryFee + $packagingFee) - $totalDiscount;
 
-        $codFee = 0;
         if ($paymentMethod && $paymentMethod->type === 'cod') {
             $user = auth()->check() ? auth()->user() : null;
             $cityId = $city?->id ?? null;
@@ -480,13 +489,9 @@ class StorefrontCheckoutController extends Controller
             if ($reason !== null) {
                 return back()->with('error', $reason);
             }
-
-            if ($city) {
-                $codFee = $this->codEligibilityService->getCodFee($city->id, $totalBeforeCod);
-            }
         }
 
-        $totalAmount = $totalBeforeCod + $codFee;
+        $totalAmount = $totalBeforeCod;
 
         $orderData = [
             'user_id' => auth()->id(),
@@ -518,7 +523,7 @@ class StorefrontCheckoutController extends Controller
             'total_amount' => $totalAmount,
             'payment_status' => Order::PAYMENT_STATUS_PENDING,
             'order_status' => Order::ORDER_STATUS_PENDING,
-            'cod_fee' => $codFee > 0 ? $codFee : null,
+            'cod_fee' => null,
         ];
 
         if (!empty($discountData['promotion'])) {
@@ -586,8 +591,7 @@ class StorefrontCheckoutController extends Controller
                 $totalDiscount = (float) ($orderData['discount_amount'] ?? 0);
                 $deliveryFee = (float) ($orderData['delivery_fee'] ?? 0);
                 $packagingFee = (float) ($orderData['packaging_fee'] ?? 0);
-                $codFee = (float) ($orderData['cod_fee'] ?? 0);
-                $orderData['total_amount'] = ($subtotal + $deliveryFee + $packagingFee + $codFee) - $totalDiscount;
+                $orderData['total_amount'] = ($subtotal + $deliveryFee + $packagingFee) - $totalDiscount;
 
                 try {
                     $order = Order::create($orderData);

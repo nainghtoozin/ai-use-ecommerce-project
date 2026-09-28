@@ -13,6 +13,7 @@ class PaymentMethod extends Model
     use HasFactory, TenantAware;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'display_name',
         'slug',

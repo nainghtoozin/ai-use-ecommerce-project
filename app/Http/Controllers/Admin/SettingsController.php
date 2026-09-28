@@ -28,7 +28,9 @@ class SettingsController extends Controller
         $settings = WebsiteInfo::getSettings();
 
         return Inertia::render('Admin/Settings/Edit', [
-            'settings' => $settings->toArray(),
+            'settings' => array_merge($settings->toArray(), [
+                'cod_availability_mode' => \App\Models\Setting::get('cod_availability_mode', 'rules'),
+            ]),
         ]);
     }
 
@@ -155,6 +157,11 @@ class SettingsController extends Controller
         $newFields = ['secondary_phone', 'sales_email', 'telegram_username', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'google_maps_link', 'footer_extra_text'];
         foreach ($newFields as $field) {
             unset($validated[$field]);
+        }
+
+        if (array_key_exists('cod_availability_mode', $validated)) {
+            \App\Models\Setting::set('cod_availability_mode', $validated['cod_availability_mode']);
+            unset($validated['cod_availability_mode']);
         }
 
         $info->fill($validated);

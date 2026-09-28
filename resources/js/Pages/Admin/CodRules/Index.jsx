@@ -11,7 +11,7 @@ export default function CodRulesIndex({ codRules }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
 
     function handleToggle(id) {
-        router.post(adminUrl(`/admin/cod-rules/${id}/toggle`));
+        router.post(adminUrl(`/admin/cod-rules/${id}/toggle`), {}, { preserveScroll: true });
     }
 
     function handleDelete(id) {
@@ -55,7 +55,7 @@ export default function CodRulesIndex({ codRules }) {
                     eyebrow="Checkout"
                     title="COD Rules"
                     subtitle="Configure Cash on Delivery eligibility, fees, and city restrictions."
-                    actions={can('cod-rules.create') && (
+                    actions={can('cod-rules.create') && !(codRules?.total > 0) && (
                         <PrimaryLink href={adminUrl('/admin/cod-rules/create')}>Add COD Rule</PrimaryLink>
                     )}
                 />
@@ -67,25 +67,18 @@ export default function CodRulesIndex({ codRules }) {
                             <tr>
                                 <TH>Name</TH>
                                 <TH>Eligibility</TH>
-                                <TH>COD Fee</TH>
                                 <TH align="center">Active</TH>
                                 <TH align="right">Actions</TH>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                             {!codRules?.data?.length ? (
-                                <TableEmptyState colSpan="5" title="No COD rules found." hint="Add your first COD rule to control cash-on-delivery availability." />
+                                <TableEmptyState colSpan="4" title="No COD rules found." hint="Add your first COD rule to control cash-on-delivery availability." />
                             ) : codRules.data.map((rule) => (
                                 <tr key={rule.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                     <TD variant="strong">{rule.name}</TD>
                                     <TD>
                                         <span className="text-xs">{getEligibilitySummary(rule)}</span>
-                                    </TD>
-                                    <TD variant="num">
-                                        {formatCurrency(rule.cod_fee, cc)}
-                                        {rule.apply_cod_fee_to_total && (
-                                            <span className="ml-1 text-xs text-gray-500">(to total)</span>
-                                        )}
                                     </TD>
                                     <td className="px-6 py-4 text-center">
                                         {can('cod-rules.update') ? (

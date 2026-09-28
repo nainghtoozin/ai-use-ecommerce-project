@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { Zap } from 'lucide-react';
+import { Zap, Banknote } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 
@@ -283,18 +283,24 @@ export default function StorefrontCheckoutV2({
   const visibleServices = (form.township_id && quotedServiceIds)
     ? (deliveryServices || []).filter(s => quotedServiceIds.has(String(s.id)))
     : (deliveryServices || []);
+  const codAvailable = quote?.cod?.available;
+  const codUnavailableReason = quote?.cod?.unavailable_reason;
+
+  useEffect(() => {
+    if (quote && quote.cod && quote.cod.available === false && selectedPayment?.type === 'cod') {
+      updateField('payment_method_id', '');
+    }
+  }, [quote, selectedPayment]);
+
   const deliveryFee = quote
     ? Number(quote.delivery?.fee || 0)
     : isOtherTownship
       ? 5000
       : (Number(township?.delivery_fee) || 0) + (selectedDeliveryService ? Number(selectedDeliveryService.base_fee) || 0 : 0);
   const packagingFee = quote ? Number(quote.packaging?.fee || 0) : (selectedPackaging?.fee || 0);
-  const codFee = quote ? Number(quote.cod?.fee || 0) : (selectedPayment?.type === 'cod' ? (selectedPayment?.cod_fee || 0) : 0);
   const totalDiscount = Number(localDiscount) || 0;
-  const totalBeforeCod = Number(subtotal) + Number(deliveryFee) + packagingFee - totalDiscount;
-  const total = totalBeforeCod + codFee;
+  const total = Number(subtotal) + Number(deliveryFee) + packagingFee - totalDiscount;
   const totalItems = Array.isArray(cartItems) ? cartItems.reduce((s, i) => s + i.quantity, 0) : 0;
-  const isCod = selectedPayment?.type === 'cod';
 
   const isAddressValid = form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.city_id;
   const isDeliveryReady = isAddressValid;
@@ -511,12 +517,6 @@ export default function StorefrontCheckoutV2({
               <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">Calculated at checkout</span>
             </div>
           ))}
-          {isCod && codFee > 0 && (
-            <div className="flex justify-between text-orange-600 dark:text-orange-400">
-              <span>COD Fee</span>
-              <span>{formatCurrency(codFee, cc)}</span>
-            </div>
-          )}
         </div>
 
         {packagingFee > 0 && (
@@ -956,24 +956,39 @@ export default function StorefrontCheckoutV2({
                     {paymentMethods?.map(pm => {
                       const isSelected = form.payment_method_id == pm.id;
                       const isCod = pm.type === 'cod';
+                      const codDisabled = isCod && codAvailable === false;
+                      const codEmphasis = isCod && !codDisabled && !isSelected;
                       return (
                         <button key={pm.id} type="button" role="radio" aria-checked={isSelected}
-                          onClick={() => updateField('payment_method_id', pm.id)}
-                          className={`relative rounded-xl border-2 p-3 text-center cursor-pointer transition-all min-h-[72px] focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]/50 ${
+                          aria-disabled={codDisabled}
+                          onClick={() => { if (!codDisabled) updateField('payment_method_id', pm.id); }}
+                          className={`relative rounded-xl border-2 p-3 text-center transition-all min-h-[72px] focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]/50 ${
+                            codDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                          } ${
                             isSelected
                               ? 'border-[var(--theme-color)] bg-[var(--theme-color)]/5 shadow-sm'
-                              : 'border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900'
+                              : codEmphasis
+                                ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/10 hover:border-emerald-300 dark:hover:border-emerald-800'
+                                : 'border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900'
                           }`}>
+                          {isCod && (
+                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">COD</span>
+                          )}
                           <div className="flex flex-col items-center gap-1">
-                            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden ${isCod && !codDisabled ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-gray-50 dark:bg-gray-800'}`}>
                               {pm.qr_image_url ? (
                                 <img src={pm.qr_image_url} alt="" className="w-full h-full object-contain" />
+                              ) : isCod ? (
+                                <Banknote className="w-5 h-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                               ) : (
                                 <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                               )}
                             </div>
-                            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 leading-tight">{pm.name}</span>
-                            {isCod && <span className="text-[10px] text-green-600 dark:text-green-400">Pay on delivery</span>}
+                            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 leading-tight">{isCod ? 'Cash on Delivery (COD)' : pm.name}</span>
+                            {isCod && !codDisabled && <span className="text-[10px] text-green-600 dark:text-green-400">Pay when you receive</span>}
+                            {isCod && codDisabled && (
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400">{codUnavailableReason || 'Not available'}</span>
+                            )}
                           </div>
                           {isSelected && (
                             <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[var(--theme-color)] rounded-full flex items-center justify-center shadow-sm">

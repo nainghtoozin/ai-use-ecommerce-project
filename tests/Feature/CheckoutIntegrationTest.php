@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\City;
 use App\Models\CodRule;
 use App\Models\DeliveryPricing;
@@ -64,6 +65,8 @@ class CheckoutIntegrationTest extends TestCase
             'is_active' => true,
         ]);
 
+        $category = Category::create(['name' => 'Test Cat', 'slug' => 'test-cat']);
+
         $this->product = Product::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Test Product',
@@ -71,6 +74,7 @@ class CheckoutIntegrationTest extends TestCase
             'price' => 5000,
             'stock' => 100,
             'status' => 'active',
+            'category_id' => $category->id,
         ]);
 
         $this->codPaymentMethod = PaymentMethod::create([
@@ -211,14 +215,12 @@ class CheckoutIntegrationTest extends TestCase
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Tenant Rule',
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
         CodRule::create([
             'tenant_id' => $this->otherTenant->id,
             'name' => 'Other Rule',
-            'cod_fee' => 1000,
             'is_active' => true,
         ]);
 
@@ -249,28 +251,27 @@ class CheckoutIntegrationTest extends TestCase
     }
 
     /** @test */
-    public function cod_fee_returns_zero_when_no_rules(): void
+    public function cod_unavailable_when_no_rules(): void
     {
+        $codMethod = new PaymentMethod(['type' => 'cod']);
         $service = new CodEligibilityService();
-        $fee = $service->getCodFee($this->city->id, 1000);
 
-        $this->assertEquals(0, $fee);
+        $this->assertFalse($service->isCodAvailable($codMethod, null, $this->city->id, 1000));
     }
 
     /** @test */
-    public function cod_fee_uses_eligible_rule(): void
+    public function cod_available_with_eligible_rule(): void
     {
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Normal Rule',
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
+        $codMethod = new PaymentMethod(['type' => 'cod']);
         $service = new CodEligibilityService();
-        $fee = $service->getCodFee($this->city->id, 1000);
 
-        $this->assertEquals(500, $fee);
+        $this->assertTrue($service->isCodAvailable($codMethod, null, $this->city->id, 1000));
     }
 
     /** @test */
@@ -280,14 +281,14 @@ class CheckoutIntegrationTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Rule',
             'min_order_amount' => 10000,
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
+        $codMethod = new PaymentMethod(['type' => 'cod']);
         $service = new CodEligibilityService();
-        $fee = $service->getCodFee($this->city->id, 5000);
 
-        $this->assertEquals(0, $fee);
+        $this->assertFalse($service->isCodAvailable($codMethod, null, $this->city->id, 5000));
+        $this->assertTrue($service->isCodAvailable($codMethod, null, $this->city->id, 15000));
     }
 
     /** @test */
@@ -302,17 +303,14 @@ class CheckoutIntegrationTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Yangon Only',
             'allowed_city_ids' => [$this->city->id],
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
+        $codMethod = new PaymentMethod(['type' => 'cod']);
         $service = new CodEligibilityService();
 
-        $yangonFee = $service->getCodFee($this->city->id, 5000);
-        $mandalayFee = $service->getCodFee($otherCity->id, 5000);
-
-        $this->assertEquals(500, $yangonFee);
-        $this->assertEquals(0, $mandalayFee);
+        $this->assertTrue($service->isCodAvailable($codMethod, null, $this->city->id, 5000));
+        $this->assertFalse($service->isCodAvailable($codMethod, null, $otherCity->id, 5000));
     }
 
     /** @test */

@@ -1254,8 +1254,6 @@ function CodTab({ codRules, cities }) {
                                         <StatusPill size="xs" active={rule.is_active} />
                                     </div>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
-                                        <span>Fee: <strong className="text-gray-700 dark:text-gray-300">{rule.cod_fee}</strong></span>
-                                        {rule.apply_cod_fee_to_total && <span className="text-gray-400">(applied to total)</span>}
                                         <span>{getEligibilitySummary(rule)}</span>
                                     </div>
                                 </div>

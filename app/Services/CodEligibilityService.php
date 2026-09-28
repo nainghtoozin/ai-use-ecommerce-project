@@ -2,17 +2,33 @@
 
 namespace App\Services;
 
+use App\Models\Account;
 use App\Models\CodRule;
 use App\Models\PaymentMethod;
+use App\Models\Setting;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\WebsiteInfo;
 use Illuminate\Support\Collection;
 
 class CodEligibilityService
 {
+    public const COD_MODE_ALL = 'all';
+    public const COD_MODE_RULES = 'rules';
+    public function isCodGloballyEnabled(?Tenant $tenant = null): bool
+    {
+        $tenant ??= Tenant::getCurrent();
+
+        $value = WebsiteInfo::withoutTenantScope()
+            ->where('tenant_id', $tenant?->id)
+            ->value('cod_enabled');
+
+        return $value === null ? true : (bool) $value;
+    }
+
     public function isCodAvailable(
         PaymentMethod $paymentMethod,
-        ?User $user = null,
+        User|Account|null $user = null,
         ?int $cityId = null,
         ?float $orderAmount = null
     ): bool {
@@ -20,8 +36,12 @@ class CodEligibilityService
             return false;
         }
 
-        if ($user !== null && $this->isUserBlocked($user)) {
+        if (!$this->isCodGloballyEnabled()) {
             return false;
+        }
+
+        if ($this->getCodAvailabilityMode() === self::COD_MODE_ALL) {
+            return true;
         }
 
         if ($orderAmount === null) {
@@ -31,7 +51,7 @@ class CodEligibilityService
         $activeRules = $this->getActiveRules();
 
         if ($activeRules->isEmpty()) {
-            return true;
+            return false;
         }
 
         foreach ($activeRules as $rule) {
@@ -62,35 +82,17 @@ class CodEligibilityService
         });
     }
 
-    public function getCodFee(
-        ?int $cityId = null,
-        ?float $orderAmount = null
-    ): float {
-        $eligibleRules = $this->getEligibleRules($cityId, $orderAmount);
+    public function getCodAvailabilityMode(?Tenant $tenant = null): string
+    {
+        $tenant ??= Tenant::getCurrent();
+        $mode = Setting::get('cod_availability_mode', self::COD_MODE_RULES, $tenant?->id);
 
-        if ($eligibleRules->isEmpty()) {
-            return 0;
-        }
-
-        return (float) $eligibleRules->first()->cod_fee;
-    }
-
-    public function shouldApplyCodFeeToTotal(
-        ?int $cityId = null,
-        ?float $orderAmount = null
-    ): bool {
-        $eligibleRules = $this->getEligibleRules($cityId, $orderAmount);
-
-        if ($eligibleRules->isEmpty()) {
-            return false;
-        }
-
-        return (bool) $eligibleRules->first()->apply_cod_fee_to_total;
+        return $mode === self::COD_MODE_ALL ? self::COD_MODE_ALL : self::COD_MODE_RULES;
     }
 
     public function getIneligibilityReason(
         PaymentMethod $paymentMethod,
-        ?User $user = null,
+        User|Account|null $user = null,
         ?int $cityId = null,
         ?float $orderAmount = null
     ): ?string {
@@ -98,8 +100,12 @@ class CodEligibilityService
             return 'Selected payment method is not COD.';
         }
 
-        if ($user !== null && $this->isUserBlocked($user)) {
-            return 'Cash on Delivery is not available for your account.';
+        if (!$this->isCodGloballyEnabled()) {
+            return 'Cash on Delivery is currently unavailable.';
+        }
+
+        if ($this->getCodAvailabilityMode() === self::COD_MODE_ALL) {
+            return null;
         }
 
         if ($orderAmount === null) {
@@ -109,7 +115,7 @@ class CodEligibilityService
         $activeRules = $this->getActiveRules();
 
         if ($activeRules->isEmpty()) {
-            return null;
+            return 'Cash on Delivery is currently unavailable.';
         }
 
         $amountFailed = false;
@@ -153,12 +159,4 @@ class CodEligibilityService
         return $this->getEligibleRules($cityId, $orderAmount)->first();
     }
 
-    private function isUserBlocked(?User $user): bool
-    {
-        if ($user === null) {
-            return false;
-        }
-
-        return !(bool) ($user->allow_cod ?? false);
-    }
 }

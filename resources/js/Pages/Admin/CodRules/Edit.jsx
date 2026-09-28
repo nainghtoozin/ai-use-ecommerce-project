@@ -18,24 +18,22 @@ export default function CodRuleEdit({ codRule, cities }) {
         name: codRule.name || '',
         min_order_amount: codRule.min_order_amount || '',
         max_order_amount: codRule.max_order_amount || '',
-        cod_fee: codRule.cod_fee || 0,
-        apply_cod_fee_to_total: codRule.apply_cod_fee_to_total ?? true,
         is_active: codRule.is_active ?? true,
+        allowed_city_ids: codRule.allowed_city_ids || [],
+        excluded_city_ids: codRule.excluded_city_ids || [],
     });
 
     function handleSubmit(e) {
         e.preventDefault();
-        setData('allowed_city_ids', selectedAllowed);
-        setData('excluded_city_ids', selectedExcluded);
         put(adminUrl(`/admin/cod-rules/${codRule.id}`));
     }
 
-    function toggleCity(list, setList, cityId) {
-        if (list.includes(cityId)) {
-            setList(list.filter(id => id !== cityId));
-        } else {
-            setList([...list, cityId]);
-        }
+    function toggleCity(list, setList, field, cityId) {
+        const next = list.includes(cityId)
+            ? list.filter(id => id !== cityId)
+            : [...list, cityId];
+        setList(next);
+        setData(field, next);
     }
 
     if (!can('cod-rules.update')) {
@@ -56,6 +54,9 @@ export default function CodRuleEdit({ codRule, cities }) {
 
                 {flash?.success && (
                     <Notice tone="success" className="mb-4">{flash.success}</Notice>
+                )}
+                {flash?.warning && (
+                    <Notice tone="warning" className="mb-4">{flash.warning}</Notice>
                 )}
 
                 <FormCard>
@@ -87,7 +88,7 @@ export default function CodRuleEdit({ codRule, cities }) {
                                             <label key={city.id} className="flex items-center gap-2 text-sm rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
                                                 <input type="checkbox"
                                                     checked={selectedAllowed.includes(city.id)}
-                                                    onChange={() => toggleCity(selectedAllowed, setSelectedAllowed, city.id)}
+                                                    onChange={() => toggleCity(selectedAllowed, setSelectedAllowed, 'allowed_city_ids', city.id)}
                                                     className={FIELD_CHECKBOX} />
                                                 <span className="text-gray-700 dark:text-gray-300">{city.name}</span>
                                             </label>
@@ -105,7 +106,7 @@ export default function CodRuleEdit({ codRule, cities }) {
                                             <label key={city.id} className="flex items-center gap-2 text-sm rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
                                                 <input type="checkbox"
                                                     checked={selectedExcluded.includes(city.id)}
-                                                    onChange={() => toggleCity(selectedExcluded, setSelectedExcluded, city.id)}
+                                                    onChange={() => toggleCity(selectedExcluded, setSelectedExcluded, 'excluded_city_ids', city.id)}
                                                     className={FIELD_CHECKBOX} />
                                                 <span className="text-gray-700 dark:text-gray-300">{city.name}</span>
                                             </label>
@@ -113,14 +114,6 @@ export default function CodRuleEdit({ codRule, cities }) {
                                     </div>
                                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to exclude no cities</p>
                                 </div>
-                            </div>
-                        </FormGroup>
-
-                        <FormGroup title="Fee" description="Extra charge for cash-on-delivery orders.">
-                            <div className="space-y-4">
-                                <TextInput id="cod_fee" label="COD Fee" type="number" min="0" step="0.01" value={data.cod_fee} onChange={(e) => setData('cod_fee', parseFloat(e.target.value) || 0)} error={errors.cod_fee} required />
-
-                                <CheckboxRow id="apply_cod_fee_to_total" label="Apply COD fee to total" checked={data.apply_cod_fee_to_total} onChange={(e) => setData('apply_cod_fee_to_total', e.target.checked)} />
                             </div>
                         </FormGroup>
 

@@ -167,7 +167,9 @@ export default function SettingsEdit({ settings = {} }) {
     footer_extra_text: settings.footer_settings?.extra_text || '',
     free_shipping_threshold: settings.free_shipping_threshold ?? 0,
     default_shipping_fee: settings.default_shipping_fee ?? 0,
-    cod_enabled: settings.cod_enabled !== undefined ? settings.cod_enabled : true,
+    cod_enabled: settings.cod_enabled !== undefined ? 
+settings.cod_enabled : true,
+    cod_availability_mode: settings.cod_availability_mode || 'rules',
     guest_checkout_enabled: settings.guest_checkout_enabled !== undefined ? settings.guest_checkout_enabled : true,
     maintenance_mode: settings.maintenance_mode || false,
     maintenance_message: settings.maintenance_message || '',
@@ -924,6 +926,34 @@ export default function SettingsEdit({ settings = {} }) {
                     {renderField('free_shipping_threshold', 'Free Shipping Threshold', 'number')}
                     {renderField('default_shipping_fee', 'Default Shipping Fee', 'number')}
                     {renderField('cod_enabled', 'COD Enabled', 'switch', { switchLabel: 'Enable Cash on Delivery' })}
+                    {data.cod_enabled && (
+                      <div>
+                        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">COD Availability</span>
+                        <div className="space-y-2">
+                          <label className="flex items-start gap-2 cursor-pointer">
+                            <input type="radio" name="cod_availability_mode" value="all"
+                              checked={data.cod_availability_mode === 'all'}
+                              onChange={() => setData('cod_availability_mode', 'all')}
+                              className="mt-1 text-blue-600 focus:ring-blue-500" />
+                            <span>
+                              <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">All COD</span>
+                              <span className="block text-xs text-gray-500 dark:text-gray-400">Allow COD without COD Rules.</span>
+                            </span>
+                          </label>
+                          <label className="flex items-start gap-2 cursor-pointer">
+                            <input type="radio" name="cod_availability_mode" value="rules"
+                              checked={data.cod_availability_mode !== 'all'}
+                              onChange={() => setData('cod_availability_mode', 'rules')}
+                              className="mt-1 text-blue-600 focus:ring-blue-500" />
+                            <span>
+                              <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">Use COD Rules</span>
+                              <span className="block text-xs text-gray-500 dark:text-gray-400">Apply the rules configured in Delivery → COD Rules.</span>
+                            </span>
+                          </label>
+                        </div>
+                        {errors.cod_availability_mode && <p className="mt-1 text-sm text-red-600">{errors.cod_availability_mode}</p>}
+                      </div>
+                    )}
                     {renderField('guest_checkout_enabled', 'Guest Checkout', 'switch', { switchLabel: 'Allow guest checkout' })}
                   </div>
                 </div>

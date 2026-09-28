@@ -81,12 +81,20 @@ class OrderController extends Controller
             'payment_screenshot' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
+        $tenant = \App\Models\Tenant::getCurrent();
+        $authUser = auth()->user();
+        if (!$tenant && $authUser instanceof \App\Models\User && $authUser->tenant) {
+            $tenant = $authUser->tenant;
+        }
+
+        $paymentMethod = \App\Models\PaymentMethod::find($validated['payment_method_id']);
+        if (!$paymentMethod || ($tenant && (int) $paymentMethod->tenant_id !== (int) $tenant->id)) {
+            return back()->withErrors(['payment_method_id' => 'Invalid payment method.'])->withInput();
+        }
+
+        $city = null;
+        $township = null;
         if (!empty($validated['city_id']) || !empty($validated['township_id'])) {
-            $tenant = \App\Models\Tenant::getCurrent();
-            $user = auth()->user();
-            if (!$tenant && $user instanceof \App\Models\User && $user->tenant) {
-                $tenant = $user->tenant;
-            }
             $location = app(\App\Services\LocationService::class)->resolveTenantLocation(
                 !empty($validated['city_id']) ? (int) $validated['city_id'] : null,
                 !empty($validated['township_id']) ? (int) $validated['township_id'] : null,
@@ -94,6 +102,7 @@ class OrderController extends Controller
             );
             $validated['city_id'] = $location['city']?->id ?? $validated['city_id'] ?? null;
             $validated['township_id'] = $location['township']?->id ?? $validated['township_id'] ?? null;
+            $city = $location['city'];
             $township = $location['township'];
             if ($township) {
                 if (!empty($validated['postal_code']) && $township->postal_code && $validated['postal_code'] !== $township->postal_code) {
@@ -107,16 +116,6 @@ class OrderController extends Controller
             $user = auth()->user();
             if ($user->tenant && $user->tenant->subscriptionExpired()) {
                 return back()->with('error', 'Your subscription has expired. Please renew your subscription to place orders.');
-            }
-        }
-
-        if (auth()->check()) {
-            $codMethods = \App\Models\PaymentMethod::where('type', 'cod')->pluck('id');
-            if ($codMethods->isNotEmpty() && $codMethods->contains($validated['payment_method_id'])) {
-                $user = auth()->user();
-                if (!$user || !$user->allow_cod) {
-                    return back()->with('error', 'COD payment is not available for your account.');
-                }
             }
         }
 
@@ -175,6 +174,20 @@ class OrderController extends Controller
         $promotionDiscount = (float) ($discountData['promotion_discount'] ?? 0);
 
         $totalDiscount = $couponDiscount + $promotionDiscount;
+
+        if ($paymentMethod && $paymentMethod->type === 'cod') {
+            $codService = app(\App\Services\CodEligibilityService::class);
+            $reason = $codService->getIneligibilityReason(
+                $paymentMethod,
+                auth()->user(),
+                $city?->id,
+                ($subtotal + $deliveryFee) - $totalDiscount
+            );
+            if ($reason !== null) {
+                return back()->with('error', $reason);
+            }
+        }
+
         $totalAmount = ($subtotal + $deliveryFee) - $totalDiscount;
 
         $orderData = [
@@ -198,6 +211,7 @@ class OrderController extends Controller
             'total_amount' => $totalAmount,
             'payment_status' => Order::PAYMENT_STATUS_PENDING,
             'order_status' => Order::ORDER_STATUS_PENDING,
+            'cod_fee' => null,
         ];
 
         if (!empty($discountData['promotion'])) {

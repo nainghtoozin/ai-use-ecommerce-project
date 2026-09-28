@@ -52,14 +52,12 @@ class CodRuleArchitectureTest extends TestCase
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Tenant Rule',
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
         CodRule::create([
             'tenant_id' => $this->otherTenant->id,
             'name' => 'Other Rule',
-            'cod_fee' => 1000,
             'is_active' => true,
         ]);
 
@@ -81,7 +79,6 @@ class CodRuleArchitectureTest extends TestCase
             'name' => 'Test Rule',
             'min_order_amount' => 1000,
             'max_order_amount' => 500,
-            'cod_fee' => 100,
         ], $rules);
 
         if (!$validator->errors()->isEmpty()) {
@@ -97,7 +94,6 @@ class CodRuleArchitectureTest extends TestCase
             'name' => 'Amount Rule',
             'min_order_amount' => 1000,
             'max_order_amount' => 5000,
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
@@ -120,7 +116,6 @@ class CodRuleArchitectureTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'City Rule',
             'allowed_city_ids' => [$this->city->id],
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
@@ -141,7 +136,6 @@ class CodRuleArchitectureTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Exclude Rule',
             'excluded_city_ids' => [$this->city->id],
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
@@ -156,14 +150,12 @@ class CodRuleArchitectureTest extends TestCase
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Active Rule',
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Inactive Rule',
-            'cod_fee' => 1000,
             'is_active' => false,
         ]);
 
@@ -174,7 +166,7 @@ class CodRuleArchitectureTest extends TestCase
     }
 
     /** @test */
-    public function user_allow_cod_blocks_cod(): void
+    public function user_allow_cod_no_longer_blocks_cod(): void
     {
         $userWithCod = User::create([
             'tenant_id' => $this->tenant->id,
@@ -195,7 +187,6 @@ class CodRuleArchitectureTest extends TestCase
         $rule = CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Test Rule',
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
@@ -204,88 +195,60 @@ class CodRuleArchitectureTest extends TestCase
         $paymentMethod = new \App\Models\PaymentMethod(['type' => 'cod']);
 
         $this->assertTrue($service->isCodAvailable($paymentMethod, $userWithCod, $this->city->id, 1000));
-        $this->assertFalse($service->isCodAvailable($paymentMethod, $userWithoutCod, $this->city->id, 1000));
+        $this->assertTrue($service->isCodAvailable($paymentMethod, $userWithoutCod, $this->city->id, 1000));
     }
 
     /** @test */
-    public function cod_fee_returns_zero_when_no_eligible_rules(): void
+    public function cod_unavailable_when_no_eligible_rules(): void
     {
         $rule = CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Rule',
             'min_order_amount' => 10000,
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
         $service = new CodEligibilityService();
-        $fee = $service->getCodFee($this->city->id, 1000);
+        $paymentMethod = new \App\Models\PaymentMethod(['type' => 'cod']);
 
-        $this->assertEquals(0, $fee);
+        $this->assertFalse($service->isCodAvailable($paymentMethod, null, $this->city->id, 1000));
     }
 
     /** @test */
-    public function cod_fee_returns_rule_fee_when_eligible(): void
+    public function cod_available_when_rule_eligible(): void
     {
         $rule = CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Normal Rule',
             'min_order_amount' => 0,
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
         $service = new CodEligibilityService();
-        $fee = $service->getCodFee($this->city->id, 1000);
+        $paymentMethod = new \App\Models\PaymentMethod(['type' => 'cod']);
 
-        $this->assertEquals(500, $fee);
+        $this->assertTrue($service->isCodAvailable($paymentMethod, null, $this->city->id, 1000));
     }
 
     /** @test */
-    public function apply_cod_fee_to_total_is_respected(): void
-    {
-        $ruleWithFee = CodRule::create([
-            'tenant_id' => $this->tenant->id,
-            'name' => 'Fee to Total',
-            'cod_fee' => 500,
-            'apply_cod_fee_to_total' => true,
-            'is_active' => true,
-        ]);
-
-        $ruleWithoutFee = CodRule::create([
-            'tenant_id' => $this->tenant->id,
-            'name' => 'Fee not to Total',
-            'cod_fee' => 500,
-            'apply_cod_fee_to_total' => false,
-            'is_active' => true,
-        ]);
-
-        $service = new CodEligibilityService();
-
-        $this->assertTrue($service->shouldApplyCodFeeToTotal($this->city->id, 1000));
-    }
-
-    /** @test */
-    public function first_eligible_rule_is_used_for_fee(): void
+    public function first_eligible_rule_is_used_for_availability(): void
     {
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'First Rule',
-            'cod_fee' => 300,
+            'max_order_amount' => 500,
             'is_active' => true,
         ]);
 
         CodRule::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Second Rule',
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
         $service = new CodEligibilityService();
-        $fee = $service->getCodFee($this->city->id, 1000);
 
-        $this->assertEquals(300, $fee);
+        $this->assertEquals('Second Rule', $service->getFirstEligibleRule($this->city->id, 1000)->name);
     }
 
     /** @test */
@@ -301,7 +264,6 @@ class CodRuleArchitectureTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Scoped Rule',
             'allowed_city_ids' => [$this->city->id, $foreignCity->id],
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
@@ -321,7 +283,6 @@ class CodRuleArchitectureTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Excluded Rule',
             'excluded_city_ids' => [$this->city->id],
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 
@@ -352,7 +313,6 @@ class CodRuleArchitectureTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Editable Rule',
             'allowed_city_ids' => [$this->city->id],
-            'cod_fee' => 500,
             'is_active' => true,
         ]);
 

@@ -112,8 +112,6 @@ class CheckoutDemoDataSeeder extends Seeder
                 'max_order_amount' => 1000000,
                 'allowed_city_ids' => null,
                 'excluded_city_ids' => null,
-                'cod_fee' => 0,
-                'apply_cod_fee_to_total' => false,
                 'is_active' => true,
             ]
         );
@@ -125,8 +123,6 @@ class CheckoutDemoDataSeeder extends Seeder
                 'max_order_amount' => null,
                 'allowed_city_ids' => $yangon ? [$yangon->id] : null,
                 'excluded_city_ids' => null,
-                'cod_fee' => 2000,
-                'apply_cod_fee_to_total' => true,
                 'is_active' => true,
             ]
         );

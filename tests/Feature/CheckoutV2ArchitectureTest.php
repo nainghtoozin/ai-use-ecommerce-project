@@ -300,14 +300,12 @@ class CheckoutV2ArchitectureTest extends TestCase
             'is_active' => true,
             'min_order_amount' => 1000,
             'max_order_amount' => 50000,
-            'cod_fee' => 500,
-            'apply_cod_fee_to_total' => true,
         ]);
 
         $this->assertNotNull($rule->id);
         $this->assertEquals(1000, $rule->min_order_amount);
         $this->assertEquals(50000, $rule->max_order_amount);
-        $this->assertEquals(500, $rule->cod_fee);
+        $this->assertArrayNotHasKey('cod_fee', $rule->getAttributes());
     }
 
     /** @test */
@@ -319,7 +317,6 @@ class CheckoutV2ArchitectureTest extends TestCase
             'is_active' => true,
             'min_order_amount' => 5000,
             'max_order_amount' => 20000,
-            'cod_fee' => 300,
         ]);
 
         $this->assertFalse($rule->isAmountEligible(4000));
@@ -337,7 +334,6 @@ class CheckoutV2ArchitectureTest extends TestCase
             'name' => 'Yangon Only COD',
             'is_active' => true,
             'allowed_city_ids' => [$this->city->id],
-            'cod_fee' => 200,
         ]);
 
         $otherCity = City::create([
@@ -365,7 +361,6 @@ class CheckoutV2ArchitectureTest extends TestCase
             'name' => 'Exclude Mandalay',
             'is_active' => true,
             'excluded_city_ids' => [$otherCity->id],
-            'cod_fee' => 200,
         ]);
 
         $this->assertTrue($rule->isCityEligible($this->city->id));
@@ -373,7 +368,7 @@ class CheckoutV2ArchitectureTest extends TestCase
     }
 
     /** @test */
-    public function cod_eligibility_service_respects_user_block(): void
+    public function cod_unavailable_without_rules_regardless_of_user_flag(): void
     {
         \App\Models\Tenant::setCurrent($this->tenant);
 
@@ -381,9 +376,9 @@ class CheckoutV2ArchitectureTest extends TestCase
 
         $service = app(CodEligibilityService::class);
 
-        $this->assertTrue($service->isCodAvailable($codMethod, $this->userWithCod, null, 10000));
+        $this->assertFalse($service->isCodAvailable($codMethod, $this->userWithCod, null, 10000));
         $this->assertFalse($service->isCodAvailable($codMethod, $this->userWithoutCod, null, 10000));
-        $this->assertTrue($service->isCodAvailable($codMethod, null, null, 10000));
+        $this->assertFalse($service->isCodAvailable($codMethod, null, null, 10000));
     }
 
     /** @test */
@@ -396,7 +391,6 @@ class CheckoutV2ArchitectureTest extends TestCase
             'name' => 'High Value Only',
             'is_active' => true,
             'min_order_amount' => 50000,
-            'cod_fee' => 1000,
         ]);
 
         $codMethod = PaymentMethod::where('type', 'cod')->first();
@@ -407,29 +401,28 @@ class CheckoutV2ArchitectureTest extends TestCase
     }
 
     /** @test */
-    public function cod_eligibility_service_returns_cod_fee(): void
+    public function cod_eligibility_ignores_amount_only_rule_differences(): void
     {
         \App\Models\Tenant::setCurrent($this->tenant);
 
         CodRule::create([
             'tenant_id' => $this->tenant->id,
-            'name' => 'Standard COD Fee',
+            'name' => 'Standard COD',
             'is_active' => true,
-            'cod_fee' => 500,
         ]);
 
         CodRule::create([
             'tenant_id' => $this->tenant->id,
-            'name' => 'High Value Fee',
+            'name' => 'High Value',
             'is_active' => true,
             'min_order_amount' => 50000,
-            'cod_fee' => 1000,
         ]);
 
+        $codMethod = PaymentMethod::where('type', 'cod')->first();
         $service = app(CodEligibilityService::class);
 
-        $this->assertEquals(500, $service->getCodFee(null, 10000));
-        $this->assertEquals(500, $service->getCodFee(null, 60000));
+        $this->assertTrue($service->isCodAvailable($codMethod, $this->userWithCod, null, 10000));
+        $this->assertTrue($service->isCodAvailable($codMethod, $this->userWithCod, null, 60000));
     }
 
     /** @test */
@@ -561,7 +554,7 @@ class CheckoutV2ArchitectureTest extends TestCase
 
         $reason = $service->getIneligibilityReason($codMethod, $this->userWithoutCod, null, 10000);
         $this->assertNotNull($reason);
-        $this->assertStringContainsString('not available for your account', $reason);
+        $this->assertStringContainsString('currently unavailable', $reason);
     }
 
     /** @test */
@@ -609,14 +602,12 @@ class CheckoutV2ArchitectureTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Tenant 1 Rule',
             'is_active' => true,
-            'cod_fee' => 500,
         ]);
 
         $ruleTenant2 = CodRule::create([
             'tenant_id' => $this->otherTenant->id,
             'name' => 'Tenant 2 Rule',
             'is_active' => true,
-            'cod_fee' => 1000,
         ]);
 
         $service = app(CodEligibilityService::class);
@@ -636,42 +627,43 @@ class CheckoutV2ArchitectureTest extends TestCase
             'name' => 'Other Tenant Rule',
             'is_active' => true,
             'min_order_amount' => 1000,
-            'cod_fee' => 500,
         ]);
 
         $codMethod = PaymentMethod::where('type', 'cod')->first();
         $service = app(CodEligibilityService::class);
 
-        $this->assertTrue($service->isCodAvailable($codMethod, $this->userWithCod, null, 500));
+        $this->assertFalse($service->isCodAvailable($codMethod, $this->userWithCod, null, 500));
     }
 
     /** @test */
-    public function cod_fee_returns_zero_when_no_rules(): void
+    public function cod_unavailable_when_no_rules(): void
     {
         \App\Models\Tenant::setCurrent($this->tenant);
 
+        $codMethod = PaymentMethod::where('type', 'cod')->first();
         $service = app(CodEligibilityService::class);
 
-        $this->assertEquals(0, $service->getCodFee(null, 10000));
+        $this->assertFalse($service->isCodAvailable($codMethod, $this->userWithCod, null, 10000));
     }
 
     /** @test */
-    public function cod_rule_with_specific_fee_applies_correctly(): void
+    public function cod_rule_with_amount_range_allows_matching_orders(): void
     {
         \App\Models\Tenant::setCurrent($this->tenant);
 
         CodRule::create([
             'tenant_id' => $this->tenant->id,
-            'name' => 'Fee Rule',
+            'name' => 'Range Rule',
             'is_active' => true,
-            'cod_fee' => 1500,
-            'apply_cod_fee_to_total' => true,
+            'min_order_amount' => 5000,
+            'max_order_amount' => 20000,
         ]);
 
+        $codMethod = PaymentMethod::where('type', 'cod')->first();
         $service = app(CodEligibilityService::class);
 
-        $this->assertEquals(1500, $service->getCodFee(null, 10000));
-        $this->assertTrue($service->shouldApplyCodFeeToTotal(null, 10000));
+        $this->assertTrue($service->isCodAvailable($codMethod, $this->userWithCod, null, 10000));
+        $this->assertFalse($service->isCodAvailable($codMethod, $this->userWithCod, null, 1000));
     }
 
     /** @test */
@@ -691,7 +683,6 @@ class CheckoutV2ArchitectureTest extends TestCase
             'is_active' => true,
             'min_order_amount' => 50000,
             'max_order_amount' => 99999,
-            'cod_fee' => 1000,
         ]);
 
         $codMethod = PaymentMethod::where('type', 'cod')->first();
@@ -705,7 +696,6 @@ class CheckoutV2ArchitectureTest extends TestCase
             'name' => 'City Rule',
             'is_active' => true,
             'allowed_city_ids' => [$otherCity->id],
-            'cod_fee' => 500,
         ]);
 
         $reasonCity = $service->getIneligibilityReason($codMethod, $this->userWithCod, $this->city->id, 100000);

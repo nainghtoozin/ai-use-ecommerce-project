@@ -8,7 +8,6 @@ use App\Http\Requests\UpdateCodRuleRequest;
 use App\Models\CodRule;
 use App\Services\ActivityLogger;
 use App\Services\CodRuleService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -31,10 +30,18 @@ class AdminCodRuleController extends Controller
         ]);
     }
 
-    public function create(): \Inertia\Response
+    public function create(): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
         if (!auth()->user()->can('cod-rules.create')) {
             abort(403, 'Unauthorized');
+        }
+
+        if (tenant()) {
+            $existing = \App\Models\CodRule::forCurrentTenant()->first();
+            if ($existing) {
+                return admin_redirect('admin.cod-rules.edit', ['cod_rule' => $existing->id])
+                    ->with('warning', 'This store already has a COD rule. Edit it below instead of creating another.');
+            }
         }
 
         $cities = $this->codRuleService->getActiveCities();
@@ -101,7 +108,7 @@ class AdminCodRuleController extends Controller
             ->with('success', 'COD rule deleted successfully.');
     }
 
-    public function toggle(CodRule $codRule): JsonResponse
+    public function toggle(CodRule $codRule): RedirectResponse
     {
         if (!auth()->user()->can('cod-rules.update')) {
             abort(403, 'Unauthorized');
@@ -109,10 +116,9 @@ class AdminCodRuleController extends Controller
 
         $codRule = $this->codRuleService->toggleActive($codRule);
 
-        return response()->json([
-            'success' => true,
-            'is_active' => $codRule->is_active,
-            'message' => $codRule->is_active ? 'COD rule activated.' : 'COD rule deactivated.',
-        ]);
+        return back()->with(
+            'success',
+            $codRule->is_active ? 'COD rule activated.' : 'COD rule deactivated.'
+        );
     }
 }

@@ -5,7 +5,11 @@ import ShopLayout from '@/Layouts/ShopLayout';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
  
-export default function Checkout({ cartItems, subtotal, paymentMethods, cities, errors, appliedPromotion: initialAppliedPromotion, discountAmount: initialDiscountAmount, autoPromotions }) {
+export default function Checkout({ cartItems, subtotal, paymentMethods, cities, codAvailability = {}, errors, appliedPromotion: initialAppliedPromotion, discountAmount: initialDiscountAmount, autoPromotions }) {
+    const isCodBlockedForCity = (pm, cityId) => pm?.type === 'cod'
+        && cityId
+        && Object.prototype.hasOwnProperty.call(codAvailability, cityId)
+        && codAvailability[cityId] === false;
     const { auth, platform_setting, website_info } = usePage().props;
     const cc = getCurrencyConfig(platform_setting, website_info);
     const [localAppliedPromotion, setLocalAppliedPromotion] = useState(initialAppliedPromotion || null);
@@ -170,9 +174,30 @@ export default function Checkout({ cartItems, subtotal, paymentMethods, cities, 
     const city = cities?.find((c) => c.id == form.city_id);
     const township = townships?.find((t) => t.id == form.township_id);
     const selectedPaymentMethod = paymentMethods?.find((pm) => pm.id == form.payment_method_id);
+    const isCodSelected = selectedPaymentMethod?.type === 'cod';
+    const [codQuote, setCodQuote] = useState(null);
+
+    useEffect(() => {
+        if (!isCodSelected || !form.city_id) {
+            setCodQuote(null);
+            return;
+        }
+        let cancelled = false;
+        axios.get('/checkout/cod-quote', {
+            params: { city_id: form.city_id, township_id: form.township_id || undefined },
+        }).then((res) => {
+            if (!cancelled) setCodQuote(res.data);
+        }).catch(() => {
+            if (!cancelled) setCodQuote(null);
+        });
+        return () => { cancelled = true; };
+    }, [isCodSelected, form.city_id, form.township_id, localDiscount, subtotal]);
+
     const deliveryFee = township?.delivery_fee || 0;
     const totalDiscount = Number(localDiscount) || 0;
-    const total = Number(subtotal) + Number(deliveryFee) - totalDiscount;
+    const total = isCodSelected && codQuote && typeof codQuote.total === 'number'
+        ? Number(codQuote.total)
+        : Number(subtotal) + Number(deliveryFee) - totalDiscount;
     const totalItems = cartItems?.reduce((s, i) => s + i.quantity, 0) || 0;
 
     function handleSubmit(e) {
@@ -327,7 +352,7 @@ return (
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City *</label>
-                                    <select value={form.city_id} onChange={(e) => { updateField('city_id', e.target.value); fetchTownships(e.target.value); setForm((p) => ({ ...p, township_id: '', postal_code: '' })); }} className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <select value={form.city_id} onChange={(e) => { const newCity = e.target.value; updateField('city_id', newCity); fetchTownships(newCity); setForm((p) => { const next = { ...p, township_id: '', postal_code: '' }; const sel = paymentMethods?.find((m) => m.id == p.payment_method_id); if (sel?.type === 'cod' && newCity && codAvailability && codAvailability[newCity] === false) { next.payment_method_id = ''; } return next; }); }} className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">Select City</option>
                                         {cities?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
@@ -367,12 +392,15 @@ return (
 
                             <div className="space-y-3">
                                 {paymentMethods?.map((pm) => {
-                                    const isSelected = form.payment_method_id == pm.id;
+                                    const codBlocked = isCodBlockedForCity(pm, form.city_id);
+                                    const isSelected = !codBlocked && form.payment_method_id == pm.id;
                                     return (
                                         <div
                                             key={pm.id}
-                                            onClick={() => updateField('payment_method_id', pm.id)}
-                                            className={`rounded-xl border-2 transition-all cursor-pointer select-none ${
+                                            onClick={() => { if (!codBlocked) updateField('payment_method_id', pm.id); }}
+                                            className={`rounded-xl border-2 transition-all select-none ${
+                                                codBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                            } ${
                                                 isSelected
                                                     ? 'border-blue-500 bg-blue-50/50 shadow-sm'
                                                     : 'border-gray-200 bg-white hover:border-gray-300'
@@ -385,10 +413,11 @@ return (
                                                     }`}>
                                                         {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                                                     </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-gray-900 dark:text-gray-100">{pm.name}</p>
-                                                        {pm.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{pm.description}</p>}
-                                                    </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-gray-900 dark:text-gray-100">{pm.name}</p>
+                                                {pm.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{pm.description}</p>}
+                                                {codBlocked && <p className="text-xs text-amber-600 mt-0.5">Not available for the selected city.</p>}
+                                            </div>
                                                     <svg className={`w-5 h-5 transition-transform ${isSelected ? 'rotate-90 text-blue-500' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                     </svg>
@@ -655,6 +684,10 @@ return (
                                                 {deliveryFee > 0 ? `${formatCurrency(deliveryFee, cc)}` : 'Free'}
                                             </span>
                                         </div>
+
+                                        {isCodSelected && codQuote && codQuote.available === false && codQuote.unavailable_reason && (
+                                            <p className="text-xs text-amber-600">{codQuote.unavailable_reason}</p>
+                                        )}
                                     </div>
 
                                     {/* Savings Summary */}

@@ -84,6 +84,7 @@ class UpdateWebsiteSettingsRequest extends FormRequest
             'enable_compare' => 'nullable|boolean',
             'guest_checkout_enabled' => 'nullable|boolean',
             'cod_enabled' => 'nullable|boolean',
+            'cod_availability_mode' => 'nullable|in:all,rules',
             'free_shipping_threshold' => 'nullable|numeric|min:0',
             'default_shipping_fee' => 'nullable|numeric|min:0',
             'is_active' => 'nullable|boolean',
