@@ -97,6 +97,7 @@ function SubmenuHeight({ open, children }) {
 export default function AdminSidebar() {
     const { props, url } = usePage();
     const { auth, website_info, platform_setting, tenant, featureStatus, menuVisibility } = props;
+    const paymentSetupRequired = props.paymentSetupRequired === true;
     const { t } = useTranslation();
     const userPermissions = auth?.user?.permissions;
     const isSuperAdmin = auth?.user?.is_superadmin;
@@ -490,6 +491,9 @@ export default function AdminSidebar() {
                                                         />
                                                         {!collapsed && (
                                                             <span className="truncate" style={linkActive && merchant ? { color: accentColor } : undefined}>{linkItem.label}</span>
+                                                        )}
+                                                        {!collapsed && paymentSetupRequired && linkItem.href === '/admin/payment-methods' && (
+                                                            <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" title="Payment method setup required" />
                                                         )}
                                                     </Link>
                                                 );

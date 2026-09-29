@@ -8,6 +8,8 @@ import {
     Calendar,
     CreditCard,
     Sparkles,
+    Wallet,
+    AlertCircle,
 } from 'lucide-react';
 
 function formatDate(dateStr) {
@@ -20,7 +22,8 @@ function formatDate(dateStr) {
 }
 
 export default function StoreSuccess() {
-    const { store, subscription } = usePage().props;
+    const { store, subscription, paymentSetup } = usePage().props;
+    const hasPaymentMethod = paymentSetup?.has_active_payment_method ?? true;
 
     const trialEndDate = formatDate(subscription?.trial_ends_at);
     const expiryDate = formatDate(subscription?.expires_at);
@@ -117,6 +120,45 @@ export default function StoreSuccess() {
                         </>
                     )}
                 </div>
+
+                {!hasPaymentMethod && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-900/40 p-4 text-left mb-6">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    <Wallet className="w-4 h-4" /> Payment Method Setup Required
+                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+                                    Customers cannot check out until your store has at least one active payment method.
+                                    Add your first payment method (e.g. bank transfer or COD) to make your store ready for orders.
+                                </p>
+                                <a
+                                    href={paymentSetup?.payment_method_create_url}
+                                    className="mt-3 w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 border border-transparent rounded-lg font-semibold text-sm text-white hover:bg-indigo-700 transition-colors"
+                                >
+                                    Add Payment Method <ArrowRight className="w-4 h-4" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {hasPaymentMethod && (
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-900/40 p-4 text-left mb-6">
+                        <div className="flex items-start gap-3">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                    Payment Method Ready
+                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+                                    Your store has at least one active payment method and can accept orders.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="space-y-3">
                     <a

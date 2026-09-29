@@ -40,7 +40,11 @@ class OrderWorkflow
             $order->load('paymentMethod');
         }
 
-        return $order->paymentMethod && $order->paymentMethod->type === 'cod';
+        if ($order->paymentMethod) {
+            return $order->paymentMethod->type === 'cod';
+        }
+
+        return $order->payment_method_id === null;
     }
 
     public function assertCanConfirmOrder(Order $order): void

@@ -38,7 +38,7 @@ class PaymentMethodUpdateRequest extends FormRequest
                     ->ignore($ignoreId)
                     ->where('tenant_id', Tenant::getCurrent()?->id),
             ],
-            'type' => 'required|string|in:bank_transfer,cod',
+            'type' => 'required|string|in:bank_transfer,cod,cash,manual',
             'account_name' => $isBankTransfer
                 ? ['required', 'string', 'max:255']
                 : ['nullable', 'string', 'max:255'],
@@ -47,6 +47,7 @@ class PaymentMethodUpdateRequest extends FormRequest
                 : ['nullable', 'string', 'max:255'],
             'qr_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'bank_name' => 'nullable|string|max:255',
+            'instructions' => 'nullable|string',
             'is_active' => 'boolean',
         ];
     }

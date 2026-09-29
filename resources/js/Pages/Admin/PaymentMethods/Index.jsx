@@ -10,13 +10,18 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
     const { can } = usePermission();
     const isSystemMethod = (name) => SYSTEM_METHODS.includes(name);
     function handleToggle(id) {
-        router.post(adminUrl(`/admin/payment-methods/${id}/toggle`));
+        router.post(adminUrl(`/admin/payment-methods/${id}/toggle`), {}, { preserveScroll: true });
     }
 
     function handleDelete(id) {
         if (confirm('Delete this payment method?')) {
             router.delete(adminUrl(`/admin/payment-methods/${id}`));
         }
+    }
+
+    function needsSetup(pm) {
+        return pm.type === 'manual' && !pm.is_active
+            && !pm.account_name && !pm.account_number && !pm.instructions && !pm.qr_image_url;
     }
 
     return (
@@ -67,7 +72,9 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{pm.account_number || '-'}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{pm.bank_name || '-'}</td>
                                     <td className="px-6 py-4 text-center">
-                                        {can('payments.update') ? (
+                                        {needsSetup(pm) ? (
+                                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Not Configured</span>
+                                        ) : can('payments.update') ? (
                                             <button onClick={() => handleToggle(pm.id)}
                                                 className={`px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer ${pm.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                                 {pm.is_active ? 'Active' : 'Inactive'}
@@ -80,7 +87,10 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm">
                                         <div className="flex justify-end gap-2">
-                                            {can('payments.update') && !isSystemMethod(pm.name) && (
+                                            {can('payments.update') && needsSetup(pm) && (
+                                                <Link href={adminUrl(`/admin/payment-methods/${pm.id}/edit`)} className="font-medium text-amber-700 hover:text-amber-900">Configure</Link>
+                                            )}
+                                            {can('payments.update') && !needsSetup(pm) && !isSystemMethod(pm.name) && (
                                                 <Link href={adminUrl(`/admin/payment-methods/${pm.id}/edit`)} className="text-blue-600 hover:text-blue-800">Edit</Link>
                                             )}
                                             {can('payments.delete') && !isSystemMethod(pm.name) && (

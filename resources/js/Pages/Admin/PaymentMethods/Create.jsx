@@ -13,6 +13,7 @@ export default function PaymentMethodCreate() {
         account_number: '',
         qr_image: null,
         bank_name: '',
+        instructions: '',
         is_active: true,
     });
     const [qrPreview, setQrPreview] = useState(null);
@@ -82,7 +83,8 @@ export default function PaymentMethodCreate() {
                             <select id="type" value={data.type} onChange={(e) => handleTypeChange(e.target.value)}
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="bank_transfer">Bank Transfer</option>
-                                <option value="cod">Cash on Delivery (COD)</option>
+                                <option value="cash">Cash (POS)</option>
+                                <option value="manual">Manual Payment</option>
                             </select>
                             {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
                         </div>
@@ -133,6 +135,14 @@ export default function PaymentMethodCreate() {
                                 </p>
                             </div>
                         )}
+
+                        <div>
+                            <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Instructions (optional)</label>
+                            <textarea id="instructions" value={data.instructions} onChange={(e) => setData('instructions', e.target.value)}
+                                rows={3} placeholder="e.g. Pay when you collect your order."
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            {errors.instructions && <p className="mt-1 text-sm text-red-600">{errors.instructions}</p>}
+                        </div>
 
                         <div className="flex items-center gap-2">
                             <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}

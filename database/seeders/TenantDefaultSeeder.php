@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\PaymentMethod;
 use App\Models\Tenant;
 use App\Models\WebsiteFaq;
 use App\Models\WebsiteInfo;
@@ -22,31 +21,12 @@ class TenantDefaultSeeder extends Seeder
         $locations = app(\App\Services\MyanmarLocationImportService::class);
 
         foreach ($tenants as $tenant) {
-            $this->seedPaymentMethods($tenant);
             $this->seedWebsiteInfo($tenant);
             $this->seedFaqs($tenant);
             $locations->import($tenant);
         }
 
         $this->command->info('Tenant defaults seeded successfully for all tenants.');
-    }
-
-    private function seedPaymentMethods(Tenant $tenant): void
-    {
-        $methods = [
-            ['name' => 'Cash', 'type' => 'cash', 'is_active' => true],
-            ['name' => 'Cash On Delivery', 'type' => 'cod', 'is_active' => true],
-        ];
-
-        foreach ($methods as $method) {
-            PaymentMethod::withoutTenantScope()->firstOrCreate(
-                ['tenant_id' => $tenant->id, 'name' => $method['name']],
-                [
-                    'type' => $method['type'],
-                    'is_active' => $method['is_active'],
-                ]
-            );
-        }
     }
 
     private function seedWebsiteInfo(Tenant $tenant): void

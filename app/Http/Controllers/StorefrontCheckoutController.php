@@ -64,15 +64,11 @@ class StorefrontCheckoutController extends Controller
                 ->with('error', 'Your cart is empty.');
         }
 
-        $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
-
-        if (!auth()->check()) {
-            $paymentMethods = $paymentMethods->reject(function ($pm) {
-                return $pm->type === 'cod';
-            })->values();
-        }
+        $paymentMethods = PaymentMethod::active()->orderBy('name')->get()
+            ->reject(fn ($pm) => $pm->type === 'cod')->values();
 
         $cities = City::getActiveWithTownships();
+
         $subtotal = (float) array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems));
 
         $addresses = collect();
@@ -109,16 +105,19 @@ class StorefrontCheckoutController extends Controller
         $packagingOptions = PackagingOption::active()->ordered()->get();
 
         $paymentMethodsFiltered = $paymentMethods;
-        $codMethod = $paymentMethods->firstWhere('type', 'cod');
-        if ($codMethod && auth()->check()) {
+        if (auth()->check()) {
             $codEligibility = $this->codEligibilityService->isCodAvailable(
-                $codMethod,
+                new PaymentMethod(['type' => 'cod']),
                 auth()->user(),
                 null,
                 $subtotal
             );
-            if (!$codEligibility) {
-                $paymentMethodsFiltered = $paymentMethods->reject(fn($pm) => $pm->type === 'cod')->values();
+            if ($codEligibility) {
+                $paymentMethodsFiltered = $paymentMethods->push([
+                    'id' => 'cod',
+                    'type' => 'cod',
+                    'name' => 'Cash on Delivery',
+                ])->values();
             }
         }
 
@@ -178,7 +177,6 @@ class StorefrontCheckoutController extends Controller
             'township_id' => ['nullable'],
             'delivery_service_id' => ['nullable', 'exists:delivery_services,id'],
             'packaging_id' => ['nullable', 'exists:packaging_options,id'],
-            'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
         ]);
 
         try {
@@ -244,33 +242,24 @@ class StorefrontCheckoutController extends Controller
             $packagingName = $packaging->name;
         }
 
-        if (!empty($validated['payment_method_id'])) {
-            $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
-            if (!$paymentMethod || $paymentMethod->tenant_id !== $tenant->id) {
-                return response()->json(['message' => 'Invalid payment method.'], 422);
-            }
-        }
-
         $codAvailable = null;
         $codUnavailableReason = null;
-        $tenantCodMethod = PaymentMethod::active()->orderBy('name')->get()->firstWhere('type', 'cod');
-        if ($tenantCodMethod) {
-            $quoteUser = auth()->check() ? auth()->user() : null;
-            $quoteTotal = ($subtotal + $deliveryFee + $packagingFee) - $discount;
-            $codAvailable = $this->codEligibilityService->isCodAvailable(
-                $tenantCodMethod,
+        $systemCodMethod = new PaymentMethod(['type' => 'cod']);
+        $quoteUser = auth()->check() ? auth()->user() : null;
+        $quoteTotal = ($subtotal + $deliveryFee + $packagingFee) - $discount;
+        $codAvailable = $this->codEligibilityService->isCodAvailable(
+            $systemCodMethod,
+            $quoteUser,
+            $city?->id,
+            $quoteTotal
+        );
+        if (!$codAvailable) {
+            $codUnavailableReason = $this->codEligibilityService->getIneligibilityReason(
+                $systemCodMethod,
                 $quoteUser,
                 $city?->id,
                 $quoteTotal
             );
-            if (!$codAvailable) {
-                $codUnavailableReason = $this->codEligibilityService->getIneligibilityReason(
-                    $tenantCodMethod,
-                    $quoteUser,
-                    $city?->id,
-                    $quoteTotal
-                );
-            }
         }
 
         $services = $this->deliveryFeeService->getServicesWithPricing($township ?? null)->map(fn($entry) => [
@@ -326,7 +315,14 @@ class StorefrontCheckoutController extends Controller
             'township_id' => ['nullable'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string'],
-            'payment_method_id' => ['required', 'exists:payment_methods,id'],
+            'payment_method_id' => ['required', function ($attribute, $value, $fail) {
+                if ($value === 'cod') {
+                    return;
+                }
+                if (!PaymentMethod::whereKey($value)->exists()) {
+                    $fail('The selected payment method is invalid.');
+                }
+            }],
             'payer_name' => ['nullable', 'string', 'max:255'],
             'sender_account_number' => ['nullable', 'string', 'max:50'],
             'transaction_id' => ['nullable', 'string', 'max:255'],
@@ -375,9 +371,14 @@ class StorefrontCheckoutController extends Controller
             }
         }
 
-        $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
-        if (!$paymentMethod || $paymentMethod->tenant_id !== $tenant->id) {
-            return back()->withErrors(['payment_method_id' => 'Invalid payment method.'])->withInput();
+        $isSystemCod = $validated['payment_method_id'] === 'cod';
+        if ($isSystemCod) {
+            $paymentMethod = new PaymentMethod(['type' => 'cod']);
+        } else {
+            $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
+            if (!$paymentMethod || !$paymentMethod->is_active || $paymentMethod->tenant_id !== $tenant->id) {
+                return back()->withErrors(['payment_method_id' => 'Invalid payment method.'])->withInput();
+            }
         }
 
         $paymentScreenshotPath = null;
@@ -504,7 +505,7 @@ class StorefrontCheckoutController extends Controller
             'township_id' => $validated['township_id'] ?? null,
             'postal_code' => $validated['postal_code'] ?? null,
             'notes' => $validated['notes'] ?? null,
-            'payment_method_id' => $validated['payment_method_id'],
+            'payment_method_id' => $isSystemCod ? null : $validated['payment_method_id'],
             'payer_name' => $validated['payer_name'] ?? null,
             'sender_account_number' => $validated['sender_account_number'] ?? null,
             'payment_screenshot' => $paymentScreenshotPath,

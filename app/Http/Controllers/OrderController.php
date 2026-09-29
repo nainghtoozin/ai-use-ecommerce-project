@@ -74,7 +74,14 @@ class OrderController extends Controller
             'township_id' => ['nullable', 'exists:townships,id'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string'],
-            'payment_method_id' => ['required', 'exists:payment_methods,id'],
+            'payment_method_id' => ['required', function ($attribute, $value, $fail) {
+                if ($value === 'cod') {
+                    return;
+                }
+                if (!\App\Models\PaymentMethod::whereKey($value)->exists()) {
+                    $fail('The selected payment method is invalid.');
+                }
+            }],
             'payer_name' => ['nullable', 'string', 'max:255'],
             'sender_account_number' => ['nullable', 'string', 'max:50'],
             'transaction_id' => ['nullable', 'string', 'max:255'],
@@ -87,9 +94,14 @@ class OrderController extends Controller
             $tenant = $authUser->tenant;
         }
 
-        $paymentMethod = \App\Models\PaymentMethod::find($validated['payment_method_id']);
-        if (!$paymentMethod || ($tenant && (int) $paymentMethod->tenant_id !== (int) $tenant->id)) {
-            return back()->withErrors(['payment_method_id' => 'Invalid payment method.'])->withInput();
+        $isSystemCod = $validated['payment_method_id'] === 'cod';
+        if ($isSystemCod) {
+            $paymentMethod = new \App\Models\PaymentMethod(['type' => 'cod']);
+        } else {
+            $paymentMethod = \App\Models\PaymentMethod::find($validated['payment_method_id']);
+            if (!$paymentMethod || !$paymentMethod->is_active || ($tenant && (int) $paymentMethod->tenant_id !== (int) $tenant->id)) {
+                return back()->withErrors(['payment_method_id' => 'Invalid payment method.'])->withInput();
+            }
         }
 
         $city = null;
@@ -200,7 +212,7 @@ class OrderController extends Controller
             'township_id' => $validated['township_id'] ?? null,
             'postal_code' => $validated['postal_code'] ?? null,
             'notes' => $validated['notes'] ?? null,
-            'payment_method_id' => $validated['payment_method_id'],
+            'payment_method_id' => $isSystemCod ? null : $validated['payment_method_id'],
             'payer_name' => $validated['payer_name'] ?? null,
             'sender_account_number' => $validated['sender_account_number'] ?? null,
             'payment_screenshot' => $paymentScreenshotPath,

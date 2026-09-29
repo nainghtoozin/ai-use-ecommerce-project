@@ -169,7 +169,17 @@ class StoreSetupController extends Controller
         $subscription = $tenant->subscription;
         $plan = $subscription?->plan;
 
+        $hasActivePaymentMethod = \App\Models\PaymentMethod::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->exists();
+
         return Inertia::render('Onboarding/StoreSuccess', [
+            'paymentSetup' => [
+                'has_active_payment_method' => $hasActivePaymentMethod,
+                'payment_methods_url' => route('storefront.admin.payment-methods.index', ['store_slug' => $tenant->slug]),
+                'payment_method_create_url' => route('storefront.admin.payment-methods.create', ['store_slug' => $tenant->slug]),
+            ],
             'store' => [
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,

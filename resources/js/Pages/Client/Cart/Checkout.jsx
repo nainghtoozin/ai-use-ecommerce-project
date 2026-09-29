@@ -390,6 +390,12 @@ return (
                                 </div>
                             )}
 
+                            {(!paymentMethods || paymentMethods.length === 0) && (
+                                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                                    <p className="text-xs text-amber-700 dark:text-amber-400">No payment methods available. Please contact the store to complete your purchase.</p>
+                                </div>
+                            )}
+
                             <div className="space-y-3">
                                 {paymentMethods?.map((pm) => {
                                     const codBlocked = isCodBlockedForCity(pm, form.city_id);
@@ -434,17 +440,28 @@ return (
                                                             </div>
                                                         ) : (
                                                             <>
+                                                                {pm.instructions && (
+                                                                    <div className="mt-4 pt-4 border-t border-blue-200">
+                                                                        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                                                                            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">How to Pay</p>
+                                                                            <p className="text-sm text-gray-700 leading-relaxed">{pm.instructions}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                                 <div className="mt-4 pt-4 border-t border-blue-200">
                                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                                         <div className="space-y-3">
-                                                                            <div>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Account Name</p>
-                                                                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{pm.account_name || 'N/A'}</p>
-                                                                            </div>
+                                                                            {pm.account_name && (
+                                                                                <div>
+                                                                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Account Name</p>
+                                                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{pm.account_name}</p>
+                                                                                </div>
+                                                                            )}
+                                                                            {pm.account_number && (
                                                                             <div>
                                                                                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Account Number</p>
                                                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pm.account_number || 'N/A'}</p>
+                                                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pm.account_number}</p>
                                                                                     {pm.account_number && (
                                                                                         <button
                                                                                             type="button"
@@ -464,6 +481,7 @@ return (
                                                                                     )}
                                                                                 </div>
                                                                             </div>
+                                                                            )}
                                                                             {pm.bank_name && (
                                                                                 <div>
                                                                                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Bank</p>

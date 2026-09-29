@@ -42,12 +42,21 @@ class CheckoutController extends Controller
                 ->with('error', 'Your cart is empty.');
         }
 
-        $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
+        $paymentMethods = PaymentMethod::active()->orderBy('name')->get()
+            ->reject(fn ($pm) => $pm->type === 'cod')->values();
 
-        if (!auth()->check()) {
-            $paymentMethods = $paymentMethods->reject(function ($pm) {
-                return $pm->type === 'cod';
-            })->values();
+        $systemCodMethod = new PaymentMethod(['type' => 'cod']);
+        $codPossible = $this->codEligibilityService->isCodGloballyEnabled()
+            && ($this->codEligibilityService->getCodAvailabilityMode() === \App\Services\CodEligibilityService::COD_MODE_ALL
+                || $this->codEligibilityService->getActiveRules()->isNotEmpty());
+
+        if ($codPossible && auth()->check()) {
+            $paymentMethods->push([
+                'id' => 'cod',
+                'type' => 'cod',
+                'name' => 'Cash on Delivery',
+            ]);
+            $paymentMethods = $paymentMethods->values();
         }
 
         $cities = City::getActiveWithTownships();
@@ -65,17 +74,14 @@ class CheckoutController extends Controller
         $autoPromotions = $this->promotionService->getAutoPromotionsForCheckout($cartItems);
 
         $codAvailability = [];
-        $codMethod = $paymentMethods->firstWhere('type', 'cod');
-        if ($codMethod) {
-            $user = auth()->check() ? auth()->user() : null;
-            foreach ($cities as $city) {
-                $codAvailability[$city->id] = $this->codEligibilityService->isCodAvailable(
-                    $codMethod,
-                    $user instanceof \App\Models\User ? $user : null,
-                    $city->id,
-                    $subtotal
-                );
-            }
+        $user = auth()->check() ? auth()->user() : null;
+        foreach ($cities as $city) {
+            $codAvailability[$city->id] = $this->codEligibilityService->isCodAvailable(
+                $systemCodMethod,
+                $user instanceof \App\Models\User ? $user : null,
+                $city->id,
+                $subtotal
+            );
         }
 
         return Inertia::render('Client/Cart/Checkout', [
@@ -125,13 +131,7 @@ class CheckoutController extends Controller
 
         $basis = ($subtotal + $deliveryFee) - $totalDiscount;
 
-        $codMethod = PaymentMethod::active()->orderBy('name')->get()->firstWhere('type', 'cod');
-        if (!$codMethod) {
-            return response()->json([
-                'available' => null, 'unavailable_reason' => null,
-                'total' => max(0, $basis),
-            ]);
-        }
+        $codMethod = new PaymentMethod(['type' => 'cod']);
 
         $user = auth()->check() ? auth()->user() : null;
         $available = $this->codEligibilityService->isCodAvailable(

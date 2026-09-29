@@ -8,7 +8,6 @@ use App\Http\Requests\PaymentMethodUpdateRequest;
 use App\Models\PaymentMethod;
 use App\Services\ActivityLogger;
 use App\Services\PaymentMethodService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -92,7 +91,7 @@ class AdminPaymentMethodController extends Controller
             ->with('success', 'Payment method deleted successfully.');
     }
 
-    public function toggle(PaymentMethod $paymentMethod): JsonResponse
+    public function toggle(PaymentMethod $paymentMethod): RedirectResponse
     {
         if (!auth()->user()->can('payments.update')) {
             abort(403, 'Unauthorized');
@@ -100,10 +99,9 @@ class AdminPaymentMethodController extends Controller
 
         $paymentMethod = $this->paymentMethodService->toggleActive($paymentMethod);
 
-        return response()->json([
-            'success' => true,
-            'is_active' => $paymentMethod->is_active,
-            'message' => $paymentMethod->is_active ? 'Payment method activated.' : 'Payment method deactivated.',
-        ]);
+        return back()->with(
+            'success',
+            $paymentMethod->is_active ? 'Payment method activated.' : 'Payment method deactivated.'
+        );
     }
 }

@@ -71,7 +71,7 @@ class TenantBootstrapService
 
                 $this->assignOwnerRole($owner, $tenant);
 
-                $this->createDefaultPaymentMethods($tenant);
+                $this->createDefaultOnlinePaymentMethod($tenant);
                 $this->createDefaultWarehouse($tenant);
                 $this->seedDefaultFaqs($tenant);
                 $this->provisionLocations($tenant);
@@ -419,28 +419,22 @@ class TenantBootstrapService
         return Plan::free();
     }
 
-    protected function createDefaultPaymentMethods(Tenant $tenant): void
+    protected function createDefaultOnlinePaymentMethod(Tenant $tenant): void
     {
-        $methods = [
-            ['name' => 'Cash', 'type' => 'cash'],
-            ['name' => 'Cash On Delivery', 'type' => 'cod'],
-        ];
+        $exists = PaymentMethod::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->exists();
 
-        foreach ($methods as $data) {
-            $existing = PaymentMethod::withoutTenantScope()
-                ->where('tenant_id', $tenant->id)
-                ->where('name', $data['name'])
-                ->first();
-
-            if (!$existing) {
-                $method = new PaymentMethod();
-                $method->tenant_id = $tenant->id;
-                $method->name = $data['name'];
-                $method->type = $data['type'];
-                $method->is_active = true;
-                $method->save();
-            }
+        if ($exists) {
+            return;
         }
+
+        $method = new PaymentMethod();
+        $method->tenant_id = $tenant->id;
+        $method->name = 'Manual Payment';
+        $method->type = 'manual';
+        $method->is_active = false;
+        $method->save();
     }
 
     protected function createDefaultWarehouse(Tenant $tenant): void

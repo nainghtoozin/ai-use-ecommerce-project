@@ -14,6 +14,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
         account_number: paymentMethod.account_number || '',
         qr_image: null,
         bank_name: paymentMethod.bank_name || '',
+        instructions: paymentMethod.instructions || '',
         is_active: paymentMethod.is_active ?? true,
     });
     const [qrPreview, setQrPreview] = useState(null);
@@ -44,6 +45,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                 formData.append('qr_image', data.qr_image);
             }
         }
+        formData.append('instructions', data.instructions || '');
         formData.append('is_active', data.is_active ? '1' : '0');
 
         router.post(adminUrl(`/admin/payment-methods/${paymentMethod.id}`), formData, {
@@ -89,6 +91,14 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">Edit Payment Method</h1>
                 </div>
 
+                {paymentMethod.type === 'manual' && !paymentMethod.is_active
+                    && !paymentMethod.account_name && !paymentMethod.account_number && !paymentMethod.instructions && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
+                        <p className="text-sm text-amber-800 font-medium">This payment method is not configured yet.</p>
+                        <p className="text-xs text-amber-700 mt-1">Fill in your payment details below, check Active, and save to let customers check out with it.</p>
+                    </div>
+                )}
+
                 <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
@@ -104,6 +114,8 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="bank_transfer">Bank Transfer</option>
                                 <option value="cod">Cash on Delivery (COD)</option>
+                                <option value="cash">Cash (POS)</option>
+                                <option value="manual">Manual Payment</option>
                             </select>
                             {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
                         </div>
@@ -154,6 +166,14 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                                 </p>
                             </div>
                         )}
+
+                        <div>
+                            <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Instructions (optional)</label>
+                            <textarea id="instructions" value={data.instructions} onChange={(e) => setData('instructions', e.target.value)}
+                                rows={3} placeholder="e.g. Pay when you collect your order."
+                                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            {errors.instructions && <p className="mt-1 text-sm text-red-600">{errors.instructions}</p>}
+                        </div>
 
                         <div className="flex items-center gap-2">
                             <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}

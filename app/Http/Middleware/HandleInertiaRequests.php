@@ -120,6 +120,12 @@ class HandleInertiaRequests extends Middleware
 
         $menuVisibility = $isSuperAdmin ? [] : \App\Services\MenuVisibilityService::getVisibility($tenant);
 
+        $paymentSetupRequired = false;
+        if (!$isSuperAdmin && $authenticatable && \App\Models\Tenant::getCurrent()
+            && (str_starts_with($routeName, 'admin.') || str_starts_with($routeName, 'storefront.admin.'))) {
+            $paymentSetupRequired = !\App\Models\PaymentMethod::where('is_active', true)->exists();
+        }
+
         if ($tenant && !$request->route('store_slug')) {
             $tenant = null;
         }
@@ -173,6 +179,7 @@ class HandleInertiaRequests extends Middleware
             'featureStatus' => $isSuperAdmin || $isPublicStorefront ? [] : FeatureGate::forUser()->getAllFeaturesStatus(),
             'subscription_limits' => $isSuperAdmin || $isPublicStorefront ? [] : ($authenticatable ? SubscriptionLimitService::for()->getAllLimits() : []),
             'menuVisibility' => $isPublicStorefront ? [] : $menuVisibility,
+            'paymentSetupRequired' => $paymentSetupRequired,
         ]);
     }
 

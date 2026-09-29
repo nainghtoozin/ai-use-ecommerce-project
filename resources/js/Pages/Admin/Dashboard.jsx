@@ -46,6 +46,7 @@ export default function AdminDashboard({
     onboarding,
 }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const paymentSetupRequired = usePage().props.paymentSetupRequired === true;
     const { t } = useTranslation();
     const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
     const [customStartDate, setCustomStartDate] = useState(startDate || '');
@@ -232,6 +233,32 @@ export default function AdminDashboard({
             <Head title={t('navigation.dashboard')} />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
+                {paymentSetupRequired && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5 dark:border-amber-900/40 dark:bg-amber-900/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+                                    <i className="bi bi-credit-card text-xl"></i>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                        Payment Method Setup Required
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                        Customers cannot place orders until at least one payment method is configured and activated.
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href={adminUrl('/admin/payment-methods')}
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-semibold rounded-lg hover:bg-amber-700 transition-colors flex-shrink-0"
+                            >
+                                Set Up Payment Method
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 {onboarding && <OnboardingChecklist onboarding={onboarding} />}
 
                 {showBanner && (
