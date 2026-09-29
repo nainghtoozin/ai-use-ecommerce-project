@@ -122,7 +122,7 @@ function DashboardSection({ tenant, customer, orderStats, recentOrders }) {
                                                 <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">#{order.invoice_number}</p>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Order #{order.invoice_number}</p>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(order.created_at).toLocaleDateString()}</p>
                                             </div>
                                         </div>

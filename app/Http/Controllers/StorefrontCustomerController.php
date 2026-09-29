@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Services\ImageService;
 use App\Services\OrderService;
 use App\Services\OrderStatusTransitionService;
+use App\Services\OrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -261,7 +262,13 @@ class StorefrontCustomerController extends Controller
             $query->where('order_status', $request->order_status);
         }
 
-        if ($request->filled('payment_status')) {
+        if ($request->payment_status === 'due_on_delivery') {
+            $query->where('payment_status', Order::PAYMENT_STATUS_PENDING)
+                ->where(function ($q) {
+                    $q->whereNull('payment_method_id')
+                        ->orWhereHas('paymentMethod', fn ($m) => $m->where('type', 'cod'));
+                });
+        } elseif ($request->filled('payment_status')) {
             $query->where('payment_status', $request->payment_status);
         }
 
@@ -333,6 +340,7 @@ class StorefrontCustomerController extends Controller
         return Inertia::render('Storefront/OrderShow', [
             'tenant' => $this->tenantData($tenant),
             'order' => $order,
+            'isCodOrder' => app(OrderWorkflow::class)->isCod($order),
         ]);
     }
 
@@ -512,6 +520,10 @@ class StorefrontCustomerController extends Controller
 
         if ($order->payment_status !== Order::PAYMENT_STATUS_PENDING) {
             return redirect()->back()->with('error', 'You cannot upload payment proof for this order.');
+        }
+
+        if (app(OrderWorkflow::class)->isCod($order)) {
+            return redirect()->back()->with('error', 'Cash on Delivery orders do not require payment proof.');
         }
 
         if ($request->hasFile('payment_proof')) {

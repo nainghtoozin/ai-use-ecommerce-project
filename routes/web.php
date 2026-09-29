@@ -461,6 +461,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment');
         Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment');
         Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid');
+        Route::post('/orders/{order}/collect-cod-payment', [AdminOrderController::class, 'collectCodPayment'])->name('orders.collect-cod-payment');
         Route::post('/orders/{order}/update-status', [AdminOrderController::class, 'updateOrderStatus'])->name('orders.update-status');
         Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status');
         Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment');

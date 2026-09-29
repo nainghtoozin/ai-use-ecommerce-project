@@ -4,8 +4,9 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
+import { isCodUnpaid, codPaymentStatusLabel, codPaymentMethodLabel } from '@/Utils/codDisplay';
 
-export default function AdminOrdersShow({ order }) {
+export default function AdminOrdersShow({ order, isCodOrder = false }) {
     const { auth, flash: pageFlash, platform_setting, website_info } = usePage().props;
     const cc = getCurrencyConfig(platform_setting, website_info);
     const flash = pageFlash || {};
@@ -71,6 +72,12 @@ export default function AdminOrdersShow({ order }) {
     function handleVerifyPayment() {
         if (confirm('Verify this payment?')) {
             router.post(adminUrl(`/admin/orders/${order.id}/verify-payment`));
+        }
+    }
+
+    function handleCollectCodPayment() {
+        if (confirm(`Confirm cash of ${formatCurrency(order.total_amount, cc)} was collected for this order?`)) {
+            router.post(adminUrl(`/admin/orders/${order.id}/collect-cod-payment`));
         }
     }
 
@@ -162,6 +169,44 @@ export default function AdminOrdersShow({ order }) {
     }
 
     function renderPaymentActions() {
+        if (isCodOrder && order.payment_status === 'paid') {
+            return (
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-green-700">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">Cash Collected</span>
+                    </div>
+                    {order.payment_verified_at && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Collected At: {new Date(order.payment_verified_at).toLocaleString()}
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
+        if (isCodOrder && order.payment_status === 'pending') {
+            return (
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Amount to Collect</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount, cc)}</span>
+                    </div>
+                    {can('orders.update-status') && (
+                        <button onClick={handleCollectCodPayment}
+                            className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors">
+                            Mark Payment Collected
+                        </button>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Collect cash on delivery, then mark this order as paid.
+                    </p>
+                </div>
+            );
+        }
+
         if (order.payment_status === 'paid') {
             return (
                 <div className="space-y-2">
@@ -233,7 +278,7 @@ export default function AdminOrdersShow({ order }) {
 
     return (
         <AdminLayout>
-            <Head title={`Order #${order.id}`} />
+            <Head title={`Order #${order.invoice_number || order.id}`} />
 
             {flash.success && (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -252,7 +297,7 @@ export default function AdminOrdersShow({ order }) {
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         Back to Orders
                     </Link>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Order #{order.id}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Order #{order.invoice_number || order.id}</h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -393,8 +438,8 @@ export default function AdminOrdersShow({ order }) {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Payment Status:</span>
-                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
-                                        {order.payment_status}
+                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${isCodUnpaid(order) ? 'bg-amber-100 text-amber-800' : (paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200')}`}>
+                                        {codPaymentStatusLabel(order)}
                                     </span>
                                 </div>
                                 <div className="pt-2 border-t">
@@ -410,7 +455,7 @@ export default function AdminOrdersShow({ order }) {
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Payment Method:</p>
-                                    <p className="font-medium text-gray-900 dark:text-gray-100">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100">{codPaymentMethodLabel(order)}</p>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Total Payable:</span>

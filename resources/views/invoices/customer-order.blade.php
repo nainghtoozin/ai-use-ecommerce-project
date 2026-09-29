@@ -104,6 +104,11 @@
             </div>
         </div>
 
+        @php
+            $isCodInvoice = ($order->paymentMethod?->type ?? null) === 'cod' || $order->payment_method_id === null;
+            $isCodUnpaidInvoice = $isCodInvoice && $order->payment_status === 'pending';
+        @endphp
+
         <div class="status-section">
             <div>
                 <div class="section-title">Order Status</div>
@@ -111,7 +116,7 @@
             </div>
             <div>
                 <div class="section-title">Payment Status</div>
-                <span class="status-badge status-{{ $order->payment_status }}">{{ ucfirst($order->payment_status) }}</span>
+                <span class="status-badge status-{{ $isCodUnpaidInvoice ? 'pending' : $order->payment_status }}">{{ $isCodUnpaidInvoice ? 'Due on Delivery' : ucfirst($order->payment_status) }}</span>
             </div>
         </div>
 
@@ -162,11 +167,11 @@
             <div class="payment-grid">
                 <div class="payment-item">
                     <label>Payment Method</label>
-                    <p>{{ $order->paymentMethod->name ?? $order->payment_method->name ?? 'N/A' }}</p>
+                    <p>{{ $isCodInvoice ? 'Cash on Delivery' : ($order->paymentMethod->name ?? $order->payment_method->name ?? 'N/A') }}</p>
                 </div>
                 <div class="payment-item">
                     <label>Payment Status</label>
-                    <p>{{ ucfirst($order->payment_status) }}</p>
+                    <p>{{ $isCodUnpaidInvoice ? 'Due on Delivery' : ucfirst($order->payment_status) }}</p>
                 </div>
                 @if($order->payer_name)
                 <div class="payment-item">

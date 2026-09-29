@@ -526,7 +526,7 @@ export default function AdminDashboard({
                                                     onClick={() => router.visit(adminUrl(`/admin/orders/${order.id}`))}
                                                 >
                                                     <td className="px-5 py-4">
-                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">#{order.id}</span>
+                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{order.invoice_number || `#${order.id}`}</span>
                                                     </td>
                                                     <td className="px-5 py-4">
                                                         <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -675,7 +675,7 @@ export default function AdminDashboard({
                                                 onClick={() => router.visit(adminUrl(`/admin/orders/${order.id}`))}
                                             >
                                                 <td className="px-5 py-4">
-                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">#{order.id}</span>
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{order.invoice_number || `#${order.id}`}</span>
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <span className="text-sm text-gray-600 dark:text-gray-400">

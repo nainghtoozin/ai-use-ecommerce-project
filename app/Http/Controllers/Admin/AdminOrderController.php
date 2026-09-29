@@ -56,7 +56,13 @@ class AdminOrderController extends Controller
             $ordersQuery->where('order_status', $filters['order_status']);
         }
 
-        if (!empty($filters['payment_status'])) {
+        if (($filters['payment_status'] ?? null) === 'due_on_delivery') {
+            $ordersQuery->where('orders.payment_status', Order::PAYMENT_STATUS_PENDING)
+                ->where(function ($query) {
+                    $query->whereNull('orders.payment_method_id')
+                        ->orWhereHas('paymentMethod', fn ($m) => $m->where('type', 'cod'));
+                });
+        } elseif (!empty($filters['payment_status'])) {
             $ordersQuery->where('payment_status', $filters['payment_status']);
         }
 
@@ -66,6 +72,7 @@ class AdminOrderController extends Controller
                 $query->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('invoice_number', 'like', "%{$search}%")
                     ->orWhere('id', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%")
@@ -135,6 +142,7 @@ class AdminOrderController extends Controller
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
+            'isCodOrder' => $this->orderWorkflow->isCod($order),
         ]);
     }
 
@@ -290,6 +298,11 @@ class AdminOrderController extends Controller
         try {
             $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
+            if ($this->orderWorkflow->isCod($order)) {
+                return admin_redirect('admin.orders.show', $id)
+                    ->with('error', 'Cash on Delivery orders use Mark Payment Collected instead.');
+            }
+
             if (!$order->canApprovePayment()) {
                 return admin_redirect('admin.orders.show', $id)
                     ->with('error', 'This payment cannot be verified.');
@@ -322,6 +335,11 @@ class AdminOrderController extends Controller
         try {
             $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
+            if ($this->orderWorkflow->isCod($order)) {
+                return admin_redirect('admin.orders.show', $id)
+                    ->with('error', 'Cash on Delivery payments cannot be rejected.');
+            }
+
             if (!$order->canRejectPayment()) {
                 return admin_redirect('admin.orders.show', $id)
                     ->with('error', 'This payment cannot be rejected.');
@@ -345,6 +363,39 @@ class AdminOrderController extends Controller
 
             return admin_redirect('admin.orders.show', $id)
                 ->with('error', 'Failed to reject payment.');
+        }
+    }
+
+    public function collectCodPayment(string $id)
+    {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
+        try {
+            $order = Order::when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))
+                ->findOrFail($id);
+
+            if (!$order->canCollectCodPayment()) {
+                return admin_redirect('admin.orders.show', $id)
+                    ->with('error', 'Cash can only be collected for pending COD orders.');
+            }
+
+            $order->update([
+                'payment_status' => Order::PAYMENT_STATUS_PAID,
+                'paid_amount' => $order->total_amount,
+                'payment_verified_at' => now(),
+            ]);
+
+            ProcessOrderStatusChange::dispatch($order, 'payment_collected');
+
+            return admin_redirect('admin.orders.show', $id)
+                ->with('success', 'Cash collected. Payment marked as paid.');
+        } catch (\Exception $e) {
+            Log::error('COD payment collection failed: ' . $e->getMessage());
+
+            return admin_redirect('admin.orders.show', $id)
+                ->with('error', 'Failed to record cash collection.');
         }
     }
 

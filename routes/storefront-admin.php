@@ -188,6 +188,7 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/orders/{order}/verify-payment', [AdminOrderController::class, 'verifyPayment'])->name('orders.verify-payment')->whereNumber('order');
         Route::post('/orders/{order}/reject-payment', [AdminOrderController::class, 'rejectPayment'])->name('orders.reject-payment')->whereNumber('order');
         Route::post('/orders/{order}/mark-as-paid', [AdminOrderController::class, 'markAsPaid'])->name('orders.mark-as-paid')->whereNumber('order');
+        Route::post('/orders/{order}/collect-cod-payment', [AdminOrderController::class, 'collectCodPayment'])->name('orders.collect-cod-payment')->whereNumber('order');
         Route::post('/orders/{order}/update-status', [AdminOrderController::class, 'updateOrderStatus'])->name('orders.update-status')->whereNumber('order');
         Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status')->whereNumber('order');
         Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment')->whereNumber('order');

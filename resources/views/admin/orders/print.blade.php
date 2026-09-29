@@ -63,7 +63,11 @@
                     <td>{{ $order->customer_name ?? trim(($order->first_name ?? '') . ' ' . ($order->last_name ?? '')) }}</td>
                     <td>{{ $order->phone }}</td>
                     <td>{{ ucfirst($order->order_status) }}</td>
-                    <td>{{ ucfirst($order->payment_status) }}</td>
+                    @php
+                    $isCodPrint = ($order->paymentMethod?->type ?? null) === 'cod' || $order->payment_method_id === null;
+                    $isCodUnpaidPrint = $isCodPrint && $order->payment_status === 'pending';
+                @endphp
+                <td>{{ $isCodUnpaidPrint ? 'Due on Delivery' : ucfirst($order->payment_status) }}</td>
                     <td class="num">{{ $order->items?->sum('quantity') ?? 0 }}</td>
                     <td class="num">{{ number_format((float) $order->total_amount, 0) }}</td>
                 </tr>

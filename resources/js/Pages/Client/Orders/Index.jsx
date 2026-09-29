@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { isCodUnpaid, codPaymentStatusLabel, codPaymentMethodLabel } from '@/Utils/codDisplay';
 
 export default function ClientOrdersIndex({ orders }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
@@ -46,12 +47,12 @@ return (
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div>
                                         <div className="flex items-center gap-3">
-                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Order #{order.id}</h3>
+                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Order #{order.invoice_number || order.id}</h3>
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
                                                 {order.order_status}
                                             </span>
-                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${paymentColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
-                                                {order.payment_status}
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isCodUnpaid(order) ? 'bg-amber-100 text-amber-800' : (paymentColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200')}`}>
+                                                {codPaymentStatusLabel(order)}
                                             </span>
                                         </div>
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -61,7 +62,7 @@ return (
                                     <div className="text-right">
                                         <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount, cc)}</p>
                                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                                            {order.payment_method?.name || order.paymentMethod?.name || ''}
+                                            {codPaymentMethodLabel(order, '')}
                                         </p>
                                     </div>
                                 </div>

@@ -39,7 +39,13 @@ class OrderExportService
             $query->where('order_status', $filters['order_status']);
         }
 
-        if (!empty($filters['payment_status'])) {
+        if (($filters['payment_status'] ?? null) === 'due_on_delivery') {
+            $query->where('payment_status', Order::PAYMENT_STATUS_PENDING)
+                ->where(function ($q) {
+                    $q->whereNull('payment_method_id')
+                        ->orWhereHas('paymentMethod', fn ($m) => $m->where('type', 'cod'));
+                });
+        } elseif (!empty($filters['payment_status'])) {
             $query->where('payment_status', $filters['payment_status']);
         }
 
@@ -69,6 +75,9 @@ class OrderExportService
         ];
 
         $rows = $orders->map(function ($order) {
+            $isCod = $order->paymentMethod?->type === 'cod' || $order->payment_method_id === null;
+            $codPending = $isCod && $order->payment_status === Order::PAYMENT_STATUS_PENDING;
+
             return [
                 'Order Number' => $order->invoice_number,
                 'Customer' => $order->customer_name ?? trim(($order->first_name ?? '') . ' ' . ($order->last_name ?? '')),
@@ -76,12 +85,12 @@ class OrderExportService
                 'Email' => $order->email ?? '',
                 'Order Date' => $order->created_at?->format('Y-m-d H:i'),
                 'Status' => $order->order_status,
-                'Payment Method' => $order->paymentMethod?->name ?? '',
+                'Payment Method' => $isCod ? 'Cash on Delivery' : ($order->paymentMethod?->name ?? ''),
                 'Subtotal' => $order->subtotal ?? '',
                 'Discount' => $order->discount_amount ?? 0,
                 'Shipping Fee' => $order->delivery_fee ?? 0,
                 'Total' => $order->total_amount,
-                'Payment Status' => $order->payment_status,
+                'Payment Status' => $codPending ? 'Due on Delivery' : $order->payment_status,
                 'City' => $order->city?->name ?? '',
                 'Township' => $order->township?->name ?? '',
                 'Address' => $order->address ?? '',

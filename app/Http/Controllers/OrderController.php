@@ -54,6 +54,7 @@ class OrderController extends Controller
 
         return Inertia::render('Client/Orders/Show', [
             'order' => $order,
+            'isCodOrder' => app(\App\Services\OrderWorkflow::class)->isCod($order),
         ]);
     }
 

@@ -119,6 +119,15 @@ class OrderBroadcastDedupTest extends TestCase
             'status' => 'active',
         ]);
 
+        $bankMethod = \App\Models\PaymentMethod::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Bank Transfer',
+            'type' => 'bank_transfer',
+            'account_name' => 'Shop',
+            'account_number' => '123',
+            'is_active' => true,
+        ]);
+
         $order = new Order([
             'customer_name' => 'Customer',
             'first_name' => 'Test',
@@ -129,6 +138,7 @@ class OrderBroadcastDedupTest extends TestCase
             'total_amount' => 50000,
             'order_status' => 'pending',
             'payment_status' => 'pending',
+            'payment_method_id' => $bankMethod->id,
         ]);
         $order->user_id = $customer->id;
         $order->user_type = Account::class;
@@ -188,9 +198,20 @@ class OrderBroadcastDedupTest extends TestCase
             $table->string('model_type');
             $table->unsignedBigInteger('model_id');
             $table->index(['model_id', 'model_type']);
+        }, 'payment_methods' => function ($table) {
+            $table->id();
+            $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->string('name');
+            $table->string('type')->nullable();
+            $table->string('account_name')->nullable();
+            $table->string('account_number')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+            $table->softDeletes();
         }, 'orders' => function ($table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->unsignedBigInteger('payment_method_id')->nullable();
             $table->string('user_type')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('invoice_number')->nullable();

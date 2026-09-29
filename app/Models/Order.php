@@ -203,6 +203,12 @@ class Order extends Model
         return $this->payment_status === self::PAYMENT_STATUS_PENDING;
     }
 
+    public function canCollectCodPayment(): bool
+    {
+        return app(OrderWorkflow::class)->isCod($this)
+            && $this->payment_status === self::PAYMENT_STATUS_PENDING;
+    }
+
     public function isPaymentAmountCorrect(): bool
     {
         if ($this->paid_amount === null) {

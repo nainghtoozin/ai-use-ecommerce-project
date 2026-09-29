@@ -3,8 +3,10 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { assetUrl } from '@/Utils/helpers';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { isCodOrder as checkCodOrder, isCodUnpaid, codPaymentStatusLabel, codPaymentMethodLabel } from '@/Utils/codDisplay';
 
-export default function ClientOrdersShow({ order }) {
+export default function ClientOrdersShow({ order, isCodOrder: isCodOrderProp = false }) {
+    const isCodOrder = isCodOrderProp || checkCodOrder(order);
     const { props } = usePage();
     const cc = getCurrencyConfig(props.platform_setting, props.website_info);
     const flash = props.flash || {};
@@ -31,6 +33,12 @@ export default function ClientOrdersShow({ order }) {
         rejected: 'bg-red-100 text-red-800',
     };
 
+    const codUnpaid = isCodUnpaid(order);
+    const customerPaymentLabel = codPaymentStatusLabel(order);
+    const customerPaymentBadge = codUnpaid
+        ? 'bg-amber-100 text-amber-800'
+        : paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
+
     function handleCancel() {
         if (confirm('Cancel this order?')) {
             router.post(`/orders/${order.id}/cancel`);
@@ -46,7 +54,7 @@ export default function ClientOrdersShow({ order }) {
 
     return (
         <ShopLayout>
-            <Head title={`Order #${order.id}`} />
+            <Head title={`Order #${order.invoice_number || order.id}`} />
 
             {flash.success && (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -62,7 +70,7 @@ export default function ClientOrdersShow({ order }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Order #{order.id}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Order #{order.invoice_number || order.id}</h1>
                         <p className="text-gray-500 dark:text-gray-400 text-sm">{new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <Link href="/client/orders" className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50">
@@ -153,8 +161,8 @@ export default function ClientOrdersShow({ order }) {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Payment Status</p>
-                                    <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
-                                        {order.payment_status}
+                                    <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isCodOrder ? customerPaymentBadge : (paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200')}`}>
+                                        {isCodOrder ? customerPaymentLabel : order.payment_status}
                                     </span>
                                 </div>
                             </div>
@@ -162,6 +170,29 @@ export default function ClientOrdersShow({ order }) {
 
                         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Payment Information</h2>
+                            {isCodOrder ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Method</p>
+                                        <p className="font-medium text-gray-900 dark:text-gray-100">Cash on Delivery</p>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Payment</p>
+                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${customerPaymentBadge}`}>
+                                            {customerPaymentLabel}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Amount Due</p>
+                                        <p className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount, cc)}</p>
+                                    </div>
+                                    {codUnpaid && (
+                                        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                                            <p className="text-sm text-green-800 font-medium">You can pay the delivery person when your order arrives.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Payment Method</p>
@@ -197,12 +228,13 @@ export default function ClientOrdersShow({ order }) {
                                     <div>
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Payment Proof</p>
                                         <a href={order.payment_proof_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100">
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                             View Proof
                                         </a>
                                     </div>
                                 )}
                             </div>
+                            )}
                         </div>
 
                         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">

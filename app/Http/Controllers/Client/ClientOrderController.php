@@ -320,6 +320,10 @@ class ClientOrderController extends Controller
             return redirect()->back()->with('error', 'You cannot upload payment proof for this order.');
         }
 
+        if (app(\App\Services\OrderWorkflow::class)->isCod($order)) {
+            return redirect()->back()->with('error', 'Cash on Delivery orders do not require payment proof.');
+        }
+
         if ($request->hasFile('payment_proof')) {
             $path = $this->imageService->upload($request->file('payment_proof'), 'payment-proofs');
 

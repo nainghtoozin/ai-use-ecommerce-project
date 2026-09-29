@@ -64,7 +64,7 @@ const TableRow = memo(function TableRow({ order, onView }) {
         <tr className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
             <td className="px-3 sm:px-5 py-3 sm:py-3.5">
                 <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
-                    #{order.id}
+                    {order.invoice_number || `#${order.id}`}
                 </span>
             </td>
             <td className="px-3 sm:px-5 py-3 sm:py-3.5">
@@ -188,7 +188,7 @@ function FilterBar({ filters, baseUrl }) {
                         className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">All Fields</option>
-                        <option value="order_id">Order ID</option>
+                        <option value="order_id">Order Number</option>
                         <option value="customer">Customer Name</option>
                     </select>
                 </div>
@@ -373,7 +373,7 @@ export default function SalesReport({ orders, summary, filters }) {
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-gray-50 dark:bg-gray-950 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <th className="px-3 sm:px-5 py-2.5 sm:py-3">Order ID</th>
+                                    <th className="px-3 sm:px-5 py-2.5 sm:py-3">Order Number</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3">Customer</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">Items</th>
                                     <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">Gross Total</th>

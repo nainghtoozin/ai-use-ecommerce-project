@@ -37,7 +37,7 @@ class AdminController extends Controller
         $end = $range['end'];
 
         $orders = Order::with('user:id,name')
-            ->select('id', 'user_id', 'customer_name', 'first_name', 'last_name', 'total_amount', 'paid_amount', 'payment_status', 'order_status', 'created_at')
+            ->select('id', 'invoice_number', 'user_id', 'customer_name', 'first_name', 'last_name', 'total_amount', 'paid_amount', 'payment_status', 'order_status', 'created_at')
             ->whereBetween('created_at', [$start, $end])
             ->orderByDesc('created_at')
             ->take(10)

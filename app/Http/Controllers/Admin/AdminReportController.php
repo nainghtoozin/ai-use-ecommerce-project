@@ -168,12 +168,14 @@ class AdminReportController extends Controller
             $searchBy = $filters['search_by'] ?? '';
             $query->where(function ($q) use ($search, $searchBy) {
                 if ($searchBy === 'order_id') {
-                    $q->where('id', $search);
+                    $q->where('id', $search)
+                      ->orWhere('invoice_number', $search);
                 } elseif ($searchBy === 'customer') {
                     $q->where(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
                       ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
                 } else {
                     $q->where('id', 'like', "%{$search}%")
+                      ->orWhere('invoice_number', 'like', "%{$search}%")
                       ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
                       ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
                 }
@@ -229,6 +231,7 @@ class AdminReportController extends Controller
 
         return $query->select([
                 'id',
+                'invoice_number',
                 'first_name',
                 'last_name',
                 'phone',
@@ -480,6 +483,7 @@ class AdminReportController extends Controller
         $orders = $baseQuery
             ->select([
                 'orders.id',
+                'orders.invoice_number',
                 'orders.transaction_id',
                 'orders.first_name',
                 'orders.last_name',
@@ -595,12 +599,14 @@ class AdminReportController extends Controller
     {
         $query->where(function ($q) use ($search, $by) {
             if ($by === 'order_id') {
-                $q->where('orders.id', (int) $search);
+                $q->where('orders.id', (int) $search)
+                  ->orWhere('orders.invoice_number', $search);
             } elseif ($by === 'transaction_id') {
                 $q->where('orders.transaction_id', 'like', "%{$search}%");
             } else {
                 // Default: try exact id match; fallback to transaction_id LIKE
                 $q->where('orders.id', (int) $search)
+                  ->orWhere('orders.invoice_number', 'like', "%{$search}%")
                   ->orWhere('orders.transaction_id', 'like', "%{$search}%");
             }
         });

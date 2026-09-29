@@ -339,14 +339,14 @@ export default function OrderDetailModal({ orderId, onClose }) {
                         <>
                             <div className="hidden print:block print-header">
                                 <h2>INVOICE</h2>
-                                <p>Order #{order.id} &middot; {order.created_at?.substring(0, 10)}</p>
+                                <p>Order #{order.invoice_number || order.id} &middot; {order.created_at?.substring(0, 10)}</p>
                             </div>
 
                             <div className="print-card bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                     <div>
                                         <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Order Number</p>
-                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">#{order.id}</h2>
+                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Order #{order.invoice_number || order.id}</h2>
                                     </div>
                                     <div className="flex flex-col sm:items-end gap-2">
                                         <StatusBadge status={order.order_status} />
@@ -516,7 +516,7 @@ export default function OrderDetailModal({ orderId, onClose }) {
                 <div className="no-print flex flex-col sm:flex-row items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
                     <div className="text-xs text-gray-400 dark:text-gray-500">
                         {order && (
-                            <span className="hidden sm:inline">Order #{order.id} &middot; {order.created_at?.substring(0, 10)}</span>
+                            <span className="hidden sm:inline">Order #{order.invoice_number || order.id} &middot; {order.created_at?.substring(0, 10)}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">

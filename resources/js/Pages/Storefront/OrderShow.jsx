@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { isCodOrder as checkCodOrder, isCodUnpaid, codPaymentStatusLabel, codPaymentMethodLabel } from '@/Utils/codDisplay';
 
 const orderStatusColors = {
     pending: 'bg-amber-50 text-amber-700 border border-amber-200',
@@ -32,8 +33,10 @@ function getStatusIndex(status) {
     return idx >= 0 ? idx : -1;
 }
 
-export default function OrderShow({ tenant, order }) {
+export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = false }) {
     const storeSlug = tenant.slug;
+    const isCodOrder = isCodOrderProp || checkCodOrder(order);
+    const codUnpaid = isCodUnpaid(order);
     const { props } = usePage();
     const storefront = props.storefront;
     const cc = getCurrencyConfig(props.platform_setting, props.website_info);
@@ -75,7 +78,7 @@ export default function OrderShow({ tenant, order }) {
 
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono">{order.invoice_number}</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono">Order #{order.invoice_number}</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             Placed on {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -199,9 +202,15 @@ export default function OrderShow({ tenant, order }) {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-1">Payment</p>
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${paymentStatusColors[order.payment_status] || 'bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800'}`}>
-                                        {order.payment_status}
-                                    </span>
+                                    {codUnpaid ? (
+                                        <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            Due on Delivery
+                                        </span>
+                                    ) : (
+                                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${paymentStatusColors[order.payment_status] || 'bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800'}`}>
+                                            {codPaymentStatusLabel(order)}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -209,6 +218,35 @@ export default function OrderShow({ tenant, order }) {
                         {/* Payment Info */}
                         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
                             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Payment</h2>
+                            {isCodOrder ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Method</p>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Cash on Delivery</p>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Payment</p>
+                                        {codUnpaid ? (
+                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                Due on Delivery
+                                            </span>
+                                        ) : (
+                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                Paid
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Amount Due</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount, cc)}</p>
+                                    </div>
+                                    {codUnpaid && (
+                                        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                                            <p className="text-sm text-green-800 font-medium">You can pay the delivery person when your order arrives.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Method</p>
@@ -219,6 +257,7 @@ export default function OrderShow({ tenant, order }) {
                                 {order.transaction_id && <div><p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Transaction ID</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-0.5 font-mono">{order.transaction_id}</p></div>}
                                 {order.paid_amount && <div><p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Paid Amount</p><p className="text-base font-bold text-emerald-600 mt-0.5">{formatCurrency(order.paid_amount, cc)}</p></div>}
                             </div>
+                            )}
                         </div>
 
                         {/* Delivery */}

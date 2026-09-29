@@ -6,6 +6,7 @@ import PerPageSelect from '@/Components/PerPageSelect';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
 import { Download, Search, Filter, X, CheckCircle, AlertCircle, FileSpreadsheet, FileText, Printer, ChevronDown } from 'lucide-react';
+import { isCodUnpaid, codPaymentStatusLabel } from '@/Utils/codDisplay';
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
 const DELETABLE_STATUSES = ['pending', 'cancelled'];
@@ -158,7 +159,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                 type="text"
                                 value={filterForm.search}
                                 onChange={(e) => setFilterForm((p) => ({ ...p, search: e.target.value }))}
-                                placeholder="Name, phone, order ID..."
+                                placeholder="Name, phone, order number..."
                                 className="w-full h-9 border border-gray-300 dark:border-gray-700 rounded-lg pl-8 pr-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                             />
                         </div>
@@ -180,11 +181,10 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                             className="h-9 w-auto min-w-[132px] border border-gray-300 dark:border-gray-700 rounded-lg pl-2.5 pr-8 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900"
                         >
                             <option value="">All Payments</option>
-                            <option value="unpaid">Unpaid</option>
-                            <option value="paid">Paid</option>
+                            <option value="due_on_delivery">Due on Delivery</option>
                             <option value="pending">Pending</option>
-                            <option value="verified">Verified</option>
-                            <option value="rejected">Rejected</option>
+                            <option value="paid">Paid</option>
+                            <option value="failed">Failed</option>
                         </select>
                         <button type="submit" className="h-9 inline-flex items-center gap-1.5 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-[13px] font-semibold whitespace-nowrap">
                             <Filter className="w-3.5 h-3.5" />
@@ -246,7 +246,7 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                         <tr key={order.id} className="hover:bg-gray-50 dark:bg-gray-950">
                                             <td className="px-4 py-4">
                                                 <Link href={adminUrl(`/admin/orders/${order.id}`)} className="text-sm font-medium text-blue-600 hover:underline">
-                                                    #{order.id}
+                                                    {order.invoice_number || `#${order.id}`}
                                                 </Link>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(order.created_at).toLocaleDateString()}</p>
                                             </td>
@@ -279,8 +279,8 @@ export default function AdminOrdersIndex({ orders, filters = {}, showPagination 
                                                 )}
                                             </td>
                                             <td className="px-4 py-4">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}>
-                                                    {order.payment_status}
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isCodUnpaid(order) ? 'bg-amber-100 text-amber-800' : (paymentStatusColors[order.payment_status] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200')}`}>
+                                                    {codPaymentStatusLabel(order)}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">

@@ -178,7 +178,7 @@ function VerifyModal({ order, onClose, onVerify, onReject, processing }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order</p>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">#{order.id}</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{order.invoice_number || `#${order.id}`}</p>
                         </div>
                         <div>
                             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Transaction ID</p>
@@ -277,7 +277,7 @@ function RejectModal({ order, onClose, onConfirm, reason, setReason, processing 
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                         <span>
-                            You are about to reject the payment for <strong>Order #{order.id}</strong>.
+                            You are about to reject the payment for <strong>Order #{order.invoice_number || order.id}</strong>.
                             This will cancel the order and notify the customer.
                         </span>
                     </div>
@@ -524,7 +524,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                 onChange={e => setForm(p => ({ ...p, search_by: e.target.value }))}
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Fields</option>
-                                <option value="order_id">Order ID</option>
+                                <option value="order_id">Order Number</option>
                                 <option value="transaction_id">Transaction ID</option>
                             </select>
                         </div>
@@ -533,7 +533,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                             <div className="flex gap-2">
                                 <input type="text" value={form.search}
                                     onChange={e => setForm(p => ({ ...p, search: e.target.value }))}
-                                    placeholder="Order ID or Transaction ID..."
+                                    placeholder="Order number or Transaction ID..."
                                     className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                                 <button type="submit"
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors flex items-center gap-1.5 shrink-0">
@@ -625,7 +625,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
                                                     <span className="text-xs sm:text-sm font-mono font-medium text-gray-900 dark:text-gray-100">
-                                                        #{order.id}
+                                                        {order.invoice_number || `#${order.id}`}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 sm:px-5 py-3 sm:py-3.5">
@@ -668,7 +668,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                                                 <button
                                                                     onClick={() => setVerifyTarget(order)}
                                                                     className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-lg transition-colors whitespace-nowrap"
-                                                                    title={`Verify payment for Order #${order.id}`}
+                                                                    title={`Verify payment for Order #${order.invoice_number || order.id}`}
                                                                 >
                                                                     <ShieldCheck className="w-3.5 h-3.5" />
                                                                     <span className="hidden sm:inline">Verify</span>
@@ -676,7 +676,7 @@ export default function PaymentReport({ orders, summary, paymentMethods, codMeth
                                                                 <button
                                                                     onClick={() => handleRejectStart(order)}
                                                                     className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg transition-colors whitespace-nowrap"
-                                                                    title={`Reject payment for Order #${order.id}`}
+                                                                    title={`Reject payment for Order #${order.invoice_number || order.id}`}
                                                                 >
                                                                     <ShieldX className="w-3.5 h-3.5" />
                                                                     <span className="hidden sm:inline">Reject</span>
