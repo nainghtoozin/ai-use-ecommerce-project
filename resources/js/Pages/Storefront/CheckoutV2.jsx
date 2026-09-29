@@ -304,7 +304,15 @@ export default function StorefrontCheckoutV2({
 
   const isAddressValid = form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.city_id;
   const isDeliveryReady = isAddressValid;
-  const isPaymentReady = isAddressValid && (isOtherTownship || selectedDeliveryService || (visibleServices && visibleServices.length === 0));
+  const isPaymentReady = isAddressValid;
+
+  const singleVisibleService = visibleServices?.length === 1 ? visibleServices[0] : null;
+  const singleVisibleServiceId = singleVisibleService?.id ?? null;
+  useEffect(() => {
+    if (!selectedDeliveryService && singleVisibleService) {
+      setSelectedDeliveryService(singleVisibleService);
+    }
+  }, [selectedDeliveryService, singleVisibleServiceId]);
 
   function canPlaceOrder() {
     return !!(form.first_name?.trim() && form.last_name?.trim() && form.phone?.trim() && form.address?.trim() && form.payment_method_id && form.city_id);
@@ -366,7 +374,7 @@ export default function StorefrontCheckoutV2({
 
   const sectionChecks = {
     address: isAddressValid,
-    delivery: isDeliveryReady && !!selectedDeliveryService,
+    delivery: isDeliveryReady,
     packaging: true,
     payment: !!form.payment_method_id,
     summary: true,
@@ -832,7 +840,7 @@ export default function StorefrontCheckoutV2({
             {/* Delivery Section */}
             <section id="section-delivery" className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 sm:p-6 shadow-sm transition-all ${!isDeliveryReady ? 'opacity-60' : ''}`}>
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
-                <SectionIcon complete={!!selectedDeliveryService}>
+                <SectionIcon complete={isDeliveryReady}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                 </SectionIcon>
                 <div className="flex-1 min-w-0">
@@ -897,8 +905,7 @@ export default function StorefrontCheckoutV2({
               {isDeliveryReady && !isOtherTownship && (!deliveryServices || deliveryServices.length === 0) && (
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Standard Delivery</p>
-                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(isOtherTownship ? 5000 : (township?.delivery_fee || 0), cc)}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Estimated 2–5 business days</p>
+                  <p className="text-lg font-bold text-[var(--theme-color)] mt-1">{formatCurrency(township?.delivery_fee || 0, cc)}</p>
                 </div>
               )}
 
@@ -939,7 +946,7 @@ export default function StorefrontCheckoutV2({
                 <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/40">
                   <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Complete your address and select delivery first.
+                    Complete your address first to see payment methods.
                   </p>
                 </div>
               )}

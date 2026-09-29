@@ -75,14 +75,17 @@ function SecondaryAction({ icon: Icon, label, onClick, href }) {
     return <button type="button" onClick={onClick} className={classes}>{content}</button>;
 }
 
-function HeaderMenuItem({ icon: Icon, label, onClick, href, close }) {
+function HeaderMenuItem({ icon: Icon, label, onClick, href, close, native = false }) {
     const handleClick = (e) => {
-        if (onClick) onClick(e);
         if (close) close();
+        if (onClick) onClick(e);
     };
     const classes = 'w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left';
     const content = (<><Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />{label}</>);
     if (href) {
+        if (native) {
+            return <a href={href} className={classes} onClick={() => close && close()}>{content}</a>;
+        }
         return <Link href={href} className={classes} onClick={() => close && close()}>{content}</Link>;
     }
     return <button type="button" onClick={handleClick} className={classes}>{content}</button>;
@@ -312,7 +315,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                             {can('products.create') && (
                                                 <HeaderMenuItem icon={Upload} label="Import Products" close={() => setImportMenuOpen(false)} onClick={() => setImportOpen(true)} />
                                             )}
-                                            <HeaderMenuItem icon={FileSpreadsheet} label="Download Template" close={() => setImportMenuOpen(false)} href={adminUrl('/admin/products/import/template')} />
+                                            <HeaderMenuItem icon={FileSpreadsheet} label="Download Template" close={() => setImportMenuOpen(false)} href={adminUrl('/admin/products/import/template')} native />
                                         </div>
                                     </>
                                 )}
@@ -343,7 +346,7 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
                                         {can('products.create') && (
                                             <HeaderMenuItem icon={Upload} label="Import Products" close={() => setMoreMenuOpen(false)} onClick={() => setImportOpen(true)} />
                                         )}
-                                        <HeaderMenuItem icon={FileSpreadsheet} label="Download Template" close={() => setMoreMenuOpen(false)} href={adminUrl('/admin/products/import/template')} />
+                                        <HeaderMenuItem icon={FileSpreadsheet} label="Download Template" close={() => setMoreMenuOpen(false)} href={adminUrl('/admin/products/import/template')} native />
                                         {can('products.view') && (
                                             <HeaderMenuItem icon={History} label="Import History" close={() => setMoreMenuOpen(false)} href={adminUrl('/admin/products/import/history/page')} />
                                         )}
