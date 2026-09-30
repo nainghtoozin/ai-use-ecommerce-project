@@ -23,6 +23,7 @@ const TABS = [
   { id: 'general', label: 'General', icon: 'bi-gear' },
   { id: 'branding', label: 'Branding', icon: 'bi-palette' },
   { id: 'contact', label: 'Contact', icon: 'bi-telephone' },
+  { id: 'support', label: 'Support', icon: 'bi-life-preserver' },
   { id: 'about', label: 'About Us', icon: 'bi-info-circle' },
   { id: 'social', label: 'Social Media', icon: 'bi-share' },
   { id: 'seo', label: 'SEO', icon: 'bi-search' },
@@ -122,6 +123,12 @@ export default function SettingsEdit({ settings = {} }) {
     contact_email: settings.contact_info?.contact_email || settings.contact_email || '',
     whatsapp_number: settings.contact_info?.whatsapp_number || settings.whatsapp_number || '',
     telegram_username: settings.contact_info?.telegram_username || '',
+    support_contact_email: settings.support_info?.email || '',
+    support_contact_phone: settings.support_info?.phone || '',
+    support_contact_whatsapp: settings.support_info?.whatsapp || '',
+    support_contact_telegram: settings.support_info?.telegram || '',
+    support_hours: settings.support_info?.hours || '',
+    support_message: settings.support_info?.message || '',
     address_line_1: settings.address_info?.address_line_1 || settings.address || '',
     address_line_2: settings.address_info?.address_line_2 || '',
     city: settings.address_info?.city || '',
@@ -553,6 +560,26 @@ settings.cod_enabled : true,
                     {renderField('postal_code', 'Postal Code')}
                     {renderField('country', 'Country')}
                     {renderField('google_maps_link', 'Google Maps Link', 'text', { colSpan: 'col-span-2' })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Support Tab */}
+            {activeTab === 'support' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Customer Support</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Shown on the customer Support page and blocked-login screen. Separate from the public store contact information under the Contact tab.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderField('support_contact_email', 'Support Email')}
+                    {renderField('support_contact_phone', 'Support Phone')}
+                    {renderField('support_contact_whatsapp', 'Support WhatsApp')}
+                    {renderField('support_contact_telegram', 'Support Telegram')}
+                    {renderField('support_hours', 'Support Hours')}
+                    {renderField('support_message', 'Support Message', 'text', { colSpan: 'col-span-2' })}
                   </div>
                 </div>
               </div>

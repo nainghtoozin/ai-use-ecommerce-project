@@ -196,6 +196,228 @@ class CustomerStatusAuthTest extends TestCase
         $this->assertGuest('web');
     }
 
+    public function test_login_page_shows_tenant_support_info_with_isolation(): void
+    {
+        config()->set('identity.use_accounts', true);
+
+        $tenantA = Tenant::create(['slug' => 'sup-shop-a', 'name' => 'Sup A', 'status' => 'active']);
+        $tenantB = Tenant::create(['slug' => 'sup-shop-b', 'name' => 'Sup B', 'status' => 'active']);
+
+        $this->setTenantSupport($tenantA, [
+            'site_name' => 'Sup A',
+            'support_email' => 'support-a@sup.test',
+            'phone' => '09111111111',
+            'whatsapp_number' => '09111111111',
+            'contact_info' => ['telegram_username' => 'sup_a_bot'],
+        ]);
+        $this->setTenantSupport($tenantB, [
+            'site_name' => 'Sup B',
+            'support_email' => 'support-b@sup.test',
+        ]);
+
+        $this->get("/store/{$tenantA->slug}/login")->assertInertia(fn ($page) => $page
+            ->where('website_info.support_email', 'support-a@sup.test')
+            ->where('website_info.phone', '09111111111')
+        );
+
+        $this->get("/store/{$tenantB->slug}/login")->assertInertia(fn ($page) => $page
+            ->where('website_info.support_email', 'support-b@sup.test')
+            ->where('website_info.phone', fn ($v) => empty($v))
+        );
+    }
+
+    public function test_blocked_login_keeps_support_info_available(): void
+    {
+        config()->set('identity.use_accounts', true);
+        [$tenant, $owner, $customer] = $this->seedTenant('sup-blocked-shop', '09888888888');
+
+        $this->setTenantSupport($tenant, [
+            'site_name' => 'Sup Blocked',
+            'support_email' => 'help@blocked.test',
+        ]);
+
+        $this->setMembershipStatus($customer->id, $tenant->id, 'banned', 'Fraud');
+
+        $this->post("/store/{$tenant->slug}/login", [
+            'email' => $customer->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+
+        $this->get("/store/{$tenant->slug}/login")->assertInertia(fn ($page) => $page
+            ->where('website_info.support_email', 'help@blocked.test')
+        );
+    }
+
+    private function setTenantSupport(Tenant $tenant, array $attributes): void
+    {
+        $info = \App\Models\WebsiteInfo::withoutTenantScope()->where('tenant_id', $tenant->id)->first()
+            ?? new \App\Models\WebsiteInfo();
+        $info->tenant_id = $tenant->id;
+        foreach ($attributes as $key => $value) {
+            $info->{$key} = $value;
+        }
+        $info->save();
+    }
+
+    public function test_contact_page_shows_tenant_support_info_with_isolation(): void
+    {
+        config()->set('identity.use_accounts', true);
+
+        $tenantA = Tenant::create(['slug' => 'contact-shop-a', 'name' => 'Contact A', 'status' => 'active']);
+        $tenantB = Tenant::create(['slug' => 'contact-shop-b', 'name' => 'Contact B', 'status' => 'active']);
+
+        $this->setTenantSupport($tenantA, [
+            'support_email' => 'support@contact-a.test',
+            'phone' => '09222222222',
+            'whatsapp_number' => '09222222222',
+            'contact_info' => ['telegram_username' => 'contact_a_bot'],
+        ]);
+
+        $this->get("/store/{$tenantA->slug}/contact")->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Contact')
+            ->where('contact.support_email', 'support@contact-a.test')
+            ->where('contact.phone', '09222222222')
+            ->where('contact.whatsapp', '09222222222')
+            ->where('contact.telegram', 'contact_a_bot')
+        );
+
+        $this->get("/store/{$tenantB->slug}/contact")->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Contact')
+            ->where('contact.support_email', fn ($v) => empty($v))
+            ->where('contact.phone', fn ($v) => empty($v))
+        );
+    }
+
+    public function test_suspended_customer_can_reach_support_page(): void
+    {
+        config()->set('identity.use_accounts', true);
+        [$tenant, $owner, $customer] = $this->seedTenant('contact-blocked-shop', '09899999999');
+
+        $this->setTenantSupport($tenant, ['support_email' => 'help@contact-blocked.test']);
+        $this->setMembershipStatus($customer->id, $tenant->id, 'suspended', 'Policy breach');
+
+        $this->post("/store/{$tenant->slug}/login", [
+            'email' => $customer->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+
+        $this->get("/store/{$tenant->slug}/contact")->assertStatus(200)->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Contact')
+            ->where('contact.support_email', 'help@contact-blocked.test')
+        );
+    }
+
+    public function test_support_page_shows_tenant_support_with_isolation(): void
+    {
+        config()->set('identity.use_accounts', true);
+
+        $tenantA = Tenant::create(['slug' => 'hs-shop-a', 'name' => 'HS A', 'status' => 'active']);
+        $tenantB = Tenant::create(['slug' => 'hs-shop-b', 'name' => 'HS B', 'status' => 'active']);
+
+        $this->setTenantSupport($tenantA, [
+            'support_info' => [
+                'email' => 'help@hs-a.test',
+                'phone' => '09333333333',
+                'whatsapp' => '09333333333',
+                'telegram' => 'hs_a_bot',
+                'hours' => 'Mon-Fri 9am-6pm',
+                'message' => 'We reply within a day.',
+            ],
+        ]);
+
+        $this->get("/store/{$tenantA->slug}/support")->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Support')
+            ->where('support.email', 'help@hs-a.test')
+            ->where('support.phone', '09333333333')
+            ->where('support.telegram', 'hs_a_bot')
+            ->where('support.hours', 'Mon-Fri 9am-6pm')
+        );
+
+        $this->get("/store/{$tenantB->slug}/support")->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Support')
+            ->where('support.email', fn ($v) => empty($v))
+            ->where('support.phone', fn ($v) => empty($v))
+        );
+    }
+
+    public function test_admin_can_save_support_info_without_touching_public_contact(): void
+    {
+        config()->set('identity.use_accounts', true);
+
+        if (!\Spatie\Permission\Models\Permission::where('name', 'settings.website')->exists()) {
+            \Spatie\Permission\Models\Permission::create(['name' => 'settings.website', 'guard_name' => 'web']);
+        }
+
+        $tenant = Tenant::create(['slug' => 'hs-admin-shop', 'name' => 'HS Admin', 'status' => 'active']);
+        $adminRole = Role::withoutTenantScope()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
+        $adminRole->syncPermissions(\Spatie\Permission\Models\Permission::all());
+        $owner = Account::create(['name' => 'Owner', 'email' => 'owner@hs-admin.test', 'password' => bcrypt('password'), 'status' => 'active']);
+        TenantMembership::create(['account_id' => $owner->id, 'tenant_id' => $tenant->id, 'role_id' => $adminRole->id, 'is_owner' => true, 'status' => 'active', 'joined_at' => now()]);
+
+        $this->setTenantSupport($tenant, ['support_email' => 'public@hs-admin.test']);
+
+        $response = $this->actingAs($owner, 'accounts')->put("/store/{$tenant->slug}/admin/settings", [
+            'support_contact_email' => 'help@hs-admin.test',
+            'support_contact_phone' => '09444444444',
+            'support_contact_whatsapp' => '09444444444',
+            'support_contact_telegram' => 'hs_admin_bot',
+            'support_hours' => 'Daily 8am-10pm',
+            'support_message' => 'We are here to help.',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $info = \App\Models\WebsiteInfo::withoutTenantScope()->where('tenant_id', $tenant->id)->first();
+        $this->assertEquals('help@hs-admin.test', $info->support_info['email'] ?? null);
+        $this->assertEquals('hs_admin_bot', $info->support_info['telegram'] ?? null);
+        $this->assertEquals('public@hs-admin.test', $info->support_email);
+
+        $this->get("/store/{$tenant->slug}/support")->assertInertia(fn ($page) => $page
+            ->where('support.email', 'help@hs-admin.test')
+        );
+    }
+
+    public function test_contact_and_support_pages_stay_separate(): void
+    {
+        config()->set('identity.use_accounts', true);
+
+        $tenant = Tenant::create(['slug' => 'sep-pages-shop', 'name' => 'Sep Pages', 'status' => 'active']);
+
+        $info = \App\Models\WebsiteInfo::withoutTenantScope()->where('tenant_id', $tenant->id)->first()
+            ?? new \App\Models\WebsiteInfo();
+        $info->tenant_id = $tenant->id;
+        $info->site_name = 'Sep Pages';
+        $info->contact_email = 'hello@sep-pages.test';
+        $info->phone = '09555555555';
+        $info->support_info = ['email' => 'help@sep-pages.test', 'phone' => '09666666666'];
+        $info->save();
+
+        $this->get("/store/{$tenant->slug}/contact")->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Contact')
+            ->where('contact.email', 'hello@sep-pages.test')
+            ->missing('support')
+        );
+
+        $this->get("/store/{$tenant->slug}/support")->assertInertia(fn ($page) => $page
+            ->component('Storefront/Cms/Support')
+            ->where('support.email', 'help@sep-pages.test')
+            ->where('support.phone', '09666666666')
+            ->missing('contact')
+        );
+    }
+
+    public function test_privacy_and_terms_pages_load(): void
+    {
+        $tenant = Tenant::create(['slug' => 'legal-shop', 'name' => 'Legal', 'status' => 'active']);
+
+        foreach (['privacy-policy' => 'Privacy Policy', 'terms-and-conditions' => 'Terms & Conditions'] as $path => $title) {
+            $this->get("/store/{$tenant->slug}/{$path}")->assertStatus(200)->assertInertia(fn ($page) => $page
+                ->component('Storefront/Cms/Policy')
+                ->where('page.title', $title)
+            );
+        }
+    }
+
     private function loginError(): string
     {
         return (string) session()->get('errors')->first('email');

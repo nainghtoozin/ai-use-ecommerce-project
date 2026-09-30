@@ -361,6 +361,80 @@ class StorefrontConfigurationResolver
         return $storefront;
     }
 
+    public static function backfillSupportInRevision(StorefrontRevision $revision): bool
+    {
+        $configuration = $revision->configuration;
+        if (!is_array($configuration) || !isset($configuration['navigation']['items']) || !is_array($configuration['navigation']['items'])) {
+            return false;
+        }
+
+        foreach ($configuration['navigation']['items'] as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            if (($item['key'] ?? null) === 'support' || ($item['path'] ?? null) === '/support') {
+                return false;
+            }
+        }
+
+        $items = [];
+        foreach ($configuration['navigation']['items'] as $item) {
+            if (is_array($item) && ($item['position'] ?? 0) >= 3) {
+                $item['position']++;
+            }
+            $items[] = $item;
+        }
+        $items[] = [
+            'key' => 'support',
+            'label' => 'Help & Support',
+            'path' => '/support',
+            'icon' => 'bi-life-preserver',
+            'position' => 3,
+        ];
+        usort($items, fn ($a, $b) => ($a['position'] ?? 0) <=> ($b['position'] ?? 0));
+
+        $configuration['navigation']['items'] = array_values($items);
+        $revision->configuration = $configuration;
+        $revision->save();
+
+        return true;
+    }
+
+    public static function ensureSupportItem(StorefrontNavigation $navigation): void
+    {
+        if (!Schema::hasTable('storefront_navigation_items')) {
+            return;
+        }
+
+        $exists = StorefrontNavigationItem::withoutTenantScope()
+            ->where('navigation_id', $navigation->id)
+            ->where('key', 'support')
+            ->where('group', 'header')
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        StorefrontNavigationItem::withoutTenantScope()
+            ->where('navigation_id', $navigation->id)
+            ->where('group', 'header')
+            ->where('position', '>=', 3)
+            ->increment('position');
+
+        StorefrontNavigationItem::withoutTenantScope()->create([
+            'tenant_id' => $navigation->tenant_id,
+            'navigation_id' => $navigation->id,
+            'key' => 'support',
+            'label' => 'Help & Support',
+            'path' => '/support',
+            'icon' => 'bi-life-preserver',
+            'group' => 'header',
+            'enabled' => true,
+            'position' => 3,
+        ]);
+    }
+
     public function ensureHomepageSections(Storefront $storefront): void
     {
         if (!Schema::hasTable('storefront_homepage_sections')) {
@@ -499,6 +573,7 @@ class StorefrontConfigurationResolver
             ['key' => 'home', 'label' => 'Home', 'path' => '/', 'icon' => 'bi-house-door', 'group' => 'header'],
             ['key' => 'products', 'label' => 'Products', 'path' => '/products', 'icon' => 'bi-grid', 'group' => 'header'],
             ['key' => 'contact', 'label' => 'Contact', 'path' => '/contact', 'icon' => 'bi-envelope', 'group' => 'header'],
+            ['key' => 'support', 'label' => 'Help & Support', 'path' => '/support', 'icon' => 'bi-life-preserver', 'group' => 'header'],
             ['key' => 'orders', 'label' => 'My Orders', 'path' => '/customer/orders', 'icon' => 'bi-receipt', 'group' => 'header'],
         ] as $position => $item) {
             StorefrontNavigationItem::withoutTenantScope()->firstOrCreate(

@@ -98,6 +98,8 @@ export default function ShopNavbar() {
         ? (storefront?.navigation?.items?.length ? configuredNavLinks : [
             { label: 'Home', href: storeUrl('/'), icon: 'bi-house-door' },
             { label: 'Products', href: storeUrl('/products'), icon: 'bi-grid' },
+            { label: 'Contact', href: storeUrl('/contact'), icon: 'bi-envelope' },
+            { label: 'Help & Support', href: storeUrl('/support'), icon: 'bi-life-preserver' },
             { label: 'My Orders', href: `/store/${storeSlug}/customer/orders`, icon: 'bi-receipt' },
         ])
         : [

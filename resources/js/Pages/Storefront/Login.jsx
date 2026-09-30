@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 
@@ -43,51 +42,64 @@ export default function StorefrontLogin({ status, tenant }) {
             {isBlocked && (
                 <div
                     role="alert"
-                    className={`mb-5 flex gap-3 rounded-xl border p-4 ${
+                    className={`mb-4 flex gap-2.5 rounded-xl border p-3 ${
                         isBanned
                             ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/40'
                             : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40'
                     }`}
                 >
                     <span
-                        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${
+                        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
                             isBanned
                                 ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'
                                 : 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-300'
                         }`}
                     >
                         {isBanned ? (
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="9" strokeWidth={2} />
                                 <line x1="5.5" y1="5.5" x2="18.5" y2="18.5" strokeWidth={2} />
                             </svg>
                         ) : (
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="9" strokeWidth={2} />
                                 <line x1="10" y1="9" x2="10" y2="15" strokeWidth={2} strokeLinecap="round" />
                                 <line x1="14" y1="9" x2="14" y2="15" strokeWidth={2} strokeLinecap="round" />
                             </svg>
                         )}
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {isBanned ? 'Account Banned' : 'Account Suspended'}
                         </p>
-                        <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+                        <p className="mt-0.5 text-[13px] leading-snug text-gray-600 dark:text-gray-400">
                             {isBanned
                                 ? 'Your account has been banned and you cannot sign in to this store.'
                                 : 'Your account has been suspended and you cannot sign in to this store at the moment.'}
                         </p>
                         {customerStatus.reason && (
-                            <div className="mt-2 rounded-lg bg-white/70 dark:bg-gray-900/60 px-3 py-2">
-                                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            <div className="mt-1.5 rounded-lg bg-white/70 dark:bg-gray-900/60 px-2.5 py-1.5">
+                                <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                     Reason
                                 </p>
-                                <p className="mt-0.5 text-sm text-gray-800 dark:text-gray-200">
+                                <p className="text-[13px] text-gray-800 dark:text-gray-200">
                                     &ldquo;{customerStatus.reason}&rdquo;
                                 </p>
                             </div>
                         )}
+                        <Link
+                            href={route('storefront.support', { store_slug: tenant.slug })}
+                            className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                                isBanned
+                                    ? 'bg-red-600 text-white hover:bg-red-700'
+                                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                            }`}
+                        >
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 01-13.2 7.9L3 21l1.1-4.8A9 9 0 1121 12z" />
+                            </svg>
+                            Help & Support
+                        </Link>
                     </div>
                 </div>
             )}

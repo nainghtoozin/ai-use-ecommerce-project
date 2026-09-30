@@ -12,6 +12,7 @@ class UpdateStorefrontNavigationRequest extends FormRequest
         '/products',
         '/brands',
         '/contact',
+        '/support',
         '/faq',
         '/about',
         '/customer/orders',

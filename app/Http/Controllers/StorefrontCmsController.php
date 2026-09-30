@@ -88,6 +88,25 @@ class StorefrontCmsController extends Controller
         return back()->with('success', 'Thank you! Your message has been sent.');
     }
 
+    public function support()
+    {
+        $tenant = $this->getTenant();
+        $settings = $this->getSettings();
+        $si = $settings->support_info ?? [];
+
+        return Inertia::render('Storefront/Cms/Support', [
+            'tenant' => $this->tenantData($tenant),
+            'support' => [
+                'email' => $si['email'] ?? null,
+                'phone' => $si['phone'] ?? null,
+                'whatsapp' => $si['whatsapp'] ?? null,
+                'telegram' => ltrim($si['telegram'] ?? '', '@') ?: null,
+                'hours' => $si['hours'] ?? null,
+                'message' => $si['message'] ?? null,
+            ],
+        ]);
+    }
+
     public function faq()
     {
         $tenant = $this->getTenant();

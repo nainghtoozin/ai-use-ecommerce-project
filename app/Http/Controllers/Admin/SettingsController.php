@@ -154,7 +154,16 @@ class SettingsController extends Controller
             'compact_mode' => true,
         ];
 
-        $newFields = ['secondary_phone', 'sales_email', 'telegram_username', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'google_maps_link', 'footer_extra_text'];
+        $supportInfo = [
+            'email' => $validated['support_contact_email'] ?? '',
+            'phone' => $validated['support_contact_phone'] ?? '',
+            'whatsapp' => $validated['support_contact_whatsapp'] ?? '',
+            'telegram' => $validated['support_contact_telegram'] ?? '',
+            'hours' => $validated['support_hours'] ?? '',
+            'message' => $validated['support_message'] ?? '',
+        ];
+
+        $newFields = ['secondary_phone', 'sales_email', 'telegram_username', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'google_maps_link', 'footer_extra_text', 'support_contact_email', 'support_contact_phone', 'support_contact_whatsapp', 'support_contact_telegram', 'support_hours', 'support_message'];
         foreach ($newFields as $field) {
             unset($validated[$field]);
         }
@@ -166,6 +175,8 @@ class SettingsController extends Controller
 
         $info->fill($validated);
         $info->contact_info = $contactInfo;
+        $info->support_info = $supportInfo;
+        $info->address_info = $addressInfo;
         $info->address_info = $addressInfo;
         $info->footer_settings = $footerSettings;
         $info->save();

@@ -8,6 +8,7 @@ const DEFAULT_PATH_OPTIONS = [
     ['/products', 'Products'],
     ['/brands', 'Brands'],
     ['/contact', 'Contact'],
+    ['/support', 'Support'],
     ['/faq', 'FAQ'],
     ['/about', 'About'],
     ['/customer/orders', 'Customer orders'],

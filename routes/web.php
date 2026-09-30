@@ -149,6 +149,7 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/about', [\App\Http\Controllers\StorefrontCmsController::class, 'about'])->name('about');
     Route::get('/contact', [\App\Http\Controllers\StorefrontCmsController::class, 'contact'])->name('contact');
     Route::post('/contact', [\App\Http\Controllers\StorefrontCmsController::class, 'submitContact'])->name('contact.submit');
+    Route::get('/support', [\App\Http\Controllers\StorefrontCmsController::class, 'support'])->name('support');
     Route::get('/privacy-policy', [\App\Http\Controllers\StorefrontCmsController::class, 'privacyPolicy'])->name('privacy');
     Route::get('/terms-and-conditions', [\App\Http\Controllers\StorefrontCmsController::class, 'termsConditions'])->name('terms');
     Route::get('/shipping-policy', [\App\Http\Controllers\StorefrontCmsController::class, 'shippingPolicy'])->name('shipping');
