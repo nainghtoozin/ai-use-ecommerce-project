@@ -17,6 +17,7 @@ class TenantMembership extends Model
         'role_id',
         'is_owner',
         'status',
+        'status_reason',
         'invited_by',
         'invited_at',
         'joined_at',

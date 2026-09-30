@@ -49,6 +49,7 @@ return [
         'stock_movements' => 'Stock Movements',
         'stock_adjustments' => 'Stock Adjustments',
         'orders' => 'Orders',
+        'sales_customers' => 'Customers',
         'payment_methods' => 'Payment Methods',
         'coupons' => 'Coupons',
         'promotions' => 'Promotions',

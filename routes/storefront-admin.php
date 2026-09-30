@@ -461,6 +461,16 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/team/{member}/restore', [\App\Http\Controllers\Admin\TeamController::class, 'restore'])->name('team.member.restore');
         Route::delete('/team/{member}', [\App\Http\Controllers\Admin\TeamController::class, 'remove'])->name('team.member.remove');
 
+        // Customers (storefront customers, customer-role memberships)
+        Route::get('/customers', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customers/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'show'])->name('customers.show')->whereNumber('customer');
+        Route::get('/customers/{customer}/edit', [\App\Http\Controllers\Admin\CustomerController::class, 'edit'])->name('customers.edit')->whereNumber('customer');
+        Route::put('/customers/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('customers.update')->whereNumber('customer');
+        Route::delete('/customers/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('customers.destroy')->whereNumber('customer');
+        Route::post('/customers/{customer}/suspend', [\App\Http\Controllers\Admin\CustomerController::class, 'suspend'])->name('customers.suspend')->whereNumber('customer');
+        Route::post('/customers/{customer}/ban', [\App\Http\Controllers\Admin\CustomerController::class, 'ban'])->name('customers.ban')->whereNumber('customer');
+        Route::post('/customers/{customer}/activate', [\App\Http\Controllers\Admin\CustomerController::class, 'activate'])->name('customers.activate')->whereNumber('customer');
+
         // Delivery Services
         Route::resource('delivery-services', \App\Http\Controllers\Admin\AdminDeliveryServiceController::class)->except(['show']);
         Route::post('delivery-services/{delivery_service}/toggle', [\App\Http\Controllers\Admin\AdminDeliveryServiceController::class, 'toggle'])->name('delivery-services.toggle')->whereNumber('delivery_service');

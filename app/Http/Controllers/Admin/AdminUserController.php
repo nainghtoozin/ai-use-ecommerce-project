@@ -59,6 +59,33 @@ class AdminUserController extends Controller
         return auth()->user()->tenant_id;
     }
 
+    private function countSuperAdmins(): int
+    {
+        if ($this->identityResolver->supportsAccount()) {
+            return Account::query()
+                ->whereHas('roles', fn ($q) => $q->where('name', 'superadmin'))
+                ->count();
+        }
+
+        return User::role('superadmin')->count();
+    }
+
+    private function countTenantAdmins(mixed $tenantId): int
+    {
+        if ($this->identityResolver->supportsAccount()) {
+            return \App\Models\TenantMembership::query()
+                ->when($tenantId, fn ($q, $id) => $q->where('tenant_id', $id))
+                ->where(fn ($q) => $q
+                    ->where('is_owner', true)
+                    ->orWhereHas('role', fn ($r) => $r->where('name', 'admin')))
+                ->count();
+        }
+
+        return User::role('admin')
+            ->when($tenantId, fn ($q, $id) => $q->where('users.tenant_id', $id))
+            ->count();
+    }
+
     public function index(Request $request)
     {
         if (!auth()->user()->can('users.view')) {
@@ -73,13 +100,21 @@ class AdminUserController extends Controller
         $useAccounts = $this->identityResolver->supportsAccount();
 
         $users = $this->identityResolver->queryUsersForTenant($tenantId)
+            ->when($useAccounts, function ($q) use ($tenantId) {
+                $q->whereDoesntHave('memberships', function ($m) use ($tenantId) {
+                    $m->when($tenantId, fn($m) => $m->where('tenant_id', $tenantId))
+                        ->whereHas('role', fn($r) => $r->where('name', 'customer'));
+                });
+            }, fn($q) => $q->whereDoesntHave('roles', fn($r) => $r->where('name', 'customer')))
             ->when($search, fn($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%");
             }))
             ->when($role, fn($q, $r) => $useAccounts
-                ? $q->whereHas('memberships.role', fn($q) => $q->where('name', $r))
-                : $q->whereHas('roles', fn($q) => $q->where('name', $r))
+                ? $q->whereHas('memberships', fn($m) => $m
+                    ->when($tenantId, fn($m) => $m->where('tenant_id', $tenantId))
+                    ->whereHas('role', fn($qr) => $qr->where('name', $r)))
+                : $q->whereHas('roles', fn($qr) => $qr->where('name', $r))
             )
             ->when($status, fn($q, $s) => $q->where('status', $s))
             ->orderBy('created_at', 'desc');
@@ -107,6 +142,7 @@ class AdminUserController extends Controller
 
         $roles = Role::orderBy('name')
             ->when($tenantId, fn($q, $id) => $q->where('tenant_id', $id))
+            ->where('name', '!=', 'customer')
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Index', [
@@ -126,6 +162,7 @@ class AdminUserController extends Controller
 
         $roles = Role::orderBy('name')
             ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
+            ->where('name', '!=', 'customer')
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Create', [
@@ -177,11 +214,19 @@ class AdminUserController extends Controller
                 ]);
             }
 
+            $roleModel = Role::where('name', $data['role'])
+                ->where(fn ($q) => $q->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))
+                ->first();
+
+            if (! $roleModel) {
+                return back()->withErrors([
+                    'role' => 'The selected role does not exist for this store.',
+                ])->onlyInput('email');
+            }
+
             $user->memberships()->create([
                 'tenant_id' => $tenantId,
-                'role_id' => Role::where('name', $data['role'])
-                    ->where('tenant_id', $tenantId)
-                    ->first()?->id,
+                'role_id' => $roleModel->id,
                 'is_owner' => false,
                 'status' => 'active',
                 'invited_at' => now(),
@@ -263,6 +308,7 @@ class AdminUserController extends Controller
 
         $roles = Role::orderBy('name')
             ->when($this->getTenantFilter(), fn($q, $tenantId) => $q->where('tenant_id', $tenantId))
+            ->where('name', '!=', 'customer')
             ->pluck('name');
 
         return Inertia::render('Admin/Users/Edit', [
@@ -336,12 +382,22 @@ class AdminUserController extends Controller
                 }
 
                 if ($user->hasRole('superadmin') && $data['role'] !== 'superadmin') {
-                    $superadminQuery = $this->identityResolver->supportsAccount()
-                        ? Account::role('superadmin')
-                        : User::role('superadmin');
-                    $superadminCount = $superadminQuery->count();
+                    $superadminCount = $this->countSuperAdmins();
                     if ($superadminCount <= 1) {
                         return redirect()->back()->with('error', 'Cannot remove the last remaining superadmin.');
+                    }
+                }
+                if ($this->identityResolver->supportsAccount()) {
+                    $tenantIdForRole = $this->getTenantFilter();
+                    $roleExistsForTenant = $tenantIdForRole
+                        ? Role::where('name', $data['role'])
+                            ->where(fn ($q) => $q->where('tenant_id', $tenantIdForRole)->orWhereNull('tenant_id'))
+                            ->exists()
+                        : Role::where('name', $data['role'])->exists();
+                    if (! $roleExistsForTenant) {
+                        return redirect()->back()->withErrors([
+                            'role' => 'The selected role does not exist for this store.',
+                        ]);
                     }
                 }
                 $user->syncRoles([$data['role']]);
@@ -380,10 +436,7 @@ class AdminUserController extends Controller
         $this->protectOwner($user);
 
         if ($user->hasRole('superadmin')) {
-            $superadminQuery = $this->identityResolver->supportsAccount()
-                ? Account::role('superadmin')
-                : User::role('superadmin');
-            $superadminCount = $superadminQuery->count();
+            $superadminCount = $this->countSuperAdmins();
             if ($superadminCount <= 1) {
                 return admin_redirect('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining superadmin.');
@@ -391,11 +444,7 @@ class AdminUserController extends Controller
         }
 
         if ($user->hasRole('admin') && !$user->hasRole('superadmin')) {
-            $tenantId = $this->getTenantFilter();
-            $adminQuery = $this->identityResolver->supportsAccount()
-                ? Account::role('admin')->when($tenantId, fn($q, $id) => $q->whereHas('memberships', fn($q) => $q->where('tenant_id', $id)))
-                : User::role('admin')->when($tenantId, fn($q, $id) => $q->where('users.tenant_id', $id));
-            $adminCount = $adminQuery->count();
+            $adminCount = $this->countTenantAdmins($this->getTenantFilter());
             if ($adminCount <= 1) {
                 return admin_redirect('admin.users.index')
                     ->with('error', 'Cannot delete the last remaining admin.');

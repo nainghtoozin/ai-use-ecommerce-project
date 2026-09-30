@@ -67,7 +67,6 @@ function RoleBadge({ role, isOwner }) {
     const styles = {
         admin:    'bg-blue-50 text-blue-700 ring-blue-600/20',
         staff:    'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
-        customer: 'bg-gray-50 text-gray-600 ring-gray-500/20',
     };
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${styles[role] || 'bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 ring-gray-500/20'}`}>
@@ -249,7 +248,6 @@ export default function TeamMembers({ members, filters, roles }) {
                                     {roles?.map(r => (
                                         <option key={r.id} value={r.name}>{r.label}</option>
                                     ))}
-                                    <option value="customer">Customer</option>
                                 </select>
                                 <select
                                     value={statusFilter}

@@ -71,12 +71,25 @@ class StorefrontLoginController extends Controller
                     ])->onlyInput('email');
                 }
 
-                $hasStoreAccess = TenantMembership::where('account_id', $account->id)
+                $membership = TenantMembership::where('account_id', $account->id)
                     ->where('tenant_id', $tenant->id)
-                    ->where('status', 'active')
-                    ->exists();
+                    ->first();
 
-                if (!$hasStoreAccess) {
+                if (!$membership || $membership->status !== 'active') {
+                    if ($membership && in_array($membership->status, ['suspended', 'banned'], true)) {
+                        $message = "Your account has been {$membership->status}.";
+                        $message .= $membership->status_reason
+                            ? " Reason: {$membership->status_reason}"
+                            : ' Please contact support.';
+                        return back()
+                            ->withErrors(['email' => $message])
+                            ->with('customer_status', [
+                                'status' => $membership->status,
+                                'reason' => $membership->status_reason,
+                            ])
+                            ->onlyInput('email');
+                    }
+
                     return back()->withErrors([
                         'email' => "Your account does not have access to {$tenant->name}.",
                     ])->onlyInput('email');
@@ -92,17 +105,19 @@ class StorefrontLoginController extends Controller
                         'email' => 'Please use the platform login page for super admin access.',
                     ])->onlyInput('email');
                 }
-
                 if (!$user->isActive()) {
                     if ($user->isSuspended()) {
-                        return back()->withErrors([
-                            'email' => 'Your account has been suspended. Please contact support.',
-                        ])->onlyInput('email');
+                        return back()
+                            ->withErrors(['email' => 'Your account has been suspended.' . ($user->status_reason ? " Reason: {$user->status_reason}" : ' Please contact support.')])
+                            ->with('customer_status', ['status' => 'suspended', 'reason' => $user->status_reason])
+                            ->onlyInput('email');
                     }
+
                     if ($user->isBanned()) {
-                        return back()->withErrors([
-                            'email' => 'Your account has been banned. Please contact support.',
-                        ])->onlyInput('email');
+                        return back()
+                            ->withErrors(['email' => 'Your account has been banned.' . ($user->status_reason ? " Reason: {$user->status_reason}" : ' Please contact support.')])
+                            ->with('customer_status', ['status' => 'banned', 'reason' => $user->status_reason])
+                            ->onlyInput('email');
                     }
                     return back()->withErrors([
                         'email' => 'Your account is inactive.',

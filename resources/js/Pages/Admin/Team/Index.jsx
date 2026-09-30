@@ -9,9 +9,6 @@ export default function TeamIndex({ members, invitations, roles }) {
     const canManage = can('users.view');
 
     const [tab, setTab] = useState('members');
-    const [search, setSearch] = useState('');
-    const [roleFilter, setRoleFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteData, setInviteData] = useState({ email: '', role_id: '', message: '' });
     const [inviteProcessing, setInviteProcessing] = useState(false);
@@ -35,24 +32,10 @@ export default function TeamIndex({ members, invitations, roles }) {
         }
     }, [showInviteModal]);
 
-    const filteredMembers = (members || []).filter(m => {
-        if (search && !m.name?.toLowerCase().includes(search.toLowerCase()) && !m.email?.toLowerCase().includes(search.toLowerCase())) return false;
-        if (roleFilter && m.role !== roleFilter) return false;
-        if (statusFilter && m.status !== statusFilter) return false;
-        return true;
-    });
-
-    const filteredInvitations = (invitations || []).filter(i => {
-        if (search && !i.email?.toLowerCase().includes(search.toLowerCase())) return false;
-        if (roleFilter && i.role !== roleFilter) return false;
-        return true;
-    });
-
     const stats = {
         total: members?.length || 0,
         pending: invitations?.length || 0,
         admins: members?.filter(m => m.role === 'admin' || m.is_owner)?.length || 0,
-        customers: members?.filter(m => m.role === 'customer')?.length || 0,
     };
 
     const statusBadge = (status) => {
@@ -76,7 +59,6 @@ export default function TeamIndex({ members, invitations, roles }) {
         const colors = {
             admin: 'bg-blue-50 text-blue-700 ring-blue-600/20',
             staff: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
-            customer: 'bg-gray-50 text-gray-700 ring-gray-600/20',
         };
         return (
             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${colors[role] || 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 ring-gray-600/20'}`}>
@@ -154,7 +136,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                 </div>
 
                 {/* Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
                             <div className="p-2.5 rounded-lg bg-blue-50">
@@ -188,20 +170,11 @@ export default function TeamIndex({ members, invitations, roles }) {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-4">
-                            <div className="p-2.5 rounded-lg bg-emerald-50">
-                                <i className="bi bi-person text-lg text-emerald-600"></i>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.customers}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Customers</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                {/* Tabs + Search + Filters */}
+                {/* Tabs + Manage links */}
+
+                {/* Tabs */}
                 <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
                     <div className="border-b border-gray-200 dark:border-gray-800">
                         <div className="flex">
@@ -228,47 +201,22 @@ export default function TeamIndex({ members, invitations, roles }) {
                         </div>
                     </div>
 
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="flex-1 relative">
-                                <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm"></i>
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search by name or email..."
-                                    className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-                            <select
-                                value={roleFilter}
-                                onChange={(e) => setRoleFilter(e.target.value)}
-                                className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">All Roles</option>
-                                {roles?.map(r => (
-                                    <option key={r.id} value={r.name}>{r.label}</option>
-                                ))}
-                                <option value="customer">Customer</option>
-                            </select>
-                            {tab === 'members' && (
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="suspended">Suspended</option>
-                                </select>
-                            )}
-                        </div>
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            For search, role and status filtering with pagination, use the canonical Members page.
+                        </p>
+                        <Link
+                            href={adminUrl('/admin/users')}
+                            className="sm:ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700"
+                        >
+                            Manage all members <i className="bi bi-arrow-right"></i>
+                        </Link>
                     </div>
 
                     {/* Members Table */}
                     {tab === 'members' && (
                         <div>
-                            {filteredMembers.length === 0 ? (
+                            {(members || []).length === 0 ? (
                                 <div className="text-center py-16">
                                     <i className="bi bi-people text-5xl text-gray-300"></i>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">No members found</p>
@@ -288,7 +236,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {filteredMembers.map((member) => (
+                                                {(members || []).map((member) => (
                                                     <tr key={member.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <td className="px-5 py-4">
                                                             <div className="flex items-center gap-3">
@@ -334,7 +282,7 @@ export default function TeamIndex({ members, invitations, roles }) {
 
                                     {/* Mobile Cards */}
                                     <div className="md:hidden divide-y divide-gray-100">
-                                        {filteredMembers.map((member) => (
+                                        {(members || []).map((member) => (
                                             <div key={member.id} className="p-4 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-center gap-3 min-w-0">
@@ -383,7 +331,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                     {/* Invitations Table */}
                     {tab === 'invitations' && (
                         <div>
-                            {filteredInvitations.length === 0 ? (
+                            {(invitations || []).length === 0 ? (
                                 <div className="text-center py-16">
                                     <i className="bi bi-envelope text-5xl text-gray-300"></i>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">No pending invitations</p>
@@ -403,7 +351,7 @@ export default function TeamIndex({ members, invitations, roles }) {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {filteredInvitations.map((invitation) => (
+                                                {(invitations || []).map((invitation) => (
                                                     <tr key={invitation.id} className="hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <td className="px-5 py-4">
                                                             <div className="flex items-center gap-3">
@@ -434,7 +382,7 @@ export default function TeamIndex({ members, invitations, roles }) {
 
                                     {/* Mobile Cards */}
                                     <div className="md:hidden divide-y divide-gray-100">
-                                        {filteredInvitations.map((invitation) => (
+                                        {(invitations || []).map((invitation) => (
                                             <div key={invitation.id} className="p-4 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-center gap-3 min-w-0">

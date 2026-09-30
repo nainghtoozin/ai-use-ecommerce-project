@@ -18,6 +18,8 @@ class UserManagementTest extends TestCase
     {
         parent::setUp();
 
+        config()->set('identity.use_accounts', false);
+
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
@@ -58,21 +60,20 @@ class UserManagementTest extends TestCase
         $this->superadmin = User::factory()->superadmin()->create();
     }
 
-    public function test_create_page_passes_all_roles(): void
+    public function test_create_page_excludes_customer_role(): void
     {
         $response = $this->actingAs($this->superadmin)->get('/admin/users/create');
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Users/Create')
-            ->has('roles', 3)
+            ->has('roles', 2)
             ->where('roles.0', 'admin')
-            ->where('roles.1', 'customer')
-            ->where('roles.2', 'superadmin')
+            ->where('roles.1', 'superadmin')
         );
     }
 
-    public function test_edit_page_passes_all_roles_and_user_role(): void
+    public function test_edit_page_excludes_customer_role(): void
     {
         $user = User::factory()->create();
 
@@ -81,7 +82,7 @@ class UserManagementTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Users/Edit')
-            ->has('roles', 3)
+            ->has('roles', 2)
             ->has('user')
         );
     }
@@ -150,7 +151,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($this->superadmin)->put("/admin/users/{$this->superadmin->id}", [
             'name' => $this->superadmin->name,
             'email' => $this->superadmin->email,
-            'role' => 'customer',
+            'role' => 'admin',
             'status' => 'active',
         ]);
 
@@ -194,14 +195,14 @@ class UserManagementTest extends TestCase
         $response->assertSessionHasErrors('role');
     }
 
-    public function test_index_page_passes_roles(): void
+    public function test_index_page_excludes_customer_role(): void
     {
         $response = $this->actingAs($this->superadmin)->get('/admin/users');
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Users/Index')
-            ->has('roles', 3)
+            ->has('roles', 2)
         );
     }
 }

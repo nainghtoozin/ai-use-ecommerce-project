@@ -10,7 +10,7 @@ export default function UsersEdit({ user, roles }) {
         email: user.email || '',
         password: '',
         password_confirmation: '',
-        role: user.role_name || 'customer',
+        role: user.role_name || 'admin',
         status: user.status || 'active',
         profile_image: null,
     });

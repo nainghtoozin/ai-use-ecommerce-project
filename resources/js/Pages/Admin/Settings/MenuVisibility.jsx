@@ -28,6 +28,7 @@ const MENU_GROUPS = [
         key: 'sales',
         children: [
             { key: 'sales.orders' },
+            { key: 'sales.customers' },
             { key: 'sales.payment_methods' },
         ],
     },
@@ -116,6 +117,7 @@ const ITEM_KEYS = {
     'inventory.movements': 'stock_movements',
     'inventory.adjustments': 'stock_adjustments',
     'sales.orders': 'orders',
+    'sales.customers': 'sales_customers',
     'sales.payment_methods': 'payment_methods',
     'marketing.coupons': 'coupons',
     'marketing.promotions': 'promotions',

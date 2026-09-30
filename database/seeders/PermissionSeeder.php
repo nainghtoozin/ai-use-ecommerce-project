@@ -23,6 +23,9 @@ class PermissionSeeder extends Seeder
             'users.assign-roles',
             'users.view-activity',
 
+            // Customer Management (storefront customers, read-only)
+            'customers.view',
+
             // Role Management
             'roles.view',
             'roles.create',

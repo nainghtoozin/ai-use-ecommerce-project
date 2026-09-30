@@ -49,6 +49,7 @@ return [
         'stock_movements' => 'ကုန်လက်ကျန်လှုပ်ရှားမှုများ',
         'stock_adjustments' => 'ကုန်လက်ကျန်ပြုပြင်မှုများ',
         'orders' => 'အော်ဒါများ',
+        'sales_customers' => 'ဖောက်သည်များ',
         'payment_methods' => 'ငွေပေးချေမှုနည်းလမ်းများ',
         'coupons' => 'ကူပွန်များ',
         'promotions' => 'ပရိုမိုးရှင်းများ',

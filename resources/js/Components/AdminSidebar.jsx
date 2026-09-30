@@ -25,6 +25,7 @@ const SECTION_VIS_KEY = {
     'Overview': 'overview',
     'Catalog': 'catalog',
     'Sales': 'sales',
+    'Sales & Commerce': 'sales',
     'Store': 'store',
     'DELIVERY': 'storefront',
     'Website': 'website',
@@ -182,9 +183,10 @@ export default function AdminSidebar() {
                 ]
             },
             {
-                title: 'Sales',
+                title: 'Sales & Commerce',
                 items: [
                     ...(can('orders.view') && isVis('sales.orders') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
+                    ...(can('customers.view') && isVis('sales.customers') ? [{ label: t('navigation.customers'), href: '/admin/customers', icon: 'User' }] : []),
                     ...(can('payments.view') && isVis('sales.payment_methods') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
                     ...(can('coupons.view') && hasFeature('coupons') && isVis('marketing.coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
                     ...(can('promotions.view') && hasFeature('promotions') && isVis('marketing.promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
@@ -222,7 +224,6 @@ export default function AdminSidebar() {
             {
                 title: 'Business',
                 items: [
-                    ...((can('users.view') || auth?.user?.is_owner) && isVis('staff.staff') ? [{ label: 'Team', href: '/admin/team', icon: 'Users' }] : []),
                     ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'UserPlus' }] : []),
                     ...(can('roles.view') && isVis('staff.roles') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'ShieldCheck' }] : []),
                 ]

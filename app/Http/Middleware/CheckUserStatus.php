@@ -43,6 +43,53 @@ class CheckUserStatus
                 return $next($request);
             }
 
+            // ─────────────────────────────────────────────────────────
+            // TENANT MEMBERSHIP: suspended/banned customer session check
+            //
+            // Customer suspension is tenant-scoped (membership status),
+            // so only the current store's membership is evaluated.
+            // Other stores' memberships are never affected.
+            // ─────────────────────────────────────────────────────────
+            if ($authenticatable instanceof Account) {
+                $storeSlug = $request->route('store_slug');
+                $currentTenant = $storeSlug
+                    ? \App\Models\Tenant::where('slug', $storeSlug)->first()
+                    : \App\Models\Tenant::getCurrent();
+
+                if ($currentTenant) {
+                    $membership = TenantMembership::where('account_id', $authenticatable->id)
+                        ->where('tenant_id', $currentTenant->id)
+                        ->first();
+
+                    if ($membership && in_array($membership->status, ['suspended', 'banned'], true)) {
+                        Auth::guard('accounts')->logout();
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+
+                        $message = "Your account has been {$membership->status}.";
+                        $message .= $membership->status_reason
+                            ? " Reason: {$membership->status_reason}"
+                            : ' Please contact support.';
+
+                        if ($storeSlug) {
+                            return redirect()->route('storefront.login', ['store_slug' => $storeSlug])
+                                ->with('error', $message)
+                                ->with('customer_status', [
+                                    'status' => $membership->status,
+                                    'reason' => $membership->status_reason,
+                                ]);
+                        }
+
+                        return redirect()->route('login')
+                            ->with('error', $message)
+                            ->with('customer_status', [
+                                'status' => $membership->status,
+                                'reason' => $membership->status_reason,
+                            ]);
+                    }
+                }
+            }
+
             if ($authenticatable->isSuspended()) {
                 $storeSlug = $request->route('store_slug');
                 Auth::guard($guard)->logout();

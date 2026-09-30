@@ -45,6 +45,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         'password',
         'email_verified_at',
         'status',
+        'status_reason',
         'remember_token',
         'tenant_id',
         'is_owner',

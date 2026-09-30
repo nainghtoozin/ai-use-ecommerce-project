@@ -9,7 +9,7 @@ export default function UsersCreate({ roles }) {
         email: '',
         password: '',
         password_confirmation: '',
-        role: 'customer',
+        role: roles?.includes('staff') ? 'staff' : (roles?.[0] ?? 'admin'),
         status: 'active',
         profile_image: null,
     });

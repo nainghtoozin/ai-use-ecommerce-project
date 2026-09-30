@@ -28,6 +28,9 @@ class TeamController extends Controller
         $tenant = Tenant::getCurrent();
 
         $members = TenantMembership::where('tenant_id', $tenant->id)
+            ->where(fn ($q) => $q
+                ->whereDoesntHave('role')
+                ->orWhereHas('role', fn ($q) => $q->where('name', '!=', 'customer')))
             ->with(['account', 'role'])
             ->orderBy('is_owner', 'desc')
             ->orderBy('joined_at')
@@ -84,6 +87,9 @@ class TeamController extends Controller
         $statusFilter = $request->input('status');
 
         $query = TenantMembership::where('tenant_id', $tenant->id)
+            ->where(fn ($q) => $q
+                ->whereDoesntHave('role')
+                ->orWhereHas('role', fn ($q) => $q->where('name', '!=', 'customer')))
             ->with(['account', 'role']);
 
         if ($search) {

@@ -164,6 +164,7 @@ class HandleInertiaRequests extends Middleware
                 'error'   => session('error'),
                 'warning' => session('warning'),
                 'feature_locked' => session('feature_locked'),
+                'customer_status' => session('customer_status'),
             ],
             'app' => [
                 'name' => $websiteSettings['site_name'] ?? config('app.name', 'My E-Commerce Store'),
