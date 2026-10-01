@@ -235,6 +235,58 @@ class StorefrontNavigationSupportTest extends TestCase
         $this->assertContains('Help & Support', collect($resolved['navigation']['items'] ?? [])->pluck('label')->all());
     }
 
+    public function test_navigation_page_exposes_revision_status_and_save_creates_draft(): void
+    {
+        if (!Permission::where('name', 'settings.website')->exists()) {
+            Permission::create(['name' => 'settings.website', 'guard_name' => 'web']);
+        }
+        config()->set('identity.use_accounts', true);
+
+        $tenant = Tenant::create(['slug' => 'nav-flow-shop', 'name' => 'Nav Flow', 'status' => 'active']);
+        $adminRole = Role::withoutTenantScope()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
+        $adminRole->syncPermissions(Permission::all());
+        $owner = Account::create(['name' => 'Owner', 'email' => 'owner@nav-flow.test', 'password' => bcrypt('password'), 'status' => 'active']);
+        TenantMembership::create(['account_id' => $owner->id, 'tenant_id' => $tenant->id, 'role_id' => $adminRole->id, 'is_owner' => true, 'status' => 'active', 'joined_at' => now()]);
+
+        Storefront::withoutTenantScope()->create(['tenant_id' => $tenant->id, 'status' => 'active']);
+        [$_, $navigation] = $this->seedNavigation('nav-flow-shop', $tenant);
+
+        $this->actingAs($owner, 'accounts')
+            ->get("/store/{$tenant->slug}/admin/storefront/navigation")
+            ->assertStatus(200)
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Storefront/Navigation')
+                ->has('revision')
+                ->has('navigation.items')
+            );
+
+        $items = $this->headerItems($navigation);
+        $this->actingAs($owner, 'accounts')
+            ->put("/store/{$tenant->slug}/admin/storefront/navigation", [
+                'show_store_name' => true,
+                'show_search' => true,
+                'items' => $items->map(fn ($i) => [
+                    'id' => $i->id,
+                    'key' => $i->key,
+                    'label' => $i->key === 'contact' ? 'Contact Us' : $i->label,
+                    'path' => $i->path,
+                    'enabled' => true,
+                    'position' => $i->position,
+                    'group' => 'header',
+                ])->values()->all(),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($owner, 'accounts')
+            ->get("/store/{$tenant->slug}/admin/storefront/navigation")
+            ->assertInertia(fn ($page) => $page
+                ->where('revision.has_unpublished_changes', true)
+            );
+
+        $this->assertEquals('Contact Us', StorefrontNavigationItem::withoutTenantScope()
+            ->where('navigation_id', $navigation->id)->where('key', 'contact')->value('label'));
+    }
+
     private function seedNavigation(string $slug, ?Tenant $existing = null)
     {
         $tenant = $existing ?? Tenant::create(['slug' => $slug, 'name' => $slug, 'status' => 'active']);

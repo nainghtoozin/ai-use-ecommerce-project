@@ -22,6 +22,7 @@ class StorefrontNavigationController extends Controller
     public function index()
     {
         $navigation = $this->navigation();
+        $storefront = $this->storefrontForNavigation($navigation);
 
         return Inertia::render('Admin/Storefront/Navigation', [
             'navigation' => [
@@ -38,6 +39,7 @@ class StorefrontNavigationController extends Controller
                 ])->values()->all(),
             ],
             'allowedPaths' => UpdateStorefrontNavigationRequest::allowedPaths(),
+            'revision' => $this->revisionService->status($storefront),
         ]);
     }
 
