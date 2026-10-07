@@ -4,6 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { Upload, X, ChevronUp, ChevronDown, Eye, Search } from 'lucide-react';
 import { DraftBadge, EditorCard, FIELD_CHECKBOX, FIELD_INPUT, FIELD_SELECT, IconButton, LiveBadge, Notice, OutlineButton, PageHeader, PublishConfirmModal, SAVE_STATUS, SaveStatusText, SuccessButton, Switch } from '@/Components/Admin/StorefrontUI';
+import MediaLibraryPicker from '@/Components/MediaLibraryPicker';
 
 const labels = { hero: 'Hero', promotion: 'Promotions', featured_categories: 'Featured Categories', featured_brands: 'Featured Brands', featured_products: 'Featured Products', product_showcase: 'Product Showcase', store_highlights: 'Store Highlights', brand_story: 'Brand Story', cta: 'Call to Action' };
 
@@ -286,6 +287,7 @@ export default function StorefrontHomepage({ sections: initialSections = [], cat
 function HeroImages({ config, updateConfig, section, media }) {
     const [uploading, setUploading] = useState(false);
     const [localImages, setLocalImages] = useState([]);
+    const [libraryOpen, setLibraryOpen] = useState(false);
     const inputRef = useRef(null);
 
     const savedIds = config.media_ids || [];
@@ -327,13 +329,38 @@ function HeroImages({ config, updateConfig, section, media }) {
         updateConfig(section.id, { media_ids: savedIds.filter((i) => i !== id) });
     };
 
+    const addFromLibrary = (item) => {
+        if (!item || allImages.length >= 5) return;
+        const id = Number(item.id);
+        if (savedIds.map(Number).includes(id)) return;
+        updateConfig(section.id, { media_ids: [...savedIds.map(Number), id].slice(0, 5) });
+    };
+
+    const libraryIds = new Set(savedIds.map((i) => String(i)));
+    const availableMedia = (media || []).filter((m) => !libraryIds.has(String(m.id)));
+
     const count = allImages.length;
     return (
         <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hero images (max 5)</p>
             <div className="flex flex-wrap gap-2 mb-2">{allImages.map((img) => (<div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950"><img src={img.url} alt={img.alt_text || ''} className="w-full h-full object-cover" /><button type="button" onClick={() => remove(img.id)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"><X className="w-3 h-3" /></button></div>))}</div>
-            {count < 5 && (<label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors"><Upload className="w-4 h-4" />{uploading ? 'Uploading...' : 'Upload Image'}<input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple onChange={handleUpload} className="hidden" disabled={uploading} /></label>)}
+            <div className="flex flex-wrap items-center gap-2">
+                {count < 5 && (<label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors"><Upload className="w-4 h-4" />{uploading ? 'Uploading...' : 'Upload Image'}<input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple onChange={handleUpload} className="hidden" disabled={uploading} /></label>)}
+                {count < 5 && (
+                    <button type="button" onClick={() => setLibraryOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
+                        <i className="bi bi-images"></i> Choose from Library
+                    </button>
+                )}
+            </div>
             <p className="text-xs text-gray-400 mt-1">{count} / 5 images</p>
+            <MediaLibraryPicker
+                open={libraryOpen}
+                onClose={() => setLibraryOpen(false)}
+                media={availableMedia}
+                excludeIds={savedIds}
+                selectedId={null}
+                onSelect={(item) => addFromLibrary(item)}
+            />
         </div>
     );
 }

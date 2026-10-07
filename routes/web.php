@@ -589,6 +589,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/storefront/media/{media}/detach-hero', [\App\Http\Controllers\Admin\StorefrontMediaController::class, 'detachHero'])->name('storefront.media.detach-hero')->whereNumber('media');
         Route::post('/storefront/media/{media}/assign-logo', [\App\Http\Controllers\Admin\StorefrontMediaController::class, 'assignLogo'])->name('storefront.media.assign-logo')->whereNumber('media');
         Route::post('/storefront/media/hero/upload', [\App\Http\Controllers\Admin\StorefrontMediaController::class, 'uploadHeroImage'])->name('storefront.media.hero.upload');
+        Route::post('/storefront/media/promotion/upload', [\App\Http\Controllers\Admin\StorefrontMediaController::class, 'uploadPromotionImage'])->name('storefront.media.promotion.upload');
+        Route::post('/storefront/media/editor/upload', [\App\Http\Controllers\Admin\StorefrontMediaController::class, 'uploadEditorImage'])->name('storefront.media.editor.upload');
+        Route::get('/storefront/media/search', [\App\Http\Controllers\Admin\StorefrontMediaController::class, 'search'])->name('storefront.media.search');
         Route::get('/storefront/navigation', [\App\Http\Controllers\Admin\StorefrontNavigationController::class, 'index'])->name('storefront.navigation.index');
         Route::put('/storefront/navigation', [\App\Http\Controllers\Admin\StorefrontNavigationController::class, 'update'])->name('storefront.navigation.update');
         Route::get('/storefront/homepage', [\App\Http\Controllers\Admin\StorefrontHomepageController::class, 'index'])->name('storefront.homepage.index');

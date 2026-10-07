@@ -8,6 +8,7 @@ import TimezoneSelect from '@/Components/TimezoneSelect';
 import CurrencySelect from '@/Components/CurrencySelect';
 import { CURRENCY_MAP } from '@/Data/currencies';
 import RichTextEditor from '@/Components/editor/RichTextEditor';
+import MediaLibraryPicker from '@/Components/MediaLibraryPicker';
 
 const PRESET_COLORS = [
   { name: 'Blue', value: '#3B82F6' },
@@ -33,7 +34,7 @@ const TABS = [
   { id: 'system', label: 'System', icon: 'bi-sliders' },
 ];
 
-export default function SettingsEdit({ settings = {} }) {
+export default function SettingsEdit({ settings = {}, mediaLibrary = [] }) {
   const [activeTab, setActiveTab] = useState('general');
   const [heroItems, setHeroItems] = useState(() => {
     return (settings.hero_images || []).map((rawPath, i) => ({
@@ -111,10 +112,12 @@ export default function SettingsEdit({ settings = {} }) {
     currency_symbol: settings.currency_symbol || 'MMK',
     theme_color: settings.theme_color || '#3B82F6',
     logo: null,
+    logo_media_id: '',
     favicon: null,
     og_image: null,
     footer_logo: null,
     about_image: null,
+    about_media_id: '',
     hero_image: null,
     phone: settings.contact_info?.primary_phone || settings.phone || '',
     secondary_phone: settings.contact_info?.secondary_phone || '',
@@ -185,6 +188,48 @@ settings.cod_enabled : true,
     enable_wishlist: settings.enable_wishlist !== undefined ? settings.enable_wishlist : true,
     enable_compare: settings.enable_compare !== undefined ? settings.enable_compare : true,
   });
+
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryPreview, setLibraryPreview] = useState(null);
+  const [aboutLibraryOpen, setAboutLibraryOpen] = useState(false);
+  const [aboutLibraryPreview, setAboutLibraryPreview] = useState(null);
+
+  const handleLogoFile = (file) => {
+    setData('logo', file);
+    if (file) {
+      setData('logo_media_id', '');
+      setLibraryPreview(null);
+    }
+  };
+  const handleLibrarySelect = (item) => {
+    setData('logo_media_id', item.id);
+    setData('logo', null);
+    setLibraryPreview(item.url || null);
+  };
+
+  const clearLibraryLogo = () => {
+    setData('logo_media_id', '');
+    setLibraryPreview(null);
+  };
+
+  const handleAboutFile = (file) => {
+    setData('about_image', file);
+    if (file) {
+      setData('about_media_id', '');
+      setAboutLibraryPreview(null);
+    }
+  };
+
+  const handleAboutLibrarySelect = (item) => {
+    setData('about_media_id', item.id);
+    setData('about_image', null);
+    setAboutLibraryPreview(item.url || null);
+  };
+
+  const clearAboutLibrary = () => {
+    setData('about_media_id', '');
+    setAboutLibraryPreview(null);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -500,11 +545,33 @@ settings.cod_enabled : true,
                     <ImageUpload
                       name="logo"
                       label="Site Logo"
-                      value={data.logo ?? settings.logo}
-                      onChange={(file) => setData('logo', file)}
+                      value={(libraryPreview || data.logo) ?? settings.logo}
+                      onChange={handleLogoFile}
                       error={errors.logo}
                       maxSize={2}
                     />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={clearLibraryLogo}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${!data.logo_media_id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:border-blue-400'}`}
+                      >
+                        <i className="bi bi-upload mr-1"></i> Upload New
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLibraryOpen(true)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${data.logo_media_id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:border-blue-400'}`}
+                      >
+                        <i className="bi bi-images mr-1"></i> Choose from Media Library
+                      </button>
+                      {data.logo_media_id ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          From library
+                        </span>
+                      ) : null}
+                    </div>
+                    {errors.logo_media_id && <p className="mt-1 text-sm text-red-600">{errors.logo_media_id}</p>}
                     <ImageUpload
                       name="favicon"
                       label="Favicon"
@@ -605,11 +672,33 @@ settings.cod_enabled : true,
                     <ImageUpload
                       name="about_image"
                       label="About Image"
-                      value={data.about_image ?? settings.about_image}
-                      onChange={(file) => setData('about_image', file)}
+                      value={(aboutLibraryPreview || data.about_image) ?? settings.about_image}
+                      onChange={handleAboutFile}
                       error={errors.about_image}
                       maxSize={2}
                     />
+                    <div className="mt-2 flex flex-wrap items-center gap-2 col-span-1 md:col-span-2">
+                      <button
+                        type="button"
+                        onClick={clearAboutLibrary}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${!data.about_media_id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:border-blue-400'}`}
+                      >
+                        <i className="bi bi-upload mr-1"></i> Upload New
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAboutLibraryOpen(true)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${data.about_media_id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:border-blue-400'}`}
+                      >
+                        <i className="bi bi-images mr-1"></i> Choose from Media Library
+                      </button>
+                      {data.about_media_id ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          From library
+                        </span>
+                      ) : null}
+                    </div>
+                    {errors.about_media_id && <p className="mt-1 text-sm text-red-600 col-span-1 md:col-span-2">{errors.about_media_id}</p>}
                     {renderField('company_name', 'Company Name')}
                   </div>
                 </div>
@@ -1041,6 +1130,20 @@ settings.cod_enabled : true,
           </form>
         </div>
       </div>
+      <MediaLibraryPicker
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        media={mediaLibrary}
+        selectedId={data.logo_media_id || null}
+        onSelect={handleLibrarySelect}
+      />
+      <MediaLibraryPicker
+        open={aboutLibraryOpen}
+        onClose={() => setAboutLibraryOpen(false)}
+        media={mediaLibrary}
+        selectedId={data.about_media_id || null}
+        onSelect={handleAboutLibrarySelect}
+      />
     </AdminLayout>
   );
 }

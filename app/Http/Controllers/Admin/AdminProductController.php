@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Models\Brand;
 use App\Models\ProductCombo;
 use App\Models\ProductVariant;
+use App\Models\StorefrontMedia;
 use App\Enums\ProductType;
 use App\Models\ActivityLog;
 use App\Services\ActivityLogger;
@@ -174,6 +175,55 @@ class AdminProductController extends Controller
         ]);
     }
 
+    private function libraryPaths(array $ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', array_filter($ids, fn ($id) => is_numeric($id) && (int) $id > 0))));
+        if (empty($ids)) {
+            return [];
+        }
+
+        return StorefrontMedia::where('tenant_id', tenant()->id)
+            ->whereIn('id', $ids)
+            ->pluck('path', 'id')
+            ->all();
+    }
+
+    private function tenantMediaPaths(): array
+    {
+        return StorefrontMedia::where('tenant_id', tenant()->id)
+            ->pluck('path')
+            ->all();
+    }
+
+    private function isLibraryPath(?string $path): bool
+    {
+        if (!$path) {
+            return false;
+        }
+
+        return StorefrontMedia::where('tenant_id', tenant()->id)
+            ->where('path', $path)
+            ->exists();
+    }
+
+    private function deleteFileUnlessLibrary(?string $path): void
+    {
+        if ($path && !$this->isLibraryPath($path)) {
+            $this->imageService->delete($path);
+        }
+    }
+
+    private function mediaLibraryProp(): array
+    {
+        return StorefrontMedia::where('tenant_id', tenant()->id)
+            ->latest()
+            ->limit(100)
+            ->get(['id', 'path', 'original_name', 'alt_text'])
+            ->append('url')
+            ->values()
+            ->all();
+    }
+
     public function create(Request $request)
     {
         if (!auth()->user()->can('products.create')) {
@@ -223,6 +273,7 @@ class AdminProductController extends Controller
             'availableTypes' => ProductType::availableTypes(),
             'allTypes' => ProductType::all(),
             'featureStatus' => $featureGate->getAllFeaturesStatus(),
+            'mediaLibrary' => $this->mediaLibraryProp(),
         ]);
     }
 
@@ -305,19 +356,44 @@ class AdminProductController extends Controller
         DB::transaction(function () use ($data, $request, $variantsPayload, $variantImages, $comboItemsPayload, &$product) {
             if ($request->hasFile('photo1')) {
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
+            } elseif ($request->filled('photo1_media_id')) {
+                $paths = $this->libraryPaths([(int) $request->input('photo1_media_id')]);
+                if (empty($paths)) {
+                    abort(422, 'The selected primary image does not belong to this store.');
+                }
+                $data['photo1'] = reset($paths);
             }
 
             if ($request->hasFile('photo2')) {
                 $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
+            } elseif ($request->filled('photo2_media_id')) {
+                $paths = $this->libraryPaths([(int) $request->input('photo2_media_id')]);
+                if (empty($paths)) {
+                    abort(422, 'The selected secondary image does not belong to this store.');
+                }
+                $data['photo2'] = reset($paths);
+            }
+
+            $galleryPaths = [];
+            if ($request->filled('existing_gallery_images')) {
+                $rawGallery = $request->input('existing_gallery_images');
+                if (is_string($rawGallery)) {
+                    $rawGallery = json_decode($rawGallery, true) ?? [];
+                }
+                $requested = array_values(array_filter(array_map('strval', (array) $rawGallery)));
+                $allowedPaths = $this->tenantMediaPaths();
+                $galleryPaths = array_values(array_filter(
+                    $requested,
+                    fn ($path) => in_array($path, $allowedPaths, true)
+                ));
             }
 
             if ($request->hasFile('gallery_images')) {
-                $galleryPaths = [];
                 foreach ($request->file('gallery_images') as $file) {
                     $galleryPaths[] = $this->imageService->upload($file, 'products/gallery');
                 }
-                $data['gallery_images'] = $galleryPaths;
             }
+            $data['gallery_images'] = array_values(array_slice(array_unique($galleryPaths), 0, 10));
 
             if ($request->hasFile('seo_image')) {
                 $data['seo_image'] = $this->imageService->upload($request->file('seo_image'), 'products');
@@ -416,6 +492,7 @@ class AdminProductController extends Controller
             'brands' => $brands,
             'selectableProducts' => $selectableProducts,
             'warehouses' => $warehouses,
+            'mediaLibrary' => $this->mediaLibraryProp(),
         ]);
     }
 
@@ -558,14 +635,36 @@ class AdminProductController extends Controller
 
             if ($request->hasFile('photo1')) {
                 $data['photo1'] = $this->imageService->upload($request->file('photo1'), 'products');
+            } elseif ($request->filled('photo1_media_id')) {
+                $paths = $this->libraryPaths([(int) $request->input('photo1_media_id')]);
+                if (empty($paths)) {
+                    abort(422, 'The selected primary image does not belong to this store.');
+                }
+                $data['photo1'] = reset($paths);
             }
 
             if ($request->hasFile('photo2')) {
                 $data['photo2'] = $this->imageService->upload($request->file('photo2'), 'products');
+            } elseif ($request->filled('photo2_media_id')) {
+                $paths = $this->libraryPaths([(int) $request->input('photo2_media_id')]);
+                if (empty($paths)) {
+                    abort(422, 'The selected secondary image does not belong to this store.');
+                }
+                $data['photo2'] = reset($paths);
             }
 
             // Handle gallery images - safe replacement: build new list first, delete removed after commit
-            $galleryPaths = json_decode($request->input('existing_gallery_images', '[]'), true) ?? [];
+            $rawGallery = $request->input('existing_gallery_images', []);
+            if (is_string($rawGallery)) {
+                $rawGallery = json_decode($rawGallery, true) ?? [];
+            }
+            $requestedGallery = array_values(array_filter(array_map('strval', (array) $rawGallery)));
+            $currentGallery = $product->gallery_images ?? [];
+            $tenantMediaPaths = $this->tenantMediaPaths();
+            $galleryPaths = array_values(array_filter(
+                $requestedGallery,
+                fn ($path) => in_array($path, $currentGallery, true) || in_array($path, $tenantMediaPaths, true)
+            ));
 
             // Track removed images to delete after transaction
             $oldGallery = $product->gallery_images ?? [];
@@ -582,7 +681,7 @@ class AdminProductController extends Controller
                 }
             }
 
-            $data['gallery_images'] = $galleryPaths;
+            $data['gallery_images'] = array_values(array_slice(array_unique($galleryPaths), 0, 10));
 
             if ($request->hasFile('seo_image')) {
                 $data['seo_image'] = $this->imageService->upload($request->file('seo_image'), 'products');
@@ -666,12 +765,13 @@ class AdminProductController extends Controller
             $this->inventoryService->handleProductUpdated($product, $data, $oldVariantStocks, $newVariantStocks);
         });
 
-        // Safe image cleanup: delete old files only after DB transaction succeeds
+        // Safe image cleanup: delete old files only after DB transaction succeeds.
+        // Library-owned paths are never deleted here; the Media Library guards them.
         if ($oldPhoto1) {
-            $this->imageService->delete($oldPhoto1);
+            $this->deleteFileUnlessLibrary($oldPhoto1);
         }
         if ($oldPhoto2) {
-            $this->imageService->delete($oldPhoto2);
+            $this->deleteFileUnlessLibrary($oldPhoto2);
         }
         if ($oldSeoImage) {
             $this->imageService->delete($oldSeoImage);
@@ -683,7 +783,7 @@ class AdminProductController extends Controller
         }
         if (!empty($oldGalleryToDelete)) {
             foreach ($oldGalleryToDelete as $oldPath) {
-                $this->imageService->delete($oldPath);
+                $this->deleteFileUnlessLibrary($oldPath);
             }
         }
 
@@ -713,12 +813,12 @@ class AdminProductController extends Controller
                 ProductCombo::where('combo_product_id', $product->id)->delete();
             }
 
-            $this->imageService->delete($product->photo1);
-            $this->imageService->delete($product->photo2);
+            $this->deleteFileUnlessLibrary($product->photo1);
+            $this->deleteFileUnlessLibrary($product->photo2);
 
             if ($product->gallery_images) {
                 foreach ($product->gallery_images as $path) {
-                    $this->imageService->delete($path);
+                    $this->deleteFileUnlessLibrary($path);
                 }
             }
 
@@ -767,8 +867,8 @@ class AdminProductController extends Controller
                     ProductCombo::where('combo_product_id', $product->id)->delete();
                 }
 
-                $this->imageService->delete($product->photo1);
-                $this->imageService->delete($product->photo2);
+                $this->deleteFileUnlessLibrary($product->photo1);
+                $this->deleteFileUnlessLibrary($product->photo2);
 
                 $product->delete();
             }

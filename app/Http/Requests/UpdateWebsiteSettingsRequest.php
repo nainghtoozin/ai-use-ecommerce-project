@@ -25,6 +25,8 @@ class UpdateWebsiteSettingsRequest extends FormRequest
             'currency_symbol' => 'nullable|string|max:10',
             'date_format' => 'nullable|string|max:20',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'logo_media_id' => 'nullable|integer|exists:storefront_media,id',
+            'about_media_id' => 'nullable|integer|exists:storefront_media,id',
             'favicon' => 'nullable|image|mimes:ico,png,jpg,gif,svg,webp|max:512',
             'contact_email' => 'nullable|email|max:255',
             'support_email' => 'nullable|email|max:255',

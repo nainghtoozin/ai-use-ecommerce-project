@@ -19,6 +19,7 @@ class ImageOptimizationService
         'payment-methods',
         'billing-payment-methods',
         'promotions',
+        'storefront-media',
     ];
 
     public function __construct(

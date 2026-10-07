@@ -1,6 +1,6 @@
 import RichTextEditor from '@/Components/editor/RichTextEditor';
 
-export default function DescriptionSection({ data, setData, errors }) {
+export default function DescriptionSection({ data, setData, errors, mediaLibrary = [] }) {
     return (
         <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -11,6 +11,7 @@ export default function DescriptionSection({ data, setData, errors }) {
                 value={data.description || ''}
                 onChange={(v) => setData('description', v)}
                 placeholder="Write a detailed product description..."
+                mediaLibrary={mediaLibrary}
                 minHeight="200px"
             />
             {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}

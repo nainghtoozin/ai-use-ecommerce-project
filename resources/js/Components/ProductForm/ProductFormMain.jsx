@@ -18,6 +18,11 @@ export default function ProductFormMain({
     setPhoto1File,
     photo2File,
     setPhoto2File,
+    photo1MediaId = null,
+    setPhoto1MediaId = null,
+    photo2MediaId = null,
+    setPhoto2MediaId = null,
+    mediaLibrary = [],
     galleryFiles,
     setGalleryFiles,
     removedGalleryImages,
@@ -97,6 +102,11 @@ export default function ProductFormMain({
                 photo2File={photo2File}
                 setPhoto2File={setPhoto2File}
                 existingPhoto2Url={existingPhoto2Url}
+                mediaLibrary={mediaLibrary}
+                photo1MediaId={photo1MediaId}
+                setPhoto1MediaId={setPhoto1MediaId}
+                photo2MediaId={photo2MediaId}
+                setPhoto2MediaId={setPhoto2MediaId}
             />
 
             <InventorySection
@@ -152,6 +162,7 @@ export default function ProductFormMain({
                 removedGalleryImages={removedGalleryImages}
                 setRemovedGalleryImages={setRemovedGalleryImages}
                 onGalleryOrderChange={(orderedPaths) => setData('gallery_images', orderedPaths)}
+                mediaLibrary={mediaLibrary}
             />
 
             {!isCombo && (
@@ -165,6 +176,7 @@ export default function ProductFormMain({
                         data={data}
                         setData={setData}
                         errors={errors}
+                        mediaLibrary={mediaLibrary}
                     />
                 </CollapseCard>
             )}

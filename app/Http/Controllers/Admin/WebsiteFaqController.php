@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWebsiteFaqRequest;
+use App\Models\StorefrontMedia;
 use App\Models\WebsiteFaq;
 use App\Services\WebsiteFaqService;
 use Illuminate\Http\Request;
@@ -48,6 +49,7 @@ class WebsiteFaqController extends Controller
 
         return Inertia::render('Admin/Faqs/Create', [
             'categories' => $this->faqService->getCategories(),
+            'mediaLibrary' => $this->mediaLibrary(),
         ]);
     }
 
@@ -68,6 +70,7 @@ class WebsiteFaqController extends Controller
         return Inertia::render('Admin/Faqs/Edit', [
             'faq' => $faq,
             'categories' => $this->faqService->getCategories(),
+            'mediaLibrary' => $this->mediaLibrary(),
         ]);
     }
 
@@ -77,6 +80,22 @@ class WebsiteFaqController extends Controller
 
         return redirect()->route('admin.faqs.index')
             ->with('success', 'FAQ updated successfully.');
+    }
+
+    private function mediaLibrary(): array
+    {
+        $tenantId = tenant()?->id;
+        if (!$tenantId) {
+            return [];
+        }
+
+        return StorefrontMedia::where('tenant_id', $tenantId)
+            ->latest()
+            ->limit(100)
+            ->get(['id', 'path', 'original_name', 'alt_text'])
+            ->append('url')
+            ->values()
+            ->all();
     }
 
     public function destroy(WebsiteFaq $faq)

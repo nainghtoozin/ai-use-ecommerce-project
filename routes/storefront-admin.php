@@ -368,6 +368,9 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/storefront/media/{media}/detach-hero', [StorefrontMediaController::class, 'detachHero'])->name('storefront.media.detach-hero')->whereNumber('media');
         Route::post('/storefront/media/{media}/assign-logo', [StorefrontMediaController::class, 'assignLogo'])->name('storefront.media.assign-logo')->whereNumber('media');
         Route::post('/storefront/media/hero/upload', [StorefrontMediaController::class, 'uploadHeroImage'])->name('storefront.media.hero.upload');
+        Route::post('/storefront/media/promotion/upload', [StorefrontMediaController::class, 'uploadPromotionImage'])->name('storefront.media.promotion.upload');
+        Route::post('/storefront/media/editor/upload', [StorefrontMediaController::class, 'uploadEditorImage'])->name('storefront.media.editor.upload');
+        Route::get('/storefront/media/search', [StorefrontMediaController::class, 'search'])->name('storefront.media.search');
         Route::get('/storefront/navigation', [StorefrontNavigationController::class, 'index'])->name('storefront.navigation.index');
         Route::put('/storefront/navigation', [StorefrontNavigationController::class, 'update'])->name('storefront.navigation.update');
         Route::get('/storefront/homepage', [StorefrontHomepageController::class, 'index'])->name('storefront.homepage.index');

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import MediaDropzone from '../media/MediaDropzone';
 import ImageThumbnail from '../media/ImageThumbnail';
+import MediaLibraryPicker from '@/Components/MediaLibraryPicker';
 import getImagePreviewUrl from '@/Utils/getImagePreviewUrl';
 
 export default function MediaSection({
@@ -14,9 +15,11 @@ export default function MediaSection({
     removedGalleryImages,
     setRemovedGalleryImages,
     onGalleryOrderChange,
+    mediaLibrary = [],
 }) {
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const [dragSource, setDragSource] = useState(null);
+    const [libraryOpen, setLibraryOpen] = useState(false);
     const dragIndexRef = useRef(null);
 
     const MAX_IMAGES = 10;
@@ -26,6 +29,16 @@ export default function MediaSection({
     );
     const existingCount = visibleExistingImages.length;
     const totalImages = existingCount + galleryFiles.length;
+
+    const attachedPaths = new Set(visibleExistingImages);
+    const availableMedia = (mediaLibrary || []).filter((m) => !attachedPaths.has(m.path));
+
+    const handleLibrarySelect = useCallback((item) => {
+        if (!item?.path) return;
+        if (attachedPaths.has(item.path)) return;
+        const next = [...visibleExistingImages, item.path].slice(0, MAX_IMAGES);
+        onGalleryOrderChange?.(next);
+    }, [visibleExistingImages, onGalleryOrderChange]);
 
     const handleGalleryAdd = useCallback((files) => {
         setGalleryFiles((prev) => [...prev, ...files]);
@@ -217,13 +230,29 @@ export default function MediaSection({
             )}
 
             {totalImages < MAX_IMAGES && (
-                <MediaDropzone
-                    onFilesAdd={handleGalleryAdd}
-                    maxFiles={MAX_IMAGES}
-                    existingCount={totalImages}
-                    error={errors.gallery_images}
-                />
+                <>
+                    <MediaDropzone
+                        onFilesAdd={handleGalleryAdd}
+                        maxFiles={MAX_IMAGES}
+                        existingCount={totalImages}
+                        error={errors.gallery_images}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setLibraryOpen(true)}
+                        className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                        <i className="bi bi-images"></i> Choose from Library
+                    </button>
+                </>
             )}
+            <MediaLibraryPicker
+                open={libraryOpen}
+                onClose={() => setLibraryOpen(false)}
+                media={availableMedia}
+                selectedId={null}
+                onSelect={handleLibrarySelect}
+            />
 
             {totalImages >= MAX_IMAGES && (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 px-4 py-3 text-center">

@@ -14,6 +14,7 @@ use App\Services\StorefrontConfigurationResolver;
 use App\Services\StorefrontRevisionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -98,6 +99,93 @@ class StorefrontMediaController extends Controller
             'id' => $media->id,
             'url' => $media->url,
             'alt_text' => $media->alt_text,
+        ]);
+    }
+
+    public function uploadPromotionImage(StorefrontMediaUploadRequest $request): JsonResponse
+    {
+        $storefront = $this->storefront();
+        $file = $request->file('file');
+        $path = $this->imageService->upload($file, 'storefront-media');
+
+        $media = StorefrontMedia::create([
+            'tenant_id' => tenant()->id,
+            'storefront_id' => $storefront->id,
+            'key' => 'library',
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'alt_text' => $request->input('alt_text') ?: pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'metadata' => ['width' => null, 'height' => null],
+            'is_visible' => true,
+        ]);
+        $this->revisionService->syncDraft($storefront);
+
+        $media->append('url');
+
+        return response()->json([
+            'id' => $media->id,
+            'url' => $media->url,
+            'alt_text' => $media->alt_text,
+            'original_name' => $media->original_name,
+        ]);
+    }
+
+    public function uploadEditorImage(StorefrontMediaUploadRequest $request): JsonResponse
+    {
+        $storefront = $this->storefront();
+        $file = $request->file('file');
+        $path = $this->imageService->upload($file, 'storefront-media');
+
+        $media = StorefrontMedia::create([
+            'tenant_id' => tenant()->id,
+            'storefront_id' => $storefront->id,
+            'key' => 'library',
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'alt_text' => $request->input('alt_text') ?: pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'metadata' => ['width' => null, 'height' => null],
+            'is_visible' => true,
+        ]);
+        $this->revisionService->syncDraft($storefront);
+
+        $media->append('url');
+
+        return response()->json([
+            'id' => $media->id,
+            'url' => $media->url,
+            'alt_text' => $media->alt_text,
+            'original_name' => $media->original_name,
+        ]);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $storefront = $this->storefront();
+        $search = trim((string) $request->input('q', ''));
+        $perPage = min(max((int) $request->input('per_page', 24), 1), 50);
+
+        $media = StorefrontMedia::where('storefront_id', $storefront->id)
+            ->when($search !== '', fn ($query) => $query->where(function ($q) use ($search) {
+                $q->where('original_name', 'like', "%{$search}%")
+                    ->orWhere('alt_text', 'like', "%{$search}%")
+                    ->orWhere('path', 'like', "%{$search}%");
+            }))
+            ->latest()
+            ->paginate($perPage, ['id', 'path', 'original_name', 'alt_text'])
+            ->withQueryString();
+
+        $media->getCollection()->each->append('url');
+
+        return response()->json([
+            'data' => $media->items(),
+            'current_page' => $media->currentPage(),
+            'last_page' => $media->lastPage(),
+            'per_page' => $media->perPage(),
+            'total' => $media->total(),
         ]);
     }
 
@@ -196,26 +284,7 @@ class StorefrontMediaController extends Controller
 
     private function mediaUsage(StorefrontMedia $media): ?string
     {
-        if (in_array($media->key, ['logo', 'favicon'], true)) {
-            return $media->key;
-        }
-
-        $heroUses = StorefrontHomepageSection::where('type', 'hero')->get()
-            ->contains(fn ($section) => in_array($media->id, array_map('intval', $section->configuration['media_ids'] ?? []), true));
-        if ($heroUses) {
-            return 'the homepage hero';
-        }
-
-        if (PromotionBanner::where('storefront_media_id', $media->id)->exists()) {
-            return 'a promotion';
-        }
-
-        $info = WebsiteInfo::first();
-        if ($info && in_array($media->path, [$info->logo, $info->favicon, $info->og_image], true)) {
-            return 'store identity or SEO';
-        }
-
-        return null;
+        return app(\App\Services\MediaCleanupService::class)->usageFor($media, (int) tenant()->id);
     }
 
     private function assertMediaBelongsToCurrentStorefront(StorefrontMedia $media): void

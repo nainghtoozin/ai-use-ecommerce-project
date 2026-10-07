@@ -17,7 +17,7 @@ const TYPE_STYLES = {
     combo: 'bg-orange-100 text-orange-700',
 };
 
-export default function ProductEdit({ product, categories, units = [], brands = [], selectableProducts = [] }) {
+export default function ProductEdit({ product, categories, units = [], brands = [], selectableProducts = [], mediaLibrary = [] }) {
     const { auth } = usePage().props;
     if (!auth?.user?.permissions?.includes('products.edit')) {
         return <AdminLayout><div className="text-center py-16"><p className="text-red-600 font-semibold">Unauthorized</p></div></AdminLayout>;
@@ -33,6 +33,10 @@ export default function ProductEdit({ product, categories, units = [], brands = 
         setPhoto1File,
         photo2File,
         setPhoto2File,
+        photo1MediaId,
+        setPhoto1MediaId,
+        photo2MediaId,
+        setPhoto2MediaId,
         galleryFiles,
         setGalleryFiles,
         removedGalleryImages,
@@ -79,6 +83,11 @@ export default function ProductEdit({ product, categories, units = [], brands = 
                                 setPhoto1File={setPhoto1File}
                                 photo2File={photo2File}
                                 setPhoto2File={setPhoto2File}
+                                photo1MediaId={photo1MediaId}
+                                setPhoto1MediaId={setPhoto1MediaId}
+                                photo2MediaId={photo2MediaId}
+                                setPhoto2MediaId={setPhoto2MediaId}
+                                mediaLibrary={mediaLibrary}
                                 galleryFiles={galleryFiles}
                                 setGalleryFiles={setGalleryFiles}
                                 removedGalleryImages={removedGalleryImages}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import FormInput from '../FormInput';
 import RichTextEditor from '@/Components/editor/RichTextEditor';
+import MediaLibraryPicker from '@/Components/MediaLibraryPicker';
 import { usePage } from '@inertiajs/react';
 import { Image, Upload, X } from 'lucide-react';
 import getImagePreviewUrl from '@/Utils/getImagePreviewUrl';
@@ -13,12 +14,14 @@ function slugify(text) {
         .replace(/^-+|-+$/g, '');
 }
 
-function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg,image/png,image/webp', maxSize = 2 }) {
+function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg,image/png,image/webp', maxSize = 2, media = [], mediaId = null, onMediaSelect = null, onMediaClear = null }) {
     const [preview, setPreview] = useState(null);
+    const [libraryUrl, setLibraryUrl] = useState(null);
+    const [libraryOpen, setLibraryOpen] = useState(false);
     const inputRef = useRef(null);
 
     const existingUrl = typeof value === 'string' && value ? value : null;
-    const previewUrl = preview || getImagePreviewUrl(existingUrl);
+    const previewUrl = preview || libraryUrl || getImagePreviewUrl(existingUrl);
 
     const handleFile = (file) => {
         if (!file) return;
@@ -28,6 +31,8 @@ function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg
         const reader = new FileReader();
         reader.onload = (ev) => setPreview(ev.target.result);
         reader.readAsDataURL(file);
+        setLibraryUrl(null);
+        if (onMediaClear) onMediaClear();
         if (onChange) onChange(file);
     };
 
@@ -39,7 +44,16 @@ function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg
     const handleRemove = () => {
         if (inputRef.current) inputRef.current.value = '';
         setPreview(null);
+        setLibraryUrl(null);
+        if (onMediaClear) onMediaClear();
         if (onChange) onChange(null);
+    };
+
+    const handleLibrarySelect = (item) => {
+        if (inputRef.current) inputRef.current.value = '';
+        setPreview(null);
+        setLibraryUrl(item.url || null);
+        if (onMediaSelect) onMediaSelect(item);
     };
 
     return (
@@ -55,11 +69,26 @@ function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg
                 <label className="cursor-pointer">
                     <span className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
                         <Upload className="w-4 h-4" />
-                        {existingUrl || preview ? 'Change Image' : 'Upload Image'}
+                        {existingUrl || preview || libraryUrl ? 'Change Image' : 'Upload Image'}
                     </span>
                     <input ref={inputRef} type="file" name={name} accept={accept} onChange={handleInputChange} className="hidden" />
                 </label>
-                {(existingUrl || preview) && (
+                {onMediaSelect && (
+                    <button
+                        type="button"
+                        onClick={() => setLibraryOpen(true)}
+                        className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${mediaId ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50'}`}
+                    >
+                        <i className="bi bi-images"></i>
+                        Choose from Library
+                    </button>
+                )}
+                {mediaId ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit">
+                        From library
+                    </span>
+                ) : null}
+                {(existingUrl || preview || libraryUrl) && (
                     <button type="button" onClick={handleRemove} className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-800">
                         <X className="w-3 h-3" /> Remove
                     </button>
@@ -67,11 +96,20 @@ function CompactImageUpload({ name, value, onChange, error, accept = 'image/jpeg
                 <p className="text-xs text-gray-400">PNG, JPG, WebP, max {maxSize}MB</p>
                 {error && <p className="text-xs text-red-600">{error}</p>}
             </div>
+            {onMediaSelect && (
+                <MediaLibraryPicker
+                    open={libraryOpen}
+                    onClose={() => setLibraryOpen(false)}
+                    media={media}
+                    selectedId={mediaId}
+                    onSelect={handleLibrarySelect}
+                />
+            )}
         </div>
     );
 }
 
-export default function BasicInfoSection({ data, setData, errors, photo1File, setPhoto1File, existingPhoto1Url, photo2File, setPhoto2File, existingPhoto2Url }) {
+export default function BasicInfoSection({ data, setData, errors, photo1File, setPhoto1File, existingPhoto1Url, photo2File, setPhoto2File, existingPhoto2Url, mediaLibrary = [], photo1MediaId = null, setPhoto1MediaId = null, photo2MediaId = null, setPhoto2MediaId = null }) {
     const { units = [], categories = [], brands = [], featureStatus = {} } = usePage().props;
     const inventoryEnabled = featureStatus.inventory_management?.enabled !== false;
     const [status, setStatus] = useState(data.status || 'active');
@@ -246,6 +284,10 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         value={photo1File || existingPhoto1Url}
                         onChange={setPhoto1File}
                         error={errors.photo1}
+                        media={mediaLibrary}
+                        mediaId={photo1MediaId}
+                        onMediaSelect={setPhoto1MediaId ? (item) => { setPhoto1File(null); setPhoto1MediaId(item.id); } : null}
+                        onMediaClear={setPhoto1MediaId ? () => setPhoto1MediaId('') : null}
                     />
                 </div>
 
@@ -257,6 +299,10 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
                         value={photo2File || existingPhoto2Url}
                         onChange={setPhoto2File}
                         error={errors.photo2}
+                        media={mediaLibrary}
+                        mediaId={photo2MediaId}
+                        onMediaSelect={setPhoto2MediaId ? (item) => { setPhoto2File(null); setPhoto2MediaId(item.id); } : null}
+                        onMediaClear={setPhoto2MediaId ? () => setPhoto2MediaId('') : null}
                     />
                 </div>
 

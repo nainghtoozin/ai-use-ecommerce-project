@@ -15,7 +15,9 @@ import { Blockquote } from '@tiptap/extension-blockquote';
 import { CodeBlock } from '@tiptap/extension-code-block';
 import { HorizontalRule } from '@tiptap/extension-horizontal-rule';
 import { Placeholder } from '@tiptap/extension-placeholder';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { adminUrl } from '@/Utils/adminUrl';
+import MediaLibraryPicker from '@/Components/MediaLibraryPicker';
 import {
     Bold, Italic, Underline as UnderlineIcon, Strikethrough,
     Heading1, Heading2, Heading3,
@@ -51,8 +53,10 @@ function ToolbarDivider() {
     return <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />;
 }
 
-function Toolbar({ editor }) {
+function Toolbar({ editor, mediaLibrary = [] }) {
     const fileInputRef = useRef(null);
+    const [libraryOpen, setLibraryOpen] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     if (!editor) return null;
 
@@ -79,14 +83,17 @@ function Toolbar({ editor }) {
         if (!file) return;
 
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('file', file);
 
+        setUploading(true);
         try {
-            const response = await fetch('/admin/products/upload-image', {
+            const response = await fetch(adminUrl('/admin/storefront/media/editor/upload'), {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
                 },
             });
             const data = await response.json();
@@ -95,8 +102,16 @@ function Toolbar({ editor }) {
             }
         } catch (err) {
             console.error('Image upload failed:', err);
+        } finally {
+            setUploading(false);
         }
         e.target.value = '';
+    };
+
+    const handleLibrarySelect = (item) => {
+        if (item?.url) {
+            editor.chain().focus().setImage({ src: item.url, alt: item.alt_text || item.original_name || '' }).run();
+        }
     };
 
     const addTable = () => {
@@ -180,10 +195,20 @@ function Toolbar({ editor }) {
             <ToolbarButton onClick={addImage} title="Image URL">
                 <ImageIcon className="w-4 h-4" />
             </ToolbarButton>
-            <ToolbarButton onClick={() => fileInputRef.current?.click()} title="Upload Image">
+            <ToolbarButton onClick={() => fileInputRef.current?.click()} title={uploading ? 'Uploading...' : 'Upload Image'}>
                 <ImageIcon className="w-4 h-4" />
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
             </ToolbarButton>
+            <ToolbarButton onClick={() => setLibraryOpen(true)} title="Choose from Media Library">
+                <i className="bi bi-images text-[14px]"></i>
+            </ToolbarButton>
+            <MediaLibraryPicker
+                open={libraryOpen}
+                onClose={() => setLibraryOpen(false)}
+                media={mediaLibrary}
+                selectedId={null}
+                onSelect={handleLibrarySelect}
+            />
             <ToolbarButton onClick={addTable} title="Insert Table">
                 <TableIcon className="w-4 h-4" />
             </ToolbarButton>
@@ -217,6 +242,7 @@ export default function RichTextEditor({
     placeholder = 'Start writing...',
     className = '',
     minHeight = '200px',
+    mediaLibrary = [],
 }) {
     const editor = useEditor({
         extensions: [
@@ -259,7 +285,7 @@ export default function RichTextEditor({
 
     return (
         <div className={`border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 ${className}`}>
-            <Toolbar editor={editor} />
+            <Toolbar editor={editor} mediaLibrary={mediaLibrary} />
             <div className="editor-content">
                 <EditorContent editor={editor} />
             </div>

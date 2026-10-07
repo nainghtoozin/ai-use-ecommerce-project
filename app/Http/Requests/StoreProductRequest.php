@@ -12,6 +12,14 @@ class StoreProductRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $gallery = $this->input('existing_gallery_images');
+        if (is_string($gallery)) {
+            $this->merge(['existing_gallery_images' => json_decode($gallery, true) ?? []]);
+        }
+    }
+
     public function rules(): array
     {
         $type = $this->input('type', 'single');
@@ -38,10 +46,14 @@ class StoreProductRequest extends FormRequest
             'type'            => 'nullable|in:single,variable,combo',
             'variants'        => 'nullable|json',
             'combo_items'     => 'nullable|json',
-            'photo1'          => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'photo1'          => 'required_without:photo1_media_id|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'photo1_media_id' => 'nullable|integer|exists:storefront_media,id',
             'photo2'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'photo2_media_id' => 'nullable|integer|exists:storefront_media,id',
             'gallery_images'  => 'nullable|array|max:10',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'existing_gallery_images' => 'nullable|array|max:10',
+            'existing_gallery_images.*' => 'nullable|string|max:500',
             'seo_title'       => 'nullable|string|max:255',
             'seo_description' => 'nullable|string|max:500',
             'seo_keywords'    => 'nullable|string|max:500',

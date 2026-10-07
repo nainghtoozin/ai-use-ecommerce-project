@@ -4,7 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import RichTextEditor from '@/Components/editor/RichTextEditor';
 
-export default function FaqEdit({ faq, categories }) {
+export default function FaqEdit({ faq, categories, mediaLibrary = [] }) {
     const [form, setForm] = useState({
         category: faq.category || 'general',
         question_en: faq.question_en || '',
@@ -100,13 +100,13 @@ export default function FaqEdit({ faq, categories }) {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Answer (English) *</label>
-                                        <RichTextEditor value={form.answer_en} onChange={(v) => setField('answer_en', v)} placeholder="Write the answer in English..." minHeight="180px" />
+                                        <RichTextEditor mediaLibrary={mediaLibrary} value={form.answer_en} onChange={(v) => setField('answer_en', v)} placeholder="Write the answer in English..." minHeight="180px" />
                                         {errors.answer_en && <p className="mt-1 text-sm text-red-600">{errors.answer_en}</p>}
                                     </div>
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Answer (Myanmar)</label>
-                                        <RichTextEditor value={form.answer_my} onChange={(v) => setField('answer_my', v)} placeholder="Myanmar ဘာသာဖြင့် ဖြေကြားပါ..." minHeight="180px" />
+                                        <RichTextEditor mediaLibrary={mediaLibrary} value={form.answer_my} onChange={(v) => setField('answer_my', v)} placeholder="Myanmar ဘာသာဖြင့် ဖြေကြားပါ..." minHeight="180px" />
                                         {errors.answer_my && <p className="mt-1 text-sm text-red-600">{errors.answer_my}</p>}
                                     </div>
 

@@ -28,6 +28,7 @@ export default function ProductCreate({
     allTypes = ['single', 'variable', 'combo'],
     featureStatus = {},
     warehouses = [],
+    mediaLibrary = [],
 }) {
     const { auth } = usePage().props;
     if (!auth?.user?.permissions?.includes('products.create')) {
@@ -45,6 +46,10 @@ export default function ProductCreate({
         setPhoto1File,
         photo2File,
         setPhoto2File,
+        photo1MediaId,
+        setPhoto1MediaId,
+        photo2MediaId,
+        setPhoto2MediaId,
         galleryFiles,
         setGalleryFiles,
         removedGalleryImages,
@@ -125,6 +130,11 @@ export default function ProductCreate({
                                     setPhoto1File={setPhoto1File}
                                     photo2File={photo2File}
                                     setPhoto2File={setPhoto2File}
+                                    photo1MediaId={photo1MediaId}
+                                    setPhoto1MediaId={setPhoto1MediaId}
+                                    photo2MediaId={photo2MediaId}
+                                    setPhoto2MediaId={setPhoto2MediaId}
+                                    mediaLibrary={mediaLibrary}
                                     galleryFiles={galleryFiles}
                                     setGalleryFiles={setGalleryFiles}
                                     removedGalleryImages={removedGalleryImages}

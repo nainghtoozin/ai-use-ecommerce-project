@@ -76,6 +76,8 @@ export default function useProductForm({ product = null, productType = 'single' 
 
     const [photo1File, setPhoto1File] = useState(null);
     const [photo2File, setPhoto2File] = useState(null);
+    const [photo1MediaId, setPhoto1MediaId] = useState('');
+    const [photo2MediaId, setPhoto2MediaId] = useState('');
     const [galleryFiles, setGalleryFiles] = useState([]);
     const [removedGalleryImages, setRemovedGalleryImages] = useState([]);
     const [seoImageFile, setSeoImageFile] = useState(null);
@@ -152,7 +154,9 @@ export default function useProductForm({ product = null, productType = 'single' 
         }
 
         if (photo1File) form.append('photo1', photo1File);
+        else if (photo1MediaId) form.append('photo1_media_id', photo1MediaId);
         if (photo2File) form.append('photo2', photo2File);
+        else if (photo2MediaId) form.append('photo2_media_id', photo2MediaId);
 
         form.append('seo_title', formData.seo_title || '');
         form.append('seo_description', formData.seo_description || '');
@@ -177,7 +181,7 @@ export default function useProductForm({ product = null, productType = 'single' 
         });
 
         return form;
-    }, [formData, variants, comboItems, photo1File, photo2File, galleryFiles, removedGalleryImages, seoImageFile, removeSeoImage]);
+    }, [formData, variants, comboItems, photo1File, photo2File, photo1MediaId, photo2MediaId, galleryFiles, removedGalleryImages, seoImageFile, removeSeoImage]);
 
     const submit = useCallback((onSuccess) => {
         setProcessing(true);
@@ -229,6 +233,10 @@ export default function useProductForm({ product = null, productType = 'single' 
         setPhoto1File,
         photo2File,
         setPhoto2File,
+        photo1MediaId,
+        setPhoto1MediaId,
+        photo2MediaId,
+        setPhoto2MediaId,
         galleryFiles,
         setGalleryFiles,
         removedGalleryImages,

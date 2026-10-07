@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateWebsiteSettingsRequest;
-use App\Models\WebsiteInfo;
 use App\Models\Storefront;
+use App\Models\StorefrontMedia;
+use App\Models\WebsiteInfo;
 use App\Services\ImageService;
 use App\Services\StorefrontRevisionService;
 use Illuminate\Support\Facades\Cache;
@@ -26,11 +27,19 @@ class SettingsController extends Controller
         }
 
         $settings = WebsiteInfo::getSettings();
+        $storefront = Storefront::first();
 
         return Inertia::render('Admin/Settings/Edit', [
             'settings' => array_merge($settings->toArray(), [
                 'cod_availability_mode' => \App\Models\Setting::get('cod_availability_mode', 'rules'),
             ]),
+            'mediaLibrary' => $storefront
+                ? StorefrontMedia::where('storefront_id', $storefront->id)
+                    ->latest()
+                    ->limit(60)
+                    ->get(['id', 'path', 'original_name', 'alt_text'])
+                    ->append('url')
+                : [],
         ]);
     }
 
@@ -54,11 +63,35 @@ class SettingsController extends Controller
 
         foreach ($imageFields as $field) {
             if ($request->hasFile($field)) {
-                if ($info->$field) {
+                if ($info->$field && !$this->isLibraryOwned($info->$field)) {
                     $this->imageService->delete($info->$field);
                 }
                 $info->$field = $this->imageService->upload($request->file($field), 'website-settings');
             }
+        }
+
+        if (!$request->hasFile('logo') && $request->filled('logo_media_id')) {
+            $media = StorefrontMedia::withoutTenantScope()->find($request->input('logo_media_id'));
+            $storefront = Storefront::first();
+            if (!$media || (int) $media->tenant_id !== (int) tenant()->id
+                || ($storefront && (int) $media->storefront_id !== (int) $storefront->id)) {
+                return redirect()->back()->withErrors([
+                    'logo_media_id' => 'The selected media does not belong to this store.',
+                ]);
+            }
+            $info->logo = $media->path;
+        }
+
+        if (!$request->hasFile('about_image') && $request->filled('about_media_id')) {
+            $media = StorefrontMedia::withoutTenantScope()->find($request->input('about_media_id'));
+            $storefront = Storefront::first();
+            if (!$media || (int) $media->tenant_id !== (int) tenant()->id
+                || ($storefront && (int) $media->storefront_id !== (int) $storefront->id)) {
+                return redirect()->back()->withErrors([
+                    'about_media_id' => 'The selected media does not belong to this store.',
+                ]);
+            }
+            $info->about_image = $media->path;
         }
 
         if ($request->has('hero_images_payload')) {
@@ -124,6 +157,8 @@ class SettingsController extends Controller
 
         $validated = $request->validated();
         unset($validated['logo'], $validated['favicon'], $validated['og_image'], $validated['hero_image'], $validated['footer_logo'], $validated['about_image']);
+        unset($validated['logo_media_id']);
+        unset($validated['about_media_id']);
         unset($validated['hero_images'], $validated['hero_images_existing'], $validated['hero_images_payload']);
 
         $contactInfo = [
@@ -197,6 +232,18 @@ class SettingsController extends Controller
         }
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
+    }
+
+    private function isLibraryOwned(?string $path): bool
+    {
+        if (!$path) {
+            return false;
+        }
+
+        return StorefrontMedia::withoutTenantScope()
+            ->where('tenant_id', tenant()->id)
+            ->where('path', $path)
+            ->exists();
     }
 
     private function normalizePath(string $path): string
