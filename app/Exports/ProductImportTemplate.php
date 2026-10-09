@@ -27,8 +27,8 @@ class ProductImportTemplateProductsSheet implements FromCollection, WithTitle, W
     public function collection(): Collection
     {
         return collect([
-            ['WM001', 'Wireless Mouse', 'single', 'Ergonomic wireless mouse with USB receiver', '', 'Electronics', 'Generic', 'Piece', '19.99', '10.00', '50', '123456789012', 'active', ''],
-            ['TS001', 'Basic T-Shirt', 'variable', 'Cotton t-shirt available in multiple sizes', '', 'Clothing', 'Apparel Co', 'Piece', '14.99', '6.00', '0', '123456789020', 'active', ''],
+            ['WM001', 'Wireless Mouse', 'single', 'Ergonomic wireless mouse with USB receiver', '', 'Electronics', 'Generic', 'Piece', '19.99', '10.00', '50', '123456789012', 'active', '', '', '', ''],
+            ['TS001', 'Basic T-Shirt', 'variable', 'Cotton t-shirt available in multiple sizes', '', 'Clothing', 'Apparel Co', 'Piece', '14.99', '6.00', '0', '123456789020', 'active', '', '', '', ''],
         ]);
     }
 
@@ -49,6 +49,9 @@ class ProductImportTemplateProductsSheet implements FromCollection, WithTitle, W
             'Barcode',
             'Status',
             'Notes',
+            'Image',
+            'Secondary Image',
+            'Gallery Images',
         ];
     }
 
@@ -68,6 +71,7 @@ class ProductImportTemplateProductsSheet implements FromCollection, WithTitle, W
             'A' => 18, 'B' => 30, 'C' => 12, 'D' => 40, 'E' => 40,
             'F' => 18, 'G' => 15, 'H' => 12, 'I' => 14,
             'J' => 12, 'K' => 10, 'L' => 18, 'M' => 10, 'N' => 20,
+            'O' => 22, 'P' => 22, 'Q' => 40,
         ];
     }
 }
@@ -77,9 +81,9 @@ class ProductImportTemplateVariantsSheet implements FromCollection, WithTitle, W
     public function collection(): Collection
     {
         return collect([
-            ['TS001', 'TS001-RED-S', 'Color', 'Red', 'Size', 'S', '', '', '14.99', '6.00', '20', '123456789021', 'active'],
-            ['TS001', 'TS001-RED-M', 'Color', 'Red', 'Size', 'M', '', '', '14.99', '6.00', '25', '123456789022', 'active'],
-            ['TS001', 'TS001-BLUE-S', 'Color', 'Blue', 'Size', 'S', '', '', '14.99', '6.00', '15', '123456789023', 'active'],
+            ['TS001', 'TS001-RED-S', 'Color', 'Red', 'Size', 'S', '', '', '14.99', '6.00', '20', '123456789021', 'active', ''],
+            ['TS001', 'TS001-RED-M', 'Color', 'Red', 'Size', 'M', '', '', '14.99', '6.00', '25', '123456789022', 'active', ''],
+            ['TS001', 'TS001-BLUE-S', 'Color', 'Blue', 'Size', 'S', '', '', '14.99', '6.00', '15', '123456789023', 'active', ''],
         ]);
     }
 
@@ -99,6 +103,7 @@ class ProductImportTemplateVariantsSheet implements FromCollection, WithTitle, W
             'Stock',
             'Barcode',
             'Status',
+            'Variant Image',
         ];
     }
 
@@ -117,7 +122,7 @@ class ProductImportTemplateVariantsSheet implements FromCollection, WithTitle, W
         return [
             'A' => 15, 'B' => 20, 'C' => 16, 'D' => 16,
             'E' => 16, 'F' => 16, 'G' => 16, 'H' => 16,
-            'I' => 14, 'J' => 12, 'K' => 10, 'L' => 18, 'M' => 10,
+            'I' => 14, 'J' => 12, 'K' => 10, 'L' => 18, 'M' => 10, 'N' => 22,
         ];
     }
 }

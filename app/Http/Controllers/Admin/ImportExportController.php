@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ErrorReportExport;
 use App\Exports\ProductImportTemplate;
+use App\Exceptions\SubscriptionLimitException;
 use App\Http\Controllers\Controller;
 use App\Models\ImportHistory;
+use App\Models\Product;
 use App\Services\ImportExport\ColumnMapper;
 use App\Services\ImportExport\FormatHandlers\MultiSheetExcelReader;
 use App\Services\ImportExport\FormatHandlers\ProductImportReader;
@@ -19,6 +21,7 @@ use App\Services\ImportExport\ProductImportService;
 use App\Services\ImportExport\ReportExportService;
 use App\Services\InventoryService;
 use App\Services\SkuService;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -387,6 +390,20 @@ class ImportExportController extends Controller
             $engine = new ProductImportEngine($resolver, $skuService, $inventoryService);
             $validation = $engine->validate($productRows, $variantRows);
 
+            $importMode = (string) $request->input('import_mode', 'create_new');
+            try {
+                $newProductCount = $this->countNewProducts($productRows, $importMode, $tenantId);
+                SubscriptionLimitService::for()->assertCanCreateProducts($newProductCount);
+            } catch (SubscriptionLimitException $e) {
+                return response()->json(array_merge($e->toArray(), [
+                    'valid' => false,
+                    'error' => $e->getMessage(),
+                    'errors' => [$e->toArray()],
+                    'warnings' => $validation['warnings'] ?? [],
+                    'summary' => $validation['summary'] ?? [],
+                ]), 422);
+            }
+
             return response()->json([
                 'valid' => $validation['valid'],
                 'errors' => $validation['errors'],
@@ -500,6 +517,25 @@ class ImportExportController extends Controller
                     'validation' => $validation,
                     'history_id' => $history->id,
                 ], 422);
+            }
+
+            try {
+                $newProductCount = $this->countNewProducts($productRows, $mode, $tenantId);
+                SubscriptionLimitService::for()->assertCanCreateProducts($newProductCount);
+            } catch (SubscriptionLimitException $e) {
+                $duration = (int) ((microtime(true) - $startTime) * 1000);
+                $history->update([
+                    'status' => ImportHistory::STATUS_FAILED,
+                    'duration_ms' => $duration,
+                    'error_count' => 1,
+                    'errors' => [$e->toArray()],
+                ]);
+
+                return response()->json(array_merge($e->toArray(), [
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                    'history_id' => $history->id,
+                ]), 422);
             }
 
             $result = $engine->import($productRows, $variantRows, $mode);
@@ -840,5 +876,47 @@ class ImportExportController extends Controller
         return Inertia::render('Admin/ImportHistory/Show', [
             'import' => $importHistory,
         ]);
+    }
+
+    /**
+     * Count how many genuinely new products a products sheet would create,
+     * respecting the import mode and existing SKU handling. Variants are not
+     * products and are not counted.
+     */
+    private function countNewProducts(array $productRows, string $mode, int $tenantId): int
+    {
+        if ($mode === 'update_only') {
+            return 0;
+        }
+
+        $skus = [];
+        foreach ($productRows as $row) {
+            $sku = trim((string) ($row['sku'] ?? ''));
+            if ($sku !== '') {
+                $skus[$sku] = true;
+            }
+        }
+
+        if (empty($skus)) {
+            return 0;
+        }
+
+        $existing = Product::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('sku', array_keys($skus))
+            ->pluck('sku')
+            ->map(fn ($sku) => (string) $sku)
+            ->all();
+
+        $existingSet = array_flip($existing);
+
+        $new = 0;
+        foreach (array_keys($skus) as $sku) {
+            if (!isset($existingSet[$sku])) {
+                $new++;
+            }
+        }
+
+        return $new;
     }
 }

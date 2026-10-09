@@ -10,6 +10,7 @@ use App\Models\Promotion;
 use App\Models\PromotionBanner;
 use App\Models\FlashSale;
 use App\Models\Tenant;
+use App\Exceptions\SubscriptionLimitException;
 
 class SubscriptionLimitService
 {
@@ -378,17 +379,41 @@ class SubscriptionLimitService
 
     public function assertCanCreateProduct(): void
     {
-        if ($this->canCreateProduct()) {
+        $this->assertCanCreateProducts(1);
+    }
+
+    /**
+     * Assert that the plan allows creating a batch of new products.
+     * Used by bulk creation flows such as Excel import.
+     */
+    public function assertCanCreateProducts(int $newCount): void
+    {
+        if ($newCount <= 0) {
             return;
         }
 
         $plan = $this->resolvePlan();
-        $current = $this->productCount();
-        $limit = $plan?->productLimit() ?? 0;
+        if (!$plan || $plan->hasUnlimitedProducts()) {
+            return;
+        }
 
-        throw new \RuntimeException(
-            "Product limit reached. You have {$current} of {$limit} products. " .
-            "Please upgrade your plan to add more products."
+        $current = $this->productCount();
+        $limit = $plan->productLimit();
+
+        if ($current + $newCount <= $limit) {
+            return;
+        }
+
+        $required = ($current + $newCount) - $limit;
+
+        throw new SubscriptionLimitException(
+            'product_limit',
+            self::LIMIT_LABELS['product_limit'],
+            $current,
+            $limit,
+            $newCount,
+            "Product limit reached. You have {$current} of {$limit} products, and this operation would add {$newCount} more. " .
+            "You need {$required} more product slot(s). Please upgrade your plan to continue."
         );
     }
 
@@ -402,7 +427,12 @@ class SubscriptionLimitService
         $current = $this->staffCount();
         $limit = $plan?->staffLimit() ?? 0;
 
-        throw new \RuntimeException(
+        throw new SubscriptionLimitException(
+            'staff_limit',
+            self::LIMIT_LABELS['staff_limit'],
+            $current,
+            $limit,
+            1,
             "Staff limit reached. You have {$current} of {$limit} staff accounts. " .
             "Please upgrade your plan to add more staff."
         );

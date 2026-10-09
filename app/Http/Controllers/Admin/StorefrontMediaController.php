@@ -54,6 +54,10 @@ class StorefrontMediaController extends Controller
     {
         $storefront = $this->storefront();
         $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        if ($this->originalNameExists($originalName)) {
+            return back()->with('error', "A media file named \"{$originalName}\" already exists in this store.");
+        }
         $path = $this->imageService->upload($file, 'storefront-media');
 
         $media = StorefrontMedia::create([
@@ -77,6 +81,10 @@ class StorefrontMediaController extends Controller
     {
         $storefront = $this->storefront();
         $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        if ($this->originalNameExists($originalName)) {
+            return response()->json(['error' => "A media file named \"{$originalName}\" already exists in this store."], 422);
+        }
         $path = $this->imageService->upload($file, 'storefront-media');
 
         $media = StorefrontMedia::create([
@@ -106,6 +114,10 @@ class StorefrontMediaController extends Controller
     {
         $storefront = $this->storefront();
         $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        if ($this->originalNameExists($originalName)) {
+            return response()->json(['error' => "A media file named \"{$originalName}\" already exists in this store."], 422);
+        }
         $path = $this->imageService->upload($file, 'storefront-media');
 
         $media = StorefrontMedia::create([
@@ -136,6 +148,10 @@ class StorefrontMediaController extends Controller
     {
         $storefront = $this->storefront();
         $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        if ($this->originalNameExists($originalName)) {
+            return response()->json(['error' => "A media file named \"{$originalName}\" already exists in this store."], 422);
+        }
         $path = $this->imageService->upload($file, 'storefront-media');
 
         $media = StorefrontMedia::create([
@@ -291,6 +307,14 @@ class StorefrontMediaController extends Controller
     {
         $storefront = $this->storefront();
         abort_unless((int) $media->tenant_id === (int) tenant()->id && (int) $media->storefront_id === (int) $storefront->id, 404);
+    }
+
+    private function originalNameExists(string $originalName): bool
+    {
+        return StorefrontMedia::withoutTenantScope()
+            ->where('tenant_id', tenant()->id)
+            ->where('original_name', $originalName)
+            ->exists();
     }
 
     private function storefront(): Storefront

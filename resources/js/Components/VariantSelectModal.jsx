@@ -38,6 +38,8 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
         return variants.find(v => v.id === selectedVariantId) || null;
     }, [variants, selectedVariantId]);
 
+    const variantThumbnail = (variant) => variant?.image_url || product.photo1_url || null;
+
     const displayPrice = useMemo(() => {
         if (selectedVariant) {
             if (selectedVariant.promotion_price != null) {
@@ -110,13 +112,13 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
             onClick={onClose}
         >
             <div
-                className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+                className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[90vh] overflow-hidden"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="variant-selector-title"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
                     <h2 id="variant-selector-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-2">
                         {product.name}
                     </h2>
@@ -128,13 +130,15 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                     </button>
                 </div>
 
-                <div className="p-4 space-y-4">
-                    {variants.length === 0 ? (
+                {variants.length === 0 ? (
+                    <div className="p-4">
                         <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                             No variants available for this product.
                         </p>
-                    ) : (
-                        <>
+                    </div>
+                ) : (
+                    <>
+                        <div className="p-4 pb-2 space-y-3 overflow-y-auto flex-1">
                             {optionKeys.length > 0 && (
                                 <div>
                                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -147,7 +151,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                             return (
                                                 <label
                                                     key={v.id}
-                                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                                    className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
                                                         selectedVariantId === v.id
                                                             ? 'border-blue-500 bg-blue-50'
                                                             : 'border-gray-200 hover:border-gray-300'
@@ -165,6 +169,15 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                                         disabled={!inStock}
                                                         className="accent-blue-600"
                                                     />
+                                                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                                                        {variantThumbnail(v) && (
+                                                            <img
+                                                                src={variantThumbnail(v)}
+                                                                alt={label}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        )}
+                                                    </div>
                                                     <div className="flex-1 min-w-0">
                                                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100 block truncate">
                                                             {label}
@@ -200,17 +213,25 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                     </div>
                                 </div>
                             )}
-                        </>
-                    )}
+                        </div>
 
-                    {selectedVariant ? (
-                        <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div>
+                        {selectedVariant ? (
+                            <div className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-3 flex-shrink-0">
+                                <div className="flex items-center gap-3">
+                                <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                                    {variantThumbnail(selectedVariant) && (
+                                        <img
+                                            src={variantThumbnail(selectedVariant)}
+                                            alt={getVariantLabel(selectedVariant)}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Price</p>
                                     {originalPrice != null ? (
                                         <>
-                                            <p className="text-xl font-bold text-green-600">
+                                            <p className="text-lg font-bold text-green-600">
                                                 {formatCurrency(displayPrice, cc)}
                                             </p>
                                             <p className="text-sm text-gray-400 line-through">
@@ -223,7 +244,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                             )}
                                         </>
                                     ) : (
-                                        <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                                        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                             {formatCurrency(displayPrice, cc)}
                                         </p>
                                     )}
@@ -236,37 +257,33 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">
-                                    Quantity
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                        disabled={quantity <= 1}
-                                        className="w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        &minus;
-                                    </button>
-                                    <span className="w-12 text-center text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                        {quantity}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
-                                        disabled={quantity >= maxQuantity}
-                                        className="w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        +
-                                    </button>
-                                </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                    disabled={quantity <= 1}
+                                    className="w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    &minus;
+                                </button>
+                                <span className="w-10 text-center text-base font-semibold text-gray-900 dark:text-gray-100">
+                                    {quantity}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
+                                    disabled={quantity >= maxQuantity}
+                                    className="w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    +
+                                </button>
                             </div>
 
                             <button
                                 onClick={handleAdd}
                                 disabled={!canAddToCart || adding}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {adding ? 'Adding...' : (labels.add_to_cart || 'Add to Cart')}
                             </button>
@@ -275,7 +292,7 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                                 type="button"
                                 onClick={() => buyNow({ productId: product.id, quantity, variantId: selectedVariant.id })}
                                 disabled={!canAddToCart || buyingKey === buyNowKey(product.id, selectedVariant.id)}
-                                className="w-full py-3 bg-white dark:bg-gray-900 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg font-semibold text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="w-full py-2.5 bg-white dark:bg-gray-900 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg font-semibold text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {labels.buy_now || 'Buy Now'}
                             </button>
@@ -286,7 +303,8 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
                             Please select a variant.
                         </p>
                     )}
-                </div>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -201,6 +201,7 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
 
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('import_mode', importMode);
 
         fetch(adminUrl(validateEndpoint), {
             method: 'POST',
@@ -354,6 +355,26 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                                         Download {isVariable ? 'Variable Product' : isVariants ? 'Variant' : 'Product'} Template
                                     </button>
                                 </div>
+
+                                {/* Import Mode */}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Import Mode</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        {[
+                                            { value: 'create_new', label: 'Create New Only', desc: 'Skip existing SKUs' },
+                                            { value: 'create_update', label: 'Create + Update', desc: 'Create new, update existing' },
+                                            { value: 'update_only', label: 'Update Only', desc: 'Only update matching SKUs' },
+                                        ].map(({ value, label, desc }) => (
+                                            <label key={value} className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-colors text-left ${importMode === value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>
+                                                <input type="radio" name="importMode" value={value} checked={importMode === value} onChange={(e) => setImportMode(e.target.value)} className="mt-0.5" />
+                                                <div>
+                                                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{label}</p>
+                                                    <p className="text-[11px] text-gray-500">{desc}</p>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -391,26 +412,6 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                                             <p className="text-xs text-gray-500">{label}</p>
                                         </div>
                                     ))}
-                                </div>
-
-                                {/* Import Mode */}
-                                <div>
-                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Import Mode</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                        {[
-                                            { value: 'create_new', label: 'Create New Only', desc: 'Skip existing SKUs' },
-                                            { value: 'create_update', label: 'Create + Update', desc: 'Create new, update existing' },
-                                            { value: 'update_only', label: 'Update Only', desc: 'Only update matching SKUs' },
-                                        ].map(({ value, label, desc }) => (
-                                            <label key={value} className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-colors text-left ${importMode === value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>
-                                                <input type="radio" name="importMode" value={value} checked={importMode === value} onChange={(e) => setImportMode(e.target.value)} className="mt-0.5" />
-                                                <div>
-                                                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{label}</p>
-                                                    <p className="text-[11px] text-gray-500">{desc}</p>
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
                                 </div>
 
                                 {/* Error/Warning Filter Tabs */}

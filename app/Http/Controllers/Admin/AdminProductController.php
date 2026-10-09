@@ -14,6 +14,7 @@ use App\Models\ProductCombo;
 use App\Models\ProductVariant;
 use App\Models\StorefrontMedia;
 use App\Enums\ProductType;
+use App\Exceptions\SubscriptionLimitException;
 use App\Models\ActivityLog;
 use App\Services\ActivityLogger;
 use App\Services\ImageService;
@@ -292,7 +293,11 @@ class AdminProductController extends Controller
         $this->productService->validateType($data['type']);
 
         // Enforce plan product limit
-        SubscriptionLimitService::for()->assertCanCreateProduct();
+        try {
+            SubscriptionLimitService::for()->assertCanCreateProduct();
+        } catch (SubscriptionLimitException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         // Combo and variable products don't need product-level stock
         if ($data['type'] === ProductType::COMBO || $data['type'] === ProductType::VARIABLE) {

@@ -5,6 +5,7 @@ namespace App\Services\ImportExport;
 use App\Enums\ProductType;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\StorefrontMedia;
 use App\Services\InventoryService;
 use App\Services\SkuService;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,9 @@ class ProductImportEngine
     private array $createdVariants = [];
     private array $seenSkus = [];
     private array $seenVariantSkus = [];
+    private ?array $mediaMap = null;
+
+    private const MAX_GALLERY_IMAGES = 10;
 
     public function __construct(
         MasterDataResolver $resolver,
@@ -39,6 +43,7 @@ class ProductImportEngine
         $this->warnings = [];
         $this->seenSkus = [];
         $this->seenVariantSkus = [];
+        $this->mediaMap = null;
 
         $variableSkus = $this->buildVariableSkuMap($products);
 
@@ -83,6 +88,7 @@ class ProductImportEngine
         $this->errors = [];
         $this->warnings = [];
         $this->seenSkus = [];
+        $this->mediaMap = null;
 
         $this->validateProducts($products);
 
@@ -109,6 +115,9 @@ class ProductImportEngine
         $this->errors = [];
         $this->warnings = [];
         $this->seenVariantSkus = [];
+        $this->mediaMap = null;
+
+        $mediaMap = $this->mediaMap($this->resolver->getTenantId());
 
         foreach ($variants as $index => $row) {
             $rowNum = $index + 2;
@@ -158,10 +167,7 @@ class ProductImportEngine
             }
 
             $variantImage = trim((string)($row['variant_image'] ?? ''));
-            if ($variantImage !== '' && !$this->sanitizeImageUrl($variantImage)) {
-                $this->addWarning('Variants', $rowNum, 'variant_image', $variantImage,
-                    'Variant image URL is not a valid HTTP/HTTPS URL and will be ignored.');
-            }
+            $this->validateImageCell('Variants', $rowNum, 'variant_image', $variantImage, $mediaMap);
         }
 
         $variantErrors = collect($this->errors)->where('sheet', 'Variants')->count();
@@ -184,6 +190,8 @@ class ProductImportEngine
 
     private function validateProducts(array $products): void
     {
+        $mediaMap = $this->mediaMap($this->resolver->getTenantId());
+
         foreach ($products as $index => $row) {
             $rowNum = $index + 2;
             $sku = trim((string)($row['sku'] ?? ''));
@@ -247,13 +255,9 @@ class ProductImportEngine
                 $this->addError('Products', $rowNum, 'status', $row['status'] ?? '', 'Status must be active, inactive, or draft.');
             }
 
-            foreach (['photo1', 'photo2', 'photo3'] as $imgCol) {
-                $imgVal = trim((string)($row[$imgCol] ?? ''));
-                if ($imgVal !== '' && !$this->sanitizeImageUrl($imgVal)) {
-                    $this->addWarning('Products', $rowNum, $imgCol, $imgVal,
-                        'Image URL is not a valid HTTP/HTTPS URL and will be ignored.');
-                }
-            }
+            $this->validateImageCell('Products', $rowNum, 'image', trim((string)($row['image'] ?? $row['photo1'] ?? '')), $mediaMap);
+            $this->validateImageCell('Products', $rowNum, 'secondary_image', trim((string)($row['secondary_image'] ?? $row['photo2'] ?? '')), $mediaMap);
+            $this->validateGalleryCell('Products', $rowNum, 'gallery_images', trim((string)($row['gallery_images'] ?? '')), $mediaMap);
         }
     }
 
@@ -285,6 +289,7 @@ class ProductImportEngine
     private function validateVariants(array $variants, array $variableSkus): void
     {
         $allWorkbookSkus = array_fill_keys(array_keys($variableSkus), true);
+        $mediaMap = $this->mediaMap($this->resolver->getTenantId());
 
         foreach ($variants as $index => $row) {
             $rowNum = $index + 2;
@@ -353,10 +358,7 @@ class ProductImportEngine
             }
 
             $variantImage = trim((string)($row['variant_image'] ?? ''));
-            if ($variantImage !== '' && !$this->sanitizeImageUrl($variantImage)) {
-                $this->addWarning('Variants', $rowNum, 'variant_image', $variantImage,
-                    'Variant image URL is not a valid HTTP/HTTPS URL and will be ignored.');
-            }
+            $this->validateImageCell('Variants', $rowNum, 'variant_image', $variantImage, $mediaMap);
         }
     }
 
@@ -376,6 +378,7 @@ class ProductImportEngine
         DB::beginTransaction();
 
         try {
+            $mediaMap = $this->mediaMap($tenantId);
             $productMap = [];
 
             foreach ($products as $index => $row) {
@@ -390,6 +393,11 @@ class ProductImportEngine
                 if ($existing && $mode === 'create_new') {
                     $result['products_skipped']++;
                     $productMap[$sku] = $existing;
+                    continue;
+                }
+
+                if (!$existing && $mode === 'update_only') {
+                    $result['products_skipped']++;
                     continue;
                 }
 
@@ -461,7 +469,7 @@ class ProductImportEngine
 
                 $attributes = $this->buildAttributes($row);
 
-                $variantImage = $this->sanitizeImageUrl($row['variant_image'] ?? null);
+                $variantImage = $this->resolveImagePath($row['variant_image'] ?? null, $mediaMap, 'Variants', 'variant_image');
 
                 $variantData = [
                     'product_id' => $parent->id,
@@ -529,6 +537,11 @@ class ProductImportEngine
                     continue;
                 }
 
+                if (!$existing && $mode === 'update_only') {
+                    $result['products_skipped']++;
+                    continue;
+                }
+
                 $productData = $this->mapProductData($row, $tenantId);
 
                 if ($existing) {
@@ -573,6 +586,7 @@ class ProductImportEngine
         DB::beginTransaction();
 
         try {
+            $mediaMap = $this->mediaMap($tenantId);
             foreach ($variants as $row) {
                 $parentSku = trim((string)($row['parent_sku'] ?? ''));
                 $variantSku = trim((string)($row['variant_sku'] ?? ''));
@@ -605,7 +619,7 @@ class ProductImportEngine
 
                 $attributes = $this->buildAttributes($row);
 
-                $variantImage = $this->sanitizeImageUrl($row['variant_image'] ?? null);
+                $variantImage = $this->resolveImagePath($row['variant_image'] ?? null, $mediaMap, 'Variants', 'variant_image');
 
                 $variantData = [
                     'product_id' => $parent->id,
@@ -652,8 +666,10 @@ class ProductImportEngine
 
         $name = trim((string)($row['product_name'] ?? ''));
 
-        $photo1 = $this->sanitizeImageUrl($row['photo1'] ?? null);
-        $photo2 = $this->sanitizeImageUrl($row['photo2'] ?? null);
+        $mediaMap = $this->mediaMap($tenantId);
+        $photo1 = $this->resolveImagePath($row['image'] ?? $row['photo1'] ?? null, $mediaMap, 'Products', 'image');
+        $photo2 = $this->resolveImagePath($row['secondary_image'] ?? $row['photo2'] ?? null, $mediaMap, 'Products', 'secondary_image');
+        $gallery = $this->resolveGalleryPaths($row['gallery_images'] ?? null, $mediaMap);
 
         $data = [
             'tenant_id' => $tenantId,
@@ -675,6 +691,7 @@ class ProductImportEngine
             'type' => $type === 'variable' ? ProductType::VARIABLE : ProductType::SINGLE,
             'photo1' => $photo1,
             'photo2' => $photo2,
+            'gallery_images' => !empty($gallery) ? $gallery : null,
         ];
 
         return $data;
@@ -732,5 +749,140 @@ class ProductImportEngine
         }
 
         return null;
+    }
+
+    /**
+     * Build a case-insensitive map of the current tenant's Media Library
+     * original filenames to their stored paths. Names mapping to more than
+     * one path are treated as ambiguous and rejected during validation.
+     */
+    private function mediaMap(int $tenantId): array
+    {
+        if ($this->mediaMap !== null) {
+            return $this->mediaMap;
+        }
+
+        $map = [];
+        $rows = StorefrontMedia::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('original_name')
+            ->get(['original_name', 'path']);
+
+        foreach ($rows as $row) {
+            $key = mb_strtolower(trim((string) $row->original_name));
+            if ($key === '') {
+                continue;
+            }
+            $map[$key][] = $row->path;
+        }
+
+        return $this->mediaMap = $map;
+    }
+
+    /**
+     * Resolve a single image cell value into a reference. HTTP(S) URLs are
+     * preserved verbatim (explicit legacy behavior). Anything else is treated
+     * as an exact Media Library filename.
+     */
+    private function resolveImageReference(?string $value, array $mediaMap): array
+    {
+        $raw = trim((string) ($value ?? ''));
+
+        if ($raw === '') {
+            return ['status' => 'empty', 'path' => null];
+        }
+
+        if ($this->sanitizeImageUrl($raw) !== null) {
+            return ['status' => 'url', 'path' => $raw];
+        }
+
+        $key = mb_strtolower($raw);
+        if (!isset($mediaMap[$key])) {
+            return ['status' => 'missing', 'path' => null];
+        }
+
+        if (count($mediaMap[$key]) > 1) {
+            return ['status' => 'ambiguous', 'path' => null];
+        }
+
+        return ['status' => 'ok', 'path' => $mediaMap[$key][0]];
+    }
+
+    private function validateImageCell(string $sheet, int $rowNum, string $column, string $value, array $mediaMap): void
+    {
+        $resolved = $this->resolveImageReference($value, $mediaMap);
+
+        if ($resolved['status'] === 'missing') {
+            $this->addError($sheet, $rowNum, $column, trim($value),
+                "Image \"{$value}\" was not found in your Media Library.");
+        } elseif ($resolved['status'] === 'ambiguous') {
+            $this->addError($sheet, $rowNum, $column, trim($value),
+                "Image \"{$value}\" is ambiguous because multiple Media Library files share this name.");
+        }
+    }
+
+    private function validateGalleryCell(string $sheet, int $rowNum, string $column, string $value, array $mediaMap): void
+    {
+        if ($value === '') {
+            return;
+        }
+
+        $names = $this->parseGallery($value);
+
+        if (count($names) > self::MAX_GALLERY_IMAGES) {
+            $this->addError($sheet, $rowNum, $column, $value,
+                'Gallery Images cannot contain more than ' . self::MAX_GALLERY_IMAGES . ' images.');
+            return;
+        }
+
+        foreach ($names as $name) {
+            $this->validateImageCell($sheet, $rowNum, $column, $name, $mediaMap);
+        }
+    }
+
+    private function resolveImagePath(?string $value, array $mediaMap, string $sheet, string $column): ?string
+    {
+        $resolved = $this->resolveImageReference($value, $mediaMap);
+
+        if ($resolved['status'] === 'empty' || $resolved['status'] === 'url') {
+            return $resolved['path'];
+        }
+
+        if ($resolved['status'] === 'ok') {
+            return $resolved['path'];
+        }
+
+        throw new \RuntimeException("Image \"{$value}\" could not be resolved from the Media Library ({$sheet}:{$column}).");
+    }
+
+    private function resolveGalleryPaths(?string $value, array $mediaMap): array
+    {
+        $raw = trim((string) ($value ?? ''));
+        if ($raw === '') {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($this->parseGallery($raw) as $name) {
+            $path = $this->resolveImagePath($name, $mediaMap, 'Products', 'gallery_images');
+            if ($path !== null) {
+                $paths[] = $path;
+            }
+        }
+
+        return array_values(array_slice($paths, 0, self::MAX_GALLERY_IMAGES));
+    }
+
+    private function parseGallery(string $value): array
+    {
+        $names = [];
+        foreach (explode('|', $value) as $part) {
+            $trimmed = trim($part);
+            if ($trimmed !== '') {
+                $names[] = $trimmed;
+            }
+        }
+
+        return $names;
     }
 }

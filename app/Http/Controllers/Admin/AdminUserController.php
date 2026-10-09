@@ -10,6 +10,7 @@ use App\Models\Account;
 use App\Models\ActivityLog;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Exceptions\SubscriptionLimitException;
 use App\Services\PerPageTrait;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Database\Eloquent\Model;
@@ -179,7 +180,11 @@ class AdminUserController extends Controller
         $data = $request->validated();
 
         if (($data['role'] ?? null) === 'admin') {
-            SubscriptionLimitService::for()->assertCanCreateStaff();
+            try {
+                SubscriptionLimitService::for()->assertCanCreateStaff();
+            } catch (SubscriptionLimitException $e) {
+                return back()->with('error', $e->getMessage())->withInput();
+            }
         }
 
         $tenantId = $this->getTenantFilter();

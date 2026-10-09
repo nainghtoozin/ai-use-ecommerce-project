@@ -311,7 +311,7 @@ class CartController extends Controller
             ->keyBy('id');
 
         $variants = !empty($variantIds)
-            ? ProductVariant::select(['id', 'product_id', 'price', 'sku', 'attributes'])
+            ? ProductVariant::select(['id', 'product_id', 'price', 'sku', 'attributes', 'image'])
                 ->whereIn('id', array_unique($variantIds))
                 ->get()
                 ->keyBy('id')
@@ -338,6 +338,7 @@ class CartController extends Controller
             }
 
             $variantName = null;
+            $variantImageUrl = null;
             $basePrice = (float) $product->price;
 
             if ($variantId) {
@@ -345,6 +346,7 @@ class CartController extends Controller
                 if ($variant) {
                     $basePrice = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;
+                    $variantImageUrl = $variant->image_url;
                 }
             }
 
@@ -369,7 +371,8 @@ class CartController extends Controller
                 'price' => $unitPrice,
                 'original_price' => $flashData['original_price'],
                 'promotion_badge' => $promotionBadge,
-                'photo1_url' => $product->photo1_url,
+                'photo1_url' => $variantImageUrl ?: $product->photo1_url,
+                'variant_image_url' => $variantImageUrl,
                 'quantity' => $item['quantity'],
                 'is_flash_sale' => $flashData['is_flash_sale'],
                 'flash_sale_id' => $flashData['flash_sale_id'],

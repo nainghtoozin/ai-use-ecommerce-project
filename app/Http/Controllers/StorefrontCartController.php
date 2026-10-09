@@ -93,7 +93,7 @@ class StorefrontCartController extends Controller
 
         $variants = !empty($cartVariantIds)
             ? ProductVariant::whereIn('id', $cartVariantIds)
-                ->select(['id', 'product_id', 'price', 'attributes'])
+                ->select(['id', 'product_id', 'price', 'attributes', 'image'])
                 ->get()
                 ->keyBy('id')
             : collect();
@@ -125,12 +125,14 @@ class StorefrontCartController extends Controller
             $basePrice = (float) $product->price;
             $variantName = null;
             $variantId = $item['variant_id'] ?? null;
+            $variantImageUrl = null;
 
             if ($variantId) {
                 $variant = $variants->get((int) $variantId);
                 if ($variant) {
                     $basePrice = (float) ($variant->price ?? $product->price);
                     $variantName = $variant->label;
+                    $variantImageUrl = $variant->image_url;
                 }
             }
 
@@ -161,7 +163,8 @@ class StorefrontCartController extends Controller
                 'price' => $price,
                 'original_price' => $basePrice,
                 'promotion_badge' => $promotionBadge,
-                'photo1_url' => $product->photo1_url,
+                'photo1_url' => $variantImageUrl ?: $product->photo1_url,
+                'variant_image_url' => $variantImageUrl,
                 'quantity' => $item['quantity'],
                 'is_flash_sale' => $fs !== null,
                 'flash_sale_id' => $fs['id'] ?? null,
