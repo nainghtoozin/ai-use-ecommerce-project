@@ -38,6 +38,10 @@ class SuperAdminBillingController extends Controller
             $query->where('plan_id', $request->plan_id);
         }
 
+        if ($request->filled('type') && array_key_exists($request->type, PaymentIntent::PAYMENT_TYPE_LABELS)) {
+            $query->where('metadata->payment_type', $request->type);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -77,6 +81,11 @@ class SuperAdminBillingController extends Controller
                     'name' => $intent->plan->name,
                     'slug' => $intent->plan->slug,
                 ] : null,
+                'payment_type' => $intent->paymentType(),
+                'payment_type_label' => $intent->paymentTypeLabel(),
+                'payment_reason_label' => $intent->paymentReasonLabel(),
+                'from_plan' => $intent->metadata['from_plan_name'] ?? null,
+                'to_plan' => $intent->plan?->name,
                 'evidences' => $intent->evidences->map(fn($ev) => [
                     'id' => $ev->id,
                     'type' => $ev->type,
@@ -117,8 +126,11 @@ class SuperAdminBillingController extends Controller
 
         return Inertia::render('SuperAdmin/Billing/Index', [
             'intents' => $intents,
-            'filters' => $request->only(['status', 'date_from', 'date_to', 'plan_id', 'search', 'per_page']),
+            'filters' => $request->only(['status', 'date_from', 'date_to', 'plan_id', 'search', 'per_page', 'type']),
             'plans' => Plan::active()->ordered()->get(['id', 'name', 'slug']),
+            'paymentTypes' => collect(PaymentIntent::PAYMENT_TYPE_LABELS)
+                ->map(fn ($label, $value) => ['value' => $value, 'label' => $label])
+                ->values(),
             'stats' => $this->getStats(),
         ]);
     }

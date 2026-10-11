@@ -95,7 +95,7 @@ function FormField({ label, error, required, children, hint }) {
     );
 }
 
-function StepStoreInfo({ data, setData, errors, currencies, timezones, countries, languages }) {
+function StepStoreInfo({ data, setData, errors, currencies, timezones, countries, languages, storeCategories }) {
     const [slugStatus, setSlugStatus] = useState(null);
     const [checkingSlug, setCheckingSlug] = useState(false);
     const slugManuallyEdited = useRef(false);
@@ -213,6 +213,19 @@ function StepStoreInfo({ data, setData, errors, currencies, timezones, countries
                     placeholder="+95 9 123 456 789"
                 />
             </FormField>
+
+            <FormField label="Store Category" error={errors.store_category_id} hint="Optional. Helps customers find your store in the marketplace.">
+                <select
+                    value={data.store_category_id}
+                    onChange={(e) => setData('store_category_id', e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                    <option value="">Select a category (optional)</option>
+                    {(storeCategories || []).map((c) => (
+                        <option key={c.id} value={String(c.id)}>{c.name}</option>
+                    ))}
+                </select>
+            </FormField>
         </div>
     );
 }
@@ -319,17 +332,19 @@ function StepBranding({ data, setData, errors }) {
     );
 }
 
-function StepReview({ data, currencies, timezones, countries, languages }) {
+function StepReview({ data, currencies, timezones, countries, languages, storeCategories }) {
     const currency = currencies.find((c) => c.code === data.currency);
     const timezone = timezones.find((t) => t.value === data.timezone);
     const country = countries.find((c) => c.code === data.country);
     const language = languages.find((l) => l.code === data.language);
+    const storeCategory = (storeCategories || []).find((c) => String(c.id) === String(data.store_category_id));
 
     const rows = [
         { label: 'Store Name', value: data.store_name },
         { label: 'Store URL', value: `/store/${data.store_slug}` },
         { label: 'Business Email', value: data.business_email },
         { label: 'Phone', value: data.phone || '—' },
+        { label: 'Store Category', value: storeCategory?.name || '—' },
         { label: 'Country', value: country?.name || data.country },
         { label: 'Language', value: language?.name || data.language },
         { label: 'Currency', value: currency ? `${currency.code} (${currency.symbol})` : data.currency },
@@ -370,6 +385,7 @@ export default function StoreSetup() {
         timezones,
         countries,
         languages,
+        storeCategories,
         defaultCurrency,
         defaultTimezone,
         defaultLanguage,
@@ -388,6 +404,7 @@ export default function StoreSetup() {
         currency: defaultCurrency || 'MMK',
         timezone: defaultTimezone || 'Asia/Yangon',
         country: '',
+        store_category_id: '',
         theme_color: '#6366F1',
         description: '',
     });
@@ -465,6 +482,7 @@ export default function StoreSetup() {
                         timezones={timezones}
                         countries={countries}
                         languages={languages}
+                        storeCategories={storeCategories}
                     />
                 )}
                 {step === 1 && (
@@ -492,6 +510,7 @@ export default function StoreSetup() {
                         timezones={timezones}
                         countries={countries}
                         languages={languages}
+                        storeCategories={storeCategories}
                     />
                 )}
             </div>

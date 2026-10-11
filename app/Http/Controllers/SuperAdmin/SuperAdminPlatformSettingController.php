@@ -31,6 +31,7 @@ class SuperAdminPlatformSettingController extends Controller
         $validated = $request->validate([
             'site_name' => 'required|string|max:255',
             'support_email' => 'nullable|email|max:255',
+            'support_page_url' => 'nullable|url|max:2048',
             'maintenance_mode' => 'boolean',
             'registration_enabled' => 'boolean',
             'trial_enabled' => 'boolean',
@@ -49,6 +50,7 @@ class SuperAdminPlatformSettingController extends Controller
         $data = [
             'site_name' => $validated['site_name'],
             'support_email' => $validated['support_email'],
+            'support_page_url' => $validated['support_page_url'] ?? null,
             'maintenance_mode' => $request->boolean('maintenance_mode'),
             'registration_enabled' => $request->boolean('registration_enabled'),
             'trial_enabled' => $request->boolean('trial_enabled'),

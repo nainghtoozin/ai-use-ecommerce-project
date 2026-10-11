@@ -7,6 +7,8 @@ use App\Models\Subscription;
 
 class SubscriptionPlanChangeService
 {
+    public const TYPE_PLAN_UPGRADE = 'plan_upgrade';
+
     public function __construct(
         private readonly SubscriptionAuditService $audit,
     ) {}
@@ -20,37 +22,78 @@ class SubscriptionPlanChangeService
         $priceDiff = $targetPrice - $currentPrice;
 
         $isUpgrade = $priceDiff >= 0;
-        $daysRemaining = 0;
-        $creditAmount = 0.0;
-        $proratedAmount = 0.0;
+        $isDowngrade = $priceDiff < 0;
 
-        if ($subscription->expires_at && $subscription->expires_at->isFuture() && $currentPrice > 0) {
-            $totalDays = $this->daysInInterval($interval);
-            $daysRemaining = max(0, now()->diffInDays($subscription->expires_at, false));
-            $dailyRate = $currentPrice / max($totalDays, 1);
-            $creditAmount = round($dailyRate * $daysRemaining, 2);
+        $periodDays = $this->daysInInterval($interval);
+        $periodSeconds = $periodDays * 86400;
 
-            if ($isUpgrade && $priceDiff > 0) {
-                $dailyDiffRate = $targetPrice / max($totalDays, 1) - $dailyRate;
-                $proratedAmount = round($dailyDiffRate * $daysRemaining, 2);
-            }
+        $remainingSeconds = 0;
+        if ($subscription->expires_at) {
+            $remainingSeconds = max(0, $subscription->expires_at->getTimestamp() - now()->getTimestamp());
         }
 
-        $totalDue = $isUpgrade
-            ? round(max($proratedAmount, $priceDiff), 2)
+        $remainingFraction = $periodSeconds > 0
+            ? min(1.0, $remainingSeconds / $periodSeconds)
             : 0.0;
+
+        $daysRemaining = (int) ceil($remainingSeconds / 86400);
+
+        // A trial has no paid value yet: never grant a paid-plan unused-value credit.
+        // Converting to a paid plan charges the selected plan's price via the paid workflow.
+        if ($subscription->isTrialing()) {
+            $fullTarget = round($targetPrice, 2);
+
+            return [
+                'current_price' => $currentPrice,
+                'target_price' => $targetPrice,
+                'price_difference' => round($priceDiff, 2),
+                'is_upgrade' => true,
+                'is_downgrade' => false,
+                'is_trial_conversion' => true,
+                'interval' => $interval,
+                'period_days' => $periodDays,
+                'days_remaining' => $daysRemaining,
+                'remaining_days' => round($remainingSeconds / 86400, 2),
+                'remaining_fraction' => round($remainingFraction, 4),
+                'credit_amount' => 0.0,
+                'target_prorated' => $fullTarget,
+                'prorated_amount' => $fullTarget,
+                'amount_due' => $fullTarget,
+                'total_due' => $fullTarget,
+                'current_expires_at' => $subscription->expires_at?->toDateString(),
+                'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+                'effective_date' => now()->toDateString(),
+            ];
+        }
+
+        $creditAmount = round($currentPrice * $remainingFraction, 2);
+        $targetProrated = round($targetPrice * $remainingFraction, 2);
+        $amountDue = round(max(0.0, $priceDiff * $remainingFraction), 2);
+
+        if ($isDowngrade) {
+            $amountDue = 0.0;
+        }
 
         return [
             'current_price' => $currentPrice,
             'target_price' => $targetPrice,
             'price_difference' => round($priceDiff, 2),
             'is_upgrade' => $isUpgrade,
-            'is_downgrade' => !$isUpgrade,
-            'days_remaining' => $daysRemaining,
-            'credit_amount' => $creditAmount,
-            'prorated_amount' => $proratedAmount,
-            'total_due' => $totalDue,
+            'is_downgrade' => $isDowngrade,
+            'is_trial_conversion' => false,
             'interval' => $interval,
+            'period_days' => $periodDays,
+            'days_remaining' => $daysRemaining,
+            'remaining_days' => round($remainingSeconds / 86400, 2),
+            'remaining_fraction' => round($remainingFraction, 4),
+            'credit_amount' => $creditAmount,
+            'target_prorated' => $targetProrated,
+            'prorated_amount' => $targetProrated,
+            'amount_due' => $amountDue,
+            'total_due' => $amountDue,
+            'current_expires_at' => $subscription->expires_at?->toDateString(),
+            'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+            'effective_date' => now()->toDateString(),
         ];
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import PlatformGuestLayout from '@/Layouts/PlatformGuestLayout';
-import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Check, X, Mail } from 'lucide-react';
 
 function getPasswordStrength(password) {
     if (!password) return { score: 0, label: '', color: '' };
@@ -50,13 +50,17 @@ function PasswordStrengthIndicator({ password }) {
     );
 }
 
-function PasswordRequirements({ password }) {
-    const checks = [
+function getPasswordChecks(password) {
+    return [
         { label: 'At least 8 characters', met: password.length >= 8 },
         { label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
         { label: 'Contains lowercase letter', met: /[a-z]/.test(password) },
         { label: 'Contains a number', met: /\d/.test(password) },
     ];
+}
+
+function PasswordRequirements({ password }) {
+    const checks = getPasswordChecks(password);
 
     if (!password) return null;
 
@@ -79,9 +83,11 @@ function PasswordRequirements({ password }) {
 }
 
 export default function Register() {
-    const { errors } = usePage().props;
+    const { errors, platform_setting } = usePage().props;
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [duplicateEmail, setDuplicateEmail] = useState(null);
+    const [modalDismissedFor, setModalDismissedFor] = useState(null);
 
     const { data, setData, post, processing, reset } = useForm({
         name: '',
@@ -96,10 +102,43 @@ export default function Register() {
         };
     }, []);
 
+    useEffect(() => {
+        if (errors.email && errors.email.toLowerCase().includes('already has an account') && data.email) {
+            setDuplicateEmail(data.email);
+            setModalDismissedFor(null);
+        }
+    }, [errors.email]);
+
+    const isDuplicateCurrent = !!errors.email && duplicateEmail !== null && data.email === duplicateEmail;
+    const modalOpen = isDuplicateCurrent && modalDismissedFor !== duplicateEmail;
+
+    useEffect(() => {
+        if (!modalOpen) return;
+        const closeOnEscape = (event) => {
+            if (event.key === 'Escape') setModalDismissedFor(duplicateEmail);
+        };
+        document.addEventListener('keydown', closeOnEscape);
+        return () => document.removeEventListener('keydown', closeOnEscape);
+    }, [modalOpen, duplicateEmail]);
+
+    const closeModal = () => setModalDismissedFor(duplicateEmail);
+
+    const passwordChecks = getPasswordChecks(data.password);
+    const passwordMeetsPolicy = passwordChecks.every((check) => check.met);
+    const passwordsMatch = data.password_confirmation.length > 0 && data.password === data.password_confirmation;
+    const canSubmit = passwordMeetsPolicy && passwordsMatch && !processing;
+
     const submit = (e) => {
         e.preventDefault();
-        post('/register');
+        if (!canSubmit) return;
+        post('/register', {
+            onError: () => setModalDismissedFor(null),
+        });
     };
+
+    const supportUrl = platform_setting?.support_page_url || null;
+    const supportEmail = platform_setting?.support_email || null;
+    const supportHref = supportUrl || (supportEmail ? `mailto:${supportEmail}` : null);
 
     return (
         <PlatformGuestLayout>
@@ -148,7 +187,7 @@ export default function Register() {
                         onChange={(e) => setData('email', e.target.value)}
                         required
                     />
-                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                    {errors.email && !isDuplicateCurrent && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
 
                 <div className="mt-4">
@@ -207,13 +246,16 @@ export default function Register() {
                         </button>
                     </div>
                     {errors.password_confirmation && <p className="text-red-500 text-xs mt-1">{errors.password_confirmation}</p>}
+                    {data.password_confirmation.length > 0 && !passwordsMatch && (
+                        <p className="text-red-500 text-xs mt-1">Passwords do not match.</p>
+                    )}
                 </div>
 
                 <div className="mt-6">
                     <button
                         type="submit"
                         className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={processing}
+                        disabled={!canSubmit}
                     >
                         {processing ? (
                             <>
@@ -233,6 +275,84 @@ export default function Register() {
                     </Link>
                 </div>
             </form>
+
+            <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                Need help creating your account?{' '}
+                {supportHref ? (
+                    <a
+                        href={supportHref}
+                        {...(supportUrl ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                        className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                    >
+                        Contact Support Team
+                    </a>
+                ) : (
+                    <span className="font-medium text-gray-400 dark:text-gray-500" aria-disabled="true">
+                        Contact Support Team
+                    </span>
+                )}
+            </div>
+
+            {modalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="presentation"
+                    onClick={closeModal}
+                >
+                    <div className="absolute inset-0 bg-black/50" />
+
+                    <div
+                        className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 w-full max-w-md p-6"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="duplicate-email-title"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            onClick={closeModal}
+                            aria-label="Close dialog"
+                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex items-start gap-4">
+                            <div className="w-11 h-11 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                                <Mail className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 id="duplicate-email-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                    Email already registered
+                                </h2>
+                                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                    This email is already registered. Sign in to continue with your existing account.
+                                </p>
+                                <p className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={duplicateEmail}>
+                                    {duplicateEmail}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-colors"
+                            >
+                                Close
+                            </button>
+                            <Link
+                                href="/login"
+                                autoFocus
+                                className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                            >
+                                Sign In
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </PlatformGuestLayout>
     );
 }

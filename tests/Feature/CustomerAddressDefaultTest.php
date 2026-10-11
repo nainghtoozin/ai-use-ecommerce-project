@@ -174,8 +174,8 @@ class CustomerAddressDefaultTest extends TestCase
         $this->post("/store/{$this->tenantB->slug}/register", [
             'name' => 'AD Customer',
             'email' => 'ad-customer@test.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'phone' => '09911122233',
             'address' => 'No. 9, New Road',
             'city_id' => $cityB->id,

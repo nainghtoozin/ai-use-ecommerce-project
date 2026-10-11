@@ -342,7 +342,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     Route::get('/billing/payment-history', [\App\Http\Controllers\Admin\AdminBillingController::class, 'paymentHistory'])->name('billing.payment-history');
     Route::get('/billing/settings', [\App\Http\Controllers\Admin\AdminBillingController::class, 'settings'])->name('billing.settings');
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
+    Route::get('/billing/renew-plan', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renewPlan'])->name('billing.renew-plan');
+    Route::post('/billing/cancel-request', [\App\Http\Controllers\Admin\AdminBillingController::class, 'requestCancellation'])->name('billing.cancel-request');
+    Route::post('/billing/cancel-request/withdraw', [\App\Http\Controllers\Admin\AdminBillingController::class, 'withdrawCancellation'])->name('billing.cancel-request.withdraw');
     Route::post('/billing/change-plan/preview', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
+    Route::post('/billing/change-plan/submit', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanSubmit'])->name('billing.change-plan.submit');
     Route::post('/billing/change-plan/execute', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
     Route::post('/billing/change-plan/cancel', [\App\Http\Controllers\Admin\AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
 
@@ -788,11 +792,16 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::post('/subscriptions/{subscription}/suspend', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
     Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
 
+    Route::get('/cancellation-requests', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancellationRequests'])->name('cancellation-requests.index');
+    Route::post('/cancellation-requests/{cancellationRequest}/review', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'reviewCancellation'])->name('cancellation-requests.review');
+
     Route::get('/billing', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'index'])->name('billing.index');
     Route::post('/billing/{intent}/approve', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'approve'])->name('billing.approve');
     Route::post('/billing/{intent}/reject', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'reject'])->name('billing.reject');
 
     Route::get('/financial', [\App\Http\Controllers\SuperAdmin\SuperAdminFinancialController::class, 'index'])->name('financial.index');
+
+    Route::get('/tenant-cleanups', [\App\Http\Controllers\SuperAdmin\TenantCleanupController::class, 'index'])->name('tenant-cleanups.index');
 
     Route::get('/operations', [\App\Http\Controllers\SuperAdmin\SuperAdminOperationsController::class, 'index'])->name('operations.index');
 
@@ -808,6 +817,14 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
 
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');
+
+    Route::get('/store-categories', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'index'])->name('store-categories.index');
+    Route::get('/store-categories/create', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'create'])->name('store-categories.create');
+    Route::post('/store-categories', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'store'])->name('store-categories.store');
+    Route::get('/store-categories/{storeCategory}/edit', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'edit'])->name('store-categories.edit');
+    Route::put('/store-categories/{storeCategory}', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'update'])->name('store-categories.update');
+    Route::post('/store-categories/{storeCategory}/toggle', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'toggle'])->name('store-categories.toggle');
+    Route::delete('/store-categories/{storeCategory}', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'destroy'])->name('store-categories.destroy');
 
     // FAQ Management
     Route::get('/faqs', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'index'])->name('faqs.index');

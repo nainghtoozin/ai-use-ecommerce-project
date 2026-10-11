@@ -14,6 +14,31 @@ class PaymentIntent extends Model
 {
     use TenantAware;
 
+    public const TYPE_NEW_SUBSCRIPTION = 'new_subscription';
+    public const TYPE_RENEWAL = 'renewal';
+    public const TYPE_UPGRADE = 'upgrade';
+    public const TYPE_PLAN_CHANGE = 'plan_change';
+    public const TYPE_OTHER = 'other';
+
+    public const PAYMENT_TYPE_LABELS = [
+        self::TYPE_NEW_SUBSCRIPTION => 'New Subscription',
+        self::TYPE_RENEWAL => 'Renewal',
+        self::TYPE_UPGRADE => 'Upgrade',
+        self::TYPE_PLAN_CHANGE => 'Plan Change',
+        self::TYPE_OTHER => 'Other',
+    ];
+
+    /**
+     * Merchant-declarable payment reasons mapped to the canonical payment type.
+     */
+    public const PAYMENT_REASONS = [
+        'subscription_renewal' => ['label' => 'Subscription renewal payment', 'type' => self::TYPE_RENEWAL],
+        'new_subscription' => ['label' => 'New subscription payment', 'type' => self::TYPE_NEW_SUBSCRIPTION],
+        'plan_upgrade' => ['label' => 'Plan upgrade payment', 'type' => self::TYPE_UPGRADE],
+        'plan_change' => ['label' => 'Plan change payment', 'type' => self::TYPE_PLAN_CHANGE],
+        'other' => ['label' => 'Other', 'type' => self::TYPE_OTHER],
+    ];
+
     protected $fillable = [
         'reference_number',
         'idempotency_key',
@@ -183,5 +208,73 @@ class PaymentIntent extends Model
     public static function findByReference(string $reference): ?self
     {
         return static::whereReference($reference)->first();
+    }
+
+    /* ── Payment purpose classification (structured, never from free text) ── */
+
+    /**
+     * Canonical payment type derived from structured intent metadata.
+     * Merchant-declared reasons act as a fallback only when no structured
+     * source/type is present. Never derives the type from remarks.
+     */
+    public static function classifyPaymentType(array $metadata): string
+    {
+        $source = $metadata['source'] ?? null;
+        $type = $metadata['type'] ?? null;
+
+        if ($type === 'plan_upgrade' || $source === 'merchant_upgrade') {
+            return self::TYPE_UPGRADE;
+        }
+
+        if ($source === 'merchant_renewal') {
+            return self::TYPE_RENEWAL;
+        }
+
+        if (!empty($metadata['trial_conversion']) || $source === 'merchant_trial_conversion') {
+            return self::TYPE_NEW_SUBSCRIPTION;
+        }
+
+        $reason = $metadata['payment_reason'] ?? null;
+        if ($reason && isset(self::PAYMENT_REASONS[$reason])) {
+            return self::PAYMENT_REASONS[$reason]['type'];
+        }
+
+        // Fall back to a previously stored canonical type (records without source/reason).
+        $stored = $metadata['payment_type'] ?? null;
+        if ($stored && isset(self::PAYMENT_TYPE_LABELS[$stored])) {
+            return $stored;
+        }
+
+        return self::TYPE_OTHER;
+    }
+
+    public function paymentType(): string
+    {
+        return self::classifyPaymentType($this->metadata ?? []);
+    }
+
+    public function paymentTypeLabel(): string
+    {
+        return self::PAYMENT_TYPE_LABELS[$this->paymentType()] ?? self::PAYMENT_TYPE_LABELS[self::TYPE_OTHER];
+    }
+
+    public function paymentReason(): ?string
+    {
+        return $this->metadata['payment_reason'] ?? null;
+    }
+
+    public function paymentReasonLabel(): ?string
+    {
+        $reason = $this->paymentReason();
+
+        if ($reason === 'other') {
+            $custom = trim((string) ($this->metadata['payment_reason_text'] ?? ''));
+
+            return $custom !== '' ? $custom : (self::PAYMENT_REASONS['other']['label'] ?? 'Other');
+        }
+
+        return $reason && isset(self::PAYMENT_REASONS[$reason])
+            ? self::PAYMENT_REASONS[$reason]['label']
+            : null;
     }
 }

@@ -6,6 +6,7 @@ import ImageUpload from '@/Components/ImageUpload';
 export default function PlatformSettingsIndex({ settings }) {
     const [siteName, setSiteName] = useState(settings.site_name || '');
     const [supportEmail, setSupportEmail] = useState(settings.support_email || '');
+    const [supportPageUrl, setSupportPageUrl] = useState(settings.support_page_url || '');
     const [logo, setLogo] = useState(settings.site_logo || null);
     const [favicon, setFavicon] = useState(settings.favicon || null);
     const [maintenanceMode, setMaintenanceMode] = useState(settings.maintenance_mode || false);
@@ -30,6 +31,7 @@ export default function PlatformSettingsIndex({ settings }) {
         const formData = new FormData();
         formData.append('site_name', siteName);
         formData.append('support_email', supportEmail);
+        formData.append('support_page_url', supportPageUrl);
         formData.append('maintenance_mode', maintenanceMode ? '1' : '0');
         formData.append('registration_enabled', registrationEnabled ? '1' : '0');
         formData.append('trial_enabled', trialEnabled ? '1' : '0');
@@ -100,6 +102,20 @@ export default function PlatformSettingsIndex({ settings }) {
                                             placeholder="support@example.com"
                                         />
                                         {errors.support_email && <p className="text-xs text-red-600 mt-1">{errors.support_email}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="support_page_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Support Page URL
+                                        </label>
+                                        <input
+                                            id="support_page_url"
+                                            type="url"
+                                            value={supportPageUrl}
+                                            onChange={(e) => setSupportPageUrl(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="https://example.com/support"
+                                        />
+                                        {errors.support_page_url && <p className="text-xs text-red-600 mt-1">{errors.support_page_url}</p>}
                                     </div>
                                 </div>
                             </div>

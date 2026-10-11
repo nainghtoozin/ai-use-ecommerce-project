@@ -18,6 +18,7 @@ class PlatformSetting extends Model
         'site_logo',
         'favicon',
         'support_email',
+        'support_page_url',
         'maintenance_mode',
         'registration_enabled',
         'trial_enabled',

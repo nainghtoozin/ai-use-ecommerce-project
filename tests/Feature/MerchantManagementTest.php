@@ -326,7 +326,7 @@ class MerchantManagementTest extends TestCase
             'create_admin' => true,
             'admin_name' => 'Coca Admin',
             'admin_email' => 'admin@cocacola.com',
-            'admin_password' => 'password123',
+            'admin_password' => 'Password123',
         ]);
 
         $response->assertRedirect();

@@ -9,7 +9,7 @@ import {
     Lock, Globe, Palette, Clock, Save, Eye, EyeOff,
     CheckCircle, AlertCircle, Loader2, Sun, Moon, Monitor,
     Calendar, Key, Activity, Globe2, BadgeCheck, ShieldCheck,
-    Bell, Trash2, Info, Settings, ExternalLink, CreditCard
+    Bell, Trash2, Info, Settings, ExternalLink, CreditCard, Check, X
 } from 'lucide-react';
 
 const availableLocales = [
@@ -50,6 +50,40 @@ function PasswordStrength({ password }) {
                 {strength > 0 ? labels[strength - 1] : 'Enter a password'}
             </p>
         </div>
+    );
+}
+
+function getPasswordChecks(password) {
+    return [
+        { label: 'At least 8 characters', met: password.length >= 8 },
+        { label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
+        { label: 'Contains lowercase letter', met: /[a-z]/.test(password) },
+        { label: 'Contains a number', met: /[0-9]/.test(password) },
+    ];
+}
+
+function passwordMeetsPolicy(password) {
+    return getPasswordChecks(password).every((check) => check.met);
+}
+
+function PasswordRequirements({ password }) {
+    if (!password) return null;
+
+    return (
+        <ul className="mt-2 space-y-1">
+            {getPasswordChecks(password).map((check) => (
+                <li key={check.label} className="flex items-center gap-2 text-xs">
+                    {check.met ? (
+                        <Check className="w-3 h-3 text-green-500" />
+                    ) : (
+                        <X className="w-3 h-3 text-gray-400" />
+                    )}
+                    <span className={check.met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>
+                        {check.label}
+                    </span>
+                </li>
+            ))}
+        </ul>
     );
 }
 
@@ -336,6 +370,7 @@ function SecurityTab({ passwordForm, submitPassword, showCurrentPassword, setSho
                             </button>
                         </div>
                         <PasswordStrength password={passwordForm.data.password} />
+                        <PasswordRequirements password={passwordForm.data.password} />
                         {passwordForm.errors.password && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{passwordForm.errors.password}</p>}
                     </div>
 
@@ -360,13 +395,16 @@ function SecurityTab({ passwordForm, submitPassword, showCurrentPassword, setSho
                                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
+                        {passwordForm.data.password_confirmation.length > 0 && passwordForm.data.password !== passwordForm.data.password_confirmation && (
+                            <p className="text-red-500 dark:text-red-400 text-xs mt-1">Passwords do not match.</p>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-2">
                     <button
                         type="submit"
-                        disabled={passwordForm.processing}
+                        disabled={passwordForm.processing || !passwordMeetsPolicy(passwordForm.data.password) || passwordForm.data.password.length === 0 || passwordForm.data.password !== passwordForm.data.password_confirmation}
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 text-sm font-medium transition-colors shadow-sm"
                     >
                         {passwordForm.processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
@@ -620,6 +658,10 @@ export default function AdminProfile({ mustVerifyEmail, status, currentRole, cur
 
     function submitPassword(e) {
         e.preventDefault();
+        if (!passwordMeetsPolicy(passwordForm.data.password)
+            || passwordForm.data.password !== passwordForm.data.password_confirmation) {
+            return;
+        }
         passwordForm.put('/password', {
             onSuccess: () => passwordForm.reset(),
         });

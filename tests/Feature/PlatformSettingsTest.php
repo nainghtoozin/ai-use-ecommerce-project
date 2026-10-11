@@ -260,6 +260,42 @@ class PlatformSettingsTest extends TestCase
         $this->assertEquals('support@example.com', PlatformSetting::current()->support_email);
     }
 
+    public function test_superadmin_can_update_support_page_url(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        $response = $this->post('/superadmin/platform-settings', [
+            'site_name' => 'My Application',
+            'support_email' => '',
+            'support_page_url' => 'https://example.com/support',
+            'maintenance_mode' => '0',
+            'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $this->assertEquals('https://example.com/support', PlatformSetting::current()->support_page_url);
+    }
+
+    public function test_superadmin_support_page_url_must_be_valid_url(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        $response = $this->post('/superadmin/platform-settings', [
+            'site_name' => 'My Application',
+            'support_email' => '',
+            'support_page_url' => 'not-a-url',
+            'maintenance_mode' => '0',
+            'registration_enabled' => '1',
+        ]);
+
+        $response->assertSessionHasErrors('support_page_url');
+    }
+
     public function test_superadmin_can_upload_logo(): void
     {
         Storage::fake('public');

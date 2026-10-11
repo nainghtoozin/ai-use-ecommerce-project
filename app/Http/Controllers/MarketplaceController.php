@@ -10,8 +10,9 @@ class MarketplaceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Tenant::where('status', 'active')
-            ->whereNotNull('activated_at');
+        $query = Tenant::whereIn('status', ['active', 'trialing'])
+            ->whereNotNull('activated_at')
+            ->whereNull('locked_at');
 
         // Search
         if ($search = $request->input('search')) {
@@ -21,11 +22,9 @@ class MarketplaceController extends Controller
             });
         }
 
-        // Category filter (via products)
+        // Store category filter (platform-level store classification)
         if ($categoryId = $request->input('category_id')) {
-            $query->whereHas('products', function ($q) use ($categoryId) {
-                $q->where('category_id', $categoryId);
-            });
+            $query->where('store_category_id', $categoryId);
         }
 
         // Sort
@@ -44,7 +43,7 @@ class MarketplaceController extends Controller
         }
 
         $stores = $query->select([
-            'id', 'name', 'slug', 'logo', 'status',
+            'id', 'name', 'slug', 'logo', 'status', 'settings',
         ])->withCount(['products' => function ($q) {
             $q->withoutTenantScope()->where('status', \App\Models\Product::STATUS_ACTIVE);
         }])->paginate(12)->withQueryString();
@@ -63,7 +62,7 @@ class MarketplaceController extends Controller
             ];
         });
 
-        $categories = \App\Models\Category::orderBy('name')->get(['id', 'name']);
+        $categories = \App\Models\StoreCategory::active()->sorted()->get(['id', 'name']);
 
         return Inertia::render('Public/StoreDirectory', [
             'stores' => $stores,

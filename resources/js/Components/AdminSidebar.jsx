@@ -153,6 +153,7 @@ export default function AdminSidebar() {
                     items: [
                         { label: 'Platform', href: '/superadmin/platform-settings', icon: 'Settings' },
                         { label: 'FAQ Management', href: '/superadmin/faqs', icon: 'HelpCircle' },
+                        { label: 'Store Categories', href: '/superadmin/store-categories', icon: 'Store' },
                     ]
                 },
                 {
@@ -298,6 +299,7 @@ export default function AdminSidebar() {
     }
 
     const storeSlug = tenant?.slug;
+    const navStoreSlug = storeSlug || auth?.user?.tenant_slug || null;
     const logout = () => router.post('/logout', {
         context: isSuperAdmin ? 'superadmin' : 'admin',
         store_slug: storeSlug,
@@ -463,7 +465,7 @@ export default function AdminSidebar() {
                                                 return (
                                                     <Link
                                                         key={linkItem.href}
-                                                        href={adminUrl(linkItem.href)}
+                                                        href={adminUrl(linkItem.href, navStoreSlug)}
                                                         onClick={() => setSidebarOpen(false)}
                                                         style={linkActive && merchant ? { backgroundColor: `color-mix(in srgb, ${accentColor} 10%, transparent)` } : undefined}
                                                         className={`flex items-center gap-2.5 ${collapsed ? 'justify-center px-2' : indented ? 'px-3 pl-9' : 'px-3 pl-4'} h-[38px] rounded-lg text-[14px] transition-colors duration-150 group relative ${

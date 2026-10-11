@@ -10,6 +10,7 @@ use App\Services\TenantBootstrapService;
 use App\Services\TenantDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 
 class TenantController extends Controller
@@ -61,7 +62,7 @@ class TenantController extends Controller
             'create_admin' => 'boolean',
             'admin_name' => 'required_if:create_admin,true|string|max:255',
             'admin_email' => 'required_if:create_admin,true|email|max:255|unique:users,email',
-            'admin_password' => 'required_if:create_admin,true|string|min:8',
+            'admin_password' => ['required_if:create_admin,true', 'string', Rules\Password::defaults()],
         ]);
 
         $tenant = DB::transaction(function () use ($validated, $bootstrapService) {

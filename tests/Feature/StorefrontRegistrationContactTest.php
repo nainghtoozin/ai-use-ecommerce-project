@@ -44,8 +44,8 @@ class StorefrontRegistrationContactTest extends TestCase
         return $this->post("/store/{$this->tenant->slug}/register", array_merge([
             'name' => 'RG Customer',
             'email' => 'rg-customer@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ], $overrides));
     }
 
@@ -131,8 +131,8 @@ class StorefrontRegistrationContactTest extends TestCase
         $this->post("/store/{$this->tenant->slug}/register", [
             'name' => 'RG Customer',
             'email' => 'rg-customer@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'phone' => '09333333333',
         ])->assertSessionHasErrors('email');
     }

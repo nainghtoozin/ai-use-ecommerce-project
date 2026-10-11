@@ -9,7 +9,9 @@ use App\Models\BillingPaymentMethod;
 use App\Models\PaymentIntent;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
+use App\Models\Subscription;
 use App\Models\SubscriptionAuditLog;
+use App\Models\SubscriptionCancellationRequest;
 use App\Models\Tenant;
 use App\Services\FeatureGate;
 use App\Services\ImageService;
@@ -125,6 +127,17 @@ class AdminBillingController extends Controller
             ->latest()
             ->first();
 
+        $renewalIntent = $subscription
+            ? PaymentIntent::forTenant($tenant->id)
+                ->where('plan_id', $subscription->plan_id)
+                ->whereIn('status', ['waiting_payment', 'waiting_review'])
+                ->latest()
+                ->first()
+            : null;
+
+        $activeCancellation = $subscription ? $subscription->activeCancellationRequest()->first() : null;
+        $latestCancellation = $subscription ? $subscription->cancellationRequests()->latest()->first() : null;
+
         return Inertia::render('Admin/Billing/Index', [
             'subscription' => $subscription ? [
                 'id' => $subscription->id,
@@ -192,6 +205,28 @@ class AdminBillingController extends Controller
             'allFeatureDefs' => $allFeatureDefs,
             'auditLogs' => $auditLogs,
             'trialDays' => (int) (PlatformSetting::current()->trial_days ?? 14),
+            'trial' => $subscription ? [
+                'is_trial' => $subscription->isTrialing(),
+                'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
+                'trial_days_remaining' => $subscription->daysLeftInTrial(),
+                'renewal_allowed' => (bool) PlatformSetting::current()->allow_trial_renewal,
+                'max_renewals' => (int) PlatformSetting::current()->max_trial_renewals,
+                'renewals_used' => (int) $subscription->trial_renewals_count,
+                'renewals_remaining' => $subscription->trialRenewalsRemaining(),
+                'can_renew' => $subscription->canRenewTrial(),
+                // A trial is only "ended" when the subscription is genuinely inactive/unpaid.
+                // Active paid subscriptions that were converted from a trial must never show this.
+                'trial_ended' => $subscription->trial_ends_at !== null
+                    && $subscription->trial_ends_at->isPast()
+                    && !$subscription->isTrialing()
+                    && !$subscription->isActive(),
+            ] : null,
+            'renewal' => $this->renewalPayload($subscription, $renewalIntent),
+            'cancellation' => [
+                'active' => $activeCancellation ? $this->cancellationPayload($activeCancellation, $subscription) : null,
+                'latest' => $latestCancellation ? $this->cancellationPayload($latestCancellation, $subscription) : null,
+                'reasons' => SubscriptionCancellationRequest::REASONS,
+            ],
         ]);
     }
 
@@ -485,7 +520,7 @@ class AdminBillingController extends Controller
 
     public function changePlanPreview(Request $request, SubscriptionPlanChangeService $planChange)
     {
-        if (!auth()->user()->can('billing.manage')) {
+        if (!auth()->user()->can('billing.view')) {
             abort(403, 'Unauthorized');
         }
 
@@ -518,6 +553,11 @@ class AdminBillingController extends Controller
             $request->billing_interval
         );
 
+        $pendingIntent = PaymentIntent::forTenant($tenant->id)
+            ->whereIn('status', ['waiting_payment', 'waiting_review'])
+            ->latest()
+            ->first();
+
         return Inertia::render('Admin/Billing/PlanChange', [
             'currentPlan' => [
                 'id' => $subscription->plan->id,
@@ -541,6 +581,19 @@ class AdminBillingController extends Controller
                 'billing_interval' => $subscription->billing_interval,
             ],
             'proration' => $proration,
+            'isTrial' => $subscription->isTrialing(),
+            'trialEndsAt' => $subscription->trial_ends_at?->toDateString(),
+            'scheduledChange' => !$subscription->isTrialing() && $subscription->hasPendingDowngrade() && $subscription->pendingPlan ? [
+                'plan_id' => $subscription->pendingPlan->id,
+                'name' => $subscription->pendingPlan->name,
+                'effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
+            ] : null,
+            'pendingPayment' => $pendingIntent ? [
+                'reference_number' => $pendingIntent->reference_number,
+                'status' => $pendingIntent->status,
+                'is_upgrade' => ($pendingIntent->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE
+                    && (int) $pendingIntent->plan_id === $targetPlan->id,
+            ] : null,
         ]);
     }
 
@@ -573,18 +626,150 @@ class AdminBillingController extends Controller
                 ->with('info', 'You are already on this plan.');
         }
 
+        $hasPendingPayment = PaymentIntent::forTenant($tenant->id)
+            ->whereIn('status', ['waiting_payment', 'waiting_review'])
+            ->exists();
+
+        if ($hasPendingPayment) {
+            return admin_redirect('admin.billing')
+                ->with('error', 'You have a payment awaiting completion or review. Please resolve it before changing your plan.');
+        }
+
         $isUpgrade = $subscription->isUpgrade($targetPlan);
 
         if ($isUpgrade) {
-            $planChange->executeUpgrade($subscription, $targetPlan, $request->billing_interval);
-        } else {
-            $planChange->executeDowngrade($subscription, $targetPlan, $request->billing_interval);
+            return admin_redirect('admin.billing.upgrade')
+                ->with('info', 'Upgrades require payment. Please review the prorated amount and confirm the upgrade.');
         }
 
-        $action = $isUpgrade ? 'upgraded' : ($subscription->hasPendingDowngrade() ? 'downgrade scheduled' : 'changed');
+        $planChange->executeDowngrade($subscription, $targetPlan, $request->billing_interval);
+
+        $action = $subscription->hasPendingDowngrade() ? 'downgrade scheduled' : 'changed';
 
         return admin_redirect('admin.billing')
             ->with('success', "Your plan has been {$action} successfully.");
+    }
+
+    public function changePlanSubmit(Request $request, SubscriptionPlanChangeService $planChange)
+    {
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $validated = $request->validate([
+            'plan_id' => ['required', 'exists:plans,id'],
+            'billing_interval' => ['nullable', 'in:monthly,yearly'],
+            'scheduled_change_action' => ['nullable', 'in:cancel,keep'],
+        ]);
+
+        $subscription = $tenant->subscription;
+        if (!$subscription || !$subscription->plan) {
+            return admin_redirect('admin.billing.upgrade')
+                ->with('error', 'No active subscription found.');
+        }
+
+        $targetPlan = Plan::active()->findOrFail($validated['plan_id']);
+
+        if ($targetPlan->id === $subscription->plan_id) {
+            return admin_redirect('admin.billing')
+                ->with('info', 'You are already on this plan.');
+        }
+
+        $interval = $validated['billing_interval'] ?? $subscription->billing_interval ?? 'monthly';
+
+        $proration = $planChange->calculateProration($subscription, $targetPlan, $interval);
+
+        if (!$proration['is_upgrade']) {
+            return admin_redirect('admin.billing')
+                ->with('error', 'This plan is a downgrade. Please use the downgrade flow.');
+        }
+
+        if (!$subscription->isTrialing() && $subscription->hasPendingDowngrade() && empty($validated['scheduled_change_action'])) {
+            return admin_redirect('admin.billing.upgrade')
+                ->with('error', 'You have a scheduled plan change. Choose whether to cancel or keep it before upgrading.');
+        }
+
+        $pending = PaymentIntent::forTenant($tenant->id)
+            ->whereIn('status', ['waiting_payment', 'waiting_review'])
+            ->latest()
+            ->first();
+
+        if ($pending) {
+            $isSameUpgrade = ($pending->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE
+                && (int) $pending->plan_id === $targetPlan->id
+                && $pending->billing_cycle === $interval;
+
+            if ($isSameUpgrade) {
+                return admin_redirect('admin.billing.payment', ['intent' => $pending->reference_number])
+                    ->with('info', 'You already have a pending request for this upgrade.');
+            }
+
+            return admin_redirect('admin.billing')
+                ->with('error', 'You have a payment awaiting completion or review. Please resolve it before changing your plan.');
+        }
+
+        $isTrialConversion = $subscription->isTrialing();
+
+        $amountDue = (float) $proration['amount_due'];
+
+        if (!$isTrialConversion && $amountDue <= 0.0) {
+            if ($proration['remaining_fraction'] <= 0) {
+                return admin_redirect('admin.billing.upgrade')
+                    ->with('info', 'Your current period has ended. Please purchase the plan to start a new period.');
+            }
+
+            $planChange->executeUpgrade($subscription, $targetPlan, $interval);
+
+            return admin_redirect('admin.billing')
+                ->with('success', 'Your plan has been upgraded successfully.');
+        }
+
+        $metadata = [
+            'source' => $isTrialConversion ? 'merchant_trial_conversion' : 'merchant_upgrade',
+            'subscription_id' => $subscription->id,
+            'payment_type' => $isTrialConversion ? PaymentIntent::TYPE_NEW_SUBSCRIPTION : PaymentIntent::TYPE_UPGRADE,
+            'from_plan_id' => $subscription->plan?->id,
+            'from_plan_name' => $subscription->plan?->name,
+            'requested_amount' => $amountDue,
+            'requested_at' => now()->toDateTimeString(),
+            'proration' => $proration,
+        ];
+
+        if ($isTrialConversion) {
+            $metadata['trial_conversion'] = true;
+            $metadata['payment_reason'] = 'new_subscription';
+        } else {
+            $metadata['type'] = SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE;
+            $metadata['payment_reason'] = 'plan_upgrade';
+            $metadata['scheduled_change_action'] = $validated['scheduled_change_action'] ?? 'keep';
+        }
+
+        try {
+            $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
+
+            $intent = app(CheckoutService::class)->initiateCheckout(
+                tenant: $tenant,
+                plan: $targetPlan,
+                billingCycle: $interval,
+                amount: $amountDue,
+                currency: Currency::fromEnum($currencyCode),
+                gateway: 'manual',
+                metadata: $metadata,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return admin_redirect('admin.billing.upgrade')
+                ->with('error', 'Unable to start the payment. Please try again.');
+        }
+
+        return admin_redirect('admin.billing.payment', ['intent' => $intent->reference_number])
+            ->with('success', $isTrialConversion
+                ? 'Conversion request created. Submit your payment to activate the paid plan.'
+                : 'Upgrade request created. Submit your payment to complete the upgrade.');
     }
 
     public function cancelScheduledChange(Request $request, SubscriptionPlanChangeService $planChange)
@@ -859,6 +1044,20 @@ class AdminBillingController extends Controller
         $subscription = $tenant->subscription;
         $currentPlan = $subscription?->plan;
 
+        $upgradeDetails = null;
+        $isUpgradeIntent = $intent && ($intent->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE;
+        $isTrialConversionIntent = $intent && ($intent->metadata['trial_conversion'] ?? false) === true;
+
+        if ($isUpgradeIntent || $isTrialConversionIntent) {
+            $upgradeDetails = [
+                'proration' => $intent->metadata['proration'] ?? [],
+                'current_expires_at' => $subscription?->expires_at?->toDateString(),
+                'effective_date' => $intent->metadata['proration']['effective_date'] ?? now()->toDateString(),
+                'scheduled_change_action' => $intent->metadata['scheduled_change_action'] ?? 'keep',
+                'is_trial_conversion' => $isTrialConversionIntent,
+            ];
+        }
+
         return Inertia::render('Admin/Billing/Payment', [
             'intent' => $intentData,
             'selectedPlan' => $selectedPlan,
@@ -872,7 +1071,8 @@ class AdminBillingController extends Controller
                 'billing_interval' => $subscription->billing_interval,
             ] : null,
             'paymentMethods' => $paymentMethods,
-        ]);
+            'upgradeDetails' => $upgradeDetails,
+        ] + $this->paymentFormContext($subscription, $intent?->plan, $intent));
     }
 
     public function paymentSubmit(Request $request)
@@ -901,6 +1101,8 @@ class AdminBillingController extends Controller
             'evidence' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'note' => ['nullable', 'string', 'max:500'],
             'payment_method_id' => ['nullable', 'exists:billing_payment_methods,id'],
+            'payment_reason' => ['nullable', 'string', 'in:' . implode(',', array_keys(PaymentIntent::PAYMENT_REASONS))],
+            'payment_reason_text' => ['nullable', 'string', 'max:255', 'required_if:payment_reason,other'],
         ]);
 
         $intentService = app(PaymentIntentService::class);
@@ -927,7 +1129,7 @@ class AdminBillingController extends Controller
                 currency: $currency,
                 gateway: 'manual',
                 metadata: [
-                    'source' => 'merchant_upgrade',
+                    'source' => 'merchant_checkout',
                     'submission_key' => $validated['submission_key'],
                 ],
             );
@@ -968,6 +1170,24 @@ class AdminBillingController extends Controller
 
         $metadata = $intent->metadata ?? [];
         $metadata['submission_key'] = $validated['submission_key'];
+
+        if (!empty($validated['payment_reason'])) {
+            $metadata['payment_reason'] = $validated['payment_reason'];
+            $metadata['payment_reason_text'] = $validated['payment_reason'] === 'other'
+                ? ($validated['payment_reason_text'] ?? null)
+                : null;
+        }
+
+        if (empty($metadata['from_plan_id'])) {
+            $currentPlan = $tenant->subscription?->plan;
+            if ($currentPlan && !$currentPlan->isFree()) {
+                $metadata['from_plan_id'] = $currentPlan->id;
+                $metadata['from_plan_name'] = $currentPlan->name;
+            }
+        }
+
+        $metadata['payment_type'] = PaymentIntent::classifyPaymentType($metadata);
+
         $intent->update(['metadata' => $metadata]);
 
         if ($intent->evidences()->where('transaction_reference', $validated['transaction_reference'])->exists()) {
@@ -1005,7 +1225,7 @@ class AdminBillingController extends Controller
                 filePath: $filePath,
                 note: $validated['note'] ?? null,
                 metadata: [
-                    'payment_method_id' => $validated['payment_method_id'],
+                    'payment_method_id' => $validated['payment_method_id'] ?? null,
                     'uploaded_by' => 'merchant',
                     'submitted_at' => now()->toDateTimeString(),
                     'transfer_time' => $validated['transfer_time'] ?? null,
@@ -1014,7 +1234,7 @@ class AdminBillingController extends Controller
                 senderAccount: $validated['sender_account'],
                 transactionReference: $validated['transaction_reference'],
                 transferredAmount: (float) $validated['transferred_amount'],
-                transferDate: now()->toDateString(),
+                transferDate: $validated['transfer_date'],
             );
 
             $manualPayment = app(ManualPaymentService::class);
@@ -1075,45 +1295,371 @@ class AdminBillingController extends Controller
             return redirect()->back()->with('error', 'No subscription found.');
         }
 
-        if ($subscription->isInGoodStanding()) {
-            return redirect()->back()->with('error', 'Your subscription is already active.');
-        }
-
         if ($subscription->isSuspended()) {
             return redirect()->back()->with('error', 'Your subscription has been suspended. Please contact support.');
         }
 
-        if ($subscription->trial_ends_at && $subscription->onTrial()) {
-            $settings = PlatformSetting::current();
-            $trialRenewalBlocked = !$settings->allow_trial_renewal
-                || $settings->max_trial_renewals <= 0
-                || $subscription->trial_renewals_count >= $settings->max_trial_renewals;
-            if ($trialRenewalBlocked) {
-                return redirect()->back()->with(
-                    'error',
-                    'Trial renewal limit reached. Please upgrade to a paid plan to continue.'
-                );
+        // This endpoint only handles trial extensions. Paid renewals use the manual-payment workflow.
+        if ($subscription->isTrialing()) {
+            if (!$subscription->canRenewTrial()) {
+                $settings = PlatformSetting::current();
+                $message = !$settings->allow_trial_renewal
+                    ? 'Trial renewal is disabled. Please choose a paid plan to continue.'
+                    : 'Your trial renewal limit has been reached. Please choose a paid plan to continue.';
+
+                return admin_redirect('admin.billing.upgrade')->with('error', $message);
             }
-        }
 
-        $subscription->renewFromInterval('Self-service renewal by merchant.');
+            $subscription->renewTrial();
+            $subscription->refresh();
 
-        $subscription->consumeExtraRenewal();
-
-        // Only count as trial renewal if the subscription is still on trial
-        if ($subscription->trial_ends_at && $subscription->onTrial()) {
-            $subscription->increment('trial_renewals_count');
             SubscriptionAuditService::log($subscription, 'trial_renewed', [
-                'reason' => 'Trial renewal via self-service.',
-                'trial_renewals_count' => $subscription->trial_renewals_count,
+                'reason' => 'Trial extended via self-service.',
+                'metadata' => [
+                    'trial_renewals_count' => $subscription->trial_renewals_count,
+                    'trial_ends_at' => $subscription->trial_ends_at?->toDateTimeString(),
+                ],
             ]);
+
+            return admin_redirect('admin.billing')
+                ->with('success', 'Your trial has been extended!');
         }
 
-        SubscriptionAuditService::log($subscription, 'renewed', [
-            'reason' => 'Self-service renewal by merchant.',
+        if ($subscription->isInGoodStanding()) {
+            return redirect()->back()->with('error', 'Your subscription is already active.');
+        }
+
+        if ($subscription->plan?->isFree()) {
+            return admin_redirect('admin.billing')
+                ->with('info', 'Your current plan is free and does not require renewal.');
+        }
+
+        // An ended trial must convert to a paid plan; a lapsed paid plan must be renewed by payment.
+        $endedTrial = $subscription->trial_ends_at !== null && $subscription->trial_ends_at->isPast();
+
+        if ($endedTrial) {
+            return admin_redirect('admin.billing.upgrade')
+                ->with('info', 'Your trial has ended. Please choose a paid plan to continue.');
+        }
+
+        return admin_redirect('admin.billing.upgrade')
+            ->with('info', 'Please complete a paid renewal to reactivate your subscription.');
+    }
+
+    /**
+     * Start a manual-payment renewal of the current plan.
+     */
+    public function renewPlan(Request $request)
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $subscription = $tenant->subscription;
+        if (!$subscription || !$subscription->plan) {
+            return admin_redirect('admin.billing.upgrade')
+                ->with('error', 'No active subscription found.');
+        }
+
+        if ($subscription->plan->isFree()) {
+            return admin_redirect('admin.billing')
+                ->with('info', 'Your current plan is free and does not require renewal.');
+        }
+
+        $plan = $subscription->plan;
+        $billingCycle = $subscription->billing_interval ?? 'monthly';
+        $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
+
+        if ($amount <= 0) {
+            return admin_redirect('admin.billing')
+                ->with('error', 'The renewal amount could not be determined. Please contact support.');
+        }
+
+        $pending = PaymentIntent::forTenant($tenant->id)
+            ->whereIn('status', ['waiting_payment', 'waiting_review'])
+            ->latest()
+            ->first();
+
+        if ($pending && ((int) $pending->plan_id !== (int) $plan->id || $pending->billing_cycle !== $billingCycle)) {
+            return admin_redirect('admin.billing.payment', ['intent' => $pending->reference_number])
+                ->with('info', 'You already have a payment awaiting completion or review.');
+        }
+
+        $intent = null;
+        try {
+            $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
+
+            $intent = app(CheckoutService::class)->initiateCheckout(
+                tenant: $tenant,
+                plan: $plan,
+                billingCycle: $billingCycle,
+                amount: $amount,
+                currency: Currency::fromEnum($currencyCode),
+                gateway: 'manual',
+                metadata: [
+                    'source' => 'merchant_renewal',
+                    'payment_type' => PaymentIntent::TYPE_RENEWAL,
+                    'payment_reason' => 'subscription_renewal',
+                ],
+            );
+        } catch (\InvalidArgumentException $e) {
+            return admin_redirect('admin.billing')
+                ->with('error', 'Unable to start renewal payment. Please try again.');
+        }
+
+        $paymentMethods = BillingPaymentMethod::active()
+            ->where('supports_manual_payment', true)
+            ->orderBy('sort_order')
+            ->orderBy('display_name')
+            ->get()
+            ->map(fn($pm) => [
+                'id' => $pm->id,
+                'name' => $pm->display_name,
+                'display_name' => $pm->display_name,
+                'type' => $pm->type,
+                'account_name' => $pm->account_name,
+                'account_number' => $pm->account_number,
+                'bank_name' => $pm->bank_name,
+                'branch' => $pm->branch,
+                'instructions' => $pm->instructions,
+                'currency' => $pm->currency,
+                'qr_image_url' => $pm->qr_image_url,
+                'is_active' => $pm->is_active,
+            ]);
+
+        return Inertia::render('Admin/Billing/Payment', [
+            'intent' => $intent ? [
+                'id' => $intent->id,
+                'reference_number' => $intent->reference_number,
+                'amount' => $intent->amount,
+                'currency' => $intent->currency,
+                'status' => $intent->status,
+                'billing_cycle' => $intent->billing_cycle,
+                'expires_at' => $intent->expires_at?->toDateTimeString(),
+                'created_at' => $intent->created_at->toDateTimeString(),
+            ] : null,
+            'selectedPlan' => [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'slug' => $plan->slug,
+                'description' => $plan->description,
+                'monthly_price' => $plan->monthly_price,
+                'yearly_price' => $plan->yearly_price,
+            ],
+            'currentPlan' => [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'slug' => $plan->slug,
+            ],
+            'subscription' => [
+                'status' => $subscription->status,
+                'billing_interval' => $subscription->billing_interval,
+                'expires_at' => $subscription->expires_at?->toDateString(),
+            ],
+            'paymentMethods' => $paymentMethods,
+            'renewalMode' => true,
+            'scheduledChange' => $subscription->hasPendingDowngrade() && $subscription->pendingPlan ? [
+                'name' => $subscription->pendingPlan->name,
+                'effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
+            ] : null,
+        ] + $this->paymentFormContext($subscription, $plan, $intent));
+    }
+
+    public function requestCancellation(Request $request)
+    {
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'in:' . implode(',', array_keys(SubscriptionCancellationRequest::REASONS))],
+            'comment' => ['nullable', 'string', 'max:1000', 'required_if:reason,other'],
+        ]);
+
+        $subscription = $tenant->subscription;
+        if (!$subscription) {
+            return admin_redirect('admin.billing')->with('error', 'No subscription found.');
+        }
+
+        if ($subscription->activeCancellationRequest()->exists()) {
+            return admin_redirect('admin.billing')
+                ->with('error', 'You already have a pending cancellation request.');
+        }
+
+        SubscriptionCancellationRequest::create([
+            'tenant_id' => $tenant->id,
+            'subscription_id' => $subscription->id,
+            'reason' => $data['reason'],
+            'comment' => $data['comment'] ?? null,
+            'status' => SubscriptionCancellationRequest::STATUS_PENDING,
+            'requested_by' => auth()->id(),
         ]);
 
         return admin_redirect('admin.billing')
-            ->with('success', 'Your subscription has been renewed!');
+            ->with('success', 'Your cancellation request has been submitted and is pending review.');
+    }
+
+    public function withdrawCancellation(Request $request)
+    {
+        if (!auth()->user()->can('billing.manage')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        $subscription = $tenant->subscription;
+        $active = $subscription?->activeCancellationRequest()->first();
+
+        if (!$active) {
+            return admin_redirect('admin.billing')
+                ->with('info', 'No pending cancellation request found.');
+        }
+
+        $active->update(['status' => SubscriptionCancellationRequest::STATUS_WITHDRAWN]);
+
+        return admin_redirect('admin.billing')
+            ->with('success', 'Your cancellation request has been withdrawn.');
+    }
+
+    private function renewalPayload(?Subscription $subscription, ?PaymentIntent $renewalIntent): array
+    {
+        $thresholdDays = min(90, max(1, (int) (PlatformSetting::current()->billing_renewal_reminder_days ?? 7)));
+
+        $activePaid = (bool) (
+            $subscription
+            && $subscription->isActive()
+            && $subscription->plan
+            && !$subscription->plan->isFree()
+        );
+
+        $expiresAt = $subscription?->expires_at;
+        $daysUntilExpiry = $expiresAt
+            ? (int) ceil(max(0, $expiresAt->getTimestamp() - now()->getTimestamp()) / 86400)
+            : null;
+
+        // Boundary-inclusive: due as soon as expiry is within the threshold window.
+        $due = $activePaid
+            && $expiresAt !== null
+            && $expiresAt->getTimestamp() <= now()->addDays($thresholdDays)->getTimestamp();
+
+        $isLapsed = (bool) ($subscription && in_array($subscription->status, ['expired', 'past_due', 'canceled'], true));
+
+        $pending = $renewalIntent ? [
+            'reference_number' => $renewalIntent->reference_number,
+            'status' => $renewalIntent->status,
+            'amount' => (float) $renewalIntent->amount,
+            'billing_cycle' => $renewalIntent->billing_cycle,
+        ] : null;
+
+        $eligible = (bool) (
+            $subscription
+            && !$subscription->isSuspended()
+            && $subscription->plan
+            && !$subscription->plan->isFree()
+            && ($due || $isLapsed)
+        );
+
+        return [
+            'pending' => $pending,
+            'price' => $subscription?->billedPrice(),
+            'billing_interval' => $subscription?->billing_interval,
+            'threshold_days' => $thresholdDays,
+            'days_until_expiry' => $daysUntilExpiry,
+            'due' => $due,
+            'active_paid' => $activePaid,
+            'is_lapsed' => $isLapsed,
+            // Authoritative backend eligibility for showing/permitting the renewal action.
+            'eligible' => $eligible,
+            // A valid renewal request is already awaiting payment/review.
+            'blocked_by_pending' => $pending !== null,
+            // Final gate the UI must follow: eligible and no duplicate pending renewal.
+            'can_renew' => $eligible && $pending === null,
+        ];
+    }
+
+    private function cancellationPayload(SubscriptionCancellationRequest $request, ?Subscription $subscription = null): array
+    {
+        $effectiveAt = null;
+        if ($request->status === SubscriptionCancellationRequest::STATUS_APPROVED && $subscription) {
+            // Access continues until the paid period ends (cancellation is not immediate).
+            $effectiveAt = $subscription->expires_at && $subscription->expires_at->isFuture()
+                ? $subscription->expires_at->toDateString()
+                : now()->toDateString();
+        }
+
+        return [
+            'id' => $request->id,
+            'reason' => $request->reason,
+            'reason_label' => $request->reasonLabel(),
+            'comment' => $request->comment,
+            'status' => $request->status,
+            'created_at' => $request->created_at?->toDateTimeString(),
+            'review_note' => $request->review_note,
+            'reviewed_at' => $request->reviewed_at?->toDateTimeString(),
+            'effective_at' => $effectiveAt,
+        ];
+    }
+
+    private function paymentFormContext(?Subscription $subscription, ?Plan $targetPlan, ?PaymentIntent $intent): array
+    {
+        $now = now();
+
+        return [
+            'timezone' => config('app.timezone'),
+            'defaultTransferDate' => $now->format('Y-m-d'),
+            'defaultTransferTime' => $now->format('H:i'),
+            'paymentReasons' => collect(\App\Models\PaymentIntent::PAYMENT_REASONS)
+                ->map(fn ($meta, $key) => ['value' => $key, 'label' => $meta['label']])
+                ->values(),
+            'suggestedReason' => $this->suggestedPaymentReason($subscription, $targetPlan, $intent),
+        ];
+    }
+
+    private function suggestedPaymentReason(?Subscription $subscription, ?Plan $targetPlan, ?PaymentIntent $intent): string
+    {
+        if ($intent) {
+            $meta = $intent->metadata ?? [];
+            $type = $meta['type'] ?? null;
+            $source = $meta['source'] ?? null;
+
+            if ($type === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE || $source === 'merchant_upgrade') {
+                return 'plan_upgrade';
+            }
+            if ($source === 'merchant_renewal') {
+                return 'subscription_renewal';
+            }
+            if (!empty($meta['trial_conversion']) || $source === 'merchant_trial_conversion') {
+                return 'new_subscription';
+            }
+        }
+
+        $currentPlan = $subscription?->plan;
+
+        if (!$currentPlan || $currentPlan->isFree()) {
+            return 'new_subscription';
+        }
+
+        if ($targetPlan && $targetPlan->id !== $currentPlan->id) {
+            $interval = $subscription?->billing_interval ?? 'monthly';
+            $currentPrice = (float) ($currentPlan->getPriceForInterval($interval) ?? 0);
+            $targetPrice = (float) ($targetPlan->getPriceForInterval($interval) ?? 0);
+
+            return $targetPrice > $currentPrice ? 'plan_upgrade' : 'plan_change';
+        }
+
+        return 'subscription_renewal';
     }
 }

@@ -36,6 +36,24 @@ const statusColors = {
     failed: 'bg-red-100 text-red-700',
 };
 
+const paymentTypeColors = {
+    new_subscription: 'bg-blue-100 text-blue-700 border-blue-200',
+    renewal: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    upgrade: 'bg-purple-100 text-purple-700 border-purple-200',
+    plan_change: 'bg-amber-100 text-amber-700 border-amber-200',
+    other: 'bg-gray-100 text-gray-600 border-gray-200',
+};
+
+function PaymentTypeBadge({ type, label, size = 'sm' }) {
+    const classes = paymentTypeColors[type] || paymentTypeColors.other;
+    const pad = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm';
+    return (
+        <span className={`inline-flex items-center rounded-full border font-semibold ${classes} ${pad}`}>
+            {label || 'Other'}
+        </span>
+    );
+}
+
 function formatDate(dateStr) {
     if (!dateStr) return '—';
     const d = new Date(dateStr);
@@ -279,9 +297,25 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                     <div className="bg-gray-50 dark:bg-gray-950 rounded-xl p-5 space-y-3">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Details</h3>
                         <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500 dark:text-gray-400">Payment Type</span>
+                            <PaymentTypeBadge type={intent.payment_type} label={intent.payment_type_label} />
+                        </div>
+                        {intent.payment_reason_label && (
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Reason</span>
+                                <span className="text-gray-700 dark:text-gray-300">{intent.payment_reason_label}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500 dark:text-gray-400">Plan</span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">{intent.plan?.name || '—'}</span>
                         </div>
+                        {intent.from_plan && intent.to_plan && intent.from_plan !== intent.to_plan && (
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Plan Change</span>
+                                <span className="font-semibold text-gray-900 dark:text-gray-100">{intent.from_plan} → {intent.to_plan}</span>
+                            </div>
+                        )}
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500 dark:text-gray-400">Billing Cycle</span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{intent.billing_cycle || '—'}</span>
@@ -458,7 +492,7 @@ function Pagination({ links }) {
     );
 }
 
-export default function SuperAdminBillingConsole({ intents, filters, plans, stats }) {
+export default function SuperAdminBillingConsole({ intents, filters, plans, stats, paymentTypes = [] }) {
     const { platform_setting } = usePage().props;
     const pc = getPlatformCurrencyConfig(platform_setting);
     const fmt = (a, c) => a == null ? '—' : _formatCurrency(a, { code: c || pc.code, symbol: pc.symbol, position: pc.position, decimals: pc.decimals });
@@ -467,17 +501,19 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
     const [searchValue, setSearchValue] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
     const [planFilter, setPlanFilter] = useState(filters?.plan_id || '');
+    const [typeFilter, setTypeFilter] = useState(filters?.type || '');
     const [dateFrom, setDateFrom] = useState(filters?.date_from || '');
     const [dateTo, setDateTo] = useState(filters?.date_to || '');
     const [selectedIntent, setSelectedIntent] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    const hasActiveFilters = filters?.status || filters?.plan_id || filters?.date_from || filters?.date_to || filters?.search;
+    const hasActiveFilters = filters?.status || filters?.plan_id || filters?.type || filters?.date_from || filters?.date_to || filters?.search;
 
     const applyFilters = () => {
         router.get('/superadmin/billing', {
             status: statusFilter || undefined,
             plan_id: planFilter || undefined,
+            type: typeFilter || undefined,
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             search: searchValue || undefined,
@@ -488,6 +524,7 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
         setSearchValue('');
         setStatusFilter('');
         setPlanFilter('');
+        setTypeFilter('');
         setDateFrom('');
         setDateTo('');
         router.get('/superadmin/billing', {}, { preserveState: true, replace: true });
@@ -594,7 +631,7 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
 
                     {showFilters && (
                         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
                                     <select
@@ -605,6 +642,20 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                     >
                                         {statusOptions.map((opt) => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type</label>
+                                    <select
+                                        value={typeFilter}
+                                        onChange={(e) => setTypeFilter(e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-900"
+                                        aria-label="Filter by payment type"
+                                    >
+                                        <option value="">All Types</option>
+                                        {paymentTypes.map((t) => (
+                                            <option key={t.value} value={t.value}>{t.label}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -658,6 +709,7 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                     <tr>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Merchant</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Submitted</th>
@@ -683,7 +735,13 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
+                                                <PaymentTypeBadge type={intent.payment_type} label={intent.payment_type_label} />
+                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap">
                                                 <span className="text-sm text-gray-600 dark:text-gray-400">{intent.plan?.name || '—'}</span>
+                                                {intent.from_plan && intent.to_plan && intent.from_plan !== intent.to_plan && (
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">{intent.from_plan} → {intent.to_plan}</p>
+                                                )}
                                             </td>
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fmt(intent.amount, intent.currency)}</span>

@@ -26,3 +26,6 @@ Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();
 Schedule::command('subscriptions:process-expired')->everyFiveMinutes();
 Schedule::command('subscriptions:send-reminders')->dailyAt('09:00');
 Schedule::command('subscriptions:apply-scheduled-changes')->hourly();
+
+// ── Tenant expiry cleanup (15-day grace → restrict + report; no hard delete) ──
+Schedule::command('tenants:process-cleanup')->dailyAt('02:30');

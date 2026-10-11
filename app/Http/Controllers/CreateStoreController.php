@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 
 class CreateStoreController extends Controller
@@ -51,6 +52,7 @@ class CreateStoreController extends Controller
             'owner_name' => 'required|string|max:255',
             'owner_email' => $emailRule,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'store_category_id' => ['nullable', 'integer', Rule::exists('store_categories', 'id')->where('is_active', true)],
         ]);
 
         $admin = DB::transaction(function () use ($validated) {
@@ -63,6 +65,7 @@ class CreateStoreController extends Controller
                 'store_url' => '/store/' . $slug,
                 'email' => $validated['owner_email'],
                 'status' => 'pending',
+                'store_category_id' => !empty($validated['store_category_id']) ? (int) $validated['store_category_id'] : null,
                 'settings' => [
                     'language' => 'en',
                     'theme' => 'light',

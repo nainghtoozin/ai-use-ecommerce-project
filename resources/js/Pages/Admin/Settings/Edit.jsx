@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, router, Head } from '@inertiajs/react';
+import { useForm, router, Head, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ImageUpload from '@/Components/ImageUpload';
 import { assetUrl } from '@/Utils/helpers';
@@ -34,7 +34,9 @@ const TABS = [
   { id: 'system', label: 'System', icon: 'bi-sliders' },
 ];
 
-export default function SettingsEdit({ settings = {}, mediaLibrary = [] }) {
+export default function SettingsEdit({ settings = {}, mediaLibrary = [], store_category_id = null, storeCategories = [], currentStoreCategory = null }) {
+  const { auth, tenant } = usePage().props;
+  const storeSlug = tenant?.slug || auth?.user?.tenant_slug || null;
   const [activeTab, setActiveTab] = useState('general');
   const [heroItems, setHeroItems] = useState(() => {
     return (settings.hero_images || []).map((rawPath, i) => ({
@@ -104,6 +106,7 @@ export default function SettingsEdit({ settings = {}, mediaLibrary = [] }) {
 
   const { data, setData, processing, errors } = useForm({
     site_name: settings.site_name || settings.name || '',
+    store_category_id: store_category_id ? String(store_category_id) : '',
     site_tagline: settings.site_tagline || '',
     site_description: settings.site_description || '',
     site_keywords: settings.site_keywords || '',
@@ -262,7 +265,10 @@ settings.cod_enabled : true,
     }
 
     formData.append('_method', 'PUT');
-    router.post(adminUrl('/admin/website-info/edit'), formData, {
+    if (!formData.has('store_category_id')) {
+      formData.append('store_category_id', data.store_category_id || '');
+    }
+    router.post(adminUrl('/admin/website-info/edit', storeSlug), formData, {
       forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {
@@ -306,7 +312,7 @@ settings.cod_enabled : true,
           className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color,#3B82F6)]"
         >
           {options.options?.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
           ))}
         </select>
       ) : type === 'switch' ? (
@@ -381,6 +387,16 @@ settings.cod_enabled : true,
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField('site_name', 'Website Title (optional)')}
                     {renderField('site_tagline', 'Site Tagline')}
+                    {renderField('store_category_id', 'Store Category', 'select', {
+                      options: [
+                        { value: '', label: 'No category (optional)' },
+                        ...((currentStoreCategory && !currentStoreCategory.is_active
+                          && !storeCategories.some((c) => String(c.id) === String(currentStoreCategory.id)))
+                          ? [{ value: String(currentStoreCategory.id), label: `${currentStoreCategory.name} (inactive)`, disabled: true }]
+                          : []),
+                        ...storeCategories.map((c) => ({ value: String(c.id), label: c.name })),
+                      ],
+                    })}
                     <div className="col-span-1 md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site Description</label>
                       <RichTextEditor

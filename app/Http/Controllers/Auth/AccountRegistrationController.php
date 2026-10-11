@@ -36,29 +36,11 @@ class AccountRegistrationController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:accounts,email', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'email.unique' => 'This email already has an account. Please sign in to continue.',
         ]);
-
-        $existing = Account::where('email', $request->email)->first();
-
-        if ($existing) {
-            if (!Hash::check($request->password, $existing->password)) {
-                return redirect()->route('login')
-                    ->with('status', 'This email is already registered. Please sign in with your password.');
-            }
-
-            Auth::guard('accounts')->login($existing);
-            $request->session()->regenerate();
-
-            if (!$existing->hasVerifiedEmail()) {
-                return redirect()->route('verification.notice')
-                    ->with('status', 'This email is already registered. Please verify your email to continue.');
-            }
-
-            return redirect()->route('login')
-                ->with('status', 'This email is already registered. Please sign in.');
-        }
 
         $account = Account::create([
             'name' => $request->name,
@@ -87,8 +69,10 @@ class AccountRegistrationController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email', 'unique:accounts,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'email.unique' => 'This email already has an account. Please sign in to continue.',
         ]);
 
         $user = User::create([

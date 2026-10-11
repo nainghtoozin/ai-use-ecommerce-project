@@ -192,8 +192,8 @@ class StorefrontRegistrationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -216,8 +216,8 @@ class StorefrontRegistrationTest extends TestCase
         $response = $this->post("/store/{$tenant->slug}/register", [
             'name' => 'Store Customer',
             'email' => 'customer@mayfashion.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ]);
 
         $response->assertRedirect(route('storefront.index', ['store_slug' => $tenant->slug], absolute: false));
@@ -226,7 +226,7 @@ class StorefrontRegistrationTest extends TestCase
         $user = User::where('email', 'customer@mayfashion.com')->first();
         $this->assertNotNull($user);
         $this->assertEquals($tenant->id, $user->tenant_id);
-        $this->assertTrue(Hash::check('password', $user->password));
+        $this->assertTrue(Hash::check('Password123', $user->password));
 
         $this->assertTrue($user->hasRole('customer'));
     }
@@ -240,8 +240,8 @@ class StorefrontRegistrationTest extends TestCase
         $responseA = $this->post("/store/{$tenantA->slug}/register", [
             'name' => 'User A',
             'email' => 'usera@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ]);
 
         $this->assertAuthenticated();
@@ -254,8 +254,8 @@ class StorefrontRegistrationTest extends TestCase
         $responseB = $this->post("/store/{$tenantB->slug}/register", [
             'name' => 'User B',
             'email' => 'userb@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ]);
 
         $this->assertAuthenticated();

@@ -89,8 +89,8 @@ class CustomerMemberSeparationTest extends TestCase
         $response = $this->actingAs($this->superadmin)->post('/admin/users', [
             'name' => 'New Customer',
             'email' => 'new-customer@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'role' => 'customer',
             'status' => 'active',
         ]);

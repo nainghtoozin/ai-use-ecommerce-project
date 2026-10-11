@@ -81,7 +81,11 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing/payment-history', [AdminBillingController::class, 'paymentHistory'])->name('billing.payment-history');
     Route::get('/billing/settings', [AdminBillingController::class, 'settings'])->name('billing.settings');
     Route::post('/billing/renew', [AdminBillingController::class, 'renew'])->name('billing.renew');
+    Route::get('/billing/renew-plan', [AdminBillingController::class, 'renewPlan'])->name('billing.renew-plan');
+    Route::post('/billing/cancel-request', [AdminBillingController::class, 'requestCancellation'])->name('billing.cancel-request');
+    Route::post('/billing/cancel-request/withdraw', [AdminBillingController::class, 'withdrawCancellation'])->name('billing.cancel-request.withdraw');
     Route::post('/billing/change-plan/preview', [AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
+    Route::post('/billing/change-plan/submit', [AdminBillingController::class, 'changePlanSubmit'])->name('billing.change-plan.submit');
     Route::post('/billing/change-plan/execute', [AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
     Route::post('/billing/change-plan/cancel', [AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
 

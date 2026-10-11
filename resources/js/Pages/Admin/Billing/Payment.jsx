@@ -1,7 +1,8 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Check, Copy, CheckCheck, Upload, X, AlertCircle, ShieldCheck, Clock, Banknote, ArrowLeft, Building2, FileImage, Loader2 } from 'lucide-react';
+import CompactReceiptUpload from '@/Components/Billing/CompactReceiptUpload';
+import { Check, Copy, CheckCheck, Upload, X, AlertCircle, ShieldCheck, Clock, Banknote, ArrowLeft, Building2, Loader2 } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
@@ -119,69 +120,7 @@ function PaymentMethodCard({ method, selectedId, onSelect, intentRef }) {
     );
 }
 
-function UploadArea({ file, onFileSelect, onFileRemove, error }) {
-    const dropRef = useRef(null);
-    const inputRef = useRef(null);
-    const [dragging, setDragging] = useState(false);
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragging(false);
-        const f = e.dataTransfer.files[0];
-        if (f) onFileSelect(f);
-    };
-
-    const handleChange = (e) => {
-        const f = e.target.files[0];
-        if (f) onFileSelect(f);
-    };
-
-    const previewUrl = file ? URL.createObjectURL(file) : null;
-
-    return (
-        <div
-            ref={dropRef}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => inputRef.current?.click()}
-            className={`relative rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-all duration-200 ${
-                dragging ? 'border-blue-400 bg-blue-50' : error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50/50'
-            }`}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
-            aria-label="Upload payment evidence"
-        >
-            <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/jpg,image/gif" onChange={handleChange} className="hidden" />
-
-            {file && previewUrl ? (
-                <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
-                    <img src={previewUrl} alt="Payment evidence preview" className="max-h-48 rounded-lg mx-auto object-contain shadow-sm" />
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onFileRemove(); }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
-                        aria-label="Remove image"
-                    >
-                        <X className="w-3.5 h-3.5" />
-                    </button>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
-                </div>
-            ) : (
-                <div>
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
-                        <FileImage className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                    </div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG or GIF — Max 5MB</p>
-                </div>
-            )}
-        </div>
-    );
-}
-
-export default function AdminBillingPayment({ intent, selectedPlan, currentPlan, subscription, paymentMethods }) {
+export default function AdminBillingPayment({ intent, selectedPlan, currentPlan, subscription, paymentMethods, renewalMode = false, scheduledChange = null, upgradeDetails = null, timezone, defaultTransferDate, defaultTransferTime, paymentReasons = [], suggestedReason = 'new_subscription' }) {
     const { props } = usePage();
     const pc = getPlatformCurrencyConfig(props.platform_setting);
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
@@ -194,9 +133,12 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
     const [transactionReference, setTransactionReference] = useState('');
     const autoAmount = intent?.amount ?? selectedPlan?.monthly_price ?? 0;
     const [transferredAmount, setTransferredAmount] = useState(String(autoAmount));
-    const [transferDate, setTransferDate] = useState('');
+    const [transferDate, setTransferDate] = useState(() => defaultTransferDate || '');
+    const [transferTime, setTransferTime] = useState(() => defaultTransferTime || '');
     const [evidenceFile, setEvidenceFile] = useState(null);
     const [note, setNote] = useState('');
+    const [paymentReason, setPaymentReason] = useState(() => suggestedReason || 'new_subscription');
+    const [paymentReasonText, setPaymentReasonText] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [submissionKey] = useState(() => (
         typeof crypto !== 'undefined' && crypto.randomUUID
@@ -217,7 +159,10 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
         if (!senderAccount.trim()) errs.push('Sender account/phone is required.');
         if (!transactionReference.trim()) errs.push('Transaction reference is required.');
         if (!transferDate) errs.push('Transfer date is required.');
-        if (transferDate && new Date(transferDate) > new Date()) errs.push('Transfer date cannot be in the future.');
+        if (transferDate && defaultTransferDate && transferDate > defaultTransferDate) errs.push('Transfer date cannot be in the future.');
+        if (!transferTime) errs.push('Transfer time is required.');
+        if (!paymentReason) errs.push('Please select a payment reason.');
+        if (paymentReason === 'other' && !paymentReasonText.trim()) errs.push('Please describe the payment reason.');
         if (!evidenceFile) errs.push('Receipt image is required.');
         if (!selectedMethod) errs.push('Please select a payment method.');
         return errs;
@@ -244,6 +189,9 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
         formData.append('transaction_reference', transactionReference.trim());
         formData.append('transferred_amount', transferredAmount);
         formData.append('transfer_date', transferDate);
+        formData.append('transfer_time', transferTime);
+        formData.append('payment_reason', paymentReason);
+        if (paymentReason === 'other') formData.append('payment_reason_text', paymentReasonText.trim());
         formData.append('evidence', evidenceFile);
         formData.append('note', note);
         if (selectedMethod) formData.append('payment_method_id', selectedMethod);
@@ -433,6 +381,60 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                     </div>
                 </div>
 
+                {renewalMode && scheduledChange && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p className="text-sm font-semibold text-amber-800">Scheduled plan change in progress</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                            You have a scheduled change to <strong>{scheduledChange.name}</strong> on {scheduledChange.effective_at}.
+                            Renewing now extends your current plan; the scheduled change is not cancelled. To cancel it, return to Billing first.
+                        </p>
+                    </div>
+                )}
+
+                {upgradeDetails?.proration && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <p className="text-sm font-semibold text-blue-800">
+                            {upgradeDetails.is_trial_conversion ? 'Trial conversion — amount breakdown' : 'Prorated upgrade — amount breakdown'}
+                        </p>
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
+                            <div className="flex justify-between">
+                                <span>Current plan</span>
+                                <span className="font-semibold">{currentPlan?.name || '—'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Current expiry</span>
+                                <span className="font-semibold">{upgradeDetails.current_expires_at || '—'}</span>
+                            </div>
+                            {!upgradeDetails.is_trial_conversion && (
+                                <>
+                                    <div className="flex justify-between">
+                                        <span>Remaining</span>
+                                        <span className="font-semibold">{upgradeDetails.proration.remaining_days} days</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Unused credit</span>
+                                        <span className="font-semibold">−{formatCurrency(upgradeDetails.proration.credit_amount, pc)}</span>
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex justify-between">
+                                <span>{selectedPlan?.name} {upgradeDetails.is_trial_conversion ? 'price' : 'prorated'}</span>
+                                <span className="font-semibold">{formatCurrency(upgradeDetails.proration.target_prorated, pc)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Amount due</span>
+                                <span className="font-semibold">{formatCurrency(upgradeDetails.proration.amount_due, pc)}</span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-blue-700 mt-2">
+                            {upgradeDetails.is_trial_conversion
+                                ? <>Your trial ends and a full billing period of <strong>{selectedPlan?.name}</strong> begins only after an admin approves this payment.</>
+                                : <>Your plan is upgraded to <strong>{selectedPlan?.name}</strong> only after an admin approves this payment.
+                                    {upgradeDetails.scheduled_change_action === 'cancel' ? ' Your scheduled plan change will be cancelled on approval.' : ''}</>}
+                        </p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
@@ -495,6 +497,49 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Information</h2>
                                     </div>
                                     <div className="p-6 space-y-5">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Payment Reason <span className="text-red-500">*</span>
+                                            </label>
+                                            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Payment reason">
+                                                {(paymentReasons.length ? paymentReasons : [
+                                                    { value: 'subscription_renewal', label: 'Subscription renewal payment' },
+                                                    { value: 'new_subscription', label: 'New subscription payment' },
+                                                    { value: 'plan_upgrade', label: 'Plan upgrade payment' },
+                                                    { value: 'plan_change', label: 'Plan change payment' },
+                                                    { value: 'other', label: 'Other' },
+                                                ]).map((reason) => {
+                                                    const active = paymentReason === reason.value;
+                                                    return (
+                                                        <button
+                                                            key={reason.value}
+                                                            type="button"
+                                                            role="radio"
+                                                            aria-checked={active}
+                                                            onClick={() => { setPaymentReason(reason.value); setUploadError(null); }}
+                                                            className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                                                                active
+                                                                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                                                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                                                            }`}
+                                                        >
+                                                            {reason.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {paymentReason === 'other' && (
+                                                <input
+                                                    type="text"
+                                                    value={paymentReasonText}
+                                                    onChange={(e) => setPaymentReasonText(e.target.value.slice(0, 255))}
+                                                    placeholder="Describe the payment reason"
+                                                    className="mt-3 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                    maxLength={255}
+                                                />
+                                            )}
+                                        </div>
+
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label htmlFor="sender-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -541,7 +586,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Transfer Amount <span className="text-red-500">*</span>
@@ -551,7 +596,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                     <span>{Number(transferredAmount).toLocaleString()}</span>
                                                     {pc.code !== 'USD' && <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">{pc.code}</span>}
                                                 </div>
-                                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">This amount is fixed based on your selected plan.</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Fixed based on your selected plan.</p>
                                             </div>
                                             <div>
                                                 <label htmlFor="transfer-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -562,16 +607,29 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                                     type="date"
                                                     value={transferDate}
                                                     onChange={(e) => setTransferDate(e.target.value)}
-                                                    max={new Date().toISOString().split('T')[0]}
+                                                    max={defaultTransferDate}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="transfer-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Transfer Time <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="transfer-time"
+                                                    type="time"
+                                                    value={transferTime}
+                                                    onChange={(e) => setTransferTime(e.target.value)}
                                                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                                 />
                                             </div>
                                         </div>
 
-                                        <UploadArea
+                                        <CompactReceiptUpload
                                             file={evidenceFile}
-                                            onFileSelect={(f) => { setEvidenceFile(f); setUploadError(null); }}
-                                            onFileRemove={() => { setEvidenceFile(null); setUploadError(null); }}
+                                            onSelect={(f) => { setEvidenceFile(f); setUploadError(null); }}
+                                            onRemove={() => { setEvidenceFile(null); setUploadError(null); }}
+                                            onError={(msg) => setUploadError(msg)}
                                             error={uploadError}
                                         />
                                         {uploadError && (

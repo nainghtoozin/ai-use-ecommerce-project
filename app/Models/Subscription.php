@@ -65,6 +65,17 @@ class Subscription extends Model
         return $this->belongsTo(Plan::class, 'pending_plan_id');
     }
 
+    public function cancellationRequests()
+    {
+        return $this->hasMany(SubscriptionCancellationRequest::class);
+    }
+
+    public function activeCancellationRequest()
+    {
+        return $this->hasOne(SubscriptionCancellationRequest::class)
+            ->where('status', SubscriptionCancellationRequest::STATUS_PENDING);
+    }
+
     public function auditLogs()
     {
         return $this->hasMany(\App\Models\SubscriptionAuditLog::class)->latest();
@@ -130,6 +141,72 @@ class Subscription extends Model
             return 0;
         }
         return max(0, now()->diffInDays($this->trial_ends_at, false));
+    }
+
+    /* ── Trial renewal policy ── */
+
+    /**
+     * Remaining trial renewals allowed by platform settings.
+     * Returns null when unlimited (max_trial_renewals = 0, the documented meaning).
+     */
+    public function trialRenewalsRemaining(): ?int
+    {
+        $max = (int) (PlatformSetting::current()->max_trial_renewals ?? 0);
+
+        if ($max <= 0) {
+            return null;
+        }
+
+        return max(0, $max - (int) $this->trial_renewals_count);
+    }
+
+    /**
+     * Whether this subscription may extend its trial right now.
+     * Only genuinely trialing subscriptions qualify; paid/expired ones must convert.
+     */
+    public function canRenewTrial(): bool
+    {
+        if (!$this->isTrialing() || $this->isSuspended()) {
+            return false;
+        }
+
+        if (!PlatformSetting::current()->allow_trial_renewal) {
+            return false;
+        }
+
+        $remaining = $this->trialRenewalsRemaining();
+
+        return $remaining === null || $remaining > 0;
+    }
+
+    /**
+     * Extend the trial by the configured trial duration and consume one allowance.
+     * Returns false when not eligible; never extends as a side effect of a request.
+     */
+    public function renewTrial(): bool
+    {
+        if (!$this->canRenewTrial()) {
+            return false;
+        }
+
+        $trialDays = max(1, (int) (PlatformSetting::current()->trial_days ?? 14));
+
+        $base = $this->trial_ends_at && $this->trial_ends_at->isFuture()
+            ? $this->trial_ends_at
+            : now();
+
+        $newTrialEnd = $base->copy()->addDays($trialDays)->endOfDay();
+
+        $this->update([
+            'status' => 'trialing',
+            'trial_ends_at' => $newTrialEnd,
+            'expires_at' => $newTrialEnd,
+        ]);
+
+        $this->increment('trial_renewals_count');
+        $this->tenant?->unlock();
+
+        return true;
     }
 
     /* ── Expiry helpers ── */

@@ -159,6 +159,12 @@ class PermissionSeeder extends Seeder
             'billing-payment-method.update',
             'billing-payment-method.delete',
 
+            // Store Categories (platform-level marketplace classification)
+            'store-categories.view',
+            'store-categories.create',
+            'store-categories.update',
+            'store-categories.delete',
+
             // Inventory Management
             'inventory.view',
             'inventory.create',

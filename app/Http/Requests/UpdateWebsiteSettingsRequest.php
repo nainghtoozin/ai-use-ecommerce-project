@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateWebsiteSettingsRequest extends FormRequest
 {
@@ -96,6 +97,7 @@ class UpdateWebsiteSettingsRequest extends FormRequest
             'free_shipping_threshold' => 'nullable|numeric|min:0',
             'default_shipping_fee' => 'nullable|numeric|min:0',
             'is_active' => 'nullable|boolean',
+            'store_category_id' => ['nullable', 'integer', Rule::exists('store_categories', 'id')->where('is_active', true)],
         ];
     }
 

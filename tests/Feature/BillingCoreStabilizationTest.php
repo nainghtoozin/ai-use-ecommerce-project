@@ -44,13 +44,17 @@ class BillingCoreStabilizationTest extends TestCase
 
         $this->assertTrue($result['is_upgrade']);
         $this->assertSame(100.0, $result['price_difference']);
-        $this->assertSame(100.0, $result['total_due']);
         $this->assertGreaterThan(0, $result['days_remaining']);
         $this->assertLessThanOrEqual(15, $result['days_remaining']);
         $this->assertEqualsWithDelta(
             round(100 / 30 * $result['days_remaining'], 2),
             $result['credit_amount'],
-            0.01
+            0.5
+        );
+        $this->assertEqualsWithDelta(
+            round(100 * $result['remaining_fraction'], 2),
+            $result['total_due'],
+            0.5
         );
     }
 

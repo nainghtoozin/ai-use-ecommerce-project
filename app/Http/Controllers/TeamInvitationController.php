@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -124,7 +125,7 @@ class TeamInvitationController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'password' => 'required|confirmed|min:8',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $account = Account::create([

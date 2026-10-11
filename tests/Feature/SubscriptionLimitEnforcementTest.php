@@ -204,8 +204,8 @@ class SubscriptionLimitEnforcementTest extends TestCase
         $response = $this->actingAs($admin)->post('/admin/users', [
             'name' => 'Second Admin',
             'email' => 'second-admin-' . uniqid() . '@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'role' => 'admin',
             'status' => 'active',
         ]);

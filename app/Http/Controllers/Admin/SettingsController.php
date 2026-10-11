@@ -28,11 +28,23 @@ class SettingsController extends Controller
 
         $settings = WebsiteInfo::getSettings();
         $storefront = Storefront::first();
+        $tenant = tenant();
+        $storeCategories = \App\Models\StoreCategory::active()->sorted()->get(['id', 'name']);
+        $currentStoreCategory = null;
+        if ($tenant?->store_category_id) {
+            $current = $tenant->storeCategory()->first(['id', 'name', 'is_active']);
+            if ($current && !$current->is_active && !$storeCategories->contains('id', $current->id)) {
+                $currentStoreCategory = $current->only(['id', 'name', 'is_active']);
+            }
+        }
 
         return Inertia::render('Admin/Settings/Edit', [
             'settings' => array_merge($settings->toArray(), [
                 'cod_availability_mode' => \App\Models\Setting::get('cod_availability_mode', 'rules'),
             ]),
+            'store_category_id' => $tenant?->store_category_id,
+            'storeCategories' => $storeCategories,
+            'currentStoreCategory' => $currentStoreCategory,
             'mediaLibrary' => $storefront
                 ? StorefrontMedia::where('storefront_id', $storefront->id)
                     ->latest()
@@ -160,6 +172,7 @@ class SettingsController extends Controller
         unset($validated['logo_media_id']);
         unset($validated['about_media_id']);
         unset($validated['hero_images'], $validated['hero_images_existing'], $validated['hero_images_payload']);
+        unset($validated['store_category_id']);
 
         $contactInfo = [
             'primary_phone' => $validated['phone'] ?? '',
@@ -215,6 +228,13 @@ class SettingsController extends Controller
         $info->address_info = $addressInfo;
         $info->footer_settings = $footerSettings;
         $info->save();
+
+        if ($request->has('store_category_id')) {
+            $tenant = tenant();
+            if ($tenant) {
+                $tenant->update(['store_category_id' => $request->input('store_category_id') ?: null]);
+            }
+        }
         if ($storefront) {
             $this->revisionService->syncDraft($storefront);
         }
@@ -224,7 +244,10 @@ class SettingsController extends Controller
 
         Log::info('Website settings updated', [
             'user_id' => auth()->id(),
+            'tenant_id' => tenant()?->id,
             'updated_fields' => array_keys($validated),
+            'store_category_id_input' => $request->input('store_category_id', '(not provided)'),
+            'store_category_id_saved' => tenant()?->fresh()->store_category_id,
         ]);
 
         if ($request->wantsJson()) {

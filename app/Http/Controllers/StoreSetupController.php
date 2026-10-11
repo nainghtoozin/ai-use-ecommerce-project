@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\PlatformSetting;
+use App\Models\StoreCategory;
 use App\Models\Tenant;
 use App\Models\WebsiteInfo;
 use App\Services\TenantBootstrapService;
@@ -34,6 +35,7 @@ class StoreSetupController extends Controller
             'timezones' => $this->getTimezones(),
             'countries' => $this->getCountries(),
             'languages' => $this->getLanguages(),
+            'storeCategories' => StoreCategory::active()->sorted()->get(['id', 'name']),
             'defaultCurrency' => $platform->default_currency ?? 'MMK',
             'defaultTimezone' => $platform->default_timezone ?? 'Asia/Yangon',
             'defaultLanguage' => $platform->default_language ?? 'en',
@@ -71,6 +73,7 @@ class StoreSetupController extends Controller
             'country' => ['required', 'string', 'max:2'],
             'theme_color' => ['nullable', 'string', 'max:9', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'store_category_id' => ['nullable', 'integer', Rule::exists('store_categories', 'id')->where('is_active', true)],
         ]);
 
         try {
@@ -80,6 +83,7 @@ class StoreSetupController extends Controller
                     'slug' => $validated['store_slug'],
                     'email' => $validated['business_email'],
                     'status' => 'pending',
+                    'store_category_id' => !empty($validated['store_category_id']) ? (int) $validated['store_category_id'] : null,
                     'settings' => [
                         'language' => $validated['language'],
                         'currency' => $validated['currency'],

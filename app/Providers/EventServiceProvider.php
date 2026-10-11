@@ -6,6 +6,7 @@ use App\Events\Payments\PaymentIntentCompleted;
 use App\Events\Payments\PaymentIntentRejected;
 use App\Listeners\ActivateSubscriptionOnPaymentCompleted;
 use App\Listeners\ActivateTenantOnVerified;
+use App\Listeners\CancelTenantCleanupOnPaymentCompleted;
 use App\Listeners\CreateTransactionFromCompletedIntent;
 use App\Listeners\GenerateInvoiceFromCompletedIntent;
 use App\Listeners\CreateReceiptFromCompletedIntent;
@@ -27,6 +28,7 @@ class EventServiceProvider extends ServiceProvider
         PaymentIntentCompleted::class => [
             CreateTransactionFromCompletedIntent::class,
             ActivateSubscriptionOnPaymentCompleted::class,
+            CancelTenantCleanupOnPaymentCompleted::class,
             GenerateInvoiceFromCompletedIntent::class,
             CreateReceiptFromCompletedIntent::class,
         ],

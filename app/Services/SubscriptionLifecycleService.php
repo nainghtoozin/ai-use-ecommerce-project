@@ -33,6 +33,11 @@ class SubscriptionLifecycleService
             return;
         }
 
+        if (($intent->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE) {
+            $this->applyProratedUpgrade($subscription, $plan, $intent);
+            return;
+        }
+
         $previousStatus = $subscription->status;
         $previousPlanId = $subscription->plan_id;
         $isUpgrade = $plan->id !== $previousPlanId;
@@ -186,5 +191,69 @@ class SubscriptionLifecycleService
                 $interval
             ),
         );
+    }
+
+    private function applyProratedUpgrade(Subscription $subscription, $plan, PaymentIntent $intent): void
+    {
+        if (!$plan) {
+            return;
+        }
+
+        $interval = $intent->billing_cycle ?? $subscription->billing_interval ?? 'monthly';
+        $oldPlanId = $subscription->plan_id;
+        $previousExpiry = $subscription->expires_at;
+
+        $scheduledAction = $intent->metadata['scheduled_change_action'] ?? 'keep';
+        $pendingPlanId = $subscription->pending_plan_id;
+        $pendingEffectiveAt = $subscription->pending_plan_effective_at;
+
+        $subscription->changePlan($plan, $interval);
+        $subscription->refresh();
+
+        if ($scheduledAction === 'keep' && $pendingPlanId && (int) $pendingPlanId !== (int) $plan->id) {
+            $subscription->update([
+                'pending_plan_id' => $pendingPlanId,
+                'pending_plan_effective_at' => $pendingEffectiveAt,
+            ]);
+            $subscription->refresh();
+        }
+
+        $proration = $intent->metadata['proration'] ?? [];
+
+        $this->timeline->record(
+            intent: $intent,
+            type: 'plan_upgraded',
+            description: sprintf(
+                'Plan upgraded to %s (%s). Charged %s %s.',
+                $plan->name,
+                $interval,
+                $intent->amount,
+                $intent->currency
+            ),
+            metadata: [
+                'previous_plan_id' => $oldPlanId,
+                'new_plan_id' => $plan->id,
+                'proration' => $proration,
+            ],
+        );
+
+        $this->audit::log($subscription, 'plan_upgraded', [
+            'old_plan_id' => $oldPlanId,
+            'new_plan_id' => $plan->id,
+            'reason' => sprintf(
+                'Prorated upgrade approved via payment %s. Charged %s %s.',
+                $intent->reference_number,
+                $intent->amount,
+                $intent->currency
+            ),
+            'metadata' => [
+                'payment_intent_id' => $intent->id,
+                'requested_amount' => $proration['amount_due'] ?? null,
+                'approved_amount' => (float) $intent->amount,
+                'proration' => $proration,
+                'previous_expires_at' => $previousExpiry?->toDateTimeString(),
+                'new_expires_at' => $subscription->expires_at?->toDateTimeString(),
+            ],
+        ]);
     }
 }

@@ -10,12 +10,8 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
     const [billingInterval, setBillingInterval] = useState(subscription?.billing_interval || 'monthly');
     const recommendedSlug = getRecommendedSlug(usage, plans);
 
-    const handleChoose = (plan, { action, interval }) => {
-        if (action === 'upgrade') {
-            router.get(adminUrl(`/admin/billing/checkout/${plan.slug}`), { billing_cycle: interval });
-        } else {
-            router.post(adminUrl('/admin/billing/change-plan/preview'), { plan_id: plan.id, billing_interval: interval });
-        }
+    const handleChoose = (plan, { interval }) => {
+        router.post(adminUrl('/admin/billing/change-plan/preview'), { plan_id: plan.id, billing_interval: interval });
     };
 
     return (

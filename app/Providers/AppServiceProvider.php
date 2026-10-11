@@ -57,6 +57,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -232,6 +233,11 @@ class AppServiceProvider extends ServiceProvider
         if (!app()->environment('local')) {
             URL::forceScheme('https');
         }
+
+        // Shared password policy for every password creation/change flow.
+        // At least 8 characters, one uppercase, one lowercase, one number.
+        // Existing stored passwords are unaffected (this only applies on validation).
+        Password::defaults(fn () => Password::min(8)->mixedCase()->numbers());
 
         RateLimiter::for('auth', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());

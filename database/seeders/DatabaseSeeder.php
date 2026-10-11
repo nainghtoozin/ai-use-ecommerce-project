@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PlatformSettingSeeder::class,     // Platform settings
             BillingPaymentMethodSeeder::class, // Platform billing methods
             CityTownshipSeeder::class,       // Global cities + townships (shared reference data)
+            StoreCategorySeeder::class,       // Platform store categories (shared, slug-stable)
 
             // ─────────────────────────────────────────────────────────
             // TENANT BOOTSTRAP (creates tenants + memberships)

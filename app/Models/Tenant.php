@@ -23,6 +23,7 @@ class Tenant extends Model
         'email',
         'logo',
         'status',
+        'store_category_id',
         'settings',
         'activated_at',
         'locked_at',
@@ -33,6 +34,7 @@ class Tenant extends Model
 
     protected $casts = [
         'settings' => 'array',
+        'store_category_id' => 'integer',
         'activated_at' => 'datetime',
         'locked_at' => 'datetime',
         'expires_at' => 'datetime',
@@ -132,6 +134,11 @@ class Tenant extends Model
     public function storefront()
     {
         return $this->hasOne(Storefront::class);
+    }
+
+    public function storeCategory()
+    {
+        return $this->belongsTo(StoreCategory::class);
     }
 
     public function subscriptionPlan()

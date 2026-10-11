@@ -109,6 +109,10 @@ class RoleAndPermissionSeeder extends Seeder
             'billing-payment-method.create',
             'billing-payment-method.update',
             'billing-payment-method.delete',
+            'store-categories.view',
+            'store-categories.create',
+            'store-categories.update',
+            'store-categories.delete',
 
             // Customer-only — not assigned to admin/staff roles
             'orders.view-own',
