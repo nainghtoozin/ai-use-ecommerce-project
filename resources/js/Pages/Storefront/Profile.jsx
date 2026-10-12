@@ -72,7 +72,7 @@ export default function CustomerProfile({ tenant, customer, mustVerifyEmail, sta
 
     function submitProfile(e) {
         e.preventDefault();
-        profileForm.post(route('storefront.customer.profile.update', { store_slug: storeSlug }), {
+        profileForm.patch(route('storefront.customer.profile.update', { store_slug: storeSlug }), {
             forceFormData: true,
             onSuccess: () => {
                 profileForm.reset('profile_image');

@@ -274,7 +274,7 @@ function ProfileSection({ tenant, customer, mustVerifyEmail, status }) {
 
     function submit(e) {
         e.preventDefault();
-        form.post(route('storefront.customer.profile.update', { store_slug: storeSlug }), {
+        form.patch(route('storefront.customer.profile.update', { store_slug: storeSlug }), {
             forceFormData: true,
             onSuccess: () => { form.reset('profile_image'); setAvatarPreview(null); },
         });
@@ -388,7 +388,7 @@ function PreferencesSection({ tenant, customer }) {
         const updated = { ...notifPrefs, [key]: value };
         setNotifPrefs(updated);
         setSavingNotif(true);
-        router.put(route('storefront.customer.profile.update', { store_slug: tenant.slug }), { notification_preferences: updated }, {
+        router.patch(route('storefront.customer.profile.update', { store_slug: tenant.slug }), { notification_preferences: updated }, {
             preserveState: true,
             onFinish: () => setSavingNotif(false),
         });

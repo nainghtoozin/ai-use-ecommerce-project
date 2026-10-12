@@ -172,7 +172,7 @@ class StorefrontCustomerController extends Controller
 
     public function updatePassword(Request $request, $storeSlug = null)
     {
-        $this->ensureTenantAccess($request);
+        $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
         $validated = $request->validate([
@@ -189,8 +189,11 @@ class StorefrontCustomerController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::route('storefront.customer.account', ['store_slug' => $storeSlug, 'tab' => 'security'])
-            ->with('status', 'password-updated');
+        // The slug is resolved from the membership-checked tenant context,
+        // never from the optional controller parameter or client input.
+        // Customers land on their own store's login page (not the merchant login).
+        return Redirect::route('storefront.login', ['store_slug' => $tenant->slug])
+            ->with('status', 'Password changed. Please log in with your new password.');
     }
 
     public function deleteAccount(Request $request, $storeSlug = null)

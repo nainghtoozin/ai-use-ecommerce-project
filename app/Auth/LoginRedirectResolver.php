@@ -66,7 +66,7 @@ class LoginRedirectResolver
                 ? route('storefront.admin.login', ['store_slug' => $storeSlug])
                 : route('admin.login'),
             'storefront' => $storeSlug
-                ? route('storefront.index', ['store_slug' => $storeSlug])
+                ? route('storefront.login', ['store_slug' => $storeSlug])
                 : '/',
             default => $this->fallbackLogoutRedirect($authenticatable, $storeSlug),
         };
