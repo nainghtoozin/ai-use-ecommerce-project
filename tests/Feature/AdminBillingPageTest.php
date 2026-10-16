@@ -384,42 +384,6 @@ class AdminBillingPageTest extends TestCase
 
     private function ensureBillingSchema(): void
     {
-        if (!Schema::hasTable('tenant_cleanups')) {
-            Schema::create('tenant_cleanups', function ($table) {
-                $table->id(); $table->unsignedBigInteger('tenant_id')->unique();
-                $table->unsignedBigInteger('subscription_id')->nullable();
-                $table->string('status', 20)->default('grace');
-                $table->timestamp('expires_at')->nullable();
-                $table->timestamp('grace_ends_at')->nullable();
-                $table->timestamp('retention_ends_at')->nullable();
-                $table->string('deletion_status', 20)->default('none');
-                $table->timestamp('restricted_at')->nullable();
-                $table->timestamp('deleted_at')->nullable();
-                $table->timestamp('archived_at')->nullable();
-                $table->timestamp('last_reminder_at')->nullable();
-                $table->json('reminders_sent')->nullable();
-                $table->unsignedInteger('attempts')->default(0);
-                $table->string('reason')->nullable();
-                $table->text('last_error')->nullable();
-                $table->json('metadata')->nullable();
-                $table->timestamps();
-            });
-        }
-
-        foreach (['retention_ends_at', 'deleted_at'] as $column) {
-            if (!Schema::hasColumn('tenant_cleanups', $column)) {
-                Schema::table('tenant_cleanups', function ($table) use ($column) {
-                    $table->timestamp($column)->nullable();
-                });
-            }
-        }
-
-        if (!Schema::hasColumn('tenant_cleanups', 'deletion_status')) {
-            Schema::table('tenant_cleanups', function ($table) {
-                $table->string('deletion_status', 20)->default('none');
-            });
-        }
-
         if (!Schema::hasTable('subscription_cancellation_requests')) {
             Schema::create('subscription_cancellation_requests', function ($table) {
                 $table->id(); $table->unsignedBigInteger('tenant_id');
@@ -464,18 +428,6 @@ class AdminBillingPageTest extends TestCase
                     }
                 });
             }
-        }
-
-        if (!Schema::hasColumn('platform_settings', 'tenant_data_retention_days')) {
-            Schema::table('platform_settings', function ($table) {
-                $table->unsignedInteger('tenant_data_retention_days')->default(15);
-            });
-        }
-
-        if (!Schema::hasColumn('platform_settings', 'tenant_auto_delete_enabled')) {
-            Schema::table('platform_settings', function ($table) {
-                $table->boolean('tenant_auto_delete_enabled')->default(false);
-            });
         }
     }
 

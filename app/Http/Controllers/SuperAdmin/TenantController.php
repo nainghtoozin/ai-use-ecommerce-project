@@ -190,11 +190,6 @@ class TenantController extends Controller
 
     public function toggleStatus(Tenant $tenant)
     {
-        if ($tenant->isDeleted()) {
-            return redirect()->route('superadmin.tenants.index')
-                ->with('error', 'This store has been permanently deleted and cannot be reactivated automatically. Restore its data first.');
-        }
-
         $wasSuspended = $tenant->status === 'suspended';
 
         if ($wasSuspended) {
@@ -230,15 +225,10 @@ class TenantController extends Controller
                 ->with('error', 'The default tenant cannot be deleted.');
         }
 
-        try {
-            $deletionService->delete($tenant);
-        } catch (\RuntimeException $e) {
-            return redirect()->route('superadmin.tenants.index')
-                ->with('error', $e->getMessage());
-        }
+        $deletionService->delete($tenant);
 
         return redirect()->route('superadmin.tenants.index')
-            ->with('success', "Tenant \"{$tenant->name}\" deleted successfully, including its users, subscriptions, invoices and store files. Other tenants and shared platform data are unaffected.");
+            ->with('success', "Tenant \"{$tenant->name}\" deleted successfully.");
     }
 
 }

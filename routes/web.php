@@ -328,14 +328,8 @@ Route::middleware('auth:web,accounts')->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:admin', 'tenant.valid', 'tenant.binding'])->group(function () {
     // ── Account routes (accessible even when subscription expired/suspended) ──
     Route::get('/expired', function () {
-        $tenant = \App\Models\Tenant::getCurrent();
-        $cleanup = $tenant ? \App\Models\TenantCleanup::where('tenant_id', $tenant->id)->first() : null;
-
         return \Inertia\Inertia::render('Standalone/Expired', [
             'store_slug' => null,
-            'store_deleted' => (bool) ($tenant && $tenant->isDeleted()),
-            'retention_deadline' => $cleanup?->retention_ends_at?->toDateString(),
-            'backup_available' => (bool) ($cleanup && $cleanup->exportAllowed()),
         ]);
     })->name('expired');
     Route::get('/suspended', fn() => \Inertia\Inertia::render('Standalone/Suspended', [
@@ -357,16 +351,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     Route::post('/billing/change-plan/submit', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanSubmit'])->name('billing.change-plan.submit');
     Route::post('/billing/change-plan/execute', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
     Route::post('/billing/change-plan/cancel', [\App\Http\Controllers\Admin\AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
-
-    // ── Backup exports (available until the retention deadline) ──
-    Route::get('/billing/backup/products', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupProducts'])->name('billing.backup.products');
-    Route::get('/billing/backup/orders', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupOrders'])->name('billing.backup.orders');
-    Route::get('/billing/backup/customers', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupCustomers'])->name('billing.backup.customers');
-    Route::get('/billing/backup/variants', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupVariants'])->name('billing.backup.variants');
-    Route::get('/billing/backup/inventory', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupInventory'])->name('billing.backup.inventory');
-    Route::get('/billing/backup/order-items', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupOrderItems'])->name('billing.backup.order-items');
-    Route::get('/billing/backup/addresses', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupAddresses'])->name('billing.backup.addresses');
-    Route::get('/billing/backup/media', [\App\Http\Controllers\Admin\AdminBillingController::class, 'backupMedia'])->name('billing.backup.media');
 
     // ── Invoice routes ──
     Route::get('/billing/invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'index'])->name('billing.invoices');
@@ -818,8 +802,6 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::post('/billing/{intent}/reject', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'reject'])->name('billing.reject');
 
     Route::get('/financial', [\App\Http\Controllers\SuperAdmin\SuperAdminFinancialController::class, 'index'])->name('financial.index');
-
-    Route::get('/tenant-cleanups', [\App\Http\Controllers\SuperAdmin\TenantCleanupController::class, 'index'])->name('tenant-cleanups.index');
 
     Route::get('/operations', [\App\Http\Controllers\SuperAdmin\SuperAdminOperationsController::class, 'index'])->name('operations.index');
 

@@ -27,7 +27,7 @@ const limitRows = [
     { key: 'flash_sale_limit', label: 'Flash Sales' },
 ];
 
-export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment, trialDays, renewal, cancellation, trial, retention }) {
+export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment, trialDays, renewal, cancellation, trial }) {
     const { can } = usePermission();
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
@@ -96,17 +96,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
             router.post(adminUrl('/admin/billing/cancel-request/withdraw'), {}, { preserveScroll: true });
         }
     };
-
-    const backupLinks = retention?.export_allowed ? [
-        { label: 'Products', href: adminUrl('/admin/billing/backup/products?format=xlsx') },
-        { label: 'Variants', href: adminUrl('/admin/billing/backup/variants?format=xlsx') },
-        { label: 'Inventory', href: adminUrl('/admin/billing/backup/inventory?format=csv') },
-        { label: 'Orders', href: adminUrl('/admin/billing/backup/orders?format=csv') },
-        { label: 'Order Items', href: adminUrl('/admin/billing/backup/order-items') },
-        { label: 'Customers', href: adminUrl('/admin/billing/backup/customers?format=csv') },
-        { label: 'Addresses', href: adminUrl('/admin/billing/backup/addresses') },
-        { label: 'Media List', href: adminUrl('/admin/billing/backup/media') },
-    ] : [];
 
     const scrollToPlans = () => {
         document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -244,20 +233,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                 <p className="text-xs text-red-700">
                                     Paid access continues until {latestCancellation.effective_at}, then the subscription will not renew. This cannot be undone here — renew to keep your store.
                                 </p>
-                                {retention?.retention_deadline && (
-                                    <p className="text-xs text-red-700">
-                                        Your store data is retained until {retention.retention_deadline} (permanent deletion date). Export a backup before then.
-                                    </p>
-                                )}
-                                {backupLinks.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 pt-1">
-                                        {backupLinks.map((l) => (
-                                            <a key={l.label} href={l.href} className="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
-                                                Export {l.label}
-                                            </a>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                         )}
                         {(latestCancellation.status === 'rejected' || latestCancellation.status === 'withdrawn') && (
@@ -380,37 +355,9 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                     <p className="text-xs text-red-600 mt-0.5">Expired {subscription.days_since_expiry} day{subscription.days_since_expiry > 1 ? 's' : ''} ago</p>
                                 )}
                                 <p className="text-xs text-red-600 mt-0.5">Renew your subscription to restore full access to your store.</p>
-                                {retention && (subscription.status === 'expired' || subscription.status === 'past_due') && (
+                                {subscription.status === 'canceled' && subscription.expires_at && (
                                     <div className="text-xs text-red-700 mt-1.5 space-y-0.5">
-                                        <p>
-                                            Grace period: {retention.grace_days} day{retention.grace_days !== 1 ? 's' : ''}.
-                                            {retention.cleanup_at
-                                                ? ` Your store will be restricted on ${retention.cleanup_at} (${retention.cleanup_grace_days} days after expiry) if not renewed.`
-                                                : ''}
-                                        </p>
-                                        <p>Your billing history and store data are retained — renewing restores full access.</p>
-                                        {retention.retention_deadline && (
-                                            <p>Export a backup before {retention.retention_deadline}, the permanent deletion date.</p>
-                                        )}
-                                    </div>
-                                )}
-                                {retention && subscription.status === 'canceled' && (
-                                    <div className="text-xs text-red-700 mt-1.5 space-y-0.5">
-                                        {subscription.expires_at && (
-                                            <p>Paid access continues until {subscription.expires_at}.</p>
-                                        )}
-                                        {retention.retention_deadline && (
-                                            <p>Store data is retained until {retention.retention_deadline} (permanent deletion date).</p>
-                                        )}
-                                    </div>
-                                )}
-                                {backupLinks.length > 0 && ['expired', 'past_due', 'canceled'].includes(subscription.status) && (
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {backupLinks.map((l) => (
-                                            <a key={l.label} href={l.href} className="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
-                                                Export {l.label}
-                                            </a>
-                                        ))}
+                                        <p>Paid access continues until {subscription.expires_at}.</p>
                                     </div>
                                 )}
                             </div>

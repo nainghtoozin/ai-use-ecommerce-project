@@ -356,15 +356,6 @@ class Subscription extends Model
 
     public function renew(Carbon $expiresAt, ?string $notes = null): void
     {
-        if ($this->tenant && $this->tenant->isDeleted()) {
-            \Illuminate\Support\Facades\Log::warning('Subscription renewal refused for a deleted tenant.', [
-                'subscription_id' => $this->id,
-                'tenant_id' => $this->tenant_id,
-            ]);
-
-            return;
-        }
-
         $this->update([
             'status' => 'active',
             'expires_at' => $expiresAt->endOfDay(),
@@ -490,15 +481,6 @@ class Subscription extends Model
     public function renewFromInterval(?string $notes = null): void
     {
         if ($this->plan?->isFree()) {
-            return;
-        }
-
-        if ($this->tenant && $this->tenant->isDeleted()) {
-            \Illuminate\Support\Facades\Log::warning('Subscription interval renewal refused for a deleted tenant.', [
-                'subscription_id' => $this->id,
-                'tenant_id' => $this->tenant_id,
-            ]);
-
             return;
         }
 

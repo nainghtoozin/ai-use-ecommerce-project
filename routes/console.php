@@ -26,9 +26,3 @@ Schedule::job(new \App\Jobs\CleanupOldInvitations(30))->daily();
 Schedule::command('subscriptions:process-expired')->everyFiveMinutes();
 Schedule::command('subscriptions:send-reminders')->dailyAt('09:00');
 Schedule::command('subscriptions:apply-scheduled-changes')->hourly();
-
-// ── Tenant expiry cleanup (grace → restrict + report; purge double-gated) ──
-Schedule::command('tenants:process-cleanup')->dailyAt('02:30')->withoutOverlapping(60);
-
-// ── Tenant data purge (runs only when retention auto-delete + purge flag enabled) ──
-Schedule::command('tenants:purge --limit=50')->weeklyOn(0, '03:15')->withoutOverlapping(120);

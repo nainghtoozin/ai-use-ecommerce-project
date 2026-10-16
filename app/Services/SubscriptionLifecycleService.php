@@ -27,21 +27,6 @@ class SubscriptionLifecycleService
             return;
         }
 
-        if ($tenant->isDeleted()) {
-            $blockedSubscription = $tenant->subscription ?? $intent->subscription;
-
-            if ($blockedSubscription) {
-                $this->audit::log($blockedSubscription, 'renewal_blocked_tenant_deleted', [
-                    'reason' => 'Payment completed for a permanently deleted store; subscription left unchanged. Contact support to restore access.',
-                    'metadata' => ['payment_intent_id' => $intent->id],
-                ]);
-            }
-
-            $this->markSubscriptionApplied($intent);
-
-            return;
-        }
-
         $subscription = $tenant->subscription;
 
         if (!$subscription) {

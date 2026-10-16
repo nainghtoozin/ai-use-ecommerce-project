@@ -58,24 +58,6 @@ E-commerce fundamentals: products, orders, cart, checkout, categories, brands, p
 
 **Audit report:** `docs/sprint-9.2-subscription-billing-audit.md`
 
-### Phase 6C: Tenant Retention & Purge Safety (Complete)
-| Area | Status |
-|------|--------|
-| Retention lifecycle (grace → restricted → pending_deletion) | ✅ Complete |
-| Manual deletion (SuperAdmin, transactional, file-aware) | ✅ Complete |
-| Automatic purge double-gate (`purge_enabled` + `tenant_auto_delete_enabled`) | ✅ Complete — **OFF by default** |
-| Purge failure/retry safety (attempts + cap, empty-dir pruning, idempotent finalization) | ✅ Complete (6C-5) |
-| Isolated staging rehearsal + backup/restore proof | ✅ Complete (6C-2C–6C-4) |
-| Final purge safety audit (read-only) + safety-test gap closure + operator runbook | ✅ Complete (6C-6, 6C-7) |
-
-**Audit reports:** `docs/phase-6C-5-purge-retry-safety-audit.md`, `docs/phase-6C-6-final-purge-safety-audit.md`
-
-**Runbook:** `docs/runbook-tenant-purge-parked-cleanups.md`
-
-**Commands:** `tenants:process-cleanup`, `tenants:purge {--dry-run} {--limit=} {--tenant=}`
-
-**Rules:** Automatic purge requires BOTH `config('billing.tenant_cleanup.purge_enabled')` AND PlatformSetting `tenant_auto_delete_enabled`; both default OFF — never enable on dev/prod (production auto-deletion remains **OFF / NO-GO** until remote Cloudinary deletion is verified with non-production credentials). `billing.tenant_cleanup.max_purge_attempts` (default 5) parks repeatedly-failing cleanups for manual review (see runbook). Dry-runs are non-mutating.
-
 ---
 
 ## Core Architecture

@@ -624,8 +624,6 @@ class SubscriptionRenewalCancellationTest extends TestCase
                 $table->boolean('trial_enabled')->default(false); $table->integer('trial_days')->default(14);
                 $table->boolean('allow_trial_renewal')->default(true); $table->integer('max_trial_renewals')->default(0);
                 $table->integer('billing_renewal_reminder_days')->default(7);
-                $table->unsignedInteger('tenant_data_retention_days')->default(15);
-                $table->boolean('tenant_auto_delete_enabled')->default(false);
                 $table->timestamps();
             });
         }

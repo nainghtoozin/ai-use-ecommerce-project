@@ -235,8 +235,6 @@ class PlatformSettingsTest extends TestCase
                 $table->string('platform_currency_symbol', 10)->default('Ks');
                 $table->string('platform_currency_position')->default('before');
                 $table->integer('platform_decimal_places')->default(0);
-                $table->unsignedInteger('tenant_data_retention_days')->default(15);
-                $table->boolean('tenant_auto_delete_enabled')->default(false);
                 $table->timestamps();
             },
         ];
@@ -246,61 +244,6 @@ class PlatformSettingsTest extends TestCase
                 Schema::create($name, $callback);
             }
         }
-
-        if (!Schema::hasColumn('platform_settings', 'tenant_data_retention_days')) {
-            Schema::table('platform_settings', function ($table) {
-                $table->unsignedInteger('tenant_data_retention_days')->default(15);
-            });
-        }
-
-        if (!Schema::hasColumn('platform_settings', 'tenant_auto_delete_enabled')) {
-            Schema::table('platform_settings', function ($table) {
-                $table->boolean('tenant_auto_delete_enabled')->default(false);
-            });
-        }
-    }
-
-    public function test_superadmin_can_update_retention_settings(): void
-    {
-        $this->actingAs($this->superadmin);
-
-        $response = $this->post('/superadmin/platform-settings', [
-            'site_name' => 'My Application',
-            'support_email' => '',
-            'maintenance_mode' => '0',
-            'registration_enabled' => '1',
-            'platform_currency_code' => 'MMK',
-            'platform_currency_symbol' => 'Ks',
-            'platform_currency_position' => 'before',
-            'platform_decimal_places' => '0',
-            'tenant_data_retention_days' => '30',
-            'tenant_auto_delete_enabled' => '0',
-        ]);
-
-        $response->assertSessionHas('success');
-
-        $settings = PlatformSetting::current();
-        $this->assertEquals(30, $settings->tenant_data_retention_days);
-        $this->assertFalse($settings->tenant_auto_delete_enabled);
-    }
-
-    public function test_retention_days_must_be_within_limits(): void
-    {
-        $this->actingAs($this->superadmin);
-
-        $response = $this->post('/superadmin/platform-settings', [
-            'site_name' => 'My Application',
-            'support_email' => '',
-            'maintenance_mode' => '0',
-            'registration_enabled' => '1',
-            'platform_currency_code' => 'MMK',
-            'platform_currency_symbol' => 'Ks',
-            'platform_currency_position' => 'before',
-            'platform_decimal_places' => '0',
-            'tenant_data_retention_days' => '400',
-        ]);
-
-        $response->assertSessionHasErrors('tenant_data_retention_days');
     }
 
     public function test_superadmin_can_view_platform_settings_page(): void
@@ -546,7 +489,7 @@ class PlatformSettingsTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_non_superadmin_cannot_update_retention_settings(): void
+    public function test_non_superadmin_cannot_update_platform_settings(): void
     {
         $adminRole = Role::firstOrCreate(['name' => 'store-admin', 'guard_name' => 'web']);
         $admin = User::firstOrCreate(['email' => 'admin@admin.com'], [
@@ -561,11 +504,10 @@ class PlatformSettingsTest extends TestCase
 
         PlatformSetting::clearCache();
         $before = PlatformSetting::current();
-        $retentionBefore = $before->tenant_data_retention_days;
-        $autoDeleteBefore = (bool) $before->tenant_auto_delete_enabled;
+        $siteNameBefore = $before->site_name;
 
         $this->post('/superadmin/platform-settings', [
-            'site_name' => 'My Application',
+            'site_name' => 'Hacked Platform',
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
@@ -573,12 +515,9 @@ class PlatformSettingsTest extends TestCase
             'platform_currency_symbol' => 'Ks',
             'platform_currency_position' => 'before',
             'platform_decimal_places' => '0',
-            'tenant_data_retention_days' => '30',
-            'tenant_auto_delete_enabled' => '1',
         ])->assertForbidden();
 
         PlatformSetting::clearCache();
-        $this->assertEquals($retentionBefore, PlatformSetting::current()->tenant_data_retention_days);
-        $this->assertSame($autoDeleteBefore, (bool) PlatformSetting::current()->tenant_auto_delete_enabled);
+        $this->assertEquals($siteNameBefore, PlatformSetting::current()->site_name);
     }
 }

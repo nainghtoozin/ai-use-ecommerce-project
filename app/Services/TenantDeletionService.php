@@ -5,16 +5,11 @@ namespace App\Services;
 use App\Models\Tenant;
 use App\Models\User;
 use DB;
-use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 
 class TenantDeletionService
 {
-    public function __construct(
-        private readonly TenantDataPurgeService $purge,
-    ) {}
-
     public function delete(Tenant $tenant, bool $dryRun = false): array
     {
         $tenantId = $tenant->id;
@@ -24,10 +19,6 @@ class TenantDeletionService
         $this->collectRoleIds($tenantId);
 
         $this->guardLastSuperadmin($tenantId);
-        $this->guardActiveSubscription($tenant);
-
-        $filePaths = $this->purge->collectTenantFilePaths($tenantId);
-        $subscription = $tenant->subscription()->first();
 
         DB::beginTransaction();
         try {
@@ -61,32 +52,11 @@ class TenantDeletionService
                 return $summary;
             }
 
-            if ($subscription) {
-                SubscriptionAuditService::log($subscription, 'tenant_deleted_manual', [
-                    'reason' => 'Tenant permanently deleted by SuperAdmin via manual deletion.',
-                    'metadata' => ['deleted_tables' => $summary],
-                ]);
-            }
-
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
-
-        $failedFiles = $this->purge->deleteTenantFiles($filePaths, $tenantId);
-        $summary['files_failed'] = count($failedFiles);
-
-        if ($failedFiles !== []) {
-            $summary['failed_files'] = $failedFiles;
-        }
-
-        Log::warning('Tenant manually deleted by SuperAdmin.', [
-            'tenant_id' => $tenantId,
-            'tenant_slug' => $tenant->slug,
-            'actor_id' => auth()->id(),
-            'summary' => $summary,
-        ]);
 
         return $summary;
     }
@@ -139,17 +109,6 @@ class TenantDeletionService
                     'Cannot delete tenant: it contains the last remaining superadmin account(s).'
                 );
             }
-        }
-    }
-
-    private function guardActiveSubscription(Tenant $tenant): void
-    {
-        $subscription = $tenant->subscription;
-
-        if ($subscription && $subscription->isInGoodStanding()) {
-            throw new RuntimeException(
-                'Cannot delete tenant: it has an active subscription. Cancel the subscription and wait for the retention workflow instead.'
-            );
         }
     }
 

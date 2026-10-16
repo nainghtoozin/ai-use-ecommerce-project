@@ -16,8 +16,6 @@ export default function PlatformSettingsIndex({ settings }) {
     const [allowTrialRenewal, setAllowTrialRenewal] = useState(settings.allow_trial_renewal ?? true);
     const [maxTrialRenewals, setMaxTrialRenewals] = useState(settings.max_trial_renewals ?? 0);
     const [renewalReminderDays, setRenewalReminderDays] = useState(settings.billing_renewal_reminder_days ?? 7);
-    const [retentionDays, setRetentionDays] = useState(settings.tenant_data_retention_days ?? 15);
-    const [autoDeleteEnabled, setAutoDeleteEnabled] = useState(settings.tenant_auto_delete_enabled ?? false);
     const [currencyCode, setCurrencyCode] = useState(settings.platform_currency_code || 'MMK');
     const [currencySymbol, setCurrencySymbol] = useState(settings.platform_currency_symbol || 'Ks');
     const [currencyPosition, setCurrencyPosition] = useState(settings.platform_currency_position || 'before');
@@ -41,8 +39,6 @@ export default function PlatformSettingsIndex({ settings }) {
         formData.append('allow_trial_renewal', allowTrialRenewal ? '1' : '0');
         formData.append('max_trial_renewals', maxTrialRenewals.toString());
         formData.append('billing_renewal_reminder_days', renewalReminderDays.toString());
-        formData.append('tenant_data_retention_days', retentionDays.toString());
-        formData.append('tenant_auto_delete_enabled', autoDeleteEnabled ? '1' : '0');
         formData.append('platform_currency_code', currencyCode);
         formData.append('platform_currency_symbol', currencySymbol);
         formData.append('platform_currency_position', currencyPosition);
@@ -242,45 +238,6 @@ export default function PlatformSettingsIndex({ settings }) {
                                     />
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Sent once per billing cycle when this many days remain.</p>
                                     {errors.billing_renewal_reminder_days && <p className="text-xs text-red-600 mt-1">{errors.billing_renewal_reminder_days}</p>}
-                                </div>
-                            </div>
-
-                            {/* Section 4b: Data Retention */}
-                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Data Retention & Deletion</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">How long restricted store data is kept after expiry before permanent deletion. Paid access always continues until the existing expiry date.</p>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label htmlFor="tenant_data_retention_days" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Retention Duration (Days After Restriction)
-                                        </label>
-                                        <input
-                                            id="tenant_data_retention_days"
-                                            type="number"
-                                            min="1"
-                                            max="365"
-                                            value={retentionDays}
-                                            onChange={(e) => setRetentionDays(e.target.value)}
-                                            className="w-full max-w-xs rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                                        />
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Merchants can export backups until this deadline. Default 15 days.</p>
-                                        {errors.tenant_data_retention_days && <p className="text-xs text-red-600 mt-1">{errors.tenant_data_retention_days}</p>}
-                                    </div>
-                                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Automatic Permanent Deletion</span>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500">When enabled (and the server purge flag is set), stores past the retention deadline are permanently deleted. Keep disabled until the full tenant-data inventory is verified.</p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            role="switch"
-                                            aria-checked={autoDeleteEnabled}
-                                            onClick={() => setAutoDeleteEnabled(!autoDeleteEnabled)}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${autoDeleteEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
-                                        >
-                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-900 shadow-sm transition-transform ${autoDeleteEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                                        </button>
-                                    </label>
                                 </div>
                             </div>
 

@@ -178,11 +178,6 @@ class Tenant extends Model
         return $this->status === 'suspended';
     }
 
-    public function isDeleted(): bool
-    {
-        return $this->status === 'deleted';
-    }
-
     public function isTrialing(): bool
     {
         return $this->status === 'trialing';
