@@ -42,26 +42,32 @@ class ProcessExpiredSubscriptions extends Command
     {
         $this->info('Dry-run: checking subscriptions that would transition...');
 
-        $activeToPastDue = Subscription::where('status', 'active')
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<', now())
-            ->count();
+        $live = fn ($q) => $q->whereHas('tenant', fn ($t) => $t->where('status', '!=', 'deleted'));
+
+        $activeToPastDue = $live(
+            Subscription::where('status', 'active')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<', now())
+        )->count();
 
         $graceCutoff = now()->subDays(SubscriptionExpiryService::GRACE_DAYS);
-        $pastDueToExpired = Subscription::where('status', 'past_due')
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<', $graceCutoff)
-            ->count();
+        $pastDueToExpired = $live(
+            Subscription::where('status', 'past_due')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<', $graceCutoff)
+        )->count();
 
         $suspendCutoff = now()->subDays(SubscriptionExpiryService::SUSPEND_DAYS_AFTER_EXPIRY);
-        $expiredToSuspended = Subscription::where('status', 'expired')
-            ->where('updated_at', '<', $suspendCutoff)
-            ->count();
+        $expiredToSuspended = $live(
+            Subscription::where('status', 'expired')
+                ->where('updated_at', '<', $suspendCutoff)
+        )->count();
 
-        $trialToExpired = Subscription::where('status', 'trialing')
-            ->whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '<', now())
-            ->count();
+        $trialToExpired = $live(
+            Subscription::where('status', 'trialing')
+                ->whereNotNull('trial_ends_at')
+                ->where('trial_ends_at', '<', now())
+        )->count();
 
         $total = $activeToPastDue + $pastDueToExpired + $expiredToSuspended + $trialToExpired;
 

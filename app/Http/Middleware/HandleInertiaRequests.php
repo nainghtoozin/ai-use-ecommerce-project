@@ -89,6 +89,20 @@ class HandleInertiaRequests extends Middleware
             ? ($isPublicStorefront ? $this->publicWebsiteSettings($settingsModel) : $settingsModel->toArray())
             : [];
         $platformSettings = PlatformSetting::current()->toArray();
+
+        // Single authoritative subscription notice (one per page, suppressed on billing routes).
+        $renewalThresholdDays = min(90, max(1, (int) ($platformSettings['billing_renewal_reminder_days'] ?? 7)));
+        $subscriptionNotice = null;
+        if (!$isSuperAdmin && $subscription && $authenticatable) {
+            $isBillingRoute = str_starts_with($routeName, 'admin.billing')
+                || str_starts_with($routeName, 'storefront.admin.billing');
+            $canSeeBilling = ($projection['is_owner'] ?? false) || $authenticatable->can('billing.view');
+
+            if (!$isPublicStorefront && !$isBillingRoute && $canSeeBilling) {
+                $subscriptionNotice = $this->buildSubscriptionNotice($subscription, $tenant, $renewalThresholdDays);
+            }
+        }
+
         $publicPlatformSettings = array_intersect_key($platformSettings, array_flip([
             'platform_currency_code', 'platform_currency_symbol', 'platform_currency_position', 'platform_decimal_places',
         ]));
@@ -163,6 +177,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => session('success'),
                 'error'   => session('error'),
                 'warning' => session('warning'),
+                'info'    => session('info'),
                 'feature_locked' => session('feature_locked'),
                 'customer_status' => session('customer_status'),
             ],
@@ -181,7 +196,113 @@ class HandleInertiaRequests extends Middleware
             'subscription_limits' => $isSuperAdmin || $isPublicStorefront ? [] : ($authenticatable ? SubscriptionLimitService::for()->getAllLimits() : []),
             'menuVisibility' => $isPublicStorefront ? [] : $menuVisibility,
             'paymentSetupRequired' => $paymentSetupRequired,
+            'subscription_notice' => $subscriptionNotice,
+            'subscription_renewal_threshold_days' => $renewalThresholdDays,
         ]);
+    }
+
+    /**
+     * Build the single authoritative subscription notice for the current state.
+     * Precedence: suspended > expired > past due > pending payment > trial ending > active due.
+     */
+    private function buildSubscriptionNotice($subscription, ?Tenant $tenant, int $thresholdDays): ?array
+    {
+        $status = $subscription->status;
+
+        if ($status === 'suspended') {
+            return $this->subscriptionNoticeData(
+                'suspended',
+                'danger',
+                'Subscription Suspended',
+                'Your store has been suspended. Please contact support to restore service.',
+                null,
+                false
+            );
+        }
+
+        if ($status === 'expired') {
+            return $this->subscriptionNoticeData(
+                'expired',
+                'danger',
+                'Subscription Expired',
+                'Your store is currently restricted. Renew your plan to restore full access.',
+                ['label' => 'Renew Plan', 'path' => '/admin/billing/renew-plan'],
+                false
+            );
+        }
+
+        if ($status === 'past_due') {
+            $graceRemaining = $subscription->expires_at
+                ? max(0, (int) (\App\Models\Subscription::GRACE_DAYS - abs(now()->diffInDays($subscription->expires_at, false))))
+                : 0;
+
+            return $this->subscriptionNoticeData(
+                'past_due',
+                'warning',
+                'Payment Past Due',
+                'Your subscription expired. Renew within ' . $graceRemaining . ' day(s) to avoid service interruption.',
+                ['label' => 'Renew Plan', 'path' => '/admin/billing/renew-plan'],
+                false
+            );
+        }
+
+        // Pending manual payment awaiting review (only while not expired/suspended).
+        if (in_array($status, ['active', 'trialing'], true) && $tenant) {
+            $pending = \App\Models\PaymentIntent::forTenant($tenant->id)
+                ->where('status', 'waiting_review')
+                ->latest()
+                ->first();
+
+            if ($pending) {
+                return $this->subscriptionNoticeData(
+                    'pending_payment',
+                    'info',
+                    'Payment Awaiting Review',
+                    'A payment is under review. Your plan updates automatically after approval.',
+                    ['label' => 'View Payment', 'path' => '/admin/billing/payment?intent=' . $pending->reference_number],
+                    true
+                );
+            }
+        }
+
+        if ($subscription->isTrialing()) {
+            $trialDays = $subscription->daysLeftInTrial();
+
+            if ($trialDays <= $thresholdDays) {
+                return $this->subscriptionNoticeData(
+                    'trial_ending',
+                    'warning',
+                    'Trial Ending',
+                    $trialDays <= 0 ? 'Your trial ends today.' : 'Your trial ends in ' . $trialDays . ' day(s).',
+                    ['label' => 'Choose Paid Plan', 'path' => '/admin/billing/upgrade'],
+                    true
+                );
+            }
+
+            return null;
+        }
+
+        if ($subscription->isActive() && $subscription->plan && !$subscription->plan->isFree() && $subscription->expires_at) {
+            $daysUntil = $subscription->renewalDaysRemaining();
+
+            if ($daysUntil !== null && $daysUntil <= $thresholdDays) {
+                return $this->subscriptionNoticeData(
+                    'active_due',
+                    'warning',
+                    'Renewal Due Soon',
+                    'Your subscription renews in ' . $daysUntil . ' day(s). Renew to avoid interruption.',
+                    ['label' => 'Renew Plan', 'path' => '/admin/billing/renew-plan'],
+                    true
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private function subscriptionNoticeData(string $key, string $severity, string $title, string $message, ?array $action, bool $dismissible): array
+    {
+        return compact('key', 'severity', 'title', 'message', 'action', 'dismissible');
     }
 
     private function getCartData(Request $request): array

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import CurrentPlanSummary from '@/Components/Billing/CurrentPlanSummary';
 import PlanPicker, { getRecommendedSlug } from '@/Components/Billing/PlanPicker';
@@ -8,6 +8,7 @@ import { adminUrl } from '@/Utils/adminUrl';
 
 export default function AdminBillingUpgradePlan({ currentPlan, subscription, plans, usage, allFeatureDefs, trialDays }) {
     const [billingInterval, setBillingInterval] = useState(subscription?.billing_interval || 'monthly');
+    const { subscription_renewal_threshold_days: renewalThresholdDays = 7 } = usePage().props;
     const recommendedSlug = getRecommendedSlug(usage, plans);
 
     const handleChoose = (plan, { interval }) => {
@@ -48,7 +49,7 @@ export default function AdminBillingUpgradePlan({ currentPlan, subscription, pla
                     </div>
                 )}
 
-                {subscription && subscription.on_trial && subscription.trial_days_remaining > 0 && subscription.trial_days_remaining <= 7 && (
+                {subscription && subscription.on_trial && subscription.trial_days_remaining > 0 && subscription.trial_days_remaining <= renewalThresholdDays && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                         <div className="flex items-start gap-3">
                             <div className="p-1.5 rounded-lg bg-amber-100 flex-shrink-0">

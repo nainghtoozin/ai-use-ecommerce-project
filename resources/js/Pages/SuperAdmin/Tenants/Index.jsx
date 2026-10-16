@@ -27,7 +27,7 @@ export default function TenantsIndex({ tenants, filters }) {
             alert('The default tenant cannot be deleted.');
             return;
         }
-        if (window.confirm(`Delete tenant "${tenant.name}"? All associated data will be orphaned.`)) {
+        if (window.confirm(`Permanently delete tenant "${tenant.name}"? Its users, subscriptions, invoices and store files will be deleted. Tenants with an active subscription cannot be deleted.`)) {
             router.delete(`/superadmin/tenants/${tenant.id}`);
         }
     }

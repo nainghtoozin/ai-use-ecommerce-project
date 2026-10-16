@@ -11,10 +11,24 @@ use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\Subscription;
 use App\Models\SubscriptionAuditLog;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\CustomerAddress;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\PromotionBanner;
+use App\Models\StorefrontMedia;
 use App\Models\SubscriptionCancellationRequest;
 use App\Models\Tenant;
+use App\Models\TenantCleanup;
+use App\Models\WebsiteInfo;
 use App\Services\FeatureGate;
 use App\Services\ImageService;
+use App\Services\ImportExport\FormatHandlers\CsvHandler;
+use App\Services\ImportExport\OrderExportService;
+use App\Services\ImportExport\ProductExportService;
+use App\Services\ImportExport\ReportExportService;
 use App\Services\Payment\Platform\CheckoutService;
 use App\Services\Payment\Platform\ManualPaymentService;
 use App\Services\Payment\Platform\PaymentEvidenceService;
@@ -121,18 +135,10 @@ class AdminBillingController extends Controller
             });
         }
 
-        $pendingIntent = PaymentIntent::forTenant($tenant->id)
-            ->whereIn('status', ['waiting_payment', 'waiting_review'])
-            ->with('plan:id,name')
-            ->latest()
-            ->first();
+        $pendingIntent = $this->actionablePendingIntent($tenant);
 
         $renewalIntent = $subscription
-            ? PaymentIntent::forTenant($tenant->id)
-                ->where('plan_id', $subscription->plan_id)
-                ->whereIn('status', ['waiting_payment', 'waiting_review'])
-                ->latest()
-                ->first()
+            ? $this->actionablePendingIntent($tenant, $subscription->plan_id)
             : null;
 
         $activeCancellation = $subscription ? $subscription->activeCancellationRequest()->first() : null;
@@ -206,7 +212,9 @@ class AdminBillingController extends Controller
             'auditLogs' => $auditLogs,
             'trialDays' => (int) (PlatformSetting::current()->trial_days ?? 14),
             'trial' => $subscription ? [
-                'is_trial' => $subscription->isTrialing(),
+                // Genuine trial lifecycle (trialing or ended trial) — excludes converted active paid.
+                'is_trial' => $subscription->isTrialSubscription(),
+                'on_trial' => $subscription->isTrialing(),
                 'trial_ends_at' => $subscription->trial_ends_at?->toDateString(),
                 'trial_days_remaining' => $subscription->daysLeftInTrial(),
                 'renewal_allowed' => (bool) PlatformSetting::current()->allow_trial_renewal,
@@ -214,19 +222,19 @@ class AdminBillingController extends Controller
                 'renewals_used' => (int) $subscription->trial_renewals_count,
                 'renewals_remaining' => $subscription->trialRenewalsRemaining(),
                 'can_renew' => $subscription->canRenewTrial(),
-                // A trial is only "ended" when the subscription is genuinely inactive/unpaid.
-                // Active paid subscriptions that were converted from a trial must never show this.
-                'trial_ended' => $subscription->trial_ends_at !== null
-                    && $subscription->trial_ends_at->isPast()
+                // A trial is only "ended" when it is genuinely inactive/unpaid (not an active paid sub).
+                'trial_ended' => $subscription->isTrialSubscription()
                     && !$subscription->isTrialing()
                     && !$subscription->isActive(),
             ] : null,
-            'renewal' => $this->renewalPayload($subscription, $renewalIntent),
+            'renewal' => $this->renewalPayload($subscription, $renewalIntent, $pendingIntent),
             'cancellation' => [
                 'active' => $activeCancellation ? $this->cancellationPayload($activeCancellation, $subscription) : null,
                 'latest' => $latestCancellation ? $this->cancellationPayload($latestCancellation, $subscription) : null,
                 'reasons' => SubscriptionCancellationRequest::REASONS,
             ],
+            // Data-retention / cleanup consequences, reusing existing policies (no deletions here).
+            'retention' => $this->retentionPayload($tenant, $subscription),
         ]);
     }
 
@@ -1101,9 +1109,33 @@ class AdminBillingController extends Controller
             'evidence' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'note' => ['nullable', 'string', 'max:500'],
             'payment_method_id' => ['nullable', 'exists:billing_payment_methods,id'],
+            'payment_remark' => ['nullable', 'string', 'max:500'],
+            'payment_purpose' => ['nullable', 'string', 'in:' . implode(',', array_keys(PaymentIntent::PAYMENT_REASONS))],
+            // Legacy fields kept for backward compatibility with older submissions.
             'payment_reason' => ['nullable', 'string', 'in:' . implode(',', array_keys(PaymentIntent::PAYMENT_REASONS))],
-            'payment_reason_text' => ['nullable', 'string', 'max:255', 'required_if:payment_reason,other'],
+            'payment_reason_text' => ['nullable', 'string', 'max:255'],
+            'renewal_mode' => ['nullable', 'boolean'],
         ]);
+
+        // Required payment purpose/remark (legacy "note"/"payment_reason_text" accepted as fallbacks).
+        $remark = trim((string) ($validated['payment_remark'] ?? $validated['note'] ?? ''));
+        $purpose = $validated['payment_purpose'] ?? $validated['payment_reason'] ?? null;
+
+        if ($purpose === 'other' && !empty($validated['payment_reason_text'])) {
+            $remark = trim((string) $validated['payment_reason_text']);
+        }
+
+        if ($purpose === 'other' && mb_strlen($remark) < 5) {
+            return redirect()->back()
+                ->withErrors(['payment_remark' => 'Please describe the payment purpose (at least 5 characters).'])
+                ->withInput();
+        }
+
+        if (mb_strlen($remark) < 3) {
+            return redirect()->back()
+                ->withErrors(['payment_remark' => 'Please provide a payment purpose/remark (at least 3 characters).'])
+                ->withInput();
+        }
 
         $intentService = app(PaymentIntentService::class);
         $intent = null;
@@ -1121,6 +1153,8 @@ class AdminBillingController extends Controller
             $billingCycle = $validated['billing_cycle'];
             $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
 
+            $isRenewal = ($purpose === 'subscription_renewal') || $request->boolean('renewal_mode');
+
             $intent = app(CheckoutService::class)->initiateCheckout(
                 tenant: $tenant,
                 plan: $plan,
@@ -1129,7 +1163,7 @@ class AdminBillingController extends Controller
                 currency: $currency,
                 gateway: 'manual',
                 metadata: [
-                    'source' => 'merchant_checkout',
+                    'source' => $isRenewal ? 'merchant_renewal' : 'merchant_checkout',
                     'submission_key' => $validated['submission_key'],
                 ],
             );
@@ -1170,12 +1204,11 @@ class AdminBillingController extends Controller
 
         $metadata = $intent->metadata ?? [];
         $metadata['submission_key'] = $validated['submission_key'];
+        $metadata['payment_remark'] = $remark;
 
-        if (!empty($validated['payment_reason'])) {
-            $metadata['payment_reason'] = $validated['payment_reason'];
-            $metadata['payment_reason_text'] = $validated['payment_reason'] === 'other'
-                ? ($validated['payment_reason_text'] ?? null)
-                : null;
+        if ($purpose) {
+            $metadata['payment_reason'] = $purpose;
+            $metadata['payment_reason_text'] = $purpose === 'other' ? $remark : null;
         }
 
         if (empty($metadata['from_plan_id'])) {
@@ -1300,12 +1333,15 @@ class AdminBillingController extends Controller
         }
 
         // This endpoint only handles trial extensions. Paid renewals use the manual-payment workflow.
-        if ($subscription->isTrialing()) {
+        // Applies to trialing AND ended trials (status may already be "expired").
+        if ($subscription->isTrialSubscription()) {
             if (!$subscription->canRenewTrial()) {
                 $settings = PlatformSetting::current();
                 $message = !$settings->allow_trial_renewal
                     ? 'Trial renewal is disabled. Please choose a paid plan to continue.'
-                    : 'Your trial renewal limit has been reached. Please choose a paid plan to continue.';
+                    : ($subscription->trialExpired()
+                        ? 'Your trial has ended and no renewals remain. Please choose a paid plan to continue.'
+                        : 'Your trial renewal limit has been reached. Please choose a paid plan to continue.');
 
                 return admin_redirect('admin.billing.upgrade')->with('error', $message);
             }
@@ -1368,48 +1404,24 @@ class AdminBillingController extends Controller
 
         if ($subscription->plan->isFree()) {
             return admin_redirect('admin.billing')
-                ->with('info', 'Your current plan is free and does not require renewal.');
+                ->with('warning', 'Your current plan is free and does not require renewal.');
         }
 
         $plan = $subscription->plan;
         $billingCycle = $subscription->billing_interval ?? 'monthly';
         $amount = (float) ($plan->getPriceForInterval($billingCycle) ?? 0);
 
-        if ($amount <= 0) {
-            return admin_redirect('admin.billing')
-                ->with('error', 'The renewal amount could not be determined. Please contact support.');
-        }
+        // Prevent duplicate pending renewal: show the existing payment instead of a new form.
+        $pending = $this->actionablePendingIntent($tenant);
 
-        $pending = PaymentIntent::forTenant($tenant->id)
-            ->whereIn('status', ['waiting_payment', 'waiting_review'])
-            ->latest()
-            ->first();
-
-        if ($pending && ((int) $pending->plan_id !== (int) $plan->id || $pending->billing_cycle !== $billingCycle)) {
+        if ($pending && (int) $pending->plan_id === (int) $plan->id && $pending->billing_cycle === $billingCycle) {
             return admin_redirect('admin.billing.payment', ['intent' => $pending->reference_number])
-                ->with('info', 'You already have a payment awaiting completion or review.');
+                ->with('warning', 'You already have a renewal payment awaiting review. You can view it below.');
         }
 
-        $intent = null;
-        try {
-            $currencyCode = CurrencyCode::tryFrom($tenant->websiteInfo?->currency_code ?? 'MMK') ?? CurrencyCode::MMK;
-
-            $intent = app(CheckoutService::class)->initiateCheckout(
-                tenant: $tenant,
-                plan: $plan,
-                billingCycle: $billingCycle,
-                amount: $amount,
-                currency: Currency::fromEnum($currencyCode),
-                gateway: 'manual',
-                metadata: [
-                    'source' => 'merchant_renewal',
-                    'payment_type' => PaymentIntent::TYPE_RENEWAL,
-                    'payment_reason' => 'subscription_renewal',
-                ],
-            );
-        } catch (\InvalidArgumentException $e) {
+        if ($pending) {
             return admin_redirect('admin.billing')
-                ->with('error', 'Unable to start renewal payment. Please try again.');
+                ->with('warning', 'You already have a payment awaiting completion or review (ref ' . $pending->reference_number . '). Please resolve it before starting a new renewal.');
         }
 
         $paymentMethods = BillingPaymentMethod::active()
@@ -1433,16 +1445,7 @@ class AdminBillingController extends Controller
             ]);
 
         return Inertia::render('Admin/Billing/Payment', [
-            'intent' => $intent ? [
-                'id' => $intent->id,
-                'reference_number' => $intent->reference_number,
-                'amount' => $intent->amount,
-                'currency' => $intent->currency,
-                'status' => $intent->status,
-                'billing_cycle' => $intent->billing_cycle,
-                'expires_at' => $intent->expires_at?->toDateTimeString(),
-                'created_at' => $intent->created_at->toDateTimeString(),
-            ] : null,
+            'intent' => null,
             'selectedPlan' => [
                 'id' => $plan->id,
                 'name' => $plan->name,
@@ -1463,11 +1466,13 @@ class AdminBillingController extends Controller
             ],
             'paymentMethods' => $paymentMethods,
             'renewalMode' => true,
+            'billingCycle' => $billingCycle,
+            'renewalAmount' => $amount,
             'scheduledChange' => $subscription->hasPendingDowngrade() && $subscription->pendingPlan ? [
                 'name' => $subscription->pendingPlan->name,
                 'effective_at' => $subscription->pending_plan_effective_at?->toDateString(),
             ] : null,
-        ] + $this->paymentFormContext($subscription, $plan, $intent));
+        ] + $this->paymentFormContext($subscription, $plan, null));
     }
 
     public function requestCancellation(Request $request)
@@ -1534,7 +1539,27 @@ class AdminBillingController extends Controller
             ->with('success', 'Your cancellation request has been withdrawn.');
     }
 
-    private function renewalPayload(?Subscription $subscription, ?PaymentIntent $renewalIntent): array
+    /**
+     * A genuinely actionable pending payment. Abandoned/expired waiting_payment
+     * requests (never submitted) are ignored so they cannot block renewal forever;
+     * payments awaiting review always count.
+     */
+    private function actionablePendingIntent(Tenant $tenant, ?int $planId = null, ?string $billingCycle = null): ?PaymentIntent
+    {
+        return PaymentIntent::forTenant($tenant->id)
+            ->whereIn('status', ['waiting_payment', 'waiting_review'])
+            ->where(function ($query) {
+                $query->where('status', 'waiting_review')
+                    ->orWhereNull('expires_at')
+                    ->orWhere('expires_at', '>=', now());
+            })
+            ->when($planId, fn ($query) => $query->where('plan_id', $planId))
+            ->when($billingCycle, fn ($query) => $query->where('billing_cycle', $billingCycle))
+            ->latest()
+            ->first();
+    }
+
+    private function renewalPayload(?Subscription $subscription, ?PaymentIntent $renewalIntent, ?PaymentIntent $anyPending = null): array
     {
         $thresholdDays = min(90, max(1, (int) (PlatformSetting::current()->billing_renewal_reminder_days ?? 7)));
 
@@ -1546,14 +1571,14 @@ class AdminBillingController extends Controller
         );
 
         $expiresAt = $subscription?->expires_at;
-        $daysUntilExpiry = $expiresAt
-            ? (int) ceil(max(0, $expiresAt->getTimestamp() - now()->getTimestamp()) / 86400)
-            : null;
+        $daysUntilExpiry = $subscription?->renewalDaysRemaining();
 
-        // Boundary-inclusive: due as soon as expiry is within the threshold window.
+        // Boundary-inclusive on a calendar-day basis: expiry dates are stored at
+        // end-of-day, so comparing exact timestamps would drop the boundary day.
         $due = $activePaid
             && $expiresAt !== null
-            && $expiresAt->getTimestamp() <= now()->addDays($thresholdDays)->getTimestamp();
+            && $daysUntilExpiry !== null
+            && $daysUntilExpiry <= $thresholdDays;
 
         $isLapsed = (bool) ($subscription && in_array($subscription->status, ['expired', 'past_due', 'canceled'], true));
 
@@ -1583,10 +1608,269 @@ class AdminBillingController extends Controller
             'is_lapsed' => $isLapsed,
             // Authoritative backend eligibility for showing/permitting the renewal action.
             'eligible' => $eligible,
-            // A valid renewal request is already awaiting payment/review.
-            'blocked_by_pending' => $pending !== null,
-            // Final gate the UI must follow: eligible and no duplicate pending renewal.
-            'can_renew' => $eligible && $pending === null,
+            // A renewal request for the current plan is already awaiting payment/review.
+            'blocked_by_pending' => $anyPending !== null,
+            // Final gate the UI must follow: eligible and no payment already pending.
+            'can_renew' => $eligible && $anyPending === null,
+        ];
+    }
+
+    public function backupProducts(Request $request, ProductExportService $exports)
+    {
+        $tenant = $this->backupTenant();
+        $format = $request->input('format', 'xlsx');
+
+        return $exports->exportProducts($format, [], $tenant->id);
+    }
+
+    public function backupOrders(Request $request, OrderExportService $exports)
+    {
+        $tenant = $this->backupTenant();
+        $format = $request->input('format', 'csv');
+
+        return $exports->export($format, [], $tenant->id);
+    }
+
+    public function backupCustomers(Request $request, ReportExportService $exports)
+    {
+        $tenant = $this->backupTenant();
+        $format = $request->input('format', 'csv');
+
+        return $exports->exportCustomers($format, [], $tenant->id);
+    }
+
+    public function backupVariants(Request $request, ProductExportService $exports)
+    {
+        $tenant = $this->backupTenant();
+        $format = $request->input('format', 'xlsx');
+
+        return $exports->exportVariants($format, [], $tenant->id);
+    }
+
+    public function backupInventory(Request $request, ReportExportService $exports)
+    {
+        $tenant = $this->backupTenant();
+        $format = $request->input('format', 'csv');
+
+        return $exports->exportInventory($format, [], $tenant->id);
+    }
+
+    public function backupOrderItems(Request $request, CsvHandler $csv)
+    {
+        $tenant = $this->backupTenant();
+
+        $items = OrderItem::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->with(['order:id,invoice_number,created_at', 'product:id,name,sku', 'variant:id,sku'])
+            ->orderBy('id')
+            ->get();
+
+        if ($items->isEmpty()) {
+            return response()->json(['error' => 'No order items found to export.'], 422);
+        }
+
+        $rows = $items->map(fn ($item) => [
+            'Order Number' => $item->order?->invoice_number ?? '',
+            'Order Date' => $item->order?->created_at?->format('Y-m-d H:i') ?? '',
+            'Product' => $item->product?->name ?? '',
+            'SKU' => $item->product?->sku ?? '',
+            'Variant SKU' => $item->variant?->sku ?? '',
+            'Quantity' => $item->quantity,
+            'Unit Price' => $item->price,
+            'Line Total' => (float) $item->price * (int) $item->quantity,
+        ])->toArray();
+
+        return $csv->write(
+            ['Order Number', 'Order Date', 'Product', 'SKU', 'Variant SKU', 'Quantity', 'Unit Price', 'Line Total'],
+            $rows,
+            'order_items_' . now()->format('Y-m-d_His')
+        );
+    }
+
+    public function backupAddresses(Request $request, CsvHandler $csv)
+    {
+        $tenant = $this->backupTenant();
+
+        $addresses = CustomerAddress::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->with(['city:id,name', 'township:id,name'])
+            ->orderBy('id')
+            ->get();
+
+        if ($addresses->isEmpty()) {
+            return response()->json(['error' => 'No customer addresses found to export.'], 422);
+        }
+
+        $rows = $addresses->map(fn ($address) => [
+            'Label' => $address->label ?? '',
+            'First Name' => $address->first_name ?? '',
+            'Last Name' => $address->last_name ?? '',
+            'Phone' => $address->phone ?? '',
+            'Address' => $address->address_line ?? '',
+            'City' => $address->city?->name ?? '',
+            'Township' => $address->township?->name ?? '',
+            'Postal Code' => $address->postal_code ?? '',
+            'Default' => $address->is_default ? 'yes' : 'no',
+            'Notes' => $address->notes ?? '',
+        ])->toArray();
+
+        return $csv->write(
+            ['Label', 'First Name', 'Last Name', 'Phone', 'Address', 'City', 'Township', 'Postal Code', 'Default', 'Notes'],
+            $rows,
+            'customer_addresses_' . now()->format('Y-m-d_His')
+        );
+    }
+
+    public function backupMedia(Request $request, CsvHandler $csv)
+    {
+        $tenant = $this->backupTenant();
+
+        $rows = [];
+        $push = function (?string $table, $id, string $column, $value) use (&$rows) {
+            if (!is_string($value) || $value === '') {
+                return;
+            }
+
+            $rows[] = [
+                'Owner Table' => $table,
+                'Owner ID' => $id,
+                'Column' => $column,
+                'Path' => $value,
+                'URL' => ImageService::url($value),
+                'Storage' => str_starts_with($value, 'http') ? 'cloudinary' : 'local',
+            ];
+        };
+
+        foreach (Product::withoutTenantScope()->where('tenant_id', $tenant->id)->get(['id', 'photo1', 'photo2', 'seo_image', 'gallery_images']) as $product) {
+            $push('products', $product->id, 'photo1', $product->photo1);
+            $push('products', $product->id, 'photo2', $product->photo2);
+            $push('products', $product->id, 'seo_image', $product->seo_image);
+            foreach ((array) ($product->gallery_images ?? []) as $path) {
+                $push('products', $product->id, 'gallery_images', $path);
+            }
+        }
+
+        foreach (ProductVariant::withoutTenantScope()->where('tenant_id', $tenant->id)->get(['id', 'image']) as $variant) {
+            $push('product_variants', $variant->id, 'image', $variant->image);
+        }
+
+        foreach (Category::withoutTenantScope()->where('tenant_id', $tenant->id)->get(['id', 'image']) as $category) {
+            $push('categories', $category->id, 'image', $category->image);
+        }
+
+        foreach (Brand::withoutTenantScope()->where('tenant_id', $tenant->id)->get(['id', 'logo', 'banner']) as $brand) {
+            $push('brands', $brand->id, 'logo', $brand->logo);
+            $push('brands', $brand->id, 'banner', $brand->banner);
+        }
+
+        foreach (PromotionBanner::withoutTenantScope()->where('tenant_id', $tenant->id)->get(['id', 'image']) as $banner) {
+            $push('promotion_banners', $banner->id, 'image', $banner->image);
+        }
+
+        foreach (StorefrontMedia::withoutTenantScope()->where('tenant_id', $tenant->id)->get(['id', 'path']) as $media) {
+            $push('storefront_media', $media->id, 'path', $media->path);
+        }
+
+        $info = WebsiteInfo::withoutTenantScope()->where('tenant_id', $tenant->id)->first();
+        if ($info) {
+            foreach (['logo', 'favicon', 'footer_logo', 'og_image', 'hero_image', 'about_image'] as $column) {
+                $push('website_infos', $info->id, $column, $info->getAttribute($column));
+            }
+            foreach ((array) ($info->hero_images ?? []) as $path) {
+                $push('website_infos', $info->id, 'hero_images', $path);
+            }
+        }
+
+        if ($rows === []) {
+            return response()->json(['error' => 'No media found to export.'], 422);
+        }
+
+        return $csv->write(
+            ['Owner Table', 'Owner ID', 'Column', 'Path', 'URL', 'Storage'],
+            $rows,
+            'media_manifest_' . now()->format('Y-m-d_His')
+        );
+    }
+
+    private function backupTenant(): Tenant
+    {
+        if (!auth()->user()->can('billing.view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = Tenant::getCurrent();
+        if (!$tenant) {
+            abort(403, 'Store not found.');
+        }
+
+        [$allowed, $reason] = $this->backupEligibility($tenant);
+        if (!$allowed) {
+            abort(403, $reason);
+        }
+
+        return $tenant;
+    }
+
+    /** @return array{bool,string} */
+    private function backupEligibility(Tenant $tenant): array
+    {
+        $subscription = $tenant->subscription;
+
+        if (!$subscription || $subscription->plan?->isFree()) {
+            return [true, ''];
+        }
+
+        if ($subscription->isInGoodStanding() || $subscription->isPending() || $subscription->isPastDue()) {
+            return [true, ''];
+        }
+
+        if ($subscription->isCanceled() && $subscription->expires_at && $subscription->expires_at->isFuture()) {
+            return [true, ''];
+        }
+
+        $cleanup = TenantCleanup::where('tenant_id', $tenant->id)->first();
+
+        if (!$cleanup || $cleanup->isDeleted()) {
+            return $cleanup ? [false, 'This store data has been permanently deleted.'] : [true, ''];
+        }
+
+        if ($cleanup->exportAllowed()) {
+            return [true, ''];
+        }
+
+        return [false, 'The retention period has ended and backups are no longer available.'];
+    }
+
+    private function retentionPayload(Tenant $tenant, ?Subscription $subscription): array
+    {
+        $graceDays = (int) config('billing.tenant_cleanup.grace_days', 15);
+        try {
+            $retentionDays = max(1, (int) (PlatformSetting::current()->tenant_data_retention_days ?? 15));
+        } catch (\Throwable $e) {
+            $retentionDays = 15;
+        }
+
+        $cleanupAt = $subscription?->expires_at
+            ? $subscription->expires_at->copy()->addDays($graceDays)->toDateString()
+            : null;
+
+        $cleanup = TenantCleanup::where('tenant_id', $tenant->id)->first();
+
+        $retentionDeadline = $cleanup?->retention_ends_at?->toDateString();
+        if (!$retentionDeadline && $subscription?->expires_at) {
+            $retentionDeadline = $subscription->expires_at->copy()->addDays($graceDays + $retentionDays)->toDateString();
+        }
+
+        [$exportAllowed] = $this->backupEligibility($tenant);
+
+        return [
+            'grace_days' => (int) \App\Services\SubscriptionExpiryService::GRACE_DAYS,
+            'cleanup_grace_days' => $graceDays,
+            'cleanup_at' => $cleanupAt,
+            'retention_days' => $retentionDays,
+            'retention_deadline' => $retentionDeadline,
+            'cleanup_status' => $cleanup?->status,
+            'export_allowed' => $exportAllowed,
         ];
     }
 

@@ -277,4 +277,19 @@ class PaymentIntent extends Model
             ? self::PAYMENT_REASONS[$reason]['label']
             : null;
     }
+
+    /**
+     * Human-readable payment purpose/remark entered by the merchant.
+     * Falls back to the structured reason label for legacy records.
+     */
+    public function paymentRemark(): ?string
+    {
+        $remark = trim((string) ($this->metadata['payment_remark'] ?? ''));
+
+        if ($remark !== '') {
+            return $remark;
+        }
+
+        return $this->paymentReasonLabel();
+    }
 }

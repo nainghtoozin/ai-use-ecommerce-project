@@ -46,6 +46,12 @@ class EnsureTenantIsActive
             return $this->redirectToSuspended($storeSlug);
         }
 
+        // Permanently deleted — never restore automatically; direct to support.
+        if ($tenant->status === 'deleted') {
+            return $this->redirectToExpired($storeSlug)
+                ->with('error', 'This store has been permanently deleted after its retention period ended. Please contact support if you need to restore access — deleted business data is not restored automatically.');
+        }
+
         // Banned or inactive — block all operations
         if (! in_array($tenant->status, ['active', 'trialing'])) {
             return $this->redirectToSuspended($storeSlug)

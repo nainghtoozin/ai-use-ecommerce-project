@@ -15,9 +15,30 @@ class SubscriptionLifecycleService
 
     public function handleCompletedPayment(PaymentIntent $intent): void
     {
+        // Idempotent: a given payment can only apply its subscription change once.
+        // Protects against duplicate approval/event dispatch extending twice.
+        if (!empty(($intent->metadata ?? [])['subscription_applied'])) {
+            return;
+        }
+
         $tenant = $intent->tenant;
 
         if (!$tenant) {
+            return;
+        }
+
+        if ($tenant->isDeleted()) {
+            $blockedSubscription = $tenant->subscription ?? $intent->subscription;
+
+            if ($blockedSubscription) {
+                $this->audit::log($blockedSubscription, 'renewal_blocked_tenant_deleted', [
+                    'reason' => 'Payment completed for a permanently deleted store; subscription left unchanged. Contact support to restore access.',
+                    'metadata' => ['payment_intent_id' => $intent->id],
+                ]);
+            }
+
+            $this->markSubscriptionApplied($intent);
+
             return;
         }
 
@@ -35,6 +56,7 @@ class SubscriptionLifecycleService
 
         if (($intent->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE) {
             $this->applyProratedUpgrade($subscription, $plan, $intent);
+            $this->markSubscriptionApplied($intent);
             return;
         }
 
@@ -80,6 +102,20 @@ class SubscriptionLifecycleService
                 $intent->reference_number
             ),
         ]);
+
+        $this->markSubscriptionApplied($intent);
+    }
+
+    private function markSubscriptionApplied(PaymentIntent $intent): void
+    {
+        $metadata = $intent->metadata ?? [];
+
+        if (!empty($metadata['subscription_applied'])) {
+            return;
+        }
+
+        $metadata['subscription_applied'] = now()->toDateTimeString();
+        $intent->update(['metadata' => $metadata]);
     }
 
     private function activateFromTrial(Subscription $subscription, $plan, PaymentIntent $intent): void

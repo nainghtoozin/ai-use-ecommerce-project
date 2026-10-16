@@ -143,6 +143,15 @@ class ImageService
 
     private function extractPublicId(string $url): ?string
     {
+        return self::cloudinaryPublicId($url);
+    }
+
+    public static function cloudinaryPublicId(?string $url): ?string
+    {
+        if (empty($url) || !str_starts_with($url, 'http')) {
+            return null;
+        }
+
         $parts = parse_url($url);
         if (!isset($parts['path'])) {
             return null;
@@ -162,6 +171,140 @@ class ImageService
         $publicId = preg_replace('/\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i', '', $publicId);
 
         return $publicId ?: null;
+    }
+
+    public static function cloudinaryConfigured(): bool
+    {
+        return (bool) (config('filesystems.disks.cloudinary.cloud_name')
+            ?? config('filesystems.disks.cloudinary.url'));
+    }
+
+    /** @var callable|null Test seam returning a Cloudinary-compatible client. */
+    public static $cloudinaryFactory = null;
+
+    public static function cloudinarySdk(): ?object
+    {
+        try {
+            if (is_callable(self::$cloudinaryFactory)) {
+                return call_user_func(self::$cloudinaryFactory);
+            }
+
+            return new \Cloudinary\Cloudinary();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public static function cloudinaryResourceType(string $publicId): ?string
+    {
+        if ($publicId === '' || str_contains($publicId, '..')) {
+            return null;
+        }
+
+        return self::cloudinaryResourceTypeVia(self::cloudinarySdk(), $publicId);
+    }
+
+    private static function cloudinaryResourceTypeVia(?object $cloudinary, string $publicId): ?string
+    {
+        if ($cloudinary === null) {
+            return null;
+        }
+
+        foreach (['image', 'video', 'raw'] as $type) {
+            try {
+                $cloudinary->adminApi()->asset($publicId, ['resource_type' => $type]);
+
+                return $type;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    public static function deleteCloudinaryPublicId(string $publicId, int $maxAttempts = 3): bool
+    {
+        $attempts = max(1, $maxAttempts);
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            try {
+                $cloudinary = self::cloudinarySdk();
+
+                if ($cloudinary === null) {
+                    return false;
+                }
+
+                $type = self::cloudinaryResourceTypeVia($cloudinary, $publicId);
+
+                if ($type === null) {
+                    return true;
+                }
+
+                $result = $cloudinary->uploadApi()->destroy($publicId, ['resource_type' => $type]);
+
+                if (($result['result'] ?? null) === 'ok' || ($result['result'] ?? null) === 'not found') {
+                    return self::cloudinaryAssetAbsentVia($cloudinary, $publicId, $type);
+                }
+
+                Log::warning('Cloudinary destroy returned an unexpected result.', [
+                    'public_id' => $publicId,
+                    'result' => $result['result'] ?? null,
+                ]);
+
+                return false;
+            } catch (\Throwable $e) {
+                Log::warning('Cloudinary deletion attempt failed.', [
+                    'public_id' => $publicId,
+                    'attempt' => $attempt,
+                    'error' => $e->getMessage(),
+                ]);
+
+                if ($attempt >= $attempts || !self::isTransientCloudinaryError($e)) {
+                    return false;
+                }
+
+                usleep(250000 * $attempt);
+            }
+        }
+
+        return false;
+    }
+
+    private static function cloudinaryAssetAbsentVia(?object $cloudinary, string $publicId, string $type): bool
+    {
+        if ($cloudinary === null) {
+            return false;
+        }
+
+        try {
+            $cloudinary->adminApi()->asset($publicId, ['resource_type' => $type]);
+
+            return false;
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
+    private static function isTransientCloudinaryError(\Throwable $e): bool
+    {
+        if ($e instanceof \GuzzleHttp\Exception\ConnectException) {
+            return true;
+        }
+
+        $message = strtolower($e->getMessage());
+
+        foreach (['curl error', 'timed out', 'timeout', 'ssl', 'connection reset', 'could not resolve host', '429', '500', '502', '503', '504'] as $marker) {
+            if (str_contains($message, $marker)) {
+                return true;
+            }
+        }
+
+        if (method_exists($e, 'getCode') && in_array((int) $e->getCode(), [429, 500, 502, 503, 504], true)) {
+            return true;
+        }
+
+        return false;
     }
 
     public static function url(?string $path, string $placeholder = ''): string

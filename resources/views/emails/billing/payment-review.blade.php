@@ -9,8 +9,8 @@
 <tr><td style="padding:6px 0;color:#64748b;">Merchant email</td><td style="padding:6px 0;text-align:right;">{{ $merchant_email }}</td></tr>
 @endif
 <tr><td style="padding:6px 0;color:#64748b;">Payment type</td><td style="padding:6px 0;text-align:right;font-weight:bold;">{{ $payment_type_label ?? 'Other' }}</td></tr>
-@if(!empty($payment_reason_label))
-<tr><td style="padding:6px 0;color:#64748b;">Reason</td><td style="padding:6px 0;text-align:right;">{{ $payment_reason_label }}</td></tr>
+@if(!empty($payment_remark) || !empty($payment_reason_label))
+<tr><td style="padding:6px 0;color:#64748b;">Purpose / Remark</td><td style="padding:6px 0;text-align:right;">{{ $payment_remark ?? $payment_reason_label }}</td></tr>
 @endif
 @if(!empty($from_plan) && $from_plan !== ($to_plan ?? null))
 <tr><td style="padding:6px 0;color:#64748b;">Plan change</td><td style="padding:6px 0;text-align:right;font-weight:bold;">{{ $from_plan }} &rarr; {{ $to_plan }}</td></tr>

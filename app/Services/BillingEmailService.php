@@ -401,6 +401,7 @@ class BillingEmailService
             'payment_type' => $intent->paymentType(),
             'payment_type_label' => $intent->paymentTypeLabel(),
             'payment_reason_label' => $intent->paymentReasonLabel(),
+            'payment_remark' => $intent->paymentRemark(),
             'from_plan' => $intent->metadata['from_plan_name'] ?? null,
             'to_plan' => $intent->plan?->name,
             'transfer_date' => $evidence?->transfer_date?->toDateString(),

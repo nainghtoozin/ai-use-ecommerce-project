@@ -7,8 +7,8 @@ Merchant: {{ $merchant_name }}
 Merchant email: {{ $merchant_email }}
 @endif
 Payment type: {{ $payment_type_label ?? 'Other' }}
-@if(!empty($payment_reason_label))
-Reason: {{ $payment_reason_label }}
+@if(!empty($payment_remark) || !empty($payment_reason_label))
+Purpose / Remark: {{ $payment_remark ?? $payment_reason_label }}
 @endif
 @if(!empty($from_plan) && $from_plan !== ($to_plan ?? null))
 Plan change: {{ $from_plan }} -> {{ $to_plan }}

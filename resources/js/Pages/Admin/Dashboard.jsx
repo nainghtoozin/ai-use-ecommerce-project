@@ -173,45 +173,6 @@ export default function AdminDashboard({
 
     const { auth } = usePage().props;
     const { can } = usePermission();
-    const subscriptionExpired = auth?.user?.subscription_expired;
-    const subscriptionStatus = auth?.user?.subscription?.status;
-    const showBanner = subscriptionExpired || subscriptionStatus === 'past_due' || subscriptionStatus === 'suspended';
-    const subscription = auth?.user?.subscription;
-    const subscriptionDays = Number(subscription?.days_until_expiry);
-    const isSubscriptionExpired = subscription?.status === 'expired'
-        || subscriptionExpired
-        || (subscription?.expires_at !== null
-            && subscription?.expires_at !== undefined
-            && Number.isFinite(subscriptionDays)
-            && subscriptionDays <= 0);
-    const reminderEligible = auth?.user?.is_owner
-        && subscription
-        && (isSubscriptionExpired
-            || (subscription.expires_at !== null
-                && subscription.expires_at !== undefined
-                && Number.isFinite(subscriptionDays)
-                && subscriptionDays <= 7));
-    const reminderKey = `dashboard_subscription_reminder_${auth?.user?.tenant_id || 'unknown'}`;
-    const [showExpiryReminder, setShowExpiryReminder] = useState(false);
-
-    useEffect(() => {
-        if (!reminderEligible || typeof window === 'undefined') return;
-
-        const now = new Date();
-        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        if (window.localStorage.getItem(reminderKey) === today) return;
-
-        window.localStorage.setItem(reminderKey, today);
-        setShowExpiryReminder(true);
-    }, [reminderEligible, reminderKey, subscription?.expires_at, subscription?.status]);
-
-    const dismissExpiryReminder = () => setShowExpiryReminder(false);
-    const expiryReminder = isSubscriptionExpired
-        ? t('dashboard.subscription_expired_reminder')
-        : t('dashboard.subscription_expiry_reminder', {
-            plan: subscription?.plan_name || t('dashboard.subscription'),
-            days: subscriptionDays,
-        });
 
     const widgetPermissions = {
         Orders: 'orders.view',
@@ -261,50 +222,6 @@ export default function AdminDashboard({
 
                 {onboarding && <OnboardingChecklist onboarding={onboarding} />}
 
-                {showBanner && (
-                    <div className={`rounded-xl border p-4 sm:p-5 ${
-                        subscriptionStatus === 'suspended'
-                            ? 'bg-yellow-50 border-yellow-200'
-                            : 'bg-red-50 border-red-200'
-                    }`}>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-full ${
-                                    subscriptionStatus === 'suspended'
-                                        ? 'bg-yellow-100 text-yellow-600'
-                                        : 'bg-red-100 text-red-600'
-                                }`}>
-                                    <i className={`bi ${
-                                        subscriptionStatus === 'suspended'
-                                            ? 'bi-pause-circle-fill'
-                                            : 'bi-x-circle-fill'
-                                    } text-xl`}></i>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                        {subscriptionStatus === 'suspended'
-                                            ? t('dashboard.subscription_suspended')
-                                            : t('dashboard.subscription_expired')
-                                        }
-                                    </p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                                        {subscriptionStatus === 'suspended'
-                                            ? t('dashboard.contact_support_message')
-                                            : t('dashboard.renew_subscription')
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                            <Link
-                                href={adminUrl('/admin/billing')}
-                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
-                            >
-                                {subscriptionStatus === 'suspended' ? t('dashboard.contact_support') : t('dashboard.renew_now')}
-                            </Link>
-                        </div>
-                    </div>
-                )}
-
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
@@ -318,29 +235,6 @@ export default function AdminDashboard({
                         <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
                 </div>
-
-                {showExpiryReminder && (
-                    <div className={`rounded-xl border p-4 sm:p-5 ${isSubscriptionExpired ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <p className={`text-sm ${isSubscriptionExpired ? 'text-red-900' : 'text-amber-900'}`}>{expiryReminder}</p>
-                            <div className="flex items-center gap-3 shrink-0">
-                                <Link
-                                    href={adminUrl('/admin/billing')}
-                                    className={`inline-flex items-center px-3 py-1.5 text-white rounded-lg text-sm font-medium transition-colors ${isSubscriptionExpired ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}
-                                >
-                                    {t('dashboard.view_billing')}
-                                </Link>
-                                <button
-                                    type="button"
-                                    onClick={dismissExpiryReminder}
-                                    className={`text-sm font-medium ${isSubscriptionExpired ? 'text-red-800 hover:text-red-950' : 'text-amber-800 hover:text-amber-950'}`}
-                                >
-                                    {t('dashboard.dismiss')}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Period Filter */}
                 <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">

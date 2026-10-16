@@ -16,6 +16,8 @@ return [
 
     'tenant_cleanup' => [
         // Grace period length (days) from subscription expiry before restricting.
+        // The post-restriction data-retention window is governed by the
+        // SuperAdmin platform setting `tenant_data_retention_days` (default 15).
         'grace_days' => (int) env('TENANT_CLEANUP_GRACE_DAYS', 15),
 
         // Reminder thresholds (days remaining before grace end).
@@ -27,6 +29,10 @@ return [
         // Destructive permanent purge is intentionally disabled until the full
         // tenant-data inventory and retention safeguards have been verified.
         'purge_enabled' => (bool) env('TENANT_CLEANUP_PURGE_ENABLED', false),
+
+        // Maximum automatic purge attempts before a tenant is parked for manual
+        // review, preventing an endless retry loop on persistently failing assets.
+        'max_purge_attempts' => (int) env('TENANT_CLEANUP_MAX_PURGE_ATTEMPTS', 5),
     ],
 
 ];

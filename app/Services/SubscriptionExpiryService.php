@@ -54,12 +54,19 @@ class SubscriptionExpiryService
         return $result;
     }
 
+    private function liveTenantsOnly($query)
+    {
+        return $query->whereHas('tenant', fn ($q) => $q->where('status', '!=', 'deleted'));
+    }
+
     private function transitionActiveToPastDue(): int
     {
         return $this->processBatch(
-            Subscription::where('status', 'active')
-                ->whereNotNull('expires_at')
-                ->where('expires_at', '<', now()),
+            $this->liveTenantsOnly(
+                Subscription::where('status', 'active')
+                    ->whereNotNull('expires_at')
+                    ->where('expires_at', '<', now())
+            ),
             function ($sub) {
                 $oldStatus = $sub->status;
                 $sub->update([
@@ -86,9 +93,11 @@ class SubscriptionExpiryService
         $graceCutoff = now()->subDays(self::GRACE_DAYS);
 
         return $this->processBatch(
-            Subscription::where('status', 'past_due')
-                ->whereNotNull('expires_at')
-                ->where('expires_at', '<', $graceCutoff),
+            $this->liveTenantsOnly(
+                Subscription::where('status', 'past_due')
+                    ->whereNotNull('expires_at')
+                    ->where('expires_at', '<', $graceCutoff)
+            ),
             function ($sub) {
                 $oldStatus = $sub->status;
                 $sub->update([
@@ -117,8 +126,10 @@ class SubscriptionExpiryService
         $suspendCutoff = now()->subDays(self::SUSPEND_DAYS_AFTER_EXPIRY);
 
         return $this->processBatch(
-            Subscription::where('status', 'expired')
-                ->where('updated_at', '<', $suspendCutoff),
+            $this->liveTenantsOnly(
+                Subscription::where('status', 'expired')
+                    ->where('updated_at', '<', $suspendCutoff)
+            ),
             function ($sub) {
                 $oldStatus = $sub->status;
                 $sub->update([
@@ -143,9 +154,11 @@ class SubscriptionExpiryService
     private function transitionTrialToExpired(): int
     {
         return $this->processBatch(
-            Subscription::where('status', 'trialing')
-                ->whereNotNull('trial_ends_at')
-                ->where('trial_ends_at', '<', now()),
+            $this->liveTenantsOnly(
+                Subscription::where('status', 'trialing')
+                    ->whereNotNull('trial_ends_at')
+                    ->where('trial_ends_at', '<', now())
+            ),
             function ($sub) {
                 $oldStatus = $sub->status;
                 $sub->update([

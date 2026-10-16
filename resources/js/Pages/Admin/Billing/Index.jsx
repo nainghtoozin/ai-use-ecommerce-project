@@ -27,7 +27,7 @@ const limitRows = [
     { key: 'flash_sale_limit', label: 'Flash Sales' },
 ];
 
-export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment, trialDays, renewal, cancellation, trial }) {
+export default function AdminBillingIndex({ subscription, usage, plans, featureCategories, allFeatureDefs, auditLogs, pendingPayment, trialDays, renewal, cancellation, trial, retention }) {
     const { can } = usePermission();
     const pc = getPlatformCurrencyConfig(usePage().props.platform_setting);
 
@@ -41,7 +41,11 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
     const recommendedSlug = getRecommendedSlug(usage, plans);
 
     const isFreePlan = currentPlan?.monthly_price === 0 && currentPlan?.yearly_price === 0;
-    const onTrial = subscription?.on_trial || trial?.is_trial || false;
+    // Genuine trial lifecycle (trialing OR ended trial); excludes converted active-paid.
+    const isTrial = !!trial?.is_trial;
+    const onTrial = isTrial;
+    const trialActive = !!trial?.on_trial;
+    const trialEnded = !!trial?.trial_ended;
     const trialCanRenew = !!trial?.can_renew;
     const trialRemaining = trial?.renewals_remaining;
     const trialRenewalAllowed = trial?.renewal_allowed !== false;
@@ -52,19 +56,13 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
     const daysUntilExpiry = renewal?.days_until_expiry;
     const renewalPending = renewal?.pending || null;
     const isSuspended = subscription?.status === 'suspended';
-    const isTrialExpired = !!trial?.trial_ended && !onTrial;
 
     // Authoritative backend eligibility: within the renewal threshold OR lapsed,
     // and no valid renewal request already pending. Never frontend-only.
     const renewalEligible = !!renewal?.can_renew;
 
-    // Primary renewal action — only when due (<= threshold) or lapsed.
+    // The single renewal action (Subscription Actions) — only when due or lapsed.
     const canRenewPlan = renewalEligible && can('billing.view');
-
-    // Same eligibility governs the Manage Subscription renewal action.
-    const canManageRenewal = renewalEligible && can('billing.view');
-
-    const showRenew = canRenewPlan && can('billing.renew');
 
     const activeCancellation = cancellation?.active || null;
     const latestCancellation = cancellation?.latest || null;
@@ -94,10 +92,21 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
     };
 
     const withdrawCancellation = () => {
-        if (window.confirm('Withdraw your pending cancellation request?')) {
+        if (window.confirm('Withdraw your pending cancellation request? Your subscription stays unchanged.')) {
             router.post(adminUrl('/admin/billing/cancel-request/withdraw'), {}, { preserveScroll: true });
         }
     };
+
+    const backupLinks = retention?.export_allowed ? [
+        { label: 'Products', href: adminUrl('/admin/billing/backup/products?format=xlsx') },
+        { label: 'Variants', href: adminUrl('/admin/billing/backup/variants?format=xlsx') },
+        { label: 'Inventory', href: adminUrl('/admin/billing/backup/inventory?format=csv') },
+        { label: 'Orders', href: adminUrl('/admin/billing/backup/orders?format=csv') },
+        { label: 'Order Items', href: adminUrl('/admin/billing/backup/order-items') },
+        { label: 'Customers', href: adminUrl('/admin/billing/backup/customers?format=csv') },
+        { label: 'Addresses', href: adminUrl('/admin/billing/backup/addresses') },
+        { label: 'Media List', href: adminUrl('/admin/billing/backup/media') },
+    ] : [];
 
     const scrollToPlans = () => {
         document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -120,14 +129,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your subscription plan and billing</p>
                     </div>
-                    {showRenew && (
-                        <button
-                            onClick={handleRenewPlan}
-                            className="px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 self-start sm:self-auto"
-                        >
-                            Renew Now
-                        </button>
-                    )}
                 </div>
 
                 {subscription && (
@@ -140,22 +141,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {onTrial && trialCanRenew && (
-                                    <button
-                                        onClick={handleRenew}
-                                        className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
-                                    >
-                                        Extend Trial{trialRemaining != null ? ` (${trialRemaining} left)` : ''}
-                                    </button>
-                                )}
-                                {onTrial && !trialCanRenew && (
-                                    <button
-                                        onClick={scrollToPlans}
-                                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                    >
-                                        Choose Paid Plan
-                                    </button>
-                                )}
                                 {!onTrial && canRenewPlan && (
                                     <button
                                         onClick={handleRenewPlan}
@@ -174,22 +159,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                 )}
                             </div>
                         </div>
-
-                        {onTrial && !trialCanRenew && (
-                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
-                                {!trialRenewalAllowed
-                                    ? 'Trial renewal is disabled by the platform. Choose a paid plan to keep using all features after your trial ends.'
-                                    : 'Your trial renewal limit has been reached. Choose a paid plan to keep using all features after your trial ends.'}
-                            </p>
-                        )}
-
-                        {onTrial && trialCanRenew && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                                Your trial can be extended
-                                {trialRemaining != null ? ` up to ${trialRemaining} more time${trialRemaining !== 1 ? 's' : ''}` : ' (unlimited)'}
-                                {trial?.trial_ends_at ? ` — current trial ends ${trial.trial_ends_at}.` : '.'}
-                            </p>
-                        )}
 
                         {!onTrial && activePaid && renewalDue && (
                             <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
@@ -215,33 +184,15 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Manage Subscription</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                     {renewalPending
-                                        ? 'A renewal payment is awaiting review. Renewal stays locked until it is resolved.'
-                                        : `Renew your plan, or request cancellation (effective at the end of your paid period). Renewal opens within ${renewalThresholdDays} days of expiry.`}
+                                        ? 'A renewal payment is under review. See the payment notice above; renewal stays locked until it is resolved.'
+                                        : `Request cancellation (effective at the end of your paid period). Renewal opens within ${renewalThresholdDays} days of expiry.`}
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {renewalPending ? (
-                                    <a
-                                        href={adminUrl(`/admin/billing/payment?intent=${renewalPending.reference_number}`)}
-                                        className="px-3 py-2 bg-white dark:bg-gray-900 text-blue-700 border border-blue-300 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
-                                    >
-                                        View Pending Renewal
-                                    </a>
-                                ) : canManageRenewal && (
-                                    <button
-                                        onClick={handleRenewPlan}
-                                        className="px-3 py-2 bg-white dark:bg-gray-900 text-emerald-700 border border-emerald-300 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-colors"
-                                    >
-                                        {renewalDue ? 'Renew Current Plan' : 'Renew Plan'}
-                                    </button>
-                                )}
                                 {activeCancellation ? (
-                                    <button
-                                        onClick={withdrawCancellation}
-                                        className="px-3 py-2 bg-white dark:bg-gray-900 text-amber-700 border border-amber-300 rounded-lg text-sm font-medium hover:bg-amber-50 transition-colors"
-                                    >
-                                        Withdraw Cancellation
-                                    </button>
+                                    <span className="text-xs text-amber-700 dark:text-amber-400 self-center">
+                                        Request pending review — see the status panel below to withdraw it.
+                                    </span>
                                 ) : canCancel && (
                                     <button
                                         onClick={() => setCancelOpen(true)}
@@ -259,18 +210,21 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div className="flex-1">
-                                <p className="text-sm font-semibold text-amber-800">Cancellation requested — pending review</p>
+                                <p className="text-sm font-semibold text-amber-800">Cancellation status: pending review</p>
                                 <p className="text-xs text-amber-700 mt-0.5">
                                     Reason: {activeCancellation.reason_label}
                                     {activeCancellation.comment ? ` — ${activeCancellation.comment}` : ''}
                                 </p>
-                                <p className="text-xs text-amber-600 mt-0.5">Your store stays active until the request is reviewed and the existing expiry is reached.</p>
+                                <p className="text-xs text-amber-600 mt-0.5">
+                                    Your paid access continues until {subscription?.expires_at || 'your existing expiry date'}.
+                                    Withdrawing now cancels this request and keeps your subscription unchanged — it is only possible before review.
+                                </p>
                             </div>
                             <button
                                 onClick={withdrawCancellation}
                                 className="px-3 py-1.5 bg-white dark:bg-gray-900 text-amber-700 border border-amber-300 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors flex-shrink-0"
                             >
-                                Withdraw Request
+                                Withdraw Pending Request
                             </button>
                         </div>
                     </div>
@@ -279,72 +233,87 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                 {!activeCancellation && latestCancellation && latestCancellation.status !== 'pending' && (
                     <div className={`rounded-xl border p-4 ${latestCancellation.status === 'approved' ? 'border-red-200 bg-red-50' : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950'}`}>
                         <p className={`text-sm font-semibold ${latestCancellation.status === 'approved' ? 'text-red-800' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Cancellation request {latestCancellation.status}
+                            Cancellation status: {latestCancellation.status}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             Reason: {latestCancellation.reason_label}
                             {latestCancellation.review_note ? ` — Review note: ${latestCancellation.review_note}` : ''}
                         </p>
                         {latestCancellation.status === 'approved' && latestCancellation.effective_at && (
-                            <p className="text-xs text-red-700 mt-0.5">
-                                Your subscription remains active until {latestCancellation.effective_at}, then it will not renew.
+                            <div className="mt-1.5 space-y-0.5">
+                                <p className="text-xs text-red-700">
+                                    Paid access continues until {latestCancellation.effective_at}, then the subscription will not renew. This cannot be undone here — renew to keep your store.
+                                </p>
+                                {retention?.retention_deadline && (
+                                    <p className="text-xs text-red-700">
+                                        Your store data is retained until {retention.retention_deadline} (permanent deletion date). Export a backup before then.
+                                    </p>
+                                )}
+                                {backupLinks.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {backupLinks.map((l) => (
+                                            <a key={l.label} href={l.href} className="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
+                                                Export {l.label}
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {(latestCancellation.status === 'rejected' || latestCancellation.status === 'withdrawn') && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Your subscription is unchanged. You may submit a new cancellation request if needed.
                             </p>
                         )}
                     </div>
                 )}
 
-                {subscription && subscription.on_trial && subscription.trial_days_remaining > 0 && (
-                    <div className={`rounded-xl border p-4 ${subscription.trial_days_remaining <= 3 ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
-                        <div className="flex items-start gap-3">
-                            <div className={`p-1.5 rounded-lg ${subscription.trial_days_remaining <= 3 ? 'bg-amber-100' : 'bg-blue-100'}`}>
-                                <svg className={`w-4 h-4 ${subscription.trial_days_remaining <= 3 ? 'text-amber-600' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
+                {isTrial && !activePaid && (
+                    <div className={`rounded-xl border p-4 ${
+                        trialEnded || !trialCanRenew
+                            ? 'bg-amber-50 border-amber-200'
+                            : (trial?.trial_days_remaining <= 3 ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200')
+                    }`}>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div className="flex-1">
-                                <p className={`text-sm font-semibold ${subscription.trial_days_remaining <= 3 ? 'text-amber-800' : 'text-blue-800'}`}>
-                                    Trial Period — {subscription.trial_days_remaining} day{subscription.trial_days_remaining !== 1 ? 's' : ''} remaining
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                    {trialEnded ? 'Your trial has ended' : 'Trial Status'}
                                 </p>
-                                <p className={`text-xs mt-0.5 ${subscription.trial_days_remaining <= 3 ? 'text-amber-600' : 'text-blue-600'}`}>
-                                    {subscription.trial_ends_at ? `Your trial ends on ${subscription.trial_ends_at}. ` : ''}
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                                    {trial?.trial_ends_at
+                                        ? (trialEnded ? `Your trial ended on ${trial.trial_ends_at}. ` : `Your trial ends on ${trial.trial_ends_at}. `)
+                                        : ''}
+                                    {!trialEnded && (trialActive
+                                        ? `${trial?.trial_days_remaining} day${trial?.trial_days_remaining !== 1 ? 's' : ''} remaining. `
+                                        : '')}
                                     {trialCanRenew
-                                        ? 'You can extend your trial or choose a paid plan to continue.'
-                                        : 'Trial renewal is not available. Choose a paid plan to continue using all features.'}
+                                        ? `You can extend your trial${trialRemaining != null ? ` (${trialRemaining} renewal${trialRemaining !== 1 ? 's' : ''} left)` : ''} or choose a paid plan.`
+                                        : 'Choose a paid plan to continue using all features.'}
                                 </p>
+                                {!trialCanRenew && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                        {!trialRenewalAllowed
+                                            ? 'Trial renewal is disabled by the platform.'
+                                            : 'No trial renewals remain.'}
+                                    </p>
+                                )}
                             </div>
-                            {trialCanRenew ? (
-                                <button
-                                    onClick={handleRenew}
-                                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition-colors flex-shrink-0"
-                                >
-                                    Extend Trial
-                                </button>
-                            ) : (
+                            <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                                {trialCanRenew && (
+                                    <button
+                                        onClick={handleRenew}
+                                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition-colors"
+                                    >
+                                        Extend Trial
+                                    </button>
+                                )}
                                 <button
                                     onClick={scrollToPlans}
-                                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors flex-shrink-0"
+                                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
                                 >
                                     Choose Paid Plan
                                 </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {subscription && isTrialExpired && !activePaid && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div>
-                                <p className="text-sm font-semibold text-amber-800">Your trial has ended</p>
-                                <p className="text-xs text-amber-700 mt-0.5">
-                                    {subscription.trial_ends_at ? `Your trial ended on ${subscription.trial_ends_at}. ` : ''}
-                                    Choose a paid plan to continue using all features.
-                                </p>
                             </div>
-                            <button
-                                onClick={scrollToPlans}
-                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors flex-shrink-0"
-                            >
-                                Choose Paid Plan
-                            </button>
                         </div>
                     </div>
                 )}
@@ -411,6 +380,39 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                     <p className="text-xs text-red-600 mt-0.5">Expired {subscription.days_since_expiry} day{subscription.days_since_expiry > 1 ? 's' : ''} ago</p>
                                 )}
                                 <p className="text-xs text-red-600 mt-0.5">Renew your subscription to restore full access to your store.</p>
+                                {retention && (subscription.status === 'expired' || subscription.status === 'past_due') && (
+                                    <div className="text-xs text-red-700 mt-1.5 space-y-0.5">
+                                        <p>
+                                            Grace period: {retention.grace_days} day{retention.grace_days !== 1 ? 's' : ''}.
+                                            {retention.cleanup_at
+                                                ? ` Your store will be restricted on ${retention.cleanup_at} (${retention.cleanup_grace_days} days after expiry) if not renewed.`
+                                                : ''}
+                                        </p>
+                                        <p>Your billing history and store data are retained — renewing restores full access.</p>
+                                        {retention.retention_deadline && (
+                                            <p>Export a backup before {retention.retention_deadline}, the permanent deletion date.</p>
+                                        )}
+                                    </div>
+                                )}
+                                {retention && subscription.status === 'canceled' && (
+                                    <div className="text-xs text-red-700 mt-1.5 space-y-0.5">
+                                        {subscription.expires_at && (
+                                            <p>Paid access continues until {subscription.expires_at}.</p>
+                                        )}
+                                        {retention.retention_deadline && (
+                                            <p>Store data is retained until {retention.retention_deadline} (permanent deletion date).</p>
+                                        )}
+                                    </div>
+                                )}
+                                {backupLinks.length > 0 && ['expired', 'past_due', 'canceled'].includes(subscription.status) && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {backupLinks.map((l) => (
+                                            <a key={l.label} href={l.href} className="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
+                                                Export {l.label}
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             {can('billing.renew') && (
                                 <button
@@ -440,11 +442,9 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
 
                 <CurrentPlanSummary
                     subscription={subscription}
-                    primary={showRenew
-                        ? { label: 'Renew Now', tone: 'emerald', onClick: handleRenewPlan }
-                        : subscription && !['suspended'].includes(subscription.status)
-                            ? { label: 'View Plans', tone: 'blue', onClick: scrollToPlans }
-                            : null}
+                    primary={subscription && !['suspended'].includes(subscription.status)
+                        ? { label: 'View Plans', tone: 'blue', onClick: scrollToPlans }
+                        : null}
                     secondaryLinks={[
                         { label: 'Payment history', href: adminUrl('/admin/billing/payment-history') },
                         { label: 'Invoices', href: adminUrl('/admin/billing/invoices') },

@@ -150,8 +150,10 @@ class ManualPaymentFormAuditTest extends TestCase
             ->post("/store/{$this->tenant->slug}/admin/billing/payment/submit", $this->payload($intent, [
                 'payment_reason' => 'other',
                 'payment_reason_text' => '',
+                'payment_remark' => '',
+                'note' => '',
             ]))
-            ->assertSessionHasErrors('payment_reason_text');
+            ->assertSessionHasErrors('payment_remark');
     }
 
     public function test_selected_reason_is_stored_structurally(): void
@@ -212,9 +214,16 @@ class ManualPaymentFormAuditTest extends TestCase
     {
         $this->actingAs($this->makeOwner($this->tenant));
 
-        // Renewal via the manual-payment workflow.
-        $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")->assertOk();
-        $renewal = $this->latestPendingIntent($this->tenant);
+        // Renewal via the manual-payment workflow (opening the form creates nothing;
+        // the intent is created on submission — classified as a renewal).
+        $renewal = app(ManualPaymentService::class)->initiate(
+            tenant: $this->tenant,
+            plan: $this->plan,
+            billingCycle: 'monthly',
+            amount: 10.0,
+            currency: Currency::fromCode('MMK'),
+            metadata: ['source' => 'merchant_renewal', 'payment_type' => PaymentIntent::TYPE_RENEWAL],
+        );
         $this->assertSame(PaymentIntent::TYPE_RENEWAL, $renewal->paymentType());
 
         // Upgrade via the prorated plan-change workflow.

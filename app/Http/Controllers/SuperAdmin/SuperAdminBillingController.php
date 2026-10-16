@@ -84,6 +84,7 @@ class SuperAdminBillingController extends Controller
                 'payment_type' => $intent->paymentType(),
                 'payment_type_label' => $intent->paymentTypeLabel(),
                 'payment_reason_label' => $intent->paymentReasonLabel(),
+                'payment_remark' => $intent->paymentRemark(),
                 'from_plan' => $intent->metadata['from_plan_name'] ?? null,
                 'to_plan' => $intent->plan?->name,
                 'evidences' => $intent->evidences->map(fn($ev) => [

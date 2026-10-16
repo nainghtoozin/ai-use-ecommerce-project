@@ -82,17 +82,21 @@ class SubscriptionRenewalCancellationTest extends TestCase
 
     // ── Renewal (merchant-initiated manual payment) ──
 
-    public function test_renew_plan_page_creates_intent_for_current_plan(): void
+    public function test_renew_plan_page_opens_form_without_creating_intent(): void
     {
         $this->actingAs($this->makeOwner($this->tenant));
 
-        $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")->assertOk();
+        $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Billing/Payment')
+                ->where('renewalMode', true)
+                ->where('intent', null)
+                ->where('selectedPlan.id', $this->plan->id)
+            );
 
-        $this->assertSame(1, \App\Models\PaymentIntent::where('tenant_id', $this->tenant->id)->count());
-        $intent = \App\Models\PaymentIntent::where('tenant_id', $this->tenant->id)->first();
-        $this->assertSame($this->plan->id, $intent->plan_id);
-        $this->assertSame('monthly', $intent->billing_cycle);
-        $this->assertSame('waiting_payment', $intent->status);
+        // Opening the form must not create a payment record.
+        $this->assertSame(0, \App\Models\PaymentIntent::where('tenant_id', $this->tenant->id)->count());
     }
 
     public function test_renew_plan_does_not_change_expiry_before_payment(): void
@@ -107,12 +111,25 @@ class SubscriptionRenewalCancellationTest extends TestCase
         $this->assertSame('active', $this->subscription->fresh()->status);
     }
 
-    public function test_renew_plan_reuses_pending_intent(): void
+    public function test_renew_plan_with_existing_pending_redirects_to_it(): void
     {
+        $intent = new \App\Models\PaymentIntent([
+            'plan_id' => $this->plan->id,
+            'billing_cycle' => 'monthly',
+            'amount' => 100,
+            'currency' => 'MMK',
+            'gateway' => 'manual',
+            'status' => 'waiting_review',
+            'reference_number' => 'PAY-' . strtoupper(uniqid()),
+            'idempotency_key' => uniqid('idem-', true),
+            'metadata' => ['source' => 'merchant_renewal'],
+        ]);
+        $intent->tenant_id = $this->tenant->id;
+        $intent->save();
+
         $this->actingAs($this->makeOwner($this->tenant));
 
-        $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")->assertOk();
-        $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")->assertOk();
+        $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")->assertRedirect();
 
         $this->assertSame(1, \App\Models\PaymentIntent::where('tenant_id', $this->tenant->id)->count());
     }
@@ -434,7 +451,13 @@ class SubscriptionRenewalCancellationTest extends TestCase
                 $table->text('description')->nullable();
                 $table->decimal('monthly_price', 10, 2)->nullable();
                 $table->decimal('yearly_price', 10, 2)->nullable();
-                $table->string('status', 20)->default('active'); $table->timestamps();
+                $table->string('status', 20)->default('active');
+                $table->boolean('analytics_enabled')->default(false);
+                $table->boolean('custom_domain_enabled')->default(false);
+                $table->string('price')->nullable(); $table->string('currency')->nullable();
+                $table->string('interval')->nullable(); $table->boolean('is_default')->default(false);
+                $table->boolean('is_active')->default(true); $table->integer('sort_order')->default(0);
+                $table->timestamps();
             });
         }
         if (!Schema::hasTable('subscriptions')) {
@@ -525,7 +548,7 @@ class SubscriptionRenewalCancellationTest extends TestCase
                 $table->text('instructions')->nullable(); $table->string('currency', 3)->nullable();
                 $table->string('qr_image_url')->nullable(); $table->boolean('is_active')->default(true);
                 $table->boolean('supports_manual_payment')->default(true);
-                $table->integer('sort_order')->default(0); $table->timestamps();
+                $table->integer('sort_order')->default(0); $table->timestamps(); $table->softDeletes();
             });
         }
         if (!Schema::hasTable('website_infos')) {
@@ -533,6 +556,90 @@ class SubscriptionRenewalCancellationTest extends TestCase
                 $table->id(); $table->unsignedBigInteger('tenant_id')->nullable();
                 $table->string('site_name')->nullable(); $table->string('currency_code')->default('MMK');
                 $table->string('currency_symbol')->default('K'); $table->timestamps();
+            });
+        }
+        if (!Schema::hasTable('activity_logs')) {
+            Schema::create('activity_logs', function ($table) {
+                $table->id(); $table->unsignedBigInteger('tenant_id')->nullable();
+                $table->string('log_name')->nullable(); $table->string('category', 50)->nullable();
+                $table->string('severity', 20)->default('info'); $table->text('description')->nullable();
+                $table->string('subject_type')->nullable(); $table->unsignedBigInteger('subject_id')->nullable();
+                $table->string('causer_type')->nullable(); $table->unsignedBigInteger('causer_id')->nullable();
+                $table->unsignedBigInteger('impersonator_id')->nullable();
+                $table->unsignedBigInteger('impersonated_user_id')->nullable();
+                $table->json('properties')->nullable(); $table->string('event')->nullable();
+                $table->string('batch_uuid')->nullable(); $table->timestamps();
+            });
+        }
+        if (!Schema::hasTable('invoices')) {
+            Schema::create('invoices', function ($table) {
+                $table->id(); $table->unsignedBigInteger('tenant_id');
+                $table->string('invoice_number')->unique();
+                $table->unsignedBigInteger('subscription_id')->nullable();
+                $table->unsignedBigInteger('plan_id')->nullable();
+                $table->unsignedBigInteger('payment_intent_id')->nullable();
+                $table->string('billing_interval')->nullable();
+                $table->date('billing_period_start')->nullable();
+                $table->date('billing_period_end')->nullable();
+                $table->decimal('amount', 10, 2)->default(0);
+                $table->decimal('subtotal', 10, 2)->default(0);
+                $table->decimal('tax', 10, 2)->default(0);
+                $table->decimal('total', 10, 2)->default(0);
+                $table->string('currency', 3)->default('MMK');
+                $table->string('status')->default('unpaid');
+                $table->text('notes')->nullable();
+                $table->timestamp('issued_at')->nullable();
+                $table->timestamp('paid_at')->nullable();
+                $table->json('line_items')->nullable();
+                $table->timestamps(); $table->softDeletes();
+            });
+        }
+        if (!Schema::hasTable('accounts')) {
+            Schema::create('accounts', function ($table) {
+                $table->id(); $table->string('name')->nullable();
+                $table->string('email')->unique(); $table->string('password');
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('remember_token', 100)->nullable();
+                $table->string('profile_image', 255)->nullable();
+                $table->string('status', 50)->default('active');
+                $table->json('notification_preferences')->nullable();
+                $table->timestamp('last_login_at')->nullable();
+                $table->string('last_login_ip', 45)->nullable();
+                $table->timestamps(); $table->softDeletes();
+            });
+        }
+        if (!Schema::hasTable('tenant_memberships')) {
+            Schema::create('tenant_memberships', function ($table) {
+                $table->id(); $table->unsignedBigInteger('account_id')->nullable();
+                $table->unsignedBigInteger('tenant_id')->nullable();
+                $table->unsignedBigInteger('role_id')->nullable();
+                $table->boolean('is_owner')->default(false);
+                $table->string('status')->default('active');
+                $table->timestamps(); $table->softDeletes();
+            });
+        }
+        if (!Schema::hasTable('platform_settings')) {
+            Schema::create('platform_settings', function ($table) {
+                $table->id(); $table->string('site_name')->default('My Application');
+                $table->boolean('trial_enabled')->default(false); $table->integer('trial_days')->default(14);
+                $table->boolean('allow_trial_renewal')->default(true); $table->integer('max_trial_renewals')->default(0);
+                $table->integer('billing_renewal_reminder_days')->default(7);
+                $table->unsignedInteger('tenant_data_retention_days')->default(15);
+                $table->boolean('tenant_auto_delete_enabled')->default(false);
+                $table->timestamps();
+            });
+        }
+        if (!Schema::hasTable('receipts')) {
+            Schema::create('receipts', function ($table) {
+                $table->id(); $table->unsignedBigInteger('tenant_id');
+                $table->unsignedBigInteger('invoice_id')->nullable();
+                $table->unsignedBigInteger('payment_intent_id')->nullable();
+                $table->string('receipt_number')->unique();
+                $table->decimal('amount', 10, 2)->default(0);
+                $table->string('currency', 3)->default('MMK');
+                $table->timestamp('paid_at')->nullable();
+                $table->json('details')->nullable();
+                $table->timestamps();
             });
         }
         if (!Schema::hasTable('reference_numbers')) {

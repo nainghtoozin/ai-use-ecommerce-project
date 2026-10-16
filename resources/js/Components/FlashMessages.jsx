@@ -39,6 +39,14 @@ export default function FlashMessages() {
             });
         }
 
+        if (flash?.info) {
+            newToasts.push({
+                id: Date.now() + 'info',
+                type: 'info',
+                message: flash.info,
+            });
+        }
+
         if (newToasts.length > 0) {
             setToasts((prev) => [...prev, ...newToasts]);
         }
@@ -132,6 +140,11 @@ function Toast({ toast, onClose }) {
             bg: 'bg-amber-500',
             icon: 'bi-exclamation-triangle-fill',
             shadow: 'shadow-amber-500/20',
+        },
+        info: {
+            bg: 'bg-blue-500',
+            icon: 'bi-info-circle-fill',
+            shadow: 'shadow-blue-500/20',
         },
     };
 

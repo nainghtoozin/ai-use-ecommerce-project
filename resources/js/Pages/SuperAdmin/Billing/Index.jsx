@@ -300,10 +300,10 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                             <span className="text-gray-500 dark:text-gray-400">Payment Type</span>
                             <PaymentTypeBadge type={intent.payment_type} label={intent.payment_type_label} />
                         </div>
-                        {intent.payment_reason_label && (
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500 dark:text-gray-400">Reason</span>
-                                <span className="text-gray-700 dark:text-gray-300">{intent.payment_reason_label}</span>
+                        {(intent.payment_remark || intent.payment_reason_label) && (
+                            <div className="flex items-start justify-between text-sm gap-4">
+                                <span className="text-gray-500 dark:text-gray-400">Purpose / Remark</span>
+                                <span className="text-gray-700 dark:text-gray-300 text-right">{intent.payment_remark || intent.payment_reason_label}</span>
                             </div>
                         )}
                         <div className="flex items-center justify-between text-sm">

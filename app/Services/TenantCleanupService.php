@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PaymentIntent;
+use App\Models\PlatformSetting;
 use App\Models\Subscription;
 use App\Models\SubscriptionCancellationRequest;
 use App\Models\Tenant;
@@ -10,9 +11,12 @@ use App\Models\TenantCleanup;
 use App\Notifications\TenantCleanupNotice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TenantCleanupService
 {
+    private static ?array $cleanupColumns = null;
+
     public function __construct(
         private readonly NotificationPreferenceService $preferenceService,
     ) {}
@@ -20,6 +24,26 @@ class TenantCleanupService
     public function graceDays(): int
     {
         return max(1, (int) config('billing.tenant_cleanup.grace_days', 15));
+    }
+
+    public function retentionDays(): int
+    {
+        try {
+            $days = PlatformSetting::current()->tenant_data_retention_days ?? 15;
+        } catch (\Throwable $e) {
+            $days = 15;
+        }
+
+        return max(1, min(365, (int) $days));
+    }
+
+    public function autoDeleteEnabled(): bool
+    {
+        try {
+            return (bool) (PlatformSetting::current()->tenant_auto_delete_enabled ?? false);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /** @return int[] */
@@ -40,14 +64,16 @@ class TenantCleanupService
     /**
      * Run the staged, idempotent cleanup for expired tenants.
      *
-     * @return array{candidates:int,reminded:int,restricted:int,flagged:int,cancelled:int,skipped:int,errors:int}
+     * @return array{candidates:int,reminded:int,retention_reminded:int,restricted:int,pending_deletion:int,flagged:int,cancelled:int,skipped:int,errors:int}
      */
-    public function process(bool $dryRun = false): array
+    public function process(bool $dryRun = false, ?int $limit = null): array
     {
         $result = [
             'candidates' => 0,
             'reminded' => 0,
+            'retention_reminded' => 0,
             'restricted' => 0,
+            'pending_deletion' => 0,
             'flagged' => 0,
             'cancelled' => 0,
             'skipped' => 0,
@@ -59,8 +85,13 @@ class TenantCleanupService
             ->whereNotNull('expires_at')
             ->where('expires_at', '<', now())
             ->whereIn('status', ['past_due', 'expired', 'suspended', 'canceled'])
-            ->chunkById(100, function ($subscriptions) use (&$result, $dryRun) {
+            ->orderBy('id')
+            ->chunkById(100, function ($subscriptions) use (&$result, $dryRun, $limit) {
                 foreach ($subscriptions as $subscription) {
+                    if ($limit !== null && $result['candidates'] >= $limit) {
+                        return false;
+                    }
+
                     if (!$subscription->tenant || !$subscription->plan || $subscription->plan->isFree()) {
                         continue;
                     }
@@ -103,23 +134,18 @@ class TenantCleanupService
             $cleanup = TenantCleanup::where('tenant_id', $tenant->id)->lockForUpdate()->first();
 
             if (!$cleanup) {
-                $cleanup = TenantCleanup::create([
+                $cleanup = TenantCleanup::create($this->cleanupPayload([
                     'tenant_id' => $tenant->id,
                     'subscription_id' => $subscription->id,
                     'status' => TenantCleanup::STATUS_GRACE,
                     'expires_at' => $subscription->expires_at,
                     'grace_ends_at' => $subscription->expires_at->copy()->addDays($this->graceDays()),
+                    'deletion_status' => TenantCleanup::DELETION_NONE,
                     'reminders_sent' => [],
-                ]);
+                ]));
             }
 
             if ($cleanup->isTerminal()) {
-                $result['skipped']++;
-                return;
-            }
-
-            // Already restricted — safe to skip on repeated runs (no duplicate actions).
-            if ($cleanup->status === TenantCleanup::STATUS_RESTRICTED && $cleanup->restricted_at !== null) {
                 $result['skipped']++;
                 return;
             }
@@ -132,7 +158,7 @@ class TenantCleanupService
             if ($this->hasActiveSubscription($tenant)) {
                 $cleanup->status = TenantCleanup::STATUS_CANCELLED;
                 $cleanup->reason = 'Active subscription present — cleanup cancelled.';
-                $cleanup->save();
+                $this->saveCleanup($cleanup, ['status', 'reason', 'subscription_id', 'expires_at', 'grace_ends_at']);
                 $result['cancelled']++;
                 return;
             }
@@ -142,7 +168,7 @@ class TenantCleanupService
                 if ($this->sendDueReminder($cleanup, $subscription)) {
                     $result['reminded']++;
                 }
-                $cleanup->save();
+                $this->saveCleanup($cleanup);
                 return;
             }
 
@@ -151,9 +177,14 @@ class TenantCleanupService
                 $cleanup->status = TenantCleanup::STATUS_FLAGGED;
                 $cleanup->reason = 'Payment/cancellation review pending — cleanup paused.';
                 $cleanup->grace_ends_at = now()->copy()->addDays($this->pendingReviewExtensionDays());
-                $cleanup->save();
+                $this->saveCleanup($cleanup);
                 $this->notify($tenant, $subscription, 'flagged');
                 $result['flagged']++;
+                return;
+            }
+
+            if ($cleanup->restricted_at !== null) {
+                $this->processRestricted($cleanup, $subscription, $result);
                 return;
             }
 
@@ -162,17 +193,66 @@ class TenantCleanupService
         });
     }
 
+    private function processRestricted(TenantCleanup $cleanup, Subscription $subscription, array &$result): void
+    {
+        $tenant = $subscription->tenant;
+
+        if ($cleanup->status !== TenantCleanup::STATUS_RESTRICTED
+            && $cleanup->status !== TenantCleanup::STATUS_PENDING_DELETION
+        ) {
+            $cleanup->status = TenantCleanup::STATUS_RESTRICTED;
+        }
+
+        if ($cleanup->retention_ends_at === null && $this->hasRetentionColumn('retention_ends_at')) {
+            $base = $cleanup->restricted_at ?? now();
+            $cleanup->retention_ends_at = $base->copy()->addDays($this->retentionDays());
+        }
+
+        if ($cleanup->retention_ends_at !== null && now()->lt($cleanup->retention_ends_at)) {
+            $cleanup->status = TenantCleanup::STATUS_RESTRICTED;
+            if ($this->sendRetentionReminder($cleanup, $subscription)) {
+                $result['retention_reminded']++;
+            } else {
+                $result['skipped']++;
+            }
+            $this->saveCleanup($cleanup);
+            return;
+        }
+
+        if (!$this->autoDeleteEnabled()) {
+            if ($this->sendRetentionExpiredNotice($cleanup, $subscription)) {
+                $result['retention_reminded']++;
+            } else {
+                $result['skipped']++;
+            }
+            $this->saveCleanup($cleanup);
+            return;
+        }
+
+        if ($cleanup->status === TenantCleanup::STATUS_PENDING_DELETION
+            && $cleanup->deletion_status === TenantCleanup::DELETION_PENDING
+        ) {
+            $result['skipped']++;
+            return;
+        }
+
+        $cleanup->status = TenantCleanup::STATUS_PENDING_DELETION;
+        if ($this->hasRetentionColumn('deletion_status')) {
+            $cleanup->deletion_status = TenantCleanup::DELETION_PENDING;
+        }
+        $cleanup->reason = 'Retention period ended. Tenant queued for permanent deletion — export data before the purge runs.';
+        $cleanup->attempts++;
+        $this->saveCleanup($cleanup);
+        $this->notify($tenant, $subscription, 'pending_deletion', 0, $cleanup->retention_ends_at);
+        $result['pending_deletion']++;
+    }
+
     private function evaluateDryRun(Subscription $subscription, array &$result): void
     {
         $tenant = $subscription->tenant;
         $cleanup = TenantCleanup::where('tenant_id', $tenant->id)->first();
 
         if ($cleanup && $cleanup->isTerminal()) {
-            $result['skipped']++;
-            return;
-        }
-
-        if ($cleanup && $cleanup->status === TenantCleanup::STATUS_RESTRICTED && $cleanup->restricted_at !== null) {
             $result['skipped']++;
             return;
         }
@@ -196,6 +276,35 @@ class TenantCleanupService
             return;
         }
 
+        if ($cleanup && $cleanup->restricted_at !== null) {
+            $retentionEndsAt = $cleanup->retention_ends_at
+                ?? $cleanup->restricted_at->copy()->addDays($this->retentionDays());
+
+            if (now()->lt($retentionEndsAt)) {
+                if ($this->isRetentionReminderDue($cleanup, $retentionEndsAt)) {
+                    $result['retention_reminded']++;
+                } else {
+                    $result['skipped']++;
+                }
+                return;
+            }
+
+            if (!$this->autoDeleteEnabled()) {
+                $result['skipped']++;
+                return;
+            }
+
+            if ($cleanup->status === TenantCleanup::STATUS_PENDING_DELETION
+                && $cleanup->deletion_status === TenantCleanup::DELETION_PENDING
+            ) {
+                $result['skipped']++;
+                return;
+            }
+
+            $result['pending_deletion']++;
+            return;
+        }
+
         $result['restricted']++;
     }
 
@@ -203,27 +312,38 @@ class TenantCleanupService
     {
         $tenant = $subscription->tenant;
 
-        if ($cleanup->restricted_at === null) {
+        $wasRestricted = $cleanup->restricted_at !== null;
+
+        if (!$wasRestricted) {
             $tenant->update(['status' => 'expired']);
             $tenant->lock();
 
             $cleanup->restricted_at = now();
+        }
 
+        $cleanup->status = TenantCleanup::STATUS_RESTRICTED;
+        $cleanup->reason = 'Grace period ended without an approved renewal.';
+        if ($this->hasRetentionColumn('retention_ends_at') && $cleanup->retention_ends_at === null) {
+            $cleanup->retention_ends_at = now()->copy()->addDays($this->retentionDays());
+        }
+        if ($this->hasRetentionColumn('deletion_status') && !$cleanup->deletion_status) {
+            $cleanup->deletion_status = TenantCleanup::DELETION_NONE;
+        }
+        $cleanup->attempts++;
+        $this->saveCleanup($cleanup);
+
+        if (!$wasRestricted) {
             SubscriptionAuditService::log($subscription, 'tenant_cleanup_restricted', [
                 'old_status' => $subscription->status,
                 'reason' => 'Grace period ended without an approved renewal.',
                 'metadata' => [
                     'grace_ends_at' => $cleanup->grace_ends_at?->toDateTimeString(),
+                    'retention_ends_at' => $cleanup->retention_ends_at?->toDateTimeString(),
                 ],
             ]);
 
-            $this->notify($tenant, $subscription, 'restricted');
+            $this->notify($tenant, $subscription, 'restricted', 0, $cleanup->retention_ends_at);
         }
-
-        $cleanup->status = TenantCleanup::STATUS_RESTRICTED;
-        $cleanup->reason = 'Grace period ended without an approved renewal.';
-        $cleanup->attempts++;
-        $cleanup->save();
     }
 
     private function hasActiveSubscription(Tenant $tenant): bool
@@ -265,7 +385,49 @@ class TenantCleanupService
         $cleanup->reminders_sent = $sentinels;
         $cleanup->last_reminder_at = now();
 
-        $this->notify($subscription->tenant, $subscription, 'grace', $daysRemaining);
+        $this->notify(
+            $subscription->tenant,
+            $subscription,
+            'grace',
+            $daysRemaining,
+            $cleanup->grace_ends_at?->copy()->addDays($this->retentionDays()),
+        );
+
+        return true;
+    }
+
+    private function sendRetentionReminder(TenantCleanup $cleanup, Subscription $subscription): bool
+    {
+        if (!$this->isRetentionReminderDue($cleanup, $cleanup->retention_ends_at)) {
+            return false;
+        }
+
+        $daysRemaining = $this->daysRemaining($cleanup->retention_ends_at);
+        $sentinel = 'retention:' . $this->nextRetentionThreshold($cleanup, $cleanup->retention_ends_at);
+
+        $sentinels = $cleanup->reminders_sent ?? [];
+        $sentinels[] = $sentinel;
+        $cleanup->reminders_sent = $sentinels;
+        $cleanup->last_reminder_at = now();
+
+        $this->notify($subscription->tenant, $subscription, 'retention', $daysRemaining, $cleanup->retention_ends_at);
+
+        return true;
+    }
+
+    private function sendRetentionExpiredNotice(TenantCleanup $cleanup, Subscription $subscription): bool
+    {
+        $sentinels = $cleanup->reminders_sent ?? [];
+
+        if (in_array('retention_expired', $sentinels, true)) {
+            return false;
+        }
+
+        $sentinels[] = 'retention_expired';
+        $cleanup->reminders_sent = $sentinels;
+        $cleanup->last_reminder_at = now();
+
+        $this->notify($subscription->tenant, $subscription, 'retention_expired', 0, $cleanup->retention_ends_at);
 
         return true;
     }
@@ -298,12 +460,36 @@ class TenantCleanupService
         return null;
     }
 
-    private function daysRemaining($graceEndsAt): int
+    private function isRetentionReminderDue(?TenantCleanup $cleanup, $retentionEndsAt): bool
     {
-        return (int) ceil(max(0, $graceEndsAt->getTimestamp() - now()->getTimestamp()) / 86400);
+        return $this->nextRetentionThreshold($cleanup, $retentionEndsAt) !== null;
     }
 
-    private function notify(Tenant $tenant, ?Subscription $subscription, string $phase, ?int $daysRemaining = null): void
+    private function nextRetentionThreshold(?TenantCleanup $cleanup, $retentionEndsAt)
+    {
+        if (!$retentionEndsAt) {
+            return null;
+        }
+
+        $daysRemaining = $this->daysRemaining($retentionEndsAt);
+        $sent = $cleanup?->reminders_sent ?? [];
+
+        foreach ($this->reminderDays() as $threshold) {
+            $sentinel = 'retention:' . $threshold;
+            if ($daysRemaining <= $threshold && !in_array($sentinel, $sent, true) && !in_array($threshold, $sent, true)) {
+                return $threshold;
+            }
+        }
+
+        return null;
+    }
+
+    private function daysRemaining($endsAt): int
+    {
+        return (int) ceil(max(0, $endsAt->getTimestamp() - now()->getTimestamp()) / 86400);
+    }
+
+    private function notify(Tenant $tenant, ?Subscription $subscription, string $phase, ?int $daysRemaining = null, $retentionEndsAt = null): void
     {
         try {
             if (!$this->preferenceService->tenantAllows($tenant->id)) {
@@ -316,6 +502,7 @@ class TenantCleanupService
                 phase: $phase,
                 graceEndsAt: $subscription?->expires_at?->copy()->addDays($this->graceDays()),
                 daysRemaining: $daysRemaining,
+                retentionEndsAt: $retentionEndsAt?->copy(),
             ));
         } catch (\Throwable $e) {
             Log::warning('Tenant cleanup notification failed.', [
@@ -336,11 +523,73 @@ class TenantCleanupService
             return false;
         }
 
-        $cleanup->update([
+        $cleanup->update($this->cleanupPayload([
             'status' => TenantCleanup::STATUS_CANCELLED,
             'reason' => $reason,
-        ]);
+        ]));
 
         return true;
+    }
+
+    private function saveCleanup(TenantCleanup $cleanup, ?array $only = null): void
+    {
+        if ($only !== null) {
+            $columns = $this->cleanupColumns();
+            $only = array_values(array_intersect($only, $columns));
+            if ($only === []) {
+                return;
+            }
+            $dirty = array_intersect(array_keys($cleanup->getDirty()), $only);
+            if ($dirty === []) {
+                return;
+            }
+            $cleanup->save();
+            return;
+        }
+
+        $columns = $this->cleanupColumns();
+        foreach (array_keys($cleanup->getDirty()) as $attribute) {
+            if (!in_array($attribute, $columns, true)) {
+                unset($cleanup->{$attribute});
+            }
+        }
+
+        if ($cleanup->isDirty()) {
+            $cleanup->save();
+        }
+    }
+
+    private function cleanupPayload(array $payload): array
+    {
+        $columns = $this->cleanupColumns();
+
+        return array_intersect_key($payload, array_flip($columns));
+    }
+
+    private function hasRetentionColumn(string $column): bool
+    {
+        return in_array($column, $this->cleanupColumns(), true);
+    }
+
+    private function cleanupColumns(): array
+    {
+        if (self::$cleanupColumns === null) {
+            try {
+                self::$cleanupColumns = Schema::getColumnListing('tenant_cleanups');
+            } catch (\Throwable $e) {
+                self::$cleanupColumns = [];
+            }
+        }
+
+        if (self::$cleanupColumns === []) {
+            return [
+                'tenant_id', 'subscription_id', 'status', 'expires_at', 'grace_ends_at',
+                'retention_ends_at', 'restricted_at', 'deleted_at', 'deletion_status',
+                'archived_at', 'last_reminder_at', 'reminders_sent', 'attempts',
+                'reason', 'last_error', 'metadata', 'created_at', 'updated_at',
+            ];
+        }
+
+        return self::$cleanupColumns;
     }
 }

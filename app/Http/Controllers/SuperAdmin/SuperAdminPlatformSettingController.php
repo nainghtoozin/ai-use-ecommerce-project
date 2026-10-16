@@ -39,6 +39,8 @@ class SuperAdminPlatformSettingController extends Controller
             'allow_trial_renewal' => 'boolean',
             'max_trial_renewals' => 'nullable|integer|min:0|max:255',
             'billing_renewal_reminder_days' => 'nullable|integer|min:1|max:30',
+            'tenant_data_retention_days' => 'nullable|integer|min:1|max:365',
+            'tenant_auto_delete_enabled' => 'boolean',
             'platform_currency_code' => 'required|string|max:10',
             'platform_currency_symbol' => 'required|string|max:10',
             'platform_currency_position' => 'required|in:before,after',
@@ -60,6 +62,10 @@ class SuperAdminPlatformSettingController extends Controller
             'billing_renewal_reminder_days' => $request->filled('billing_renewal_reminder_days')
                 ? $request->integer('billing_renewal_reminder_days')
                 : 7,
+            'tenant_data_retention_days' => $request->filled('tenant_data_retention_days')
+                ? $request->integer('tenant_data_retention_days')
+                : 15,
+            'tenant_auto_delete_enabled' => $request->boolean('tenant_auto_delete_enabled'),
             'platform_currency_code' => $validated['platform_currency_code'],
             'platform_currency_symbol' => $validated['platform_currency_symbol'],
             'platform_currency_position' => $validated['platform_currency_position'],

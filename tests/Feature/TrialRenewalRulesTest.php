@@ -237,7 +237,7 @@ class TrialRenewalRulesTest extends TestCase
 
     /* ── 9. Paid-plan renewal and prorated upgrades remain unchanged ── */
 
-    public function test_paid_proration_unchanged_and_renewal_creates_payment(): void
+    public function test_paid_proration_unchanged_and_renew_form_opens_without_payment(): void
     {
         $this->subscription->update([
             'status' => 'active',
@@ -255,7 +255,8 @@ class TrialRenewalRulesTest extends TestCase
         $this->actingAs($this->makeOwner($this->tenant));
         $this->get("/store/{$this->tenant->slug}/admin/billing/renew-plan")->assertOk();
 
-        $this->assertSame(1, PaymentIntent::withoutTenantScope()
+        // Opening the renewal form does not create a payment; it is created on submission.
+        $this->assertSame(0, PaymentIntent::withoutTenantScope()
             ->where('tenant_id', $this->tenant->id)
             ->where('plan_id', $this->paidPlan->id)
             ->whereIn('status', ['waiting_payment', 'waiting_review'])
@@ -297,7 +298,149 @@ class TrialRenewalRulesTest extends TestCase
         $this->assertSame(0, $otherSub->fresh()->trial_renewals_count);
     }
 
+    /* ── 11. Ended trial can still be extended within the allowance ── */
+
+    public function test_ended_trial_can_be_extended_when_allowance_remains(): void
+    {
+        $this->setPlatformSettings(['max_trial_renewals' => 1]);
+        $this->makeEndedTrial($this->subscription);
+
+        $this->assertTrue($this->subscription->fresh()->isTrialSubscription());
+        $this->assertTrue($this->subscription->fresh()->canRenewTrial());
+
+        $this->actingAs($this->makeOwner($this->tenant));
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/renew")
+            ->assertRedirect();
+
+        $fresh = $this->subscription->fresh();
+        $this->assertSame(1, $fresh->trial_renewals_count);
+        $this->assertSame('trialing', $fresh->status);
+        $this->assertTrue($fresh->trial_ends_at->isFuture());
+    }
+
+    /* ── 12. Permitted second trial ── */
+
+    public function test_permitted_second_extension(): void
+    {
+        $this->setPlatformSettings(['max_trial_renewals' => 2]);
+        $this->makeEndedTrial($this->subscription);
+
+        $this->actingAs($this->makeOwner($this->tenant));
+        $url = "/store/{$this->tenant->slug}/admin/billing/renew";
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")->post($url)->assertRedirect();
+        $this->assertSame(1, $this->subscription->fresh()->trial_renewals_count);
+
+        // The extended trial ends again.
+        $this->makeEndedTrial($this->subscription->fresh());
+        $this->assertTrue($this->subscription->fresh()->canRenewTrial());
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")->post($url)->assertRedirect();
+        $this->assertSame(2, $this->subscription->fresh()->trial_renewals_count);
+    }
+
+    /* ── 13. Exhausted trial renewals ── */
+
+    public function test_ended_trial_blocked_when_allowance_exhausted(): void
+    {
+        $this->setPlatformSettings(['max_trial_renewals' => 1]);
+        $this->makeEndedTrial($this->subscription);
+        $this->subscription->update(['trial_renewals_count' => 1]);
+
+        $this->assertFalse($this->subscription->fresh()->canRenewTrial());
+
+        $this->actingAs($this->makeOwner($this->tenant));
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/renew")
+            ->assertSessionHas('error');
+
+        $this->assertSame(1, $this->subscription->fresh()->trial_renewals_count);
+        $this->assertSame('expired', $this->subscription->fresh()->status);
+    }
+
+    /* ── 14. Direct attempts to exceed the limit ── */
+
+    public function test_direct_attempt_to_exceed_limit_is_rejected(): void
+    {
+        $this->setPlatformSettings(['max_trial_renewals' => 1]);
+        $this->makeEndedTrial($this->subscription);
+        $this->subscription->update(['trial_renewals_count' => 1]);
+
+        $this->assertFalse($this->subscription->fresh()->renewTrial());
+        $this->assertSame(1, $this->subscription->fresh()->trial_renewals_count);
+    }
+
+    /* ── 15. Active paid (converted) subscriptions are never trials ── */
+
+    public function test_active_paid_subscription_is_not_treated_as_trial(): void
+    {
+        $this->subscription->update([
+            'status' => 'active',
+            'starts_at' => $this->now->copy(),
+            'trial_ends_at' => $this->now->copy(),
+            'expires_at' => $this->now->copy()->addDays(30),
+        ]);
+
+        $fresh = $this->subscription->fresh();
+        $this->assertFalse($fresh->isTrialSubscription());
+        $this->assertFalse($fresh->canRenewTrial());
+
+        $this->actingAs($this->makeOwner($this->tenant));
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('trial.is_trial', false)
+                ->where('trial.can_renew', false)
+                ->where('trial.trial_ended', false)
+                ->where('renewal.active_paid', true)
+            );
+    }
+
+    /* ── 16. Lapsed paid subscriptions are not treated as trials ── */
+
+    public function test_lapsed_paid_subscription_is_not_treated_as_trial(): void
+    {
+        $this->subscription->update([
+            'status' => 'expired',
+            'starts_at' => $this->now->copy()->subDays(40),
+            'trial_ends_at' => $this->now->copy()->subDays(40),
+            'expires_at' => $this->now->copy()->subDays(2),
+        ]);
+
+        $this->assertFalse($this->subscription->fresh()->isTrialSubscription());
+        $this->assertFalse($this->subscription->fresh()->canRenewTrial());
+    }
+
+    /* ── 17. Billing payload for an ended trial exposes the extend action ── */
+
+    public function test_ended_trial_billing_payload_shows_extend_action(): void
+    {
+        $this->setPlatformSettings(['max_trial_renewals' => 1]);
+        $this->makeEndedTrial($this->subscription);
+
+        $this->actingAs($this->makeOwner($this->tenant));
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('trial.is_trial', true)
+                ->where('trial.trial_ended', true)
+                ->where('trial.can_renew', true)
+            );
+    }
+
     /* ── Helpers ── */
+
+    private function makeEndedTrial(Subscription $subscription): void
+    {
+        // A genuine trial started well before it ended (distinct from a converted paid sub).
+        $subscription->update([
+            'status' => 'expired',
+            'starts_at' => $this->now->copy()->subDays(20),
+            'trial_ends_at' => $this->now->copy()->subDays(6),
+            'expires_at' => $this->now->copy()->subDays(6),
+        ]);
+    }
 
     private function setPlatformSettings(array $values): void
     {

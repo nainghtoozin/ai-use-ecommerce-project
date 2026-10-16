@@ -66,9 +66,18 @@ Route::prefix('store/{store_slug}/admin')
     ->group(function () {
 
     // ── Account routes (accessible even when subscription expired/suspended) ──
-    Route::get('/expired', fn (\Illuminate\Http\Request $req) => \Inertia\Inertia::render('Standalone/Expired', [
-        'store_slug' => $req->route('store_slug'),
-    ]))->name('expired');
+    Route::get('/expired', function (\Illuminate\Http\Request $req) {
+        $tenant = \App\Models\Tenant::where('slug', $req->route('store_slug'))->first()
+            ?? \App\Models\Tenant::getCurrent();
+        $cleanup = $tenant ? \App\Models\TenantCleanup::where('tenant_id', $tenant->id)->first() : null;
+
+        return \Inertia\Inertia::render('Standalone/Expired', [
+            'store_slug' => $req->route('store_slug'),
+            'store_deleted' => (bool) ($tenant && $tenant->isDeleted()),
+            'retention_deadline' => $cleanup?->retention_ends_at?->toDateString(),
+            'backup_available' => (bool) ($cleanup && $cleanup->exportAllowed()),
+        ]);
+    })->name('expired');
     Route::get('/suspended', fn (\Illuminate\Http\Request $req) => \Inertia\Inertia::render('Standalone/Suspended', [
         'store_slug' => $req->route('store_slug'),
     ]))->name('suspended');
@@ -88,6 +97,16 @@ Route::prefix('store/{store_slug}/admin')
     Route::post('/billing/change-plan/submit', [AdminBillingController::class, 'changePlanSubmit'])->name('billing.change-plan.submit');
     Route::post('/billing/change-plan/execute', [AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
     Route::post('/billing/change-plan/cancel', [AdminBillingController::class, 'cancelScheduledChange'])->name('billing.change-plan.cancel');
+
+    // ── Backup exports (available until the retention deadline) ──
+    Route::get('/billing/backup/products', [AdminBillingController::class, 'backupProducts'])->name('billing.backup.products');
+    Route::get('/billing/backup/orders', [AdminBillingController::class, 'backupOrders'])->name('billing.backup.orders');
+    Route::get('/billing/backup/customers', [AdminBillingController::class, 'backupCustomers'])->name('billing.backup.customers');
+    Route::get('/billing/backup/variants', [AdminBillingController::class, 'backupVariants'])->name('billing.backup.variants');
+    Route::get('/billing/backup/inventory', [AdminBillingController::class, 'backupInventory'])->name('billing.backup.inventory');
+    Route::get('/billing/backup/order-items', [AdminBillingController::class, 'backupOrderItems'])->name('billing.backup.order-items');
+    Route::get('/billing/backup/addresses', [AdminBillingController::class, 'backupAddresses'])->name('billing.backup.addresses');
+    Route::get('/billing/backup/media', [AdminBillingController::class, 'backupMedia'])->name('billing.backup.media');
 
     // ── Invoice routes ──
     Route::get('/billing/invoices', [InvoiceController::class, 'index'])->name('billing.invoices');

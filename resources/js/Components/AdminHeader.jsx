@@ -52,6 +52,7 @@ export default function AdminHeader() {
     const isSuperAdmin = auth?.user?.is_superadmin;
     const subscription = auth?.user?.subscription;
     const showSubscriptionStatus = !isSuperAdmin && auth?.user?.is_owner && subscription;
+    const renewalThresholdDays = Number(props.subscription_renewal_threshold_days) || 7;
     const subscriptionDays = Number(subscription?.days_until_expiry);
     const subscriptionState = subscription?.status === 'expired'
         ? 'expired'
@@ -59,7 +60,7 @@ export default function AdminHeader() {
             ? 'unlimited'
             : !Number.isFinite(subscriptionDays) || subscriptionDays <= 0
             ? 'expired'
-            : subscriptionDays <= 7 ? 'expiring' : 'healthy';
+            : subscriptionDays <= renewalThresholdDays ? 'expiring' : 'healthy';
     const subscriptionStatusClasses = {
         healthy: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         expiring: 'bg-amber-50 text-amber-700 border-amber-200',

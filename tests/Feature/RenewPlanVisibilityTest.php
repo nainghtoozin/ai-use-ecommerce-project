@@ -164,6 +164,41 @@ class RenewPlanVisibilityTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('subscription.status', 'active'));
     }
 
+    /* ── End-of-day expiry boundary (the reported bug) ── */
+
+    public function test_renew_shown_when_exactly_7_days_remaining_at_end_of_day(): void
+    {
+        // Real expiries are stored at endOfDay; 7 days away is ~7.5 days in the future.
+        $this->subscription->update(['expires_at' => now()->addDays(7)->endOfDay()]);
+
+        $this->billingPage()->assertInertia(fn ($page) => $page
+            ->where('renewal.days_until_expiry', 7)
+            ->where('renewal.due', true)
+            ->where('renewal.can_renew', true)
+        );
+    }
+
+    public function test_renew_shown_when_6_days_remaining_at_end_of_day(): void
+    {
+        $this->subscription->update(['expires_at' => now()->addDays(6)->endOfDay()]);
+
+        $this->billingPage()->assertInertia(fn ($page) => $page
+            ->where('renewal.days_until_expiry', 6)
+            ->where('renewal.can_renew', true)
+        );
+    }
+
+    public function test_renew_hidden_when_8_days_remaining_at_end_of_day(): void
+    {
+        $this->subscription->update(['expires_at' => now()->addDays(8)->endOfDay()]);
+
+        $this->billingPage()->assertInertia(fn ($page) => $page
+            ->where('renewal.days_until_expiry', 8)
+            ->where('renewal.due', false)
+            ->where('renewal.can_renew', false)
+        );
+    }
+
     /* ── Helpers ── */
 
     private ?User $owner = null;
@@ -264,7 +299,7 @@ class RenewPlanVisibilityTest extends TestCase
             'billing_payment_methods' => function ($t) { $t->id(); $t->string('display_name'); $t->string('type')->nullable(); $t->string('account_name')->nullable(); $t->string('account_number')->nullable(); $t->string('bank_name')->nullable(); $t->string('branch')->nullable(); $t->text('instructions')->nullable(); $t->string('currency',3)->nullable(); $t->string('qr_image_url')->nullable(); $t->boolean('is_active')->default(true); $t->boolean('supports_manual_payment')->default(true); $t->integer('sort_order')->default(0); $t->timestamps(); },
             'website_infos' => function ($t) { $t->id(); $t->unsignedBigInteger('tenant_id')->nullable(); $t->string('site_name')->nullable(); $t->string('currency_code')->default('MMK'); $t->string('currency_symbol')->default('K'); $t->timestamps(); },
             'platform_settings' => function ($t) { $t->id(); $t->string('site_name')->default('My Application'); $t->boolean('trial_enabled')->default(false); $t->integer('trial_days')->default(14); $t->boolean('allow_trial_renewal')->default(true); $t->integer('max_trial_renewals')->default(0); $t->integer('billing_renewal_reminder_days')->default(7); $t->timestamps(); },
-            'tenant_cleanups' => function ($t) { $t->id(); $t->unsignedBigInteger('tenant_id')->unique(); $t->unsignedBigInteger('subscription_id')->nullable(); $t->string('status',20)->default('grace'); $t->timestamp('expires_at')->nullable(); $t->timestamp('grace_ends_at')->nullable(); $t->timestamp('restricted_at')->nullable(); $t->timestamp('archived_at')->nullable(); $t->timestamp('last_reminder_at')->nullable(); $t->json('reminders_sent')->nullable(); $t->unsignedInteger('attempts')->default(0); $t->string('reason')->nullable(); $t->text('last_error')->nullable(); $t->json('metadata')->nullable(); $t->timestamps(); $t->index('status'); $t->index('grace_ends_at'); },
+            'tenant_cleanups' => function ($t) { $t->id(); $t->unsignedBigInteger('tenant_id')->unique(); $t->unsignedBigInteger('subscription_id')->nullable(); $t->string('status',20)->default('grace'); $t->timestamp('expires_at')->nullable(); $t->timestamp('grace_ends_at')->nullable(); $t->timestamp('retention_ends_at')->nullable(); $t->string('deletion_status',20)->default('none'); $t->timestamp('restricted_at')->nullable(); $t->timestamp('deleted_at')->nullable(); $t->timestamp('archived_at')->nullable(); $t->timestamp('last_reminder_at')->nullable(); $t->json('reminders_sent')->nullable(); $t->unsignedInteger('attempts')->default(0); $t->string('reason')->nullable(); $t->text('last_error')->nullable(); $t->json('metadata')->nullable(); $t->timestamps(); $t->index('status'); $t->index('grace_ends_at'); },
         ];
 
         foreach ($tables as $name => $callback) {
@@ -276,6 +311,20 @@ class RenewPlanVisibilityTest extends TestCase
         if (!Schema::hasColumn('platform_settings', 'billing_renewal_reminder_days')) {
             Schema::table('platform_settings', function ($t) {
                 $t->integer('billing_renewal_reminder_days')->default(7);
+            });
+        }
+
+        foreach (['retention_ends_at', 'deleted_at'] as $column) {
+            if (!Schema::hasColumn('tenant_cleanups', $column)) {
+                Schema::table('tenant_cleanups', function ($t) use ($column) {
+                    $t->timestamp($column)->nullable();
+                });
+            }
+        }
+
+        if (!Schema::hasColumn('tenant_cleanups', 'deletion_status')) {
+            Schema::table('tenant_cleanups', function ($t) {
+                $t->string('deletion_status', 20)->default('none');
             });
         }
     }

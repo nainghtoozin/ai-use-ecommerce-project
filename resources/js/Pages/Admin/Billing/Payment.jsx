@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import CompactReceiptUpload from '@/Components/Billing/CompactReceiptUpload';
-import { Check, Copy, CheckCheck, Upload, X, AlertCircle, ShieldCheck, Clock, Banknote, ArrowLeft, Building2, Loader2 } from 'lucide-react';
+import { Check, Copy, CheckCheck, Upload, X, AlertCircle, ShieldCheck, Clock, Banknote, ArrowLeft, Building2, Loader2, FileText } from 'lucide-react';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
 
@@ -120,25 +120,37 @@ function PaymentMethodCard({ method, selectedId, onSelect, intentRef }) {
     );
 }
 
-export default function AdminBillingPayment({ intent, selectedPlan, currentPlan, subscription, paymentMethods, renewalMode = false, scheduledChange = null, upgradeDetails = null, timezone, defaultTransferDate, defaultTransferTime, paymentReasons = [], suggestedReason = 'new_subscription' }) {
+const REMARK_PRESETS = [
+    { value: 'subscription_renewal', label: 'Subscription renewal' },
+    { value: 'new_subscription', label: 'New subscription' },
+    { value: 'plan_upgrade', label: 'Plan upgrade' },
+    { value: 'plan_change', label: 'Plan change' },
+    { value: 'other', label: 'Other' },
+];
+
+export default function AdminBillingPayment({ intent, selectedPlan, currentPlan, subscription, paymentMethods, renewalMode = false, scheduledChange = null, upgradeDetails = null, timezone, defaultTransferDate, defaultTransferTime, paymentReasons = [], suggestedReason = 'new_subscription', billingCycle = null, renewalAmount = null }) {
     const { props } = usePage();
     const pc = getPlatformCurrencyConfig(props.platform_setting);
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
     const submitted = urlParams.get('submitted') === 'true';
     const flash = props?.flash || {};
 
+    const cycle = billingCycle || intent?.billing_cycle || subscription?.billing_interval || 'monthly';
+
     const [selectedMethod, setSelectedMethod] = useState(null);
     const [senderName, setSenderName] = useState('');
     const [senderAccount, setSenderAccount] = useState('');
     const [transactionReference, setTransactionReference] = useState('');
-    const autoAmount = intent?.amount ?? selectedPlan?.monthly_price ?? 0;
+    const autoAmount = intent?.amount ?? renewalAmount ?? (cycle === 'yearly' ? selectedPlan?.yearly_price : selectedPlan?.monthly_price) ?? 0;
     const [transferredAmount, setTransferredAmount] = useState(String(autoAmount));
     const [transferDate, setTransferDate] = useState(() => defaultTransferDate || '');
     const [transferTime, setTransferTime] = useState(() => defaultTransferTime || '');
     const [evidenceFile, setEvidenceFile] = useState(null);
-    const [note, setNote] = useState('');
-    const [paymentReason, setPaymentReason] = useState(() => suggestedReason || 'new_subscription');
-    const [paymentReasonText, setPaymentReasonText] = useState('');
+    const [paymentPurpose, setPaymentPurpose] = useState(() => suggestedReason || 'subscription_renewal');
+    const [paymentRemark, setPaymentRemark] = useState(() => {
+        const preset = REMARK_PRESETS.find((p) => p.value === (suggestedReason || 'subscription_renewal'));
+        return preset ? preset.label : '';
+    });
     const [submitting, setSubmitting] = useState(false);
     const [submissionKey] = useState(() => (
         typeof crypto !== 'undefined' && crypto.randomUUID
@@ -146,6 +158,27 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
             : `${Date.now()}-${Math.random().toString(36).slice(2)}`
     ));
     const [uploadError, setUploadError] = useState(null);
+    const [instructionsOpen, setInstructionsOpen] = useState(false);
+
+    useEffect(() => {
+        if (!instructionsOpen) return;
+        const onKey = (e) => { if (e.key === 'Escape') setInstructionsOpen(false); };
+        window.addEventListener('keydown', onKey);
+        document.body.style.overflow = 'hidden';
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            document.body.style.overflow = '';
+        };
+    }, [instructionsOpen]);
+
+    const instructions = [
+        { num: '1', label: 'Transfer the exact amount', desc: `Transfer ${pc.symbol}${Number(intent?.amount ?? autoAmount).toLocaleString()} ${pc.code} to one of the accounts above.` },
+        { num: '2', label: 'Use your reference number', desc: intent?.reference_number ? `Include your reference number ${intent.reference_number} in the transfer remarks.` : 'A payment reference will be generated once you submit this form.' },
+        { num: '3', label: 'Upload payment evidence', desc: 'Take a screenshot or photo of your transfer confirmation and upload it in the form.' },
+        { num: '4', label: 'Submit for review', desc: 'Click Submit Payment to send your evidence to our team.' },
+        { num: '5', label: 'Wait for admin review', desc: 'Our team will verify your payment, typically within 24 hours.' },
+        { num: '6', label: 'Subscription activated', desc: 'Your subscription is updated immediately after approval.' },
+    ];
 
     const isWaitingReview = intent?.status === 'waiting_review' || submitted;
     const isTerminal = ['completed', 'approved', 'paid', 'cancelled', 'expired', 'failed'].includes(intent?.status);
@@ -153,16 +186,23 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
     const errors = {};
 
+    const selectRemarkPreset = (preset) => {
+        setPaymentPurpose(preset.value);
+        setPaymentRemark(preset.label);
+        setUploadError(null);
+    };
+
     function validateForm() {
         const errs = [];
+        const remark = paymentRemark.trim();
         if (!senderName.trim()) errs.push('Account holder name is required.');
         if (!senderAccount.trim()) errs.push('Sender account/phone is required.');
         if (!transactionReference.trim()) errs.push('Transaction reference is required.');
         if (!transferDate) errs.push('Transfer date is required.');
         if (transferDate && defaultTransferDate && transferDate > defaultTransferDate) errs.push('Transfer date cannot be in the future.');
         if (!transferTime) errs.push('Transfer time is required.');
-        if (!paymentReason) errs.push('Please select a payment reason.');
-        if (paymentReason === 'other' && !paymentReasonText.trim()) errs.push('Please describe the payment reason.');
+        if (remark.length < 3) errs.push('Please provide a payment purpose/remark (at least 3 characters).');
+        if (paymentPurpose === 'other' && remark.length < 5) errs.push('Please describe the payment purpose (at least 5 characters).');
         if (!evidenceFile) errs.push('Receipt image is required.');
         if (!selectedMethod) errs.push('Please select a payment method.');
         return errs;
@@ -183,6 +223,11 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
 
         const formData = new FormData();
         formData.append('intent_reference', intent?.reference_number || '');
+        if (!intent?.reference_number) {
+            formData.append('plan_slug', selectedPlan?.slug || '');
+            formData.append('billing_cycle', cycle);
+            if (renewalMode) formData.append('renewal_mode', '1');
+        }
         formData.append('submission_key', submissionKey);
         formData.append('sender_name', senderName.trim());
         formData.append('sender_account', senderAccount.trim());
@@ -190,10 +235,9 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
         formData.append('transferred_amount', transferredAmount);
         formData.append('transfer_date', transferDate);
         formData.append('transfer_time', transferTime);
-        formData.append('payment_reason', paymentReason);
-        if (paymentReason === 'other') formData.append('payment_reason_text', paymentReasonText.trim());
+        formData.append('payment_purpose', paymentPurpose);
+        formData.append('payment_remark', paymentRemark.trim());
         formData.append('evidence', evidenceFile);
-        formData.append('note', note);
         if (selectedMethod) formData.append('payment_method_id', selectedMethod);
 
         try {
@@ -211,7 +255,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
         }
     };
 
-    if (!intent) {
+    if (!intent && !renewalMode) {
         return (
             <AdminLayout>
                 <Head title="Payment" />
@@ -364,7 +408,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
         );
     }
 
-    const canSubmit = intent?.status === 'waiting_payment';
+    const canSubmit = intent?.status === 'waiting_payment' || (renewalMode && !intent);
 
     return (
         <AdminLayout>
@@ -380,6 +424,19 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Transfer the exact amount and upload your payment evidence</p>
                     </div>
                 </div>
+
+                {renewalMode && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                        <p className="text-sm font-semibold text-emerald-800">
+                            Renewal of {selectedPlan?.name || currentPlan?.name || 'your plan'}
+                        </p>
+                        <p className="text-xs text-emerald-700 mt-0.5">
+                            This payment renews your current {cycle} plan.
+                            Your subscription is extended only after an admin approves the payment
+                            {subscription?.expires_at ? ` — unused paid time is preserved from ${subscription.expires_at}.` : '.'}
+                        </p>
+                    </div>
+                )}
 
                 {renewalMode && scheduledChange && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -464,29 +521,24 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Instructions</h2>
-                            </div>
-                            <div className="p-6">
-                                <ol className="space-y-3">
-                                    {[
-                                        { num: '1', label: 'Transfer the exact amount', desc: `Transfer ${pc.symbol}${intent?.amount || selectedPlan?.monthly_price || '—'} to one of the accounts above.` },
-                                        { num: '2', label: 'Use your reference number', desc: `Include your reference number ${intent?.reference_number || ''} in the transfer remarks.` },
-                                        { num: '3', label: 'Upload payment evidence', desc: 'Take a screenshot or photo of your transfer confirmation and upload it below.' },
-                                        { num: '4', label: 'Submit for review', desc: 'Click Submit Payment to send your evidence to our team.' },
-                                        { num: '5', label: 'Wait for admin review', desc: 'Our team will verify your payment within 24 hours.' },
-                                        { num: '6', label: 'Subscription activated', desc: 'Your subscription is upgraded immediately after approval.' },
-                                    ].map((step) => (
-                                        <li key={step.num} className="flex items-start gap-3">
-                                            <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{step.num}</span>
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{step.label}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{step.desc}</p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ol>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <span className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                                        <FileText className="w-4 h-4" />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payment Instructions</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">How to transfer and complete your payment.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setInstructionsOpen(true)}
+                                    className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap flex-shrink-0"
+                                >
+                                    View Payment Instructions
+                                </button>
                             </div>
                         </div>
 
@@ -497,49 +549,6 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Information</h2>
                                     </div>
                                     <div className="p-6 space-y-5">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                Payment Reason <span className="text-red-500">*</span>
-                                            </label>
-                                            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Payment reason">
-                                                {(paymentReasons.length ? paymentReasons : [
-                                                    { value: 'subscription_renewal', label: 'Subscription renewal payment' },
-                                                    { value: 'new_subscription', label: 'New subscription payment' },
-                                                    { value: 'plan_upgrade', label: 'Plan upgrade payment' },
-                                                    { value: 'plan_change', label: 'Plan change payment' },
-                                                    { value: 'other', label: 'Other' },
-                                                ]).map((reason) => {
-                                                    const active = paymentReason === reason.value;
-                                                    return (
-                                                        <button
-                                                            key={reason.value}
-                                                            type="button"
-                                                            role="radio"
-                                                            aria-checked={active}
-                                                            onClick={() => { setPaymentReason(reason.value); setUploadError(null); }}
-                                                            className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                                                                active
-                                                                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                                                                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                                                            }`}
-                                                        >
-                                                            {reason.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            {paymentReason === 'other' && (
-                                                <input
-                                                    type="text"
-                                                    value={paymentReasonText}
-                                                    onChange={(e) => setPaymentReasonText(e.target.value.slice(0, 255))}
-                                                    placeholder="Describe the payment reason"
-                                                    className="mt-3 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                                                    maxLength={255}
-                                                />
-                                            )}
-                                        </div>
-
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label htmlFor="sender-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -638,19 +647,41 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                             </p>
                                         )}
 
-                                        <div>
-                                            <label htmlFor="payment-note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                Remark (optional)
+                                        <div className="pt-1 border-t border-gray-100 dark:border-gray-800">
+                                            <label htmlFor="payment-remark" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4 mb-2">
+                                                Remark / Payment Purpose <span className="text-red-500">*</span>
                                             </label>
+                                            <div className="flex flex-wrap gap-2 mb-2" role="group" aria-label="Payment purpose presets">
+                                                {REMARK_PRESETS.map((preset) => {
+                                                    const active = paymentPurpose === preset.value;
+                                                    return (
+                                                        <button
+                                                            key={preset.value}
+                                                            type="button"
+                                                            aria-pressed={active}
+                                                            onClick={() => selectRemarkPreset(preset)}
+                                                            className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                                                                active
+                                                                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium'
+                                                                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                                                            }`}
+                                                        >
+                                                            {preset.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                             <textarea
-                                                id="payment-note"
-                                                value={note}
-                                                onChange={(e) => setNote(e.target.value.slice(0, 500))}
+                                                id="payment-remark"
+                                                value={paymentRemark}
+                                                onChange={(e) => setPaymentRemark(e.target.value.slice(0, 500))}
                                                 rows={2}
-                                                placeholder="Any additional information..."
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-shadow"
+                                                required
+                                                maxLength={500}
+                                                placeholder={paymentPurpose === 'other' ? 'Describe the payment purpose…' : 'Payment purpose / remark'}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
                                             />
-                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{note.length}/500</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{paymentRemark.length}/500</p>
                                         </div>
                                     </div>
                                 </div>
@@ -681,11 +712,11 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => router.get(adminUrl(`/admin/billing/checkout/${selectedPlan?.slug || ''}`), {}, { preserveState: false })}
+                                        onClick={() => router.get(adminUrl(renewalMode ? '/admin/billing' : `/admin/billing/checkout/${selectedPlan?.slug || ''}`), {}, { preserveState: false })}
                                         className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                                     >
                                         <ArrowLeft className="w-4 h-4" />
-                                        Back to Checkout
+                                        {renewalMode ? 'Back to Billing' : 'Back to Checkout'}
                                     </button>
                                 </div>
                             </form>
@@ -704,7 +735,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-500 dark:text-gray-400">Billing</span>
-                                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{intent?.billing_cycle || 'monthly'}</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{cycle}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-500 dark:text-gray-400">Currency</span>
@@ -729,7 +760,7 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                         {intent?.reference_number && <CopyButton text={intent.reference_number} />}
                                     </div>
                                 </div>
-                                {currentPlan && selectedPlan && (
+                                {currentPlan && selectedPlan && currentPlan.id !== selectedPlan.id && (
                                     <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
                                         <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Plan Change</div>
                                         <div className="flex items-center gap-2 text-sm">
@@ -737,6 +768,12 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                                             <span className="text-gray-300">→</span>
                                             <span className="font-medium text-blue-600">{selectedPlan.name}</span>
                                         </div>
+                                    </div>
+                                )}
+                                {selectedPlan && (!currentPlan || currentPlan.id === selectedPlan.id) && (
+                                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Payment Type</div>
+                                        <div className="text-sm font-medium text-emerald-600">Renewal of {selectedPlan.name}</div>
                                     </div>
                                 )}
                             </div>
@@ -772,6 +809,52 @@ export default function AdminBillingPayment({ intent, selectedPlan, currentPlan,
                     </div>
                 </div>
             </div>
+
+            {instructionsOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="payment-instructions-title"
+                >
+                    <div className="fixed inset-0 bg-black/50" onClick={() => setInstructionsOpen(false)} aria-hidden="true" />
+                    <div className="relative w-full sm:max-w-lg bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[85vh] flex flex-col">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+                            <h3 id="payment-instructions-title" className="text-base font-semibold text-gray-900 dark:text-gray-100">Payment Instructions</h3>
+                            <button
+                                type="button"
+                                onClick={() => setInstructionsOpen(false)}
+                                aria-label="Close instructions"
+                                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                            </button>
+                        </div>
+                        <div className="p-5 overflow-y-auto">
+                            <ol className="space-y-3">
+                                {instructions.map((step) => (
+                                    <li key={step.num} className="flex items-start gap-3">
+                                        <span className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{step.num}</span>
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{step.label}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{step.desc}</p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setInstructionsOpen(false)}
+                                className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                                Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }

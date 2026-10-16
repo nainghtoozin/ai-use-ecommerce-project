@@ -26,6 +26,12 @@ class CheckoutService
         string $gateway,
         array $metadata = [],
     ): PaymentIntent {
+        if ($tenant->isDeleted()) {
+            throw new \InvalidArgumentException(
+                'This store has been permanently deleted and cannot start new payments. Please contact support to restore access first.'
+            );
+        }
+
         $this->validator->validateGateway($gateway);
         $this->validator->validateAmount($amount);
         $this->validator->validateBillingCycle($billingCycle);

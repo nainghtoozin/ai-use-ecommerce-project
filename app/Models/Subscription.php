@@ -146,8 +146,34 @@ class Subscription extends Model
     /* ── Trial renewal policy ── */
 
     /**
+     * Whether this subscription is in a genuine trial lifecycle (currently trialing,
+     * or a trial that ended) and has NOT converted into an active paid subscription.
+     *
+     * Converted subscriptions set starts_at ≈ trial_ends_at (both to the conversion
+     * time); a real trial starts before it ends. This prevents a lapsed paid
+     * subscription from being treated as an extendable trial.
+     */
+    public function isTrialSubscription(): bool
+    {
+        if ($this->trial_ends_at === null) {
+            return false;
+        }
+
+        if ($this->isTrialing()) {
+            return true;
+        }
+
+        if ($this->starts_at === null) {
+            return false;
+        }
+
+        return $this->starts_at->copy()->startOfDay()->lt($this->trial_ends_at->copy()->startOfDay());
+    }
+
+    /**
      * Remaining trial renewals allowed by platform settings.
-     * Returns null when unlimited (max_trial_renewals = 0, the documented meaning).
+     * Returns null when unlimited. The Super Admin setting explicitly documents
+     * "Set to 0 for unlimited renewals", so 0 means unlimited.
      */
     public function trialRenewalsRemaining(): ?int
     {
@@ -162,15 +188,20 @@ class Subscription extends Model
 
     /**
      * Whether this subscription may extend its trial right now.
-     * Only genuinely trialing subscriptions qualify; paid/expired ones must convert.
+     * Applies to trialing AND ended trials with allowance remaining; active paid
+     * (converted) and suspended subscriptions are never eligible.
      */
     public function canRenewTrial(): bool
     {
-        if (!$this->isTrialing() || $this->isSuspended()) {
+        if ($this->isSuspended()) {
             return false;
         }
 
         if (!PlatformSetting::current()->allow_trial_renewal) {
+            return false;
+        }
+
+        if (!$this->isTrialSubscription()) {
             return false;
         }
 
@@ -235,6 +266,26 @@ class Subscription extends Model
             return PHP_INT_MAX;
         }
         return max(0, now()->diffInDays($this->expires_at, false));
+    }
+
+    /**
+     * Whole calendar days between today and the expiry date (endOfDay-safe).
+     *
+     * Expiry timestamps are stored at end-of-day, so a subscription "7 days away"
+     * is really ~7.5 days in the future. Comparing exact timestamps against
+     * now()->addDays(7) incorrectly excludes the boundary day; this counts days
+     * by calendar date instead. Returns null when there is no expiry.
+     */
+    public function renewalDaysRemaining(): ?int
+    {
+        if (!$this->expires_at) {
+            return null;
+        }
+
+        $todayStart = now()->startOfDay()->getTimestamp();
+        $expiryStart = $this->expires_at->copy()->startOfDay()->getTimestamp();
+
+        return (int) round(($expiryStart - $todayStart) / 86400);
     }
 
     public function daysSinceExpiry(): int
@@ -305,6 +356,15 @@ class Subscription extends Model
 
     public function renew(Carbon $expiresAt, ?string $notes = null): void
     {
+        if ($this->tenant && $this->tenant->isDeleted()) {
+            \Illuminate\Support\Facades\Log::warning('Subscription renewal refused for a deleted tenant.', [
+                'subscription_id' => $this->id,
+                'tenant_id' => $this->tenant_id,
+            ]);
+
+            return;
+        }
+
         $this->update([
             'status' => 'active',
             'expires_at' => $expiresAt->endOfDay(),
@@ -430,6 +490,15 @@ class Subscription extends Model
     public function renewFromInterval(?string $notes = null): void
     {
         if ($this->plan?->isFree()) {
+            return;
+        }
+
+        if ($this->tenant && $this->tenant->isDeleted()) {
+            \Illuminate\Support\Facades\Log::warning('Subscription interval renewal refused for a deleted tenant.', [
+                'subscription_id' => $this->id,
+                'tenant_id' => $this->tenant_id,
+            ]);
+
             return;
         }
 

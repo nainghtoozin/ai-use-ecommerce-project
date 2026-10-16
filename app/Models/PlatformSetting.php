@@ -28,6 +28,8 @@ class PlatformSetting extends Model
         'billing_renewal_reminder_days',
         'audit_retention_days',
         'notification_retention_days',
+        'tenant_data_retention_days',
+        'tenant_auto_delete_enabled',
         'platform_currency_code',
         'platform_currency_symbol',
         'platform_currency_position',
@@ -44,6 +46,8 @@ class PlatformSetting extends Model
         'billing_renewal_reminder_days' => 'integer',
         'audit_retention_days' => 'integer',
         'notification_retention_days' => 'integer',
+        'tenant_data_retention_days' => 'integer',
+        'tenant_auto_delete_enabled' => 'boolean',
         'platform_decimal_places' => 'integer',
     ];
 

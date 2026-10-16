@@ -232,6 +232,11 @@ class SubscriptionController extends Controller
 
     public function renew(Request $request, Subscription $subscription)
     {
+        if ($subscription->tenant && $subscription->tenant->isDeleted()) {
+            return redirect()->route('superadmin.subscriptions.show', $subscription)
+                ->with('error', 'This store has been permanently deleted. Renewal is disabled; contact support to restore access first.');
+        }
+
         $validated = $request->validate([
             'expires_at' => 'required|date|after:now',
             'notes' => 'nullable|string|max:1000',
@@ -251,6 +256,11 @@ class SubscriptionController extends Controller
 
     public function renewFromInterval(Request $request, Subscription $subscription)
     {
+        if ($subscription->tenant && $subscription->tenant->isDeleted()) {
+            return redirect()->route('superadmin.subscriptions.show', $subscription)
+                ->with('error', 'This store has been permanently deleted. Renewal is disabled; contact support to restore access first.');
+        }
+
         $validated = $request->validate([
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -322,6 +332,11 @@ class SubscriptionController extends Controller
 
     public function activate(Subscription $subscription)
     {
+        if ($subscription->tenant && $subscription->tenant->isDeleted()) {
+            return redirect()->route('superadmin.subscriptions.show', $subscription)
+                ->with('error', 'This store has been permanently deleted and cannot be reactivated automatically. Contact support to restore access first.');
+        }
+
         if (!$subscription->isSuspended()) {
             return redirect()->route('superadmin.subscriptions.show', $subscription)
                 ->with('error', 'Only suspended subscriptions can be activated.');

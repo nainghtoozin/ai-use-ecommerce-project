@@ -32,15 +32,14 @@ class PlatformSettingsTest extends TestCase
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Permission::create(['name' => 'platform.settings.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'platform.settings.update', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'platform.settings.view', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'platform.settings.update', 'guard_name' => 'web']);
 
-        $superadminRole = Role::create(['name' => 'superadmin', 'guard_name' => 'web']);
+        $superadminRole = Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
         $superadminRole->syncPermissions(Permission::all());
 
-        $this->superadmin = User::create([
+        $this->superadmin = User::firstOrCreate(['email' => 'super@admin.com'], [
             'name' => 'Super Admin',
-            'email' => 'super@admin.com',
             'password' => Hash::make('password'),
             'status' => 'active',
             'email_verified_at' => now(),
@@ -48,8 +47,7 @@ class PlatformSettingsTest extends TestCase
         $this->superadmin->assignRole('superadmin');
 
         // Seed a default platform_settings row
-        PlatformSetting::create([
-            'site_name' => 'My Application',
+        PlatformSetting::firstOrCreate(['site_name' => 'My Application'], [
             'site_logo' => null,
             'favicon' => null,
             'support_email' => null,
@@ -110,9 +108,36 @@ class PlatformSettingsTest extends TestCase
                 $table->rememberToken();
                 $table->timestamps();
             },
+            'accounts' => function ($table) {
+                $table->id();
+                $table->string('name')->nullable();
+                $table->string('email')->unique();
+                $table->string('password');
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('remember_token', 100)->nullable();
+                $table->string('profile_image', 255)->nullable();
+                $table->string('status', 50)->default('active');
+                $table->json('notification_preferences')->nullable();
+                $table->timestamp('last_login_at')->nullable();
+                $table->string('last_login_ip', 45)->nullable();
+                $table->timestamps();
+                $table->softDeletes();
+            },
+            'tenant_memberships' => function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('account_id')->nullable();
+                $table->unsignedBigInteger('tenant_id')->nullable();
+                $table->unsignedBigInteger('role_id')->nullable();
+                $table->boolean('is_owner')->default(false);
+                $table->string('status')->default('active');
+                $table->timestamps();
+                $table->softDeletes();
+            },
             'activity_logs' => function ($table) {
                 $table->id();
                 $table->string('log_name');
+                $table->string('category', 50)->nullable();
+                $table->string('severity', 20)->default('info');
                 $table->text('description');
                 $table->string('subject_type')->nullable();
                 $table->unsignedBigInteger('subject_id')->nullable();
@@ -198,12 +223,20 @@ class PlatformSettingsTest extends TestCase
                 $table->string('site_logo')->nullable();
                 $table->string('favicon')->nullable();
                 $table->string('support_email')->nullable();
+                $table->string('support_page_url')->nullable();
                 $table->boolean('maintenance_mode')->default(false);
                 $table->boolean('registration_enabled')->default(true);
                 $table->boolean('trial_enabled')->default(true);
                 $table->integer('trial_days')->default(14);
                 $table->boolean('allow_trial_renewal')->default(false);
                 $table->unsignedTinyInteger('max_trial_renewals')->default(0);
+                $table->integer('billing_renewal_reminder_days')->default(7);
+                $table->string('platform_currency_code', 10)->default('MMK');
+                $table->string('platform_currency_symbol', 10)->default('Ks');
+                $table->string('platform_currency_position')->default('before');
+                $table->integer('platform_decimal_places')->default(0);
+                $table->unsignedInteger('tenant_data_retention_days')->default(15);
+                $table->boolean('tenant_auto_delete_enabled')->default(false);
                 $table->timestamps();
             },
         ];
@@ -213,6 +246,61 @@ class PlatformSettingsTest extends TestCase
                 Schema::create($name, $callback);
             }
         }
+
+        if (!Schema::hasColumn('platform_settings', 'tenant_data_retention_days')) {
+            Schema::table('platform_settings', function ($table) {
+                $table->unsignedInteger('tenant_data_retention_days')->default(15);
+            });
+        }
+
+        if (!Schema::hasColumn('platform_settings', 'tenant_auto_delete_enabled')) {
+            Schema::table('platform_settings', function ($table) {
+                $table->boolean('tenant_auto_delete_enabled')->default(false);
+            });
+        }
+    }
+
+    public function test_superadmin_can_update_retention_settings(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        $response = $this->post('/superadmin/platform-settings', [
+            'site_name' => 'My Application',
+            'support_email' => '',
+            'maintenance_mode' => '0',
+            'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
+            'tenant_data_retention_days' => '30',
+            'tenant_auto_delete_enabled' => '0',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $settings = PlatformSetting::current();
+        $this->assertEquals(30, $settings->tenant_data_retention_days);
+        $this->assertFalse($settings->tenant_auto_delete_enabled);
+    }
+
+    public function test_retention_days_must_be_within_limits(): void
+    {
+        $this->actingAs($this->superadmin);
+
+        $response = $this->post('/superadmin/platform-settings', [
+            'site_name' => 'My Application',
+            'support_email' => '',
+            'maintenance_mode' => '0',
+            'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
+            'tenant_data_retention_days' => '400',
+        ]);
+
+        $response->assertSessionHasErrors('tenant_data_retention_days');
     }
 
     public function test_superadmin_can_view_platform_settings_page(): void
@@ -237,6 +325,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $response->assertSessionHas('success');
@@ -253,6 +345,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => 'support@example.com',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $response->assertSessionHas('success');
@@ -291,6 +387,10 @@ class PlatformSettingsTest extends TestCase
             'support_page_url' => 'not-a-url',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $response->assertSessionHasErrors('support_page_url');
@@ -309,6 +409,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
             'logo' => $file,
         ]);
 
@@ -334,6 +438,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
             'favicon' => $file,
         ]);
 
@@ -355,6 +463,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '1',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $this->assertTrue(PlatformSetting::current()->maintenance_mode);
@@ -364,6 +476,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $this->assertFalse(PlatformSetting::current()->maintenance_mode);
@@ -378,6 +494,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '0',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $this->assertFalse(PlatformSetting::current()->registration_enabled);
@@ -387,6 +507,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => '',
             'maintenance_mode' => '0',
             'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         $this->assertTrue(PlatformSetting::current()->registration_enabled);
@@ -401,6 +525,10 @@ class PlatformSettingsTest extends TestCase
             'support_email' => 'persist@test.com',
             'maintenance_mode' => '1',
             'registration_enabled' => '0',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
         ]);
 
         PlatformSetting::clearCache();
@@ -416,5 +544,41 @@ class PlatformSettingsTest extends TestCase
     {
         $response = $this->get('/superadmin/platform-settings');
         $response->assertRedirect('/login');
+    }
+
+    public function test_non_superadmin_cannot_update_retention_settings(): void
+    {
+        $adminRole = Role::firstOrCreate(['name' => 'store-admin', 'guard_name' => 'web']);
+        $admin = User::firstOrCreate(['email' => 'admin@admin.com'], [
+            'name' => 'Admin',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+        $admin->assignRole('store-admin');
+
+        $this->actingAs($admin);
+
+        PlatformSetting::clearCache();
+        $before = PlatformSetting::current();
+        $retentionBefore = $before->tenant_data_retention_days;
+        $autoDeleteBefore = (bool) $before->tenant_auto_delete_enabled;
+
+        $this->post('/superadmin/platform-settings', [
+            'site_name' => 'My Application',
+            'support_email' => '',
+            'maintenance_mode' => '0',
+            'registration_enabled' => '1',
+            'platform_currency_code' => 'MMK',
+            'platform_currency_symbol' => 'Ks',
+            'platform_currency_position' => 'before',
+            'platform_decimal_places' => '0',
+            'tenant_data_retention_days' => '30',
+            'tenant_auto_delete_enabled' => '1',
+        ])->assertForbidden();
+
+        PlatformSetting::clearCache();
+        $this->assertEquals($retentionBefore, PlatformSetting::current()->tenant_data_retention_days);
+        $this->assertSame($autoDeleteBefore, (bool) PlatformSetting::current()->tenant_auto_delete_enabled);
     }
 }

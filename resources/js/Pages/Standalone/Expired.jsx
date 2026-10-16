@@ -2,7 +2,7 @@ import { Head, usePage, router } from '@inertiajs/react';
 import { assetUrl } from '@/Utils/helpers';
 
 export default function Expired() {
-    const { website_info, store_slug, auth } = usePage().props;
+    const { website_info, store_slug, auth, store_deleted, retention_deadline, backup_available } = usePage().props;
     const logoUrl = assetUrl(website_info?.logo);
     const siteName = website_info?.site_name || website_info?.name || 'My Store';
     const sub = auth?.user?.subscription;
@@ -14,7 +14,7 @@ export default function Expired() {
     const routeParams = isStorefront ? { store_slug } : {};
 
     const handleRenew = () => {
-        router.post(route(`${routePrefix}.billing.renew`, routeParams));
+        router.get(route(`${routePrefix}.billing.renew-plan`, routeParams));
     };
 
     const handleLogout = () => {
@@ -43,40 +43,61 @@ export default function Expired() {
                         </div>
 
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                            Store Safely Locked
+                            {store_deleted ? 'Store Permanently Deleted' : 'Store Safely Locked'}
                         </h1>
 
-                        <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                            Your <strong>{planName}</strong> plan subscription has expired
-                            {daysSince > 0 ? ` (${daysSince} day${daysSince !== 1 ? 's' : ''} ago)` : ''}.
-                            Your store data is safely preserved and no information has been lost.
-                            Renew your subscription to restore full access.
-                        </p>
+                        {store_deleted ? (
+                            <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                                This store was permanently deleted after its retention period ended.
+                                Deleted business data is not restored automatically.
+                                Please contact support if you need help — renewing alone will not bring back deleted data.
+                            </p>
+                        ) : (
+                            <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                                Your <strong>{planName}</strong> plan subscription has expired
+                                {daysSince > 0 ? ` (${daysSince} day${daysSince !== 1 ? 's' : ''} ago)` : ''}.
+                                Your store data is preserved until {retention_deadline || 'the end of the retention period'}.
+                                Renew your subscription to restore full access.
+                            </p>
+                        )}
 
-                        <div className="bg-amber-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                            <p className="font-medium text-gray-800 dark:text-gray-200">What this means:</p>
-                            <ul className="list-disc list-inside space-y-1">
-                                <li>All your products, orders, and data are securely stored</li>
-                                <li>Your storefront is temporarily unavailable to customers</li>
-                                <li>You can still manage your billing and subscription</li>
-                                <li>Renew within the grace period to avoid suspension</li>
-                            </ul>
-                        </div>
+                        {!store_deleted && (
+                            <div className="bg-amber-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                                <p className="font-medium text-gray-800 dark:text-gray-200">What this means:</p>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>All your products, orders, and data are securely stored</li>
+                                    <li>Your storefront is temporarily unavailable to customers</li>
+                                    <li>You can still manage your billing and subscription</li>
+                                    <li>Renew within the grace period to avoid suspension</li>
+                                    {retention_deadline && <li>Export a backup before {retention_deadline}, the permanent deletion date</li>}
+                                </ul>
+                                {backup_available && (
+                                    <a
+                                        href={isStorefront ? `/store/${store_slug}/admin/billing` : '/admin/billing'}
+                                        className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                        Export a backup from billing →
+                                    </a>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                            <button
-                                type="button"
-                                onClick={handleRenew}
-                                className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                Renew Subscription
-                            </button>
+                            {!store_deleted && (
+                                <button
+                                    type="button"
+                                    onClick={handleRenew}
+                                    className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    Renew Subscription
+                                </button>
+                            )}
 
                             <a
                                 href={billingUrl}
                                 className="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 transition-colors"
                             >
-                                Upgrade Plan
+                                {store_deleted ? 'Contact Support via Billing' : 'Upgrade Plan'}
                             </a>
                         </div>
 

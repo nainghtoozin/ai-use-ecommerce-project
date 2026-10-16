@@ -29,12 +29,12 @@ class AdminBillingPageTest extends TestCase
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Permission::create(['name' => 'billing.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'billing.renew', 'guard_name' => 'web']);
-        Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'billing.view', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'billing.renew', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
 
-        $this->freePlan = Plan::create([
-            'name' => 'Free', 'slug' => 'free', 'description' => 'Free plan',
+        $this->freePlan = Plan::firstOrCreate(['slug' => 'free'], [
+            'name' => 'Free', 'description' => 'Free plan',
             'monthly_price' => 0, 'yearly_price' => 0, 'status' => 'active',
             'analytics_enabled' => false, 'custom_domain_enabled' => false,
             'product_limit' => 10, 'staff_limit' => 2, 'storage_limit' => 100,
@@ -43,8 +43,8 @@ class AdminBillingPageTest extends TestCase
             'branch_limit' => 1, 'warehouse_limit' => 1, 'pos_device_limit' => 1,
         ]);
 
-        $this->starterPlan = Plan::create([
-            'name' => 'Starter', 'slug' => 'starter', 'description' => 'Starter plan',
+        $this->starterPlan = Plan::firstOrCreate(['slug' => 'starter'], [
+            'name' => 'Starter', 'description' => 'Starter plan',
             'monthly_price' => 29, 'yearly_price' => 290, 'status' => 'active',
             'analytics_enabled' => true, 'custom_domain_enabled' => true,
             'product_limit' => 100, 'staff_limit' => 5, 'storage_limit' => 1024,
@@ -53,8 +53,8 @@ class AdminBillingPageTest extends TestCase
             'branch_limit' => 3, 'warehouse_limit' => 2, 'pos_device_limit' => 3,
         ]);
 
-        $this->businessPlan = Plan::create([
-            'name' => 'Business', 'slug' => 'business', 'description' => 'Business plan',
+        $this->businessPlan = Plan::firstOrCreate(['slug' => 'business'], [
+            'name' => 'Business', 'description' => 'Business plan',
             'monthly_price' => 99, 'yearly_price' => 990, 'status' => 'active',
             'analytics_enabled' => true, 'custom_domain_enabled' => true,
             'product_limit' => null, 'staff_limit' => null, 'storage_limit' => null,
@@ -63,20 +63,79 @@ class AdminBillingPageTest extends TestCase
             'branch_limit' => null, 'warehouse_limit' => null, 'pos_device_limit' => null,
         ]);
 
+        $this->freePlan->update([
+            'monthly_price' => 0, 'yearly_price' => 0, 'status' => 'active',
+            'analytics_enabled' => false, 'custom_domain_enabled' => false,
+            'product_limit' => 10, 'staff_limit' => 2, 'storage_limit' => 100,
+            'orders_monthly_limit' => 50, 'coupon_limit' => 5,
+            'promotion_limit' => 3, 'flash_sale_limit' => 1,
+            'branch_limit' => 1, 'warehouse_limit' => 1, 'pos_device_limit' => 1,
+        ]);
+        $this->starterPlan->update([
+            'monthly_price' => 29, 'yearly_price' => 290, 'status' => 'active',
+            'analytics_enabled' => true, 'custom_domain_enabled' => true,
+            'product_limit' => 100, 'staff_limit' => 5, 'storage_limit' => 1024,
+            'orders_monthly_limit' => 500, 'coupon_limit' => 20,
+            'promotion_limit' => 10, 'flash_sale_limit' => 5,
+            'branch_limit' => 3, 'warehouse_limit' => 2, 'pos_device_limit' => 3,
+        ]);
+        $this->businessPlan->update([
+            'monthly_price' => 99, 'yearly_price' => 990, 'status' => 'active',
+            'analytics_enabled' => true, 'custom_domain_enabled' => true,
+        ]);
+
         $this->seedPlanFeatures($this->freePlan, ['single_products', 'payment_gateways_cod']);
         $this->seedPlanFeatures($this->starterPlan, ['single_products', 'variable_products', 'coupons', 'reports', 'payment_gateways_cod']);
         $allKeys = array_column(FeatureGate::getAllFeatureDefinitions(), 'key');
         $this->seedPlanFeatures($this->businessPlan, $allKeys);
 
-        $this->tenant = Tenant::create([
-            'slug' => 'test-tenant',
+        $this->tenant = Tenant::firstOrCreate(['slug' => 'test-tenant'], [
             'name' => 'Test Tenant',
             'status' => 'active',
             'plan_id' => $this->freePlan->id,
         ]);
+        $this->tenant->update(['status' => 'active']);
     }
 
+    private const SCHEMA_TABLES = [
+        'permissions', 'roles', 'model_has_roles', 'role_has_permissions',
+        'model_has_permissions', 'users', 'tenants', 'plans', 'plan_features',
+        'subscriptions', 'website_infos', 'platform_settings', 'notifications',
+        'categories', 'products', 'orders', 'coupons', 'promotions',
+        'promotion_banners', 'settings', 'activity_logs', 'subscription_audit_logs',
+        'accounts', 'tenant_memberships', 'payment_methods', 'flash_sales', 'wishlists',
+    ];
+
     private function createMinimalSchema(): void
+    {
+        $missing = array_values(array_filter(
+            self::SCHEMA_TABLES,
+            fn ($table) => !Schema::hasTable($table)
+        ));
+
+        if ($missing !== []) {
+            $this->createMissingSchemaTables($missing);
+        }
+
+        $this->ensureBillingSchema();
+    }
+
+    private function createMissingSchemaTables(array $missing): void
+    {
+        $all = array_fill_keys(self::SCHEMA_TABLES, true);
+        $need = array_fill_keys($missing, true);
+
+        if (count($need) !== count($all)) {
+            throw new \RuntimeException(
+                'AdminBillingPageTest requires a fresh database or a database where its schema was fully created before; ' .
+                'partial schema would collide with other suites. Missing: ' . implode(',', $missing)
+            );
+        }
+
+        $this->buildSchemaTables();
+    }
+
+    private function buildSchemaTables(): void
     {
         Schema::create('permissions', function ($table) {
             $table->id(); $table->string('name'); $table->string('guard_name');
@@ -117,8 +176,11 @@ class AdminBillingPageTest extends TestCase
             $table->string('name'); $table->string('email')->nullable();
             $table->string('status')->default('active');
             $table->unsignedBigInteger('plan_id')->nullable();
+            $table->unsignedBigInteger('store_category_id')->nullable();
+            $table->string('store_url')->nullable();
             $table->json('settings')->nullable();
             $table->string('logo')->nullable(); $table->timestamp('trial_ends_at')->nullable();
+            $table->timestamp('activated_at')->nullable();
             $table->timestamp('locked_at')->nullable();
             $table->timestamps();
         });
@@ -237,6 +299,9 @@ class AdminBillingPageTest extends TestCase
         });
         Schema::create('promotions', function ($table) {
             $table->id(); $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->string('name')->nullable(); $table->string('code')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_automatic')->default(false);
             $table->timestamps();
         });
         Schema::create('promotion_banners', function ($table) {
@@ -251,12 +316,14 @@ class AdminBillingPageTest extends TestCase
         });
         Schema::create('activity_logs', function ($table) {
             $table->id(); $table->string('log_name')->nullable();
+            $table->string('category', 50)->nullable();
+            $table->string('severity', 20)->default('info');
             $table->text('description'); $table->string('subject_type')->nullable();
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('causer_type')->nullable();
             $table->unsignedBigInteger('causer_id')->nullable();
-            $table->string('impersonator_id')->nullable();
-            $table->string('impersonated_user_id')->nullable();
+            $table->unsignedBigInteger('impersonator_id')->nullable();
+            $table->unsignedBigInteger('impersonated_user_id')->nullable();
             $table->json('properties')->nullable();
             $table->string('event')->nullable();
             $table->string('batch_uuid')->nullable();
@@ -265,41 +332,179 @@ class AdminBillingPageTest extends TestCase
         });
         Schema::create('subscription_audit_logs', function ($table) {
             $table->id(); $table->unsignedBigInteger('subscription_id');
+            $table->unsignedBigInteger('tenant_id')->nullable();
             $table->string('event'); $table->string('actor_type')->nullable();
+            $table->unsignedBigInteger('actor_id')->nullable();
             $table->string('old_status')->nullable();
             $table->string('new_status')->nullable();
             $table->unsignedBigInteger('old_plan_id')->nullable();
             $table->unsignedBigInteger('new_plan_id')->nullable();
             $table->text('reason')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
+        Schema::create('accounts', function ($table) {
+            $table->id(); $table->string('name')->nullable();
+            $table->string('email')->unique(); $table->string('password');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('remember_token', 100)->nullable();
+            $table->string('profile_image', 255)->nullable();
+            $table->string('status', 50)->default('active');
+            $table->json('notification_preferences')->nullable();
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip', 45)->nullable();
+            $table->timestamps(); $table->softDeletes();
+        });
+        Schema::create('tenant_memberships', function ($table) {
+            $table->id(); $table->unsignedBigInteger('account_id')->nullable();
+            $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->unsignedBigInteger('role_id')->nullable();
+            $table->boolean('is_owner')->default(false);
+            $table->string('status')->default('active');
+            $table->timestamps(); $table->softDeletes();
+        });
+        Schema::create('payment_methods', function ($table) {
+            $table->id(); $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->string('name')->nullable(); $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('flash_sales', function ($table) {
+            $table->id(); $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->string('name')->nullable(); $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('wishlists', function ($table) {
+            $table->id(); $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('user_type')->nullable();
+            $table->unsignedBigInteger('product_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    private function ensureBillingSchema(): void
+    {
+        if (!Schema::hasTable('tenant_cleanups')) {
+            Schema::create('tenant_cleanups', function ($table) {
+                $table->id(); $table->unsignedBigInteger('tenant_id')->unique();
+                $table->unsignedBigInteger('subscription_id')->nullable();
+                $table->string('status', 20)->default('grace');
+                $table->timestamp('expires_at')->nullable();
+                $table->timestamp('grace_ends_at')->nullable();
+                $table->timestamp('retention_ends_at')->nullable();
+                $table->string('deletion_status', 20)->default('none');
+                $table->timestamp('restricted_at')->nullable();
+                $table->timestamp('deleted_at')->nullable();
+                $table->timestamp('archived_at')->nullable();
+                $table->timestamp('last_reminder_at')->nullable();
+                $table->json('reminders_sent')->nullable();
+                $table->unsignedInteger('attempts')->default(0);
+                $table->string('reason')->nullable();
+                $table->text('last_error')->nullable();
+                $table->json('metadata')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        foreach (['retention_ends_at', 'deleted_at'] as $column) {
+            if (!Schema::hasColumn('tenant_cleanups', $column)) {
+                Schema::table('tenant_cleanups', function ($table) use ($column) {
+                    $table->timestamp($column)->nullable();
+                });
+            }
+        }
+
+        if (!Schema::hasColumn('tenant_cleanups', 'deletion_status')) {
+            Schema::table('tenant_cleanups', function ($table) {
+                $table->string('deletion_status', 20)->default('none');
+            });
+        }
+
+        if (!Schema::hasTable('subscription_cancellation_requests')) {
+            Schema::create('subscription_cancellation_requests', function ($table) {
+                $table->id(); $table->unsignedBigInteger('tenant_id');
+                $table->unsignedBigInteger('subscription_id');
+                $table->string('reason', 50); $table->text('comment')->nullable();
+                $table->string('status', 20)->default('pending');
+                $table->unsignedBigInteger('requested_by')->nullable();
+                $table->unsignedBigInteger('reviewed_by')->nullable();
+                $table->text('review_note')->nullable();
+                $table->timestamp('reviewed_at')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('payment_intents')) {
+            Schema::create('payment_intents', function ($table) {
+                $table->id(); $table->unsignedBigInteger('tenant_id');
+                $table->unsignedBigInteger('plan_id');
+                $table->unsignedBigInteger('subscription_id')->nullable();
+                $table->string('billing_cycle'); $table->decimal('amount', 10, 2);
+                $table->string('currency', 3); $table->string('gateway');
+                $table->string('status'); $table->timestamp('expires_at')->nullable();
+                $table->json('metadata')->nullable();
+                $table->timestamp('completed_at')->nullable();
+                $table->timestamp('cancelled_at')->nullable();
+                $table->timestamp('rejected_at')->nullable();
+                $table->string('reference_number')->nullable()->unique();
+                $table->string('idempotency_key', 64)->nullable();
+                $table->timestamps();
+            });
+        }
+
+        foreach (['billing_interval', 'starts_at', 'suspended_at', 'cancelled_at', 'extra_renewal_used_at', 'pending_plan_id', 'pending_plan_effective_at'] as $column) {
+            if (!Schema::hasColumn('subscriptions', $column)) {
+                Schema::table('subscriptions', function ($table) use ($column) {
+                    if (in_array($column, ['pending_plan_id'], true)) {
+                        $table->unsignedBigInteger($column)->nullable();
+                    } elseif (str_ends_with($column, '_at')) {
+                        $table->timestamp($column)->nullable();
+                    } else {
+                        $table->string($column)->nullable();
+                    }
+                });
+            }
+        }
+
+        if (!Schema::hasColumn('platform_settings', 'tenant_data_retention_days')) {
+            Schema::table('platform_settings', function ($table) {
+                $table->unsignedInteger('tenant_data_retention_days')->default(15);
+            });
+        }
+
+        if (!Schema::hasColumn('platform_settings', 'tenant_auto_delete_enabled')) {
+            Schema::table('platform_settings', function ($table) {
+                $table->boolean('tenant_auto_delete_enabled')->default(false);
+            });
+        }
     }
 
     private function seedPlanFeatures(Plan $plan, array $enabledFeatures): void
     {
         $definitions = FeatureGate::getAllFeatureDefinitions();
         foreach ($definitions as $def) {
-            PlanFeature::create([
-                'plan_id' => $plan->id,
-                'feature_key' => $def['key'],
-                'is_enabled' => in_array($def['key'], $enabledFeatures),
-                'display_label' => $def['label'],
-                'description' => in_array($def['key'], $enabledFeatures) ? $def['label'] : null,
-            ]);
+            PlanFeature::updateOrCreate(
+                ['plan_id' => $plan->id, 'feature_key' => $def['key']],
+                [
+                    'is_enabled' => in_array($def['key'], $enabledFeatures),
+                    'display_label' => $def['label'],
+                    'description' => in_array($def['key'], $enabledFeatures) ? $def['label'] : null,
+                ]
+            );
         }
         FeatureGate::clearCache($plan);
     }
 
     private function createUserAndLogin(): void
     {
-        $user = \App\Models\User::create([
+        $user = \App\Models\User::firstOrCreate(['email' => 'admin@test.com'], [
             'tenant_id' => $this->tenant->id,
             'name' => 'Admin User',
-            'email' => 'admin@test.com',
             'password' => bcrypt('password'),
             'status' => 'active',
             'is_owner' => true,
         ]);
+        $user->update(['tenant_id' => $this->tenant->id, 'status' => 'active']);
         $user->assignRole('admin');
         $user->givePermissionTo('billing.view');
         $user->givePermissionTo('billing.renew');
@@ -308,6 +513,7 @@ class AdminBillingPageTest extends TestCase
 
     private function createSubscription(): void
     {
+        $this->tenant->subscriptions()->delete();
         $this->tenant->subscription()->create([
             'plan_id' => $this->freePlan->id,
             'status' => 'active',
@@ -349,7 +555,8 @@ class AdminBillingPageTest extends TestCase
 
         $response = $this->get('/admin/billing');
         $response->assertInertia(fn($page) => $page
-            ->has('plans', 3)
+            ->has('plans')
+            ->where('plans', fn ($plans) => collect($plans)->pluck('slug')->intersect(['free', 'starter', 'business'])->count() === 3)
         );
     }
 

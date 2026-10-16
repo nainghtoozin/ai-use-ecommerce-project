@@ -36,6 +36,12 @@ class TenantCleanupController extends Controller
                 'days_remaining' => $cleanup->grace_ends_at
                     ? (int) ceil(max(0, $cleanup->grace_ends_at->getTimestamp() - now()->getTimestamp()) / 86400)
                     : null,
+                'retention_ends_at' => $cleanup->retention_ends_at?->toDateString(),
+                'retention_days_remaining' => $cleanup->retention_ends_at
+                    ? (int) ceil(max(0, $cleanup->retention_ends_at->getTimestamp() - now()->getTimestamp()) / 86400)
+                    : null,
+                'deletion_status' => $cleanup->deletion_status,
+                'deleted_at' => $cleanup->deleted_at?->toDateTimeString(),
                 'restricted_at' => $cleanup->restricted_at?->toDateTimeString(),
                 'reason' => $cleanup->reason,
                 'attempts' => $cleanup->attempts,
@@ -50,6 +56,8 @@ class TenantCleanupController extends Controller
                 'restricted' => TenantCleanup::where('status', TenantCleanup::STATUS_RESTRICTED)->count(),
                 'flagged' => TenantCleanup::where('status', TenantCleanup::STATUS_FLAGGED)->count(),
                 'cancelled' => TenantCleanup::where('status', TenantCleanup::STATUS_CANCELLED)->count(),
+                'pending_deletion' => TenantCleanup::where('status', TenantCleanup::STATUS_PENDING_DELETION)->count(),
+                'deleted' => TenantCleanup::where('status', TenantCleanup::STATUS_DELETED)->count(),
             ],
             'purgeEnabled' => (bool) config('billing.tenant_cleanup.purge_enabled', false),
         ]);

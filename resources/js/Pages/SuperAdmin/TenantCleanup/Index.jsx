@@ -8,6 +8,8 @@ const STATUS_TONE = {
     flagged: 'bg-amber-100 text-amber-700',
     cancelled: 'bg-gray-100 text-gray-600',
     archived: 'bg-gray-100 text-gray-500',
+    pending_deletion: 'bg-red-200 text-red-800',
+    deleted: 'bg-gray-800 text-gray-100',
 };
 
 const STATUS_LABEL = {
@@ -16,6 +18,8 @@ const STATUS_LABEL = {
     flagged: 'Flagged for review',
     cancelled: 'Cancelled',
     archived: 'Archived',
+    pending_deletion: 'Pending deletion',
+    deleted: 'Deleted',
 };
 
 export default function TenantCleanupIndex({ cleanups, filters, counts = {}, purgeEnabled = false }) {
@@ -26,6 +30,8 @@ export default function TenantCleanupIndex({ cleanups, filters, counts = {}, pur
         { value: 'grace', label: 'Grace', count: counts.grace, icon: Clock },
         { value: 'restricted', label: 'Restricted', count: counts.restricted, icon: ShieldAlert },
         { value: 'flagged', label: 'Flagged', count: counts.flagged, icon: AlertTriangle },
+        { value: 'pending_deletion', label: 'Pending deletion', count: counts.pending_deletion, icon: AlertTriangle },
+        { value: 'deleted', label: 'Deleted', count: counts.deleted, icon: CheckCircle2 },
         { value: 'cancelled', label: 'Cancelled', count: counts.cancelled, icon: CheckCircle2 },
         { value: null, label: 'All', count: null, icon: null },
     ];
@@ -76,7 +82,7 @@ export default function TenantCleanupIndex({ cleanups, filters, counts = {}, pur
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                                 <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        {['Store', 'Plan', 'Status', 'Expired', 'Grace Ends', 'Restricted', 'Reason'].map((h) => (
+                                        {['Store', 'Plan', 'Status', 'Expired', 'Grace Ends', 'Retention Ends', 'Deletion', 'Restricted', 'Reason'].map((h) => (
                                             <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                                         ))}
                                     </tr>
@@ -99,6 +105,16 @@ export default function TenantCleanupIndex({ cleanups, filters, counts = {}, pur
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{c.expires_at || '—'}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{c.grace_ends_at || '—'}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+                                                {c.retention_ends_at || '—'}
+                                                {c.retention_days_remaining != null && c.status !== 'deleted' && (
+                                                    <span className="block">{c.retention_days_remaining}d left</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+                                                {c.deletion_status && c.deletion_status !== 'none' ? c.deletion_status : '—'}
+                                                {c.deleted_at && <span className="block">{c.deleted_at}</span>}
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{c.restricted_at || '—'}</td>
                                             <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 max-w-xs">
                                                 {c.reason || '—'}

@@ -2,13 +2,12 @@ import FlashMessages from '@/Components/FlashMessages';
 import AdminSidebar from '@/Components/AdminSidebar';
 import AdminHeader from '@/Components/AdminHeader';
 import AdminFooter from '@/Components/AdminFooter';
-import SubscriptionStatusBanner from '@/Components/Billing/SubscriptionStatusBanner';
+import SubscriptionNotice from '@/Components/Billing/SubscriptionNotice';
 
 export default function AdminLayout({ children, header = null }) {
     return (
         <>
             <FlashMessages />
-            <SubscriptionStatusBanner />
             <style>{`
                 :root {
                     --admin-theme: var(--theme-color, #3B82F6);
@@ -25,6 +24,7 @@ export default function AdminLayout({ children, header = null }) {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0">
                     <AdminHeader />
+                    <SubscriptionNotice />
                     {header && (
                         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">

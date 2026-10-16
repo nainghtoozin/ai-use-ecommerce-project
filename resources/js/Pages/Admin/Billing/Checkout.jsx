@@ -101,6 +101,8 @@ export default function AdminBillingCheckout({ intent, billingCycle, selectedPla
         if (transferTime) form.append('transfer_time', transferTime);
         form.append('evidence', evidence);
         form.append('note', note);
+        form.append('payment_purpose', currentPlan && selectedPlan && currentPlan.id !== selectedPlan.id ? 'plan_upgrade' : 'new_subscription');
+        form.append('payment_remark', note.trim() || (currentPlan && selectedPlan && currentPlan.id !== selectedPlan.id ? 'Plan upgrade' : 'New subscription'));
         form.append('payment_method_id', String(selectedMethod));
 
         setSubmitting(true);
