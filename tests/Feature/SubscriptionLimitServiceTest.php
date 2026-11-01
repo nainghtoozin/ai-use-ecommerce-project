@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
@@ -11,7 +12,7 @@ use App\Services\SubscriptionLimitService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -23,56 +24,13 @@ class SubscriptionLimitServiceTest extends TestCase
     private Plan $freePlan;
     private Plan $starterPlan;
     private Plan $businessPlan;
+    private Category $category;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->createMinimalSchema();
-
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-
-        Permission::create(['name' => 'dashboard.view', 'guard_name' => 'web']);
-        $superadminRole = Role::create(['name' => 'superadmin', 'guard_name' => 'web']);
-        $superadminRole->syncPermissions(Permission::all());
-        Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        Role::create(['name' => 'customer', 'guard_name' => 'web']);
-
-        $this->freePlan = Plan::create([
-            'name' => 'Free',
-            'slug' => 'free',
-            'monthly_price' => 0,
-            'yearly_price' => 0,
-            'product_limit' => 10,
-            'staff_limit' => 2,
-            'storage_limit' => 100,
-            'description' => 'Free plan',
-            'status' => 'active',
-        ]);
-
-        $this->starterPlan = Plan::create([
-            'name' => 'Starter',
-            'slug' => 'starter',
-            'monthly_price' => 9.99,
-            'yearly_price' => 99.99,
-            'product_limit' => 100,
-            'staff_limit' => 5,
-            'storage_limit' => 1024,
-            'description' => 'Starter plan',
-            'status' => 'active',
-        ]);
-
-        $this->businessPlan = Plan::create([
-            'name' => 'Business',
-            'slug' => 'business',
-            'monthly_price' => 29.99,
-            'yearly_price' => 299.99,
-            'product_limit' => null,
-            'staff_limit' => null,
-            'storage_limit' => null,
-            'description' => 'Business plan',
-            'status' => 'active',
-        ]);
 
         $this->tenant = Tenant::create([
             'name' => 'Test Store',
@@ -82,7 +40,55 @@ class SubscriptionLimitServiceTest extends TestCase
             'used_storage_bytes' => 0,
         ]);
 
-        \Illuminate\Support\Facades\App::instance('current.tenant', $this->tenant);
+        Tenant::setCurrent($this->tenant);
+
+        $this->category = Category::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Default Category',
+            'slug' => 'default-category',
+            'is_active' => true,
+        ]);
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        Permission::findOrCreate('dashboard.view', 'web');
+        $superadminRole = Role::findOrCreate('superadmin', 'web');
+        $superadminRole->syncPermissions(Permission::all());
+        Role::findOrCreate('admin', 'web');
+        Role::findOrCreate('customer', 'web');
+
+        $this->freePlan = Plan::updateOrCreate(['slug' => 'free'], [
+            'name' => 'Free',
+            'monthly_price' => 0,
+            'yearly_price' => 0,
+            'product_limit' => 10,
+            'staff_limit' => 2,
+            'storage_limit' => 100,
+            'description' => 'Free plan',
+            'status' => 'active',
+        ]);
+
+        $this->starterPlan = Plan::updateOrCreate(['slug' => 'starter'], [
+            'name' => 'Starter',
+            'monthly_price' => 9.99,
+            'yearly_price' => 99.99,
+            'product_limit' => 100,
+            'staff_limit' => 5,
+            'storage_limit' => 1024,
+            'description' => 'Starter plan',
+            'status' => 'active',
+        ]);
+
+        $this->businessPlan = Plan::updateOrCreate(['slug' => 'business'], [
+            'name' => 'Business',
+            'monthly_price' => 29.99,
+            'yearly_price' => 299.99,
+            'product_limit' => null,
+            'staff_limit' => null,
+            'storage_limit' => null,
+            'description' => 'Business plan',
+            'status' => 'active',
+        ]);
     }
 
     /* ── Product Limit Tests ── */
@@ -321,16 +327,35 @@ class SubscriptionLimitServiceTest extends TestCase
             $product->tenant_id = $this->tenant->id;
             $product->name = "Product {$i}";
             $product->price = 9.99;
-            $product->category_id = 1;
+            $product->category_id = $this->category->id;
             $product->save();
         }
     }
 
     private function createStaff(int $count): void
     {
-        $adminRole = Role::where('name', 'admin')->whereNull('tenant_id')->first();
+        $adminRole = Role::where('name', 'admin')->first();
 
         for ($i = 0; $i < $count; $i++) {
+            if (config('identity.use_accounts')) {
+                $account = \App\Models\Account::create([
+                    'name' => "Staff {$i}",
+                    'email' => "staff{$i}@example.com",
+                    'password' => Hash::make('password'),
+                    'status' => 'active',
+                ]);
+
+                \App\Models\TenantMembership::create([
+                    'account_id' => $account->id,
+                    'tenant_id' => $this->tenant->id,
+                    'role_id' => $adminRole->id,
+                    'status' => 'active',
+                    'joined_at' => now(),
+                ]);
+
+                continue;
+            }
+
             $user = User::create([
                 'name' => "Staff {$i}",
                 'email' => "staff{$i}@example.com",

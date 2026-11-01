@@ -48,10 +48,10 @@ class TenantIsolationTestCase extends TestCase
         ]);
 
         // Create roles per tenant
-        $this->adminRoleA = Role::create(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $this->tenantA->id]);
-        $this->adminRoleB = Role::create(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $this->tenantB->id]);
-        $this->customerRoleA = Role::create(['name' => 'customer', 'guard_name' => 'web', 'tenant_id' => $this->tenantA->id]);
-        $this->customerRoleB = Role::create(['name' => 'customer', 'guard_name' => 'web', 'tenant_id' => $this->tenantB->id]);
+        $this->adminRoleA = Role::withoutTenantScope()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $this->tenantA->id]);
+        $this->adminRoleB = Role::withoutTenantScope()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $this->tenantB->id]);
+        $this->customerRoleA = Role::withoutTenantScope()->firstOrCreate(['name' => 'customer', 'guard_name' => 'web', 'tenant_id' => $this->tenantA->id]);
+        $this->customerRoleB = Role::withoutTenantScope()->firstOrCreate(['name' => 'customer', 'guard_name' => 'web', 'tenant_id' => $this->tenantB->id]);
 
         // Create accounts
         $this->ownerA = Account::create(['name' => 'Owner A', 'email' => 'owner-a@test.com', 'password' => bcrypt('password'), 'status' => 'active']);

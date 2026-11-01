@@ -23,6 +23,7 @@ class BrandV2Test extends TestCase
     private User $adminA;
     private User $adminB;
     private Role $adminRole;
+    private \App\Models\Category $categoryA;
 
     protected function setUp(): void
     {
@@ -59,6 +60,11 @@ class BrandV2Test extends TestCase
         $this->tenantA->save();
         $this->tenantB->subscription_plan_id = $plan->id;
         $this->tenantB->save();
+
+        $this->categoryA = \App\Models\Category::create([
+            'tenant_id' => $this->tenantA->id,
+            'name' => 'Brand Test Category',
+        ]);
 
         $this->adminA = User::create([
             'tenant_id' => $this->tenantA->id,
@@ -148,6 +154,9 @@ class BrandV2Test extends TestCase
         $this->assertNotNull($brand->id);
         $this->assertEquals('Legacy Brand', $brand->name);
         $this->assertNull($brand->banner);
+        $this->assertNull($brand->featured);
+
+        $brand->refresh();
         $this->assertFalse($brand->featured);
         $this->assertEquals(0, $brand->sort_order);
         $this->assertTrue($brand->is_active);
@@ -453,6 +462,7 @@ class BrandV2Test extends TestCase
             'tenant_id' => $this->tenantA->id,
             'name' => 'Test Product',
             'price' => 100,
+            'category_id' => $this->categoryA->id,
             'brand_id' => $brand->id,
             'status' => 'active',
             'type' => 'single',
@@ -569,10 +579,16 @@ class BrandV2Test extends TestCase
             'banner' => null,
         ]);
 
-        $this->assertNull($brand->banner_url);
+        $this->assertEquals(
+            \App\Services\ImageService::url(null),
+            $brand->banner_url
+        );
 
         $brand->update(['banner' => 'brands/banners/test.jpg']);
-        $this->assertNotNull($brand->fresh()->banner_url);
+        $this->assertEquals(
+            \App\Services\ImageService::url('brands/banners/test.jpg'),
+            $brand->fresh()->banner_url
+        );
     }
 
     /** @test */
@@ -606,6 +622,7 @@ class BrandV2Test extends TestCase
             'tenant_id' => $this->tenantA->id,
             'name' => 'Product Under Brand',
             'price' => 50,
+            'category_id' => $this->categoryA->id,
             'brand_id' => $brand->id,
             'status' => 'active',
             'type' => 'single',

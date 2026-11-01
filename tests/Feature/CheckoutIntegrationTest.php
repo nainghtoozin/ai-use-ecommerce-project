@@ -43,12 +43,16 @@ class CheckoutIntegrationTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($this->tenant);
+
         $this->otherTenant = Tenant::create([
             'name' => 'Other Store',
             'slug' => 'other-store',
             'store_url' => '/store/other-store',
             'status' => 'active',
         ]);
+
+        $this->grantStorefrontEntitlement($this->otherTenant);
 
         Tenant::setCurrent($this->tenant);
 

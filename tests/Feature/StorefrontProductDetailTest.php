@@ -54,12 +54,16 @@ class StorefrontProductDetailTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($this->tenant);
+
         $this->otherTenant = Tenant::create([
             'name' => 'Other Store',
             'slug' => 'other-store',
             'store_url' => '/store/other-store',
             'status' => 'active',
         ]);
+
+        $this->grantStorefrontEntitlement($this->otherTenant);
 
         $this->category = Category::create([
             'tenant_id' => $this->tenant->id,

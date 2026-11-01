@@ -273,7 +273,7 @@ class StorefrontConfigurationResolverTest extends TestCase
     {
         $tenant = Tenant::create(['name' => 'Canonical Store', 'slug' => 'canonical-store', 'status' => 'active']);
         app()->instance('current.tenant', $tenant);
-        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => null, 'theme_color' => '#3B82F6']);
+        WebsiteInfo::create(['tenant_id' => $tenant->id, 'site_name' => '', 'theme_color' => '#3B82F6']);
 
         $identity = app(StorefrontConfigurationResolver::class)->resolve()['identity'];
 
@@ -519,9 +519,9 @@ class StorefrontConfigurationResolverTest extends TestCase
         $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
         $storefrontB = Storefront::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
         StorefrontHomepageSection::create(['tenant_id' => $tenantA->id, 'storefront_id' => $storefrontA->id, 'type' => 'promotion', 'variant' => 'default', 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'configuration' => ['limit' => 6]]);
-        PromotionBanner::create(['tenant_id' => $tenantA->id, 'title' => 'Live campaign', 'description' => 'Now', 'link' => '/products', 'is_active' => true, 'position' => 0]);
-        PromotionBanner::create(['tenant_id' => $tenantA->id, 'title' => 'Expired campaign', 'link' => '/products', 'is_active' => true, 'ends_at' => now()->subDay(), 'position' => 1]);
-        PromotionBanner::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'title' => 'Other store campaign', 'link' => '/products', 'is_active' => true]);
+        PromotionBanner::create(['tenant_id' => $tenantA->id, 'title' => 'Live campaign', 'description' => 'Now', 'link' => '/products', 'image' => 'campaign.jpg', 'is_active' => true, 'position' => 0]);
+        PromotionBanner::create(['tenant_id' => $tenantA->id, 'title' => 'Expired campaign', 'link' => '/products', 'image' => 'campaign.jpg', 'is_active' => true, 'ends_at' => now()->subDay(), 'position' => 1]);
+        PromotionBanner::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'title' => 'Other store campaign', 'link' => '/products', 'image' => 'campaign.jpg', 'is_active' => true]);
 
         $this->assertSame($tenantA->id, Tenant::getCurrent()->id);
         $sections = app(StorefrontConfigurationResolver::class)->resolve()['homepage']['sections'];
@@ -630,8 +630,9 @@ class StorefrontConfigurationResolverTest extends TestCase
         WebsiteInfo::create(['tenant_id' => $tenantA->id, 'site_name' => 'A', 'theme_color' => '#3B82F6']);
         $theme = Theme::firstOrFail();
         $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $storefrontB = Storefront::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
         app(\App\Services\StorefrontRevisionService::class)->prepareDraft($storefrontA);
-        $publishedB = StorefrontRevision::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => 999, 'revision_number' => 1, 'status' => 'published', 'configuration' => ['theme' => ['slug' => 'commerce-default']]]);
+        $publishedB = StorefrontRevision::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => $storefrontB->id, 'revision_number' => 1, 'status' => 'published', 'configuration' => ['theme' => ['slug' => 'commerce-default']]]);
 
         $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
         app(\App\Services\StorefrontRevisionService::class)->restoreAsDraft($storefrontA, $publishedB);
@@ -668,7 +669,8 @@ class StorefrontConfigurationResolverTest extends TestCase
         app()->instance('current.tenant', $tenantA);
         $theme = Theme::firstOrFail();
         $storefrontA = Storefront::create(['tenant_id' => $tenantA->id, 'theme_id' => $theme->id, 'status' => 'active']);
-        $revisionB = StorefrontRevision::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => 999, 'revision_number' => 1, 'status' => 'published', 'configuration' => ['identity' => ['name' => 'B']]]);
+        $storefrontB = Storefront::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'theme_id' => $theme->id, 'status' => 'active']);
+        $revisionB = StorefrontRevision::withoutTenantScope()->create(['tenant_id' => $tenantB->id, 'storefront_id' => $storefrontB->id, 'revision_number' => 1, 'status' => 'published', 'configuration' => ['identity' => ['name' => 'B']]]);
 
         $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
         app(StorefrontConfigurationResolver::class)->resolveRevision($revisionB);
@@ -692,8 +694,8 @@ class StorefrontConfigurationResolverTest extends TestCase
 
     public function test_hero_variants_are_canonical_and_normalizable(): void
     {
-        $this->assertSame(['default', 'split', 'centered', 'text-only', 'minimal'], StorefrontConfigurationResolver::heroVariants());
-        $this->assertSame('default', StorefrontConfigurationResolver::HERO_DEFAULT_VARIANT);
+        $this->assertSame(['modern-split', 'full-background', 'centered-minimal', 'image-carousel', 'text-only'], StorefrontConfigurationResolver::heroVariants());
+        $this->assertSame('modern-split', StorefrontConfigurationResolver::HERO_DEFAULT_VARIANT);
 
         $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant(null));
         $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant(''));
@@ -701,11 +703,12 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('image'));
         $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('product'));
         $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant('garbage'));
-        $this->assertSame('split', StorefrontConfigurationResolver::normalizeHeroVariant('split'));
+        $this->assertSame('modern-split', StorefrontConfigurationResolver::normalizeHeroVariant('modern-split'));
+        $this->assertSame('full-background', StorefrontConfigurationResolver::normalizeHeroVariant('full-background'));
         $this->assertSame('text-only', StorefrontConfigurationResolver::normalizeHeroVariant('text-only'));
-        $this->assertSame('minimal', StorefrontConfigurationResolver::normalizeHeroVariant('minimal'));
-        $this->assertSame('centered', StorefrontConfigurationResolver::normalizeHeroVariant('CENTERED'));
-        $this->assertSame('default', StorefrontConfigurationResolver::normalizeHeroVariant(' default '));
+        $this->assertSame('image-carousel', StorefrontConfigurationResolver::normalizeHeroVariant('image-carousel'));
+        $this->assertSame('centered-minimal', StorefrontConfigurationResolver::normalizeHeroVariant('CENTERED-MINIMAL'));
+        $this->assertSame('modern-split', StorefrontConfigurationResolver::normalizeHeroVariant(' modern-split '));
     }
 
     public function test_valid_hero_variant_can_be_saved(): void
@@ -719,13 +722,13 @@ class StorefrontConfigurationResolverTest extends TestCase
 
         $request = \Mockery::mock(\App\Http\Requests\UpdateHomepageSectionsRequest::class);
         $request->shouldReceive('validated')->andReturn([
-            'sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'split', 'configuration' => []]],
+            'sections' => [['id' => $hero->id, 'enabled' => true, 'desktop_visible' => true, 'mobile_visible' => true, 'position' => 0, 'variant' => 'full-background', 'configuration' => []]],
         ]);
 
         app(\App\Http\Controllers\Admin\StorefrontHomepageController::class)->update($request);
 
         $hero->refresh();
-        $this->assertSame('split', $hero->variant);
+        $this->assertSame('full-background', $hero->variant);
     }
 
     public function test_invalid_hero_variant_is_normalized_not_rejected(): void
@@ -1112,7 +1115,7 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertArrayHasKey('button_labels', $config);
         $this->assertArrayHasKey('appearance', $config);
         $this->assertArrayHasKey('layout', $config);
-        $this->assertEquals('Continue to Delivery', $config['button_labels']['continue_to_delivery']);
+        $this->assertEquals('Back to Cart', $config['button_labels']['back_to_cart']);
         $this->assertEquals('bordered', $config['appearance']['card_style']);
         $this->assertEquals('right', $config['layout']['order_summary_position']);
     }
@@ -1150,7 +1153,7 @@ class StorefrontConfigurationResolverTest extends TestCase
         $this->assertEquals('My Address', $config['sections']['address']['title']);
         $this->assertEquals(10, $config['sections']['address']['order']);
         $this->assertEquals('Submit My Order', $config['button_labels']['place_order']);
-        $this->assertEquals('Continue to Delivery', $config['button_labels']['continue_to_delivery']);
+        $this->assertEquals('Back to Cart', $config['button_labels']['back_to_cart']);
         $this->assertEquals('bordered', $config['appearance']['card_style']);
     }
 

@@ -44,6 +44,30 @@ class StorefrontTest extends TestCase
                 $table->bigInteger('used_storage_bytes')->default(0);
                 $table->timestamps();
             },
+            'plans' => function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->string('slug')->unique();
+                $table->decimal('monthly_price', 10, 2)->nullable();
+                $table->decimal('yearly_price', 10, 2)->nullable();
+                $table->integer('product_limit')->nullable();
+                $table->integer('staff_limit')->nullable();
+                $table->string('status')->default('active');
+                $table->timestamps();
+            },
+            'subscriptions' => function ($table) {
+                $table->id();
+                $table->unsignedBigInteger('tenant_id');
+                $table->unsignedBigInteger('plan_id');
+                $table->string('billing_interval')->nullable();
+                $table->string('status')->default('active');
+                $table->timestamp('starts_at')->nullable();
+                $table->timestamp('expires_at')->nullable();
+                $table->timestamp('trial_ends_at')->nullable();
+                $table->timestamp('cancelled_at')->nullable();
+                $table->timestamp('suspended_at')->nullable();
+                $table->timestamps();
+            },
             'categories' => function ($table) {
                 $table->id();
                 $table->unsignedBigInteger('tenant_id')->nullable();

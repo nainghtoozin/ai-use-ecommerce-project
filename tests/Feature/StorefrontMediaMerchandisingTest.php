@@ -28,6 +28,8 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
     private Tenant $tenant;
     private Storefront $storefront;
+    private Theme $theme;
+    private Category $category;
 
     protected function setUp(): void
     {
@@ -60,6 +62,15 @@ class StorefrontMediaMerchandisingTest extends TestCase
             'slug' => 'test-media-store',
             'store_url' => '/store/test-media-store',
             'status' => 'active',
+        ]);
+
+        Tenant::setCurrent($this->tenant);
+
+        $this->category = Category::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Default Category',
+            'slug' => 'default-category',
+            'is_active' => true,
         ]);
 
         $this->theme = Theme::firstOrCreate(
@@ -122,6 +133,18 @@ class StorefrontMediaMerchandisingTest extends TestCase
         ]);
     }
 
+    private function createProductForTenant(Tenant $tenant, array $attributes): Product
+    {
+        $current = Tenant::getCurrent();
+        Tenant::setCurrent($tenant);
+
+        try {
+            return Product::create($attributes);
+        } finally {
+            Tenant::setCurrent($current);
+        }
+    }
+
     private function createWebsiteInfo(): void
     {
         if (!Schema::hasTable('website_infos')) return;
@@ -137,6 +160,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function product_photo_accessor_returns_url_when_path_set(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Test Product',
             'type' => 'single',
@@ -154,6 +178,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function product_photo_accessor_returns_null_when_empty(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'No Image Product',
             'type' => 'single',
@@ -228,6 +253,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function product_gallery_images_returns_array_of_urls(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Gallery Product',
             'type' => 'single',
@@ -246,6 +272,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function product_gallery_images_empty_when_no_images(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Empty Gallery',
             'type' => 'single',
@@ -264,10 +291,9 @@ class StorefrontMediaMerchandisingTest extends TestCase
     }
 
     /** @test */
-    public function image_service_url_returns_empty_string_for_null_path(): void
+    public function image_service_url_returns_placeholder_for_null_path(): void
     {
-        $result = ImageService::url(null);
-        $this->assertEmpty($result);
+        $this->assertSame(ImageService::placeholderUrl(), ImageService::url(null));
     }
 
     /** @test */
@@ -300,6 +326,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Prod', 'type' => 'single', 'price' => 50, 'stock' => 5, 'status' => 'active',
         ]);
 
@@ -326,6 +353,18 @@ class StorefrontMediaMerchandisingTest extends TestCase
     /** @test */
     public function featured_categories_returns_active_categories_only(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_categories',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         Category::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Active', 'slug' => 'active', 'is_active' => true, 'featured' => true, 'sort_order' => 1,
         ]);
@@ -336,52 +375,99 @@ class StorefrontMediaMerchandisingTest extends TestCase
         $resolver = new \App\Services\StorefrontConfigurationResolver();
         $config = $resolver->resolveBase($this->tenant);
 
-        $categoryTypes = collect($config['homepage']['sections'])->where('type', 'featured_categories');
-        $this->assertTrue($categoryTypes->isNotEmpty());
+        $section = collect($config['homepage']['sections'])->firstWhere('type', 'featured_categories');
+        $this->assertNotNull($section);
+        $names = array_column($section['data']['categories'], 'name');
+        $this->assertContains('Active', $names);
+        $this->assertNotContains('Inactive', $names);
     }
 
     /** @test */
     public function featured_brands_returns_active_brands_only(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_brands',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         Brand::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Active Brand', 'slug' => 'active-brand', 'is_active' => true, 'featured' => true,
         ]);
         Brand::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'Inactive Brand', 'slug' => 'inactive-brand', 'is_active' => false,
+            'tenant_id' => $this->tenant->id, 'name' => 'Inactive Brand', 'slug' => 'inactive-brand', 'is_active' => false, 'featured' => true,
         ]);
 
         $resolver = new \App\Services\StorefrontConfigurationResolver();
         $config = $resolver->resolveBase($this->tenant);
 
-        $brandTypes = collect($config['homepage']['sections'])->where('type', 'featured_brands');
-        $this->assertTrue($brandTypes->isNotEmpty());
+        $section = collect($config['homepage']['sections'])->firstWhere('type', 'featured_brands');
+        $this->assertNotNull($section);
+        $names = array_column($section['data']['brands'], 'name');
+        $this->assertContains('Active Brand', $names);
+        $this->assertNotContains('Inactive Brand', $names);
     }
 
     /** @test */
     public function featured_products_returns_active_products_only(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_products',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         Product::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'Active Prod', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
+            'category_id' => $this->category->id,
+            'tenant_id' => $this->tenant->id, 'name' => 'Active Prod', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active', 'featured' => true,
         ]);
         Product::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'Inactive Prod', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'inactive',
+            'category_id' => $this->category->id,
+            'tenant_id' => $this->tenant->id, 'name' => 'Inactive Prod', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'inactive', 'featured' => true,
         ]);
 
         $resolver = new \App\Services\StorefrontConfigurationResolver();
         $config = $resolver->resolveBase($this->tenant);
 
-        $productSections = collect($config['homepage']['sections'])->whereIn('type', ['featured_products', 'product_showcase']);
-        $this->assertTrue($productSections->isNotEmpty());
+        $section = collect($config['homepage']['sections'])->firstWhere('type', 'featured_products');
+        $this->assertNotNull($section);
+        $names = collect($section['data']['products'])->pluck('name')->all();
+        $this->assertContains('Active Prod', $names);
+        $this->assertNotContains('Inactive Prod', $names);
     }
 
     /** @test */
     public function sort_order_is_respected_for_categories(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_categories',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         $cat1 = Category::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'B Category', 'slug' => 'b-cat', 'is_active' => true, 'sort_order' => 2,
+            'tenant_id' => $this->tenant->id, 'name' => 'B Category', 'slug' => 'b-cat', 'is_active' => true, 'featured' => true, 'sort_order' => 2,
         ]);
         $cat2 = Category::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'A Category', 'slug' => 'a-cat', 'is_active' => true, 'sort_order' => 1,
+            'tenant_id' => $this->tenant->id, 'name' => 'A Category', 'slug' => 'a-cat', 'is_active' => true, 'featured' => true, 'sort_order' => 1,
         ]);
 
         $resolver = new \App\Services\StorefrontConfigurationResolver();
@@ -423,6 +509,18 @@ class StorefrontMediaMerchandisingTest extends TestCase
             'tenant_id' => $this->tenant->id, 'name' => 'Counted', 'slug' => 'counted', 'is_active' => true,
         ]);
 
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_categories',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => ['category_ids' => [$category->id]],
+        ]);
+
         Product::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Active', 'type' => 'single', 'price' => 100, 'stock' => 5, 'status' => 'active', 'category_id' => $category->id,
         ]);
@@ -444,6 +542,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function active_promotion_is_applied_to_product(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Sale Product', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -460,11 +559,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('findBestPromotionForProduct');
@@ -479,6 +574,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function expired_promotion_is_not_applied(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Expired Product', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -496,11 +592,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('findBestPromotionForProduct');
@@ -514,6 +606,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function future_promotion_is_not_applied(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Future Product', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -531,11 +624,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('findBestPromotionForProduct');
@@ -549,6 +638,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function promotion_price_does_not_go_negative(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Cheap Product', 'type' => 'single', 'price' => 5, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -565,11 +655,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $enrichMethod = $reflection->getMethod('enrichProductWithPromotion');
@@ -583,6 +669,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function percentage_discount_calculates_correctly(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Pct Product', 'type' => 'single', 'price' => 200, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -599,11 +686,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $enrichMethod = $reflection->getMethod('enrichProductWithPromotion');
@@ -618,6 +701,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function fixed_discount_calculates_correctly(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Fixed Product', 'type' => 'single', 'price' => 200, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -634,11 +718,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $enrichMethod = $reflection->getMethod('enrichProductWithPromotion');
@@ -652,6 +732,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function max_discount_amount_caps_percentage_discount(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Capped Product', 'type' => 'single', 'price' => 1000, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -669,11 +750,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $enrichMethod = $reflection->getMethod('enrichProductWithPromotion');
@@ -686,15 +763,31 @@ class StorefrontMediaMerchandisingTest extends TestCase
     /** @test */
     public function promotion_banner_is_filtered_by_active_status(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'promotion',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         PromotionBanner::create([
             'tenant_id' => $this->tenant->id,
             'title' => 'Active Banner',
+            'image' => 'banners/active.jpg',
+            'link' => '/products',
             'is_active' => true,
             'position' => 1,
         ]);
         PromotionBanner::create([
             'tenant_id' => $this->tenant->id,
             'title' => 'Inactive Banner',
+            'image' => 'banners/inactive.jpg',
+            'link' => '/products',
             'is_active' => false,
             'position' => 2,
         ]);
@@ -712,9 +805,23 @@ class StorefrontMediaMerchandisingTest extends TestCase
     /** @test */
     public function promotion_banner_respects_date_range(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'promotion',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         PromotionBanner::create([
             'tenant_id' => $this->tenant->id,
             'title' => 'Future Banner',
+            'image' => 'banners/future.jpg',
+            'link' => '/products',
             'is_active' => true,
             'starts_at' => now()->addDays(7),
             'position' => 1,
@@ -733,66 +840,111 @@ class StorefrontMediaMerchandisingTest extends TestCase
     /** @test */
     public function cross_tenant_products_cannot_appear_in_featured(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_products',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         $otherTenant = Tenant::create([
             'name' => 'Other', 'slug' => 'other-media', 'store_url' => '/store/other-media', 'status' => 'active',
         ]);
 
-        Product::create([
-            'tenant_id' => $otherTenant->id, 'name' => 'Other Product', 'type' => 'single', 'price' => 999, 'stock' => 10, 'status' => 'active',
+        $otherCategory = Category::create([
+            'tenant_id' => $otherTenant->id, 'name' => 'Other Product Cat', 'slug' => 'other-product-cat', 'is_active' => true,
+        ]);
+
+        $this->createProductForTenant($otherTenant, [
+            'category_id' => $otherCategory->id,
+            'name' => 'Other Product', 'type' => 'single', 'price' => 999, 'stock' => 10, 'status' => 'active', 'featured' => true,
         ]);
 
         Product::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'My Product', 'type' => 'single', 'price' => 50, 'stock' => 10, 'status' => 'active',
+            'category_id' => $this->category->id,
+            'tenant_id' => $this->tenant->id, 'name' => 'My Product', 'type' => 'single', 'price' => 50, 'stock' => 10, 'status' => 'active', 'featured' => true,
         ]);
 
         $this->createWebsiteInfo();
 
         $response = $this->get("/store/{$this->tenant->slug}");
         $response->assertOk();
+        $response->assertSee('My Product');
         $response->assertDontSee('Other Product');
     }
 
     /** @test */
     public function cross_tenant_categories_cannot_appear(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_categories',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         $otherTenant = Tenant::create([
             'name' => 'Other', 'slug' => 'other-cat-media', 'store_url' => '/store/other-cat-media', 'status' => 'active',
         ]);
 
         Category::create([
-            'tenant_id' => $otherTenant->id, 'name' => 'Other Cat', 'slug' => 'other-cat', 'is_active' => true,
+            'tenant_id' => $otherTenant->id, 'name' => 'Other Cat', 'slug' => 'other-cat', 'is_active' => true, 'featured' => true,
         ]);
 
         Category::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'My Cat', 'slug' => 'my-cat', 'is_active' => true,
+            'tenant_id' => $this->tenant->id, 'name' => 'My Cat', 'slug' => 'my-cat', 'is_active' => true, 'featured' => true,
         ]);
 
         $this->createWebsiteInfo();
 
         $response = $this->get("/store/{$this->tenant->slug}");
         $response->assertOk();
+        $response->assertSee('My Cat');
         $response->assertDontSee('Other Cat');
     }
 
     /** @test */
     public function cross_tenant_brands_cannot_appear(): void
     {
+        StorefrontHomepageSection::create([
+            'tenant_id' => $this->tenant->id,
+            'storefront_id' => $this->storefront->id,
+            'type' => 'featured_brands',
+            'variant' => 'default',
+            'enabled' => true,
+            'desktop_visible' => true,
+            'mobile_visible' => true,
+            'position' => 1,
+            'configuration' => [],
+        ]);
+
         $otherTenant = Tenant::create([
             'name' => 'Other', 'slug' => 'other-brand-media', 'store_url' => '/store/other-brand-media', 'status' => 'active',
         ]);
 
         Brand::create([
-            'tenant_id' => $otherTenant->id, 'name' => 'Other Brand', 'slug' => 'other-brand', 'is_active' => true,
+            'tenant_id' => $otherTenant->id, 'name' => 'Other Brand', 'slug' => 'other-brand', 'is_active' => true, 'featured' => true,
         ]);
 
         Brand::create([
-            'tenant_id' => $this->tenant->id, 'name' => 'My Brand', 'slug' => 'my-brand', 'is_active' => true,
+            'tenant_id' => $this->tenant->id, 'name' => 'My Brand', 'slug' => 'my-brand', 'is_active' => true, 'featured' => true,
         ]);
 
         $this->createWebsiteInfo();
 
         $response = $this->get("/store/{$this->tenant->slug}");
         $response->assertOk();
+        $response->assertSee('My Brand');
         $response->assertDontSee('Other Brand');
     }
 
@@ -804,21 +956,19 @@ class StorefrontMediaMerchandisingTest extends TestCase
         ]);
 
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'My Product', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
         ]);
 
-        Promotion::create([
-            'tenant_id' => $otherTenant->id, 'name' => 'Other Promo', 'code' => 'OTHER', 'type' => 'percentage', 'value' => 50,
+        $otherPromotion = Promotion::create([
+            'name' => 'Other Promo', 'code' => 'OTHER', 'type' => 'percentage', 'value' => 50,
             'is_active' => true, 'is_automatic' => true, 'applies_to' => 'all',
         ]);
+        $otherPromotion->forceFill(['tenant_id' => $otherTenant->id])->save();
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('findBestPromotionForProduct');
@@ -976,6 +1126,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function best_promotion_respects_max_discount_amount(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Capped Product', 'type' => 'single', 'price' => 1000, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -991,11 +1142,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('findBestPromotionForProduct');
@@ -1009,6 +1156,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function max_discount_amount_caps_even_when_best(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Only Promo', 'type' => 'single', 'price' => 500, 'stock' => 10, 'status' => 'active',
         ]);
 
@@ -1019,11 +1167,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
 
         $promotions = Promotion::valid()->automatic()->get();
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $enrichMethod = $reflection->getMethod('enrichProductWithPromotion');
@@ -1042,11 +1186,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
         $promotion->type = 'fixed';
         $promotion->value = 5000;
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('formatPromotionBadge');
@@ -1063,11 +1203,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
         $promotion->type = 'fixed';
         $promotion->value = 1000;
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('formatPromotionBadge');
@@ -1084,11 +1220,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
         $promotion->type = 'percentage';
         $promotion->value = 25;
 
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('formatPromotionBadge');
@@ -1104,6 +1236,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function gallery_images_url_filters_out_null_entries(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Gallery', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
             'gallery_images' => ['valid/image.jpg', null, '', 'another/image.png'],
         ]);
@@ -1118,6 +1251,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function gallery_images_url_returns_empty_array_for_all_empty(): void
     {
         $product = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'No Gallery', 'type' => 'single', 'price' => 100, 'stock' => 10, 'status' => 'active',
             'gallery_images' => [null, '', null],
         ]);
@@ -1160,13 +1294,16 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function combo_with_all_components_in_stock_passes_filter(): void
     {
         $component1 = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Comp1', 'type' => 'single', 'price' => 50, 'stock' => 10, 'status' => 'active',
         ]);
         $component2 = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Comp2', 'type' => 'single', 'price' => 50, 'stock' => 10, 'status' => 'active',
         ]);
 
         $combo = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'Combo', 'type' => 'combo', 'price' => 100, 'stock' => 0, 'status' => 'active',
         ]);
 
@@ -1178,11 +1315,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
         ]);
 
         $query = Product::active()->where('type', 'combo');
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('applyInStockFilter');
@@ -1196,13 +1329,16 @@ class StorefrontMediaMerchandisingTest extends TestCase
     public function combo_with_one_component_out_of_stock_fails_filter(): void
     {
         $component1 = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'InStock', 'type' => 'single', 'price' => 50, 'stock' => 10, 'status' => 'active',
         ]);
         $component2 = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'OutOfStock', 'type' => 'single', 'price' => 50, 'stock' => 0, 'status' => 'active',
         ]);
 
         $combo = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id, 'name' => 'PartialCombo', 'type' => 'combo', 'price' => 100, 'stock' => 0, 'status' => 'active',
         ]);
 
@@ -1214,11 +1350,7 @@ class StorefrontMediaMerchandisingTest extends TestCase
         ]);
 
         $query = Product::active()->where('type', 'combo');
-        $controller = new \App\Http\Controllers\StorefrontController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\WebsiteFaqService::class),
-            app(\App\Services\StorefrontConfigurationResolver::class),
-        );
+        $controller = app(\App\Http\Controllers\StorefrontController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('applyInStockFilter');
@@ -1228,3 +1360,5 @@ class StorefrontMediaMerchandisingTest extends TestCase
         $this->assertFalse($query->get()->contains('id', $combo->id), 'Combo with OOS component should be excluded');
     }
 }
+
+

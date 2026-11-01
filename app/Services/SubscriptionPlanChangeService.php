@@ -110,6 +110,8 @@ class SubscriptionPlanChangeService
             'reason' => "Plan upgraded to {$targetPlan->name} ({$interval})",
         ]);
 
+        $subscription->resolvePendingCancellation('Superseded by plan upgrade.');
+
         return $subscription->fresh();
     }
 
@@ -137,6 +139,8 @@ class SubscriptionPlanChangeService
                 'new_plan_id' => $targetPlan->id,
                 'reason' => "Plan changed to {$targetPlan->name} ({$interval})",
             ]);
+
+            $subscription->resolvePendingCancellation('Superseded by plan change.');
         }
 
         return $subscription->fresh();
@@ -183,6 +187,8 @@ class SubscriptionPlanChangeService
                         'new_plan_id' => $targetPlan->id,
                         'reason' => "Scheduled downgrade to {$targetPlan->name} applied",
                     ]);
+
+                    $subscription->resolvePendingCancellation('Superseded by plan change.');
 
                     $count++;
                 }

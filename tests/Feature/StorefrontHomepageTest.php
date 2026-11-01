@@ -53,6 +53,8 @@ class StorefrontHomepageTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($this->tenant);
+
         $theme = Theme::firstOrCreate(
             ['slug' => 'commerce-default'],
             [
@@ -218,6 +220,8 @@ class StorefrontHomepageTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($otherTenant);
+
         $otherStorefront = Storefront::create([
             'tenant_id' => $otherTenant->id,
             'theme_id' => $this->storefront->theme_id,
@@ -272,6 +276,8 @@ class StorefrontHomepageTest extends TestCase
             'store_url' => '/store/other-store',
             'status' => 'active',
         ]);
+
+        $this->grantStorefrontEntitlement($otherTenant);
 
         $tenantBrand = Brand::create([
             'tenant_id' => $this->tenant->id,
@@ -341,6 +347,8 @@ class StorefrontHomepageTest extends TestCase
             'store_url' => '/store/other-store',
             'status' => 'active',
         ]);
+
+        $this->grantStorefrontEntitlement($otherTenant);
 
         $tenantProduct = Product::create([
             'tenant_id' => $this->tenant->id,
@@ -597,6 +605,8 @@ class StorefrontHomepageTest extends TestCase
             'store_url' => '/store/other-store',
             'status' => 'active',
         ]);
+
+        $this->grantStorefrontEntitlement($otherTenant);
 
         $otherStorefront = Storefront::create([
             'tenant_id' => $otherTenant->id,

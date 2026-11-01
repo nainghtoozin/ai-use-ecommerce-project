@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Policies\CustomerAddressPolicy;
 use App\Policies\CustomerOrderPolicy;
 use App\Policies\UserPolicy;
+use App\Services\Backup\SystemBackupAuditLogger;
 use App\Services\NotificationPreferenceService;
 use App\Services\OrderService;
 use App\Services\Payment\PaymentGatewayResolver;
@@ -57,6 +58,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -223,6 +225,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\StorefrontConfigurationResolver::class);
         $this->app->singleton(\App\Services\StorefrontRevisionService::class);
 
+        $this->app->bind(SystemBackupAuditLogger::class, fn () => new SystemBackupAuditLogger(
+            Log::channel((string) config('backups.log_channel', 'backups'))
+        ));
+
         $this->app->singleton(\Inertia\ResponseFactory::class, function ($app) {
             return new \App\Inertia\InertiaResponseFactory;
         });
@@ -241,6 +247,27 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('merchant-backup', function (Request $request) {
+            $tenantId = \App\Models\Tenant::getCurrent()?->id;
+            $key = $tenantId ? 'tenant:' . $tenantId : 'user:' . ($request->user()?->getAuthIdentifier() ?? $request->ip());
+
+            return Limit::perHour((int) config('exports.backup.per_hour', 10))->by($key);
+        });
+
+        RateLimiter::for('merchant-backup-verify', function (Request $request) {
+            $tenantId = \App\Models\Tenant::getCurrent()?->id;
+            $key = $tenantId ? 'tenant:' . $tenantId : 'user:' . ($request->user()?->getAuthIdentifier() ?? $request->ip());
+
+            return Limit::perHour((int) config('exports.backup.verify_per_hour', 5))->by($key);
+        });
+
+        RateLimiter::for('merchant-backup-recover', function (Request $request) {
+            $tenantId = \App\Models\Tenant::getCurrent()?->id;
+            $key = $tenantId ? 'tenant:' . $tenantId : 'user:' . ($request->user()?->getAuthIdentifier() ?? $request->ip());
+
+            return Limit::perHour((int) config('exports.backup.recover_per_hour', 3))->by($key);
         });
 
         Gate::policy(User::class, UserPolicy::class);

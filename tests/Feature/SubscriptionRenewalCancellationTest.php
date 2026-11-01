@@ -227,7 +227,7 @@ class SubscriptionRenewalCancellationTest extends TestCase
         $this->assertSame(0, SubscriptionCancellationRequest::withoutTenantScope()->count());
     }
 
-    public function test_cancel_request_creates_pending_request_without_changing_status(): void
+    public function test_cancel_request_creates_scheduled_request_without_changing_status(): void
     {
         $owner = $this->makeOwner($this->tenant);
         $this->actingAs($owner);
@@ -241,7 +241,7 @@ class SubscriptionRenewalCancellationTest extends TestCase
 
         $request = SubscriptionCancellationRequest::withoutTenantScope()->first();
         $this->assertNotNull($request);
-        $this->assertSame(SubscriptionCancellationRequest::STATUS_PENDING, $request->status);
+        $this->assertSame(SubscriptionCancellationRequest::STATUS_SCHEDULED, $request->status);
         $this->assertSame($this->tenant->id, $request->tenant_id);
         $this->assertSame($this->subscription->id, $request->subscription_id);
         $this->assertSame($owner->id, $request->requested_by);
@@ -261,21 +261,347 @@ class SubscriptionRenewalCancellationTest extends TestCase
         $this->assertSame(1, SubscriptionCancellationRequest::withoutTenantScope()->count());
     }
 
-    public function test_withdraw_cancel_request(): void
+    public function test_cancel_request_is_not_auto_withdrawn_and_shows_scheduled(): void
+    {
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'too_expensive'])
+            ->assertRedirect();
+
+        // Submitting a cancellation must never withdraw or reverse the request.
+        $this->assertSame(1, SubscriptionCancellationRequest::withoutTenantScope()->count());
+        $this->assertSame(0, SubscriptionCancellationRequest::withoutTenantScope()
+            ->where('status', SubscriptionCancellationRequest::STATUS_WITHDRAWN)->count());
+
+        // The billing page reports the request as pending review.
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Billing/Index')
+                ->where('cancellation.active.status', SubscriptionCancellationRequest::STATUS_SCHEDULED)
+            );
+    }
+
+    public function test_cancel_request_preserves_access_until_paid_through_date(): void
+    {
+        $originalExpiry = $this->subscription->expires_at->toDateTimeString();
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'no_longer_needed'])
+            ->assertRedirect();
+
+        $subscription = $this->subscription->fresh();
+        $this->assertSame('active', $subscription->status);
+        $this->assertSame($originalExpiry, $subscription->expires_at->toDateTimeString());
+        $this->assertNull($subscription->cancelled_at);
+        $this->assertFalse($subscription->hasExpired());
+        $this->assertNull($this->tenant->fresh()->locked_at);
+
+        // Access is still granted after the request is submitted.
+        $this->get("/store/{$this->tenant->slug}/admin/billing")->assertOk();
+    }
+
+    public function test_cancel_request_creates_no_refund_or_invoice(): void
+    {
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $before = \App\Models\Invoice::withoutTenantScope()->count();
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'switching_platform'])
+            ->assertRedirect();
+
+        $this->assertSame($before, \App\Models\Invoice::withoutTenantScope()->count());
+        $this->assertSame(0, \App\Models\Invoice::withoutTenantScope()
+            ->where('status', \App\Models\Invoice::STATUS_REFUNDED)->count());
+    }
+
+    public function test_cancellation_keeps_store_and_business_data_intact(): void
+    {
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $userCount = \Illuminate\Support\Facades\DB::table('users')->where('tenant_id', $this->tenant->id)->count();
+        $planId = $this->subscription->plan_id;
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'business_closed'])
+            ->assertRedirect();
+
+        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('tenants')->where('id', $this->tenant->id)->count());
+        $this->assertNull($this->tenant->fresh()->locked_at);
+        $this->assertSame($userCount, \Illuminate\Support\Facades\DB::table('users')->where('tenant_id', $this->tenant->id)->count());
+        $this->assertSame($planId, $this->subscription->fresh()->plan_id);
+        $this->assertSame('active', $this->subscription->fresh()->status);
+    }
+
+    public function test_rejected_renewal_payment_does_not_extend_access_or_resolve_cancellation(): void
+    {
+        $this->makeCancellationRequest();
+        $originalExpiry = $this->subscription->expires_at->toDateTimeString();
+
+        $manual = app(ManualPaymentService::class);
+        $intent = $manual->initiate(
+            tenant: $this->tenant,
+            plan: $this->plan,
+            billingCycle: 'monthly',
+            amount: 100.0,
+            currency: Currency::fromCode('MMK'),
+        );
+        $manual->confirmPayment($intent);
+        $manual->rejectPayment($intent->fresh(), 'Invalid slip');
+
+        $subscription = $this->subscription->fresh();
+        $this->assertSame('active', $subscription->status);
+        $this->assertSame($originalExpiry, $subscription->expires_at->toDateTimeString());
+        $this->assertTrue($subscription->activeCancellationRequest()->exists());
+    }
+
+    public function test_withdraw_endpoint_is_removed_and_request_stays_scheduled(): void
     {
         $this->actingAs($this->makeOwner($this->tenant));
 
         $this->from("/store/{$this->tenant->slug}/admin/billing")
             ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'too_expensive']);
 
-        $this->from("/store/{$this->tenant->slug}/admin/billing")
-            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request/withdraw")
-            ->assertRedirect();
+        // Withdrawal is no longer a route; the request must remain pending.
+        $this->post("/store/{$this->tenant->slug}/admin/billing/cancel-request/withdraw")
+            ->assertStatus(404);
 
         $this->assertSame(
-            SubscriptionCancellationRequest::STATUS_WITHDRAWN,
+            SubscriptionCancellationRequest::STATUS_SCHEDULED,
             SubscriptionCancellationRequest::withoutTenantScope()->first()->status
         );
+    }
+
+    // ── Cancellation availability & status messaging (UI-facing props) ──
+
+    public function test_cancel_is_available_well_before_the_renewal_window(): void
+    {
+        // 60 days out: far outside the 7-day renewal window, yet cancellation must still be offered.
+        $this->subscription->update(['expires_at' => now()->addDays(60)]);
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Billing/Index')
+                ->where('cancellation.can_request', true)
+                ->where('renewal.due', false)
+            );
+    }
+
+    public function test_cancel_is_available_for_past_due_subscription(): void
+    {
+        $this->subscription->update(['status' => 'past_due', 'expires_at' => now()->subDay()]);
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('cancellation.can_request', true));
+    }
+
+    public function test_cancel_is_not_offered_for_free_plan(): void
+    {
+        $freePlan = Plan::create([
+            'name' => 'Free', 'slug' => 'free-' . uniqid(), 'description' => 'Free',
+            'monthly_price' => 0, 'yearly_price' => 0, 'status' => 'active',
+        ]);
+        $this->subscription->update(['plan_id' => $freePlan->id]);
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('cancellation.can_request', false));
+    }
+
+    public function test_cancel_is_not_offered_for_expired_subscription(): void
+    {
+        $this->subscription->update(['status' => 'expired', 'expires_at' => now()->subDays(9)]);
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('cancellation.can_request', false));
+    }
+
+    public function test_cancel_is_not_offered_while_a_cancellation_is_scheduled(): void
+    {
+        $this->makeCancellationRequest();
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('cancellation.can_request', false)
+                ->where('cancellation.active.status', SubscriptionCancellationRequest::STATUS_SCHEDULED)
+            );
+    }
+
+    public function test_cancel_is_not_offered_without_billing_manage_permission(): void
+    {
+        $user = User::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Viewer',
+            'email' => 'viewer-' . uniqid() . '@test.com',
+            'password' => bcrypt('password'),
+            'status' => 'active',
+            'is_owner' => false,
+        ]);
+        $user->givePermissionTo(['billing.view']);
+        $this->actingAs($user);
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('cancellation.can_request', false));
+    }
+
+    public function test_scheduled_cancellation_exposes_paid_through_date(): void
+    {
+        $expiry = $this->subscription->expires_at->toDateString();
+        $this->makeCancellationRequest();
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('cancellation.active.status', SubscriptionCancellationRequest::STATUS_SCHEDULED)
+                ->where('cancellation.active.paid_through_at', $expiry)
+            );
+    }
+
+    public function test_approved_cancellation_is_exposed_as_latest_with_paid_through_date(): void
+    {
+        $expiry = $this->subscription->expires_at->toDateString();
+        $request = $this->makeCancellationRequest();
+        $request->update([
+            'status' => SubscriptionCancellationRequest::STATUS_APPROVED,
+            'reviewed_at' => now(),
+        ]);
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('cancellation.latest.status', SubscriptionCancellationRequest::STATUS_APPROVED)
+                ->where('cancellation.latest.paid_through_at', $expiry)
+            );
+    }
+
+    // ── Auto-resolution on successful renewal / plan change ──
+
+    public function test_renewal_submission_does_not_supersede_until_payment_approved(): void
+    {
+        $this->makeCancellationRequest();
+
+        $manual = app(ManualPaymentService::class);
+        $intent = $manual->initiate(
+            tenant: $this->tenant,
+            plan: $this->plan,
+            billingCycle: 'monthly',
+            amount: 100.0,
+            currency: Currency::fromCode('MMK'),
+        );
+        $manual->confirmPayment($intent);
+
+        // Submitting/confirming a payment is not a successful application.
+        $this->assertSame(
+            SubscriptionCancellationRequest::STATUS_SCHEDULED,
+            SubscriptionCancellationRequest::withoutTenantScope()->first()->status
+        );
+    }
+
+    public function test_successful_renewal_supersedes_scheduled_cancellation(): void
+    {
+        $this->makeCancellationRequest();
+
+        $manual = app(ManualPaymentService::class);
+        $intent = $manual->initiate(
+            tenant: $this->tenant,
+            plan: $this->plan,
+            billingCycle: 'monthly',
+            amount: 100.0,
+            currency: Currency::fromCode('MMK'),
+        );
+        $manual->confirmPayment($intent);
+        $manual->approvePayment($intent->fresh());
+
+        $request = SubscriptionCancellationRequest::withoutTenantScope()->first();
+        $this->assertSame(SubscriptionCancellationRequest::STATUS_SUPERSEDED, $request->status);
+        $this->assertFalse($this->subscription->fresh()->activeCancellationRequest()->exists());
+        $this->assertSame('active', $this->subscription->fresh()->status);
+    }
+
+    public function test_applied_plan_change_supersedes_scheduled_cancellation(): void
+    {
+        $this->makeCancellationRequest();
+
+        $larger = Plan::create([
+            'name' => 'Enterprise', 'slug' => 'enterprise-' . uniqid(), 'description' => 'Big',
+            'monthly_price' => 300, 'yearly_price' => 3000, 'status' => 'active',
+        ]);
+
+        app(\App\Services\SubscriptionPlanChangeService::class)
+            ->executeUpgrade($this->subscription, $larger, 'monthly');
+
+        $request = SubscriptionCancellationRequest::withoutTenantScope()->first();
+        $this->assertSame(SubscriptionCancellationRequest::STATUS_SUPERSEDED, $request->status);
+        $this->assertSame($larger->id, $this->subscription->fresh()->plan_id);
+    }
+
+    public function test_superseded_cancellation_allows_a_new_request(): void
+    {
+        $this->makeCancellationRequest();
+
+        app(\App\Services\SubscriptionPlanChangeService::class)
+            ->executeUpgrade($this->subscription, Plan::create([
+                'name' => 'Plus', 'slug' => 'plus-' . uniqid(), 'description' => 'Plus',
+                'monthly_price' => 200, 'yearly_price' => 2000, 'status' => 'active',
+            ]), 'monthly');
+
+        $this->actingAs($this->makeOwner($this->tenant));
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'missing_features'])
+            ->assertRedirect();
+
+        $this->assertSame(2, SubscriptionCancellationRequest::withoutTenantScope()->count());
+        $this->assertSame(
+            1,
+            SubscriptionCancellationRequest::withoutTenantScope()->where('status', SubscriptionCancellationRequest::STATUS_SCHEDULED)->count()
+        );
+    }
+
+    public function test_renewal_and_cancellation_coexist_while_scheduled(): void
+    {
+        $this->subscription->update(['expires_at' => now()->addDays(3)]);
+        $this->makeCancellationRequest();
+
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Billing/Index')
+                ->where('cancellation.active.status', SubscriptionCancellationRequest::STATUS_SCHEDULED)
+                ->where('renewal.can_renew', true)
+            );
+    }
+
+    public function test_renewal_available_after_expiry_with_scheduled_cancellation(): void
+    {
+        $this->subscription->update(['status' => 'expired', 'expires_at' => now()->subDays(2)]);
+        $this->makeCancellationRequest();
+
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->get("/store/{$this->tenant->slug}/admin/billing")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Billing/Index')
+                ->where('renewal.is_lapsed', true)
+                ->where('renewal.can_renew', true)
+            );
     }
 
     public function test_cancel_request_requires_billing_manage_permission(): void
@@ -306,34 +632,46 @@ class SubscriptionRenewalCancellationTest extends TestCase
         Tenant::setCurrent(null);
     }
 
-    // ── SuperAdmin review ──
+    // ── SuperAdmin oversight (no approval) ──
 
-    public function test_superadmin_approval_sets_cancelled_at_but_keeps_status(): void
+    public function test_cancellation_is_scheduled_without_superadmin_approval(): void
+    {
+        $this->actingAs($this->makeOwner($this->tenant));
+
+        $this->from("/store/{$this->tenant->slug}/admin/billing")
+            ->post("/store/{$this->tenant->slug}/admin/billing/cancel-request", ['reason' => 'too_expensive'])
+            ->assertRedirect();
+
+        $request = SubscriptionCancellationRequest::withoutTenantScope()->first();
+        $this->assertNotNull($request);
+        $this->assertNull($request->reviewed_by);
+        $this->assertNull($request->reviewed_at);
+        $this->assertTrue($this->subscription->fresh()->activeCancellationRequest()->exists());
+    }
+
+    public function test_superadmin_cancellation_review_route_is_removed(): void
     {
         $request = $this->makeCancellationRequest();
         $this->actingAs($this->makeSuperAdmin());
 
         $this->post("/superadmin/cancellation-requests/{$request->id}/review", ['action' => 'approve'])
-            ->assertRedirect();
+            ->assertStatus(404);
 
-        $this->assertSame(SubscriptionCancellationRequest::STATUS_APPROVED, $request->fresh()->status);
-        $this->assertNotNull($request->fresh()->reviewed_at);
-        $this->assertNotNull($this->subscription->fresh()->cancelled_at);
-        $this->assertSame('active', $this->subscription->fresh()->status);
+        // The scheduled cancellation is untouched and still in effect.
+        $this->assertSame(SubscriptionCancellationRequest::STATUS_SCHEDULED, $request->fresh()->status);
     }
 
-    public function test_superadmin_reject_does_not_cancel_subscription(): void
+    public function test_superadmin_cancellation_list_is_read_only_oversight(): void
     {
-        $request = $this->makeCancellationRequest();
+        $this->makeCancellationRequest();
         $this->actingAs($this->makeSuperAdmin());
 
-        $this->post("/superadmin/cancellation-requests/{$request->id}/review", [
-            'action' => 'reject',
-            'review_note' => 'Please contact support.',
-        ])->assertRedirect();
-
-        $this->assertSame(SubscriptionCancellationRequest::STATUS_REJECTED, $request->fresh()->status);
-        $this->assertNull($this->subscription->fresh()->cancelled_at);
+        $this->get('/superadmin/cancellation-requests')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('SuperAdmin/CancellationRequests/Index')
+                ->has('requests.data', 1)
+            );
     }
 
     // ── Helpers ──
@@ -344,7 +682,7 @@ class SubscriptionRenewalCancellationTest extends TestCase
             'subscription_id' => $this->subscription->id,
             'reason' => 'too_expensive',
             'comment' => 'Test',
-            'status' => SubscriptionCancellationRequest::STATUS_PENDING,
+            'status' => SubscriptionCancellationRequest::STATUS_SCHEDULED,
         ]);
         $request->tenant_id = $this->tenant->id;
         $request->save();

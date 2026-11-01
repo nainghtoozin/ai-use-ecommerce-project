@@ -47,6 +47,10 @@ class StorefrontCheckoutController extends Controller
             abort(404);
         }
 
+        if (!$tenant->canServePublicStorefront()) {
+            abort(404);
+        }
+
         $draftPreview = (int) $request->session()->get('storefront_preview_draft') === (int) $tenant->id;
 
         $guestCheckout = true;
@@ -169,6 +173,10 @@ class StorefrontCheckoutController extends Controller
     {
         $tenant = Tenant::getCurrent();
         if (!$tenant) {
+            abort(404);
+        }
+
+        if (!$tenant->canServePublicStorefront()) {
             abort(404);
         }
 
@@ -297,6 +305,10 @@ class StorefrontCheckoutController extends Controller
     {
         $tenant = Tenant::getCurrent();
         if (!$tenant) {
+            abort(404);
+        }
+
+        if (!$tenant->canServePublicStorefront()) {
             abort(404);
         }
 

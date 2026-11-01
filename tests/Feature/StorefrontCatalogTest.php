@@ -52,6 +52,10 @@ class StorefrontCatalogTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($this->tenant);
+
+        Tenant::setCurrent($this->tenant);
+
         $this->category = Category::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Electronics',
@@ -87,8 +91,28 @@ class StorefrontCatalogTest extends TestCase
             'type' => 'single',
             'price' => 99,
             'stock' => 0,
+            'category_id' => $this->category->id,
             'status' => 'inactive',
         ]);
+    }
+
+    private function createProductForTenant(Tenant $tenant, array $attributes): Product
+    {
+        $current = Tenant::getCurrent();
+        Tenant::setCurrent($tenant);
+
+        try {
+            return Product::create($attributes);
+        } finally {
+            Tenant::setCurrent($current);
+        }
+    }
+
+    private function catalogProductNames($response): array
+    {
+        $products = $response->viewData('page')['props']['products']['data'] ?? [];
+
+        return array_column($products, 'name');
     }
 
     /** @test */
@@ -160,6 +184,7 @@ class StorefrontCatalogTest extends TestCase
     public function price_sort_low_to_high_works(): void
     {
         $cheapProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Cheap Item',
             'type' => 'single',
@@ -169,6 +194,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         $expensiveProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Item',
             'type' => 'single',
@@ -188,6 +214,7 @@ class StorefrontCatalogTest extends TestCase
     public function price_sort_high_to_low_works(): void
     {
         $cheapProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Cheap Item',
             'type' => 'single',
@@ -197,6 +224,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         $expensiveProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Item',
             'type' => 'single',
@@ -216,6 +244,7 @@ class StorefrontCatalogTest extends TestCase
     public function name_sort_works(): void
     {
         $productA = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Alpha Product',
             'type' => 'single',
@@ -225,6 +254,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         $productZ = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Zebra Product',
             'type' => 'single',
@@ -301,8 +331,17 @@ class StorefrontCatalogTest extends TestCase
             'status' => 'active',
         ]);
 
-        $otherProduct = Product::create([
+        $this->grantStorefrontEntitlement($otherTenant);
+
+        $otherCategory = Category::create([
             'tenant_id' => $otherTenant->id,
+            'name' => 'Other Category',
+            'slug' => 'other-category',
+            'is_active' => true,
+        ]);
+
+        $otherProduct = $this->createProductForTenant($otherTenant, [
+            'category_id' => $otherCategory->id,
             'name' => 'Other Store Product',
             'type' => 'single',
             'price' => 100,
@@ -340,6 +379,7 @@ class StorefrontCatalogTest extends TestCase
     {
         for ($i = 0; $i < 15; $i++) {
             Product::create([
+                'category_id' => $this->category->id,
                 'tenant_id' => $this->tenant->id,
                 'name' => "Product {$i}",
                 'type' => 'single',
@@ -352,7 +392,7 @@ class StorefrontCatalogTest extends TestCase
         $response = $this->get("/store/{$this->tenant->slug}/products?page=1");
 
         $response->assertOk();
-        $this->assertLessThanOrEqual(12, substr_count($response->getContent(), 'Product'));
+        $this->assertCount(12, $response->viewData('page')['props']['products']['data']);
     }
 
     /** @test */
@@ -379,6 +419,7 @@ class StorefrontCatalogTest extends TestCase
     public function min_price_filter_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Cheap Product',
             'type' => 'single',
@@ -388,6 +429,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Product',
             'type' => 'single',
@@ -407,6 +449,7 @@ class StorefrontCatalogTest extends TestCase
     public function max_price_filter_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Cheap Product',
             'type' => 'single',
@@ -416,6 +459,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Product',
             'type' => 'single',
@@ -435,6 +479,7 @@ class StorefrontCatalogTest extends TestCase
     public function price_range_filter_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Cheap Product',
             'type' => 'single',
@@ -444,6 +489,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Mid Product',
             'type' => 'single',
@@ -453,6 +499,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Expensive Product',
             'type' => 'single',
@@ -473,6 +520,7 @@ class StorefrontCatalogTest extends TestCase
     public function invalid_price_values_are_handled(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Normal Product',
             'type' => 'single',
@@ -491,6 +539,7 @@ class StorefrontCatalogTest extends TestCase
     public function product_type_filter_single_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Single Product',
             'type' => 'single',
@@ -500,6 +549,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Variable Product',
             'type' => 'variable',
@@ -511,14 +561,16 @@ class StorefrontCatalogTest extends TestCase
         $response = $this->get("/store/{$this->tenant->slug}/products?type=single");
 
         $response->assertOk();
-        $response->assertSee('Single Product');
-        $response->assertDontSee('Variable Product');
+        $names = $this->catalogProductNames($response);
+        $this->assertContains('Single Product', $names);
+        $this->assertNotContains('Variable Product', $names);
     }
 
     /** @test */
     public function product_type_filter_variable_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Single Product',
             'type' => 'single',
@@ -528,6 +580,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Variable Product',
             'type' => 'variable',
@@ -539,14 +592,16 @@ class StorefrontCatalogTest extends TestCase
         $response = $this->get("/store/{$this->tenant->slug}/products?type=variable");
 
         $response->assertOk();
-        $response->assertDontSee('Single Product');
-        $response->assertSee('Variable Product');
+        $names = $this->catalogProductNames($response);
+        $this->assertContains('Variable Product', $names);
+        $this->assertNotContains('Single Product', $names);
     }
 
     /** @test */
     public function invalid_sort_value_defaults_to_recommended(): void
     {
         $productA = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Alpha Product',
             'type' => 'single',
@@ -557,6 +612,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         $productZ = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Zebra Product',
             'type' => 'single',
@@ -576,6 +632,7 @@ class StorefrontCatalogTest extends TestCase
     public function recommended_sort_shows_featured_first(): void
     {
         $regularProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Regular Product',
             'type' => 'single',
@@ -586,6 +643,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         $featuredProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Featured Product',
             'type' => 'single',
@@ -605,6 +663,7 @@ class StorefrontCatalogTest extends TestCase
     public function name_asc_sort_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Zebra Product',
             'type' => 'single',
@@ -614,6 +673,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Alpha Product',
             'type' => 'single',
@@ -635,6 +695,7 @@ class StorefrontCatalogTest extends TestCase
     public function name_desc_sort_works(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Zebra Product',
             'type' => 'single',
@@ -644,6 +705,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Alpha Product',
             'type' => 'single',
@@ -658,7 +720,7 @@ class StorefrontCatalogTest extends TestCase
         $content = $response->getContent();
         $alphaPos = strpos($content, 'Alpha Product');
         $zebraPos = strpos($content, 'Zebra Product');
-        $this->assertGreaterThan($alphaPos, $zebraPos);
+        $this->assertLessThan($alphaPos, $zebraPos);
     }
 
     /** @test */
@@ -713,24 +775,26 @@ class StorefrontCatalogTest extends TestCase
     public function newest_sort_works(): void
     {
         $oldProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Old Product',
             'type' => 'single',
             'price' => 100,
             'stock' => 10,
             'status' => 'active',
-            'created_at' => now()->subDays(30),
         ]);
+        $oldProduct->forceFill(['created_at' => now()->subDays(30)])->save();
 
         $newProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'New Product',
             'type' => 'single',
             'price' => 100,
             'stock' => 10,
             'status' => 'active',
-            'created_at' => now(),
         ]);
+        $newProduct->forceFill(['created_at' => now()])->save();
 
         $response = $this->get("/store/{$this->tenant->slug}/products?sort=newest");
 
@@ -745,6 +809,7 @@ class StorefrontCatalogTest extends TestCase
     public function negative_price_values_are_handled(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Normal Product',
             'type' => 'single',
@@ -763,6 +828,7 @@ class StorefrontCatalogTest extends TestCase
     public function legacy_sort_name_behaves_as_name_asc(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Zebra Product',
             'type' => 'single',
@@ -772,6 +838,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Alpha Product',
             'type' => 'single',
@@ -793,6 +860,7 @@ class StorefrontCatalogTest extends TestCase
     public function invalid_sort_value_does_not_inject_sql(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Safe Product',
             'type' => 'single',
@@ -822,6 +890,7 @@ class StorefrontCatalogTest extends TestCase
     public function min_greater_than_max_is_swapped_safely(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Cheap Product',
             'type' => 'single',
@@ -831,6 +900,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Mid Product',
             'type' => 'single',
@@ -850,6 +920,7 @@ class StorefrontCatalogTest extends TestCase
     public function zero_price_filter_is_valid(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Zero Product',
             'type' => 'single',
@@ -859,6 +930,7 @@ class StorefrontCatalogTest extends TestCase
         ]);
 
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Pricey Product',
             'type' => 'single',
@@ -878,6 +950,7 @@ class StorefrontCatalogTest extends TestCase
     public function empty_price_params_are_ignored(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Visible Product',
             'type' => 'single',
@@ -915,6 +988,7 @@ class StorefrontCatalogTest extends TestCase
     public function non_numeric_brand_id_is_ignored(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Branded Product',
             'type' => 'single',
@@ -934,6 +1008,7 @@ class StorefrontCatalogTest extends TestCase
     public function invalid_type_value_is_ignored(): void
     {
         Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Normal Product',
             'type' => 'single',
@@ -958,6 +1033,8 @@ class StorefrontCatalogTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($otherTenant);
+
         $otherCategory = Category::create([
             'tenant_id' => $otherTenant->id,
             'name' => 'Other Category',
@@ -965,8 +1042,7 @@ class StorefrontCatalogTest extends TestCase
             'is_active' => true,
         ]);
 
-        Product::create([
-            'tenant_id' => $otherTenant->id,
+        $this->createProductForTenant($otherTenant, [
             'name' => 'Other Store Product',
             'type' => 'single',
             'price' => 100,
@@ -979,7 +1055,7 @@ class StorefrontCatalogTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Other Store Product');
-        $response->assertSee('iPhone 15');
+        $this->assertSame([], $this->catalogProductNames($response));
     }
 
     /** @test */
@@ -992,6 +1068,8 @@ class StorefrontCatalogTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($otherTenant);
+
         $otherBrand = Brand::create([
             'tenant_id' => $otherTenant->id,
             'name' => 'Other Brand',
@@ -999,8 +1077,8 @@ class StorefrontCatalogTest extends TestCase
             'is_active' => true,
         ]);
 
-        Product::create([
-            'tenant_id' => $otherTenant->id,
+        $this->createProductForTenant($otherTenant, [
+            'category_id' => $this->category->id,
             'name' => 'Other Store Product',
             'type' => 'single',
             'price' => 100,
@@ -1025,6 +1103,8 @@ class StorefrontCatalogTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($otherTenant);
+
         $otherBrand = Brand::create([
             'tenant_id' => $otherTenant->id,
             'name' => 'UniqueOtherBrandName',
@@ -1032,8 +1112,8 @@ class StorefrontCatalogTest extends TestCase
             'is_active' => true,
         ]);
 
-        Product::create([
-            'tenant_id' => $otherTenant->id,
+        $this->createProductForTenant($otherTenant, [
+            'category_id' => $this->category->id,
             'name' => 'Other Product',
             'type' => 'single',
             'price' => 100,
@@ -1091,6 +1171,7 @@ class StorefrontCatalogTest extends TestCase
     public function combo_products_visible_in_catalog_when_featuregate_disabled(): void
     {
         $comboProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Combo Bundle',
             'type' => 'combo',
@@ -1105,3 +1186,4 @@ class StorefrontCatalogTest extends TestCase
         $response->assertSee('Combo Bundle');
     }
 }
+

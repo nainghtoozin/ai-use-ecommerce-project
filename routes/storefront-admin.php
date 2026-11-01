@@ -19,7 +19,9 @@ use App\Http\Controllers\Admin\AdminPromotionReportController;
 use App\Http\Controllers\Admin\AdminTownshipController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminBillingController;
+use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\MerchantBackupController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
@@ -85,7 +87,6 @@ Route::prefix('store/{store_slug}/admin')
     Route::post('/billing/renew', [AdminBillingController::class, 'renew'])->name('billing.renew');
     Route::get('/billing/renew-plan', [AdminBillingController::class, 'renewPlan'])->name('billing.renew-plan');
     Route::post('/billing/cancel-request', [AdminBillingController::class, 'requestCancellation'])->name('billing.cancel-request');
-    Route::post('/billing/cancel-request/withdraw', [AdminBillingController::class, 'withdrawCancellation'])->name('billing.cancel-request.withdraw');
     Route::post('/billing/change-plan/preview', [AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
     Route::post('/billing/change-plan/submit', [AdminBillingController::class, 'changePlanSubmit'])->name('billing.change-plan.submit');
     Route::post('/billing/change-plan/execute', [AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
@@ -97,6 +98,26 @@ Route::prefix('store/{store_slug}/admin')
     Route::get('/billing/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('billing.invoices.download');
     Route::get('/billing/invoices/{invoice}/receipt', [InvoiceController::class, 'downloadReceipt'])->name('billing.invoices.receipt');
     Route::delete('/billing/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('billing.invoices.destroy');
+
+    // ── Data export (Account route — accessible even when subscription expired) ──
+    Route::get('/data-export', [DataExportController::class, 'index'])->name('data-export.index');
+    Route::get('/data-export/all', [DataExportController::class, 'downloadAll'])->name('data-export.all');
+    Route::get('/data-export/category/{category}', [DataExportController::class, 'download'])->name('data-export.category');
+
+    // ── Merchant backup (Account route — signed archive, throttled per tenant) ──
+    Route::get('/backups', [MerchantBackupController::class, 'index'])->name('backups.index');
+    Route::get('/backups/download', [MerchantBackupController::class, 'download'])
+        ->middleware('throttle:merchant-backup')
+        ->name('backups.download');
+    Route::get('/backups/preview', [MerchantBackupController::class, 'preview'])->name('backups.preview');
+    Route::post('/backups/verify', [MerchantBackupController::class, 'verifyUpload'])
+        ->middleware('throttle:merchant-backup-verify')
+        ->name('backups.verify');
+    Route::post('/backups/recover', [MerchantBackupController::class, 'recover'])
+        ->middleware('throttle:merchant-backup-recover')
+        ->name('backups.recover');
+    Route::get('/backups/recovered', [MerchantBackupController::class, 'recovered'])
+        ->name('backups.recovered');
 
     // ── Billing document routes (standalone invoice/receipt pages, same tenant guards) ──
     Route::get('/billing/documents/invoices/{invoice}', [\App\Http\Controllers\Admin\BillingDocumentController::class, 'showInvoice'])->name('billing.documents.invoice');

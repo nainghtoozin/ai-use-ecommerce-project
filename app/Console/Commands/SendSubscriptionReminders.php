@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\SendTelegramMessageJob;
 use App\Models\Subscription;
 use App\Models\SubscriptionAuditLog;
+use App\Models\SubscriptionCancellationRequest;
 use App\Notifications\SubscriptionExpiringSoon;
 use App\Services\BillingEmailService;
 use App\Services\NotificationPreferenceService;
@@ -66,6 +67,10 @@ class SendSubscriptionReminders extends Command
         Subscription::where('status', 'active')
             ->whereNotNull('expires_at')
             ->whereDate('expires_at', $targetDate)
+            ->whereDoesntHave('cancellationRequests', fn ($query) => $query->whereIn(
+                'status',
+                SubscriptionCancellationRequest::EFFECTIVE_STATUSES,
+            ))
             ->chunk(100, function ($subscriptions) use (&$count) {
                 foreach ($subscriptions as $sub) {
                     if ($this->billingEmails->sendRenewalReminder($sub)) {
@@ -99,7 +104,9 @@ class SendSubscriptionReminders extends Command
                         continue;
                     }
 
-                    $sub->tenant->notifyAdmins(new SubscriptionExpiringSoon($sub, $days));
+                    $cancellation = $sub->activeCancellationRequest()->first();
+
+                    $sub->tenant->notifyAdmins(new SubscriptionExpiringSoon($sub, $days, $cancellation));
 
                     SubscriptionAuditService::log($sub, self::RENEWAL_EVENT, [
                         'reason' => "Renewal reminder sent ({$days} day(s) before expiry).",
@@ -108,7 +115,7 @@ class SendSubscriptionReminders extends Command
 
                     SendTelegramMessageJob::dispatchForTenant(
                         $sub->tenant_id,
-                        $this->telegramBuilder->billingSubscriptionExpiring($sub, $days),
+                        $this->telegramBuilder->billingSubscriptionExpiring($sub, $days, $cancellation),
                     );
 
                     $count++;

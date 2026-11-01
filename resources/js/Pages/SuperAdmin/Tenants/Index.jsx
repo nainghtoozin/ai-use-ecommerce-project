@@ -22,16 +22,6 @@ export default function TenantsIndex({ tenants, filters }) {
         }, { preserveState: true, replace: true });
     }
 
-    function confirmDelete(tenant) {
-        if (tenant.slug === 'default') {
-            alert('The default tenant cannot be deleted.');
-            return;
-        }
-        if (window.confirm(`Permanently delete tenant "${tenant.name}"? Its users, subscriptions, invoices and store files will be deleted. Tenants with an active subscription cannot be deleted.`)) {
-            router.delete(`/superadmin/tenants/${tenant.id}`);
-        }
-    }
-
     function toggleStatus(tenant) {
         const action = tenant.status === 'active' ? 'suspend' : 'activate';
         if (window.confirm(`${action} tenant "${tenant.name}"?`)) {
@@ -53,6 +43,10 @@ export default function TenantsIndex({ tenants, filters }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
+                            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                                Tenant deletion is temporarily unavailable while the archival workflow is reviewed. Tenant data, billing history, and files are unchanged.
+                            </div>
+
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                                 <form onSubmit={handleSearch} className="flex-1 flex gap-2">
                                     <input
@@ -131,11 +125,6 @@ export default function TenantsIndex({ tenants, filters }) {
                                                         <button onClick={() => toggleStatus(tenant)} className={`${tenant.status === 'active' ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}>
                                                             {tenant.status === 'active' ? 'Suspend' : 'Activate'}
                                                         </button>
-                                                        {tenant.slug !== 'default' && (
-                                                            <button onClick={() => confirmDelete(tenant)} className="text-red-600 hover:text-red-900">
-                                                                Delete
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

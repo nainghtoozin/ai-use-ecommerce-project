@@ -73,7 +73,8 @@ class Subscription extends Model
     public function activeCancellationRequest()
     {
         return $this->hasOne(SubscriptionCancellationRequest::class)
-            ->where('status', SubscriptionCancellationRequest::STATUS_PENDING);
+            ->whereIn('status', SubscriptionCancellationRequest::EFFECTIVE_STATUSES)
+            ->latest();
     }
 
     public function auditLogs()
@@ -260,6 +261,38 @@ class Subscription extends Model
             && $this->status !== 'canceled';
     }
 
+    /**
+     * Whether this subscription currently entitles the tenant to serve the
+     * public storefront and accept orders. A pending subscription has never
+     * been paid or activated and therefore grants no service, even when its
+     * billing dates are empty. Free plans are always entitled.
+     */
+    public function grantsService(): bool
+    {
+        if ($this->plan?->isFree()) {
+            return true;
+        }
+
+        if ($this->isPending()) {
+            return false;
+        }
+
+        if ($this->isTrialing() || $this->isActive()) {
+            return $this->expires_at !== null && $this->expires_at->isFuture();
+        }
+
+        if ($this->isPastDue()) {
+            return $this->expires_at !== null
+                && $this->expires_at->copy()->addDays(self::GRACE_DAYS)->isFuture();
+        }
+
+        if ($this->isCanceled()) {
+            return $this->expires_at !== null && $this->expires_at->isFuture();
+        }
+
+        return false;
+    }
+
     public function daysUntilExpiry(): int
     {
         if (!$this->expires_at) {
@@ -318,6 +351,26 @@ class Subscription extends Model
 
     public function activate(): void
     {
+        if (!$this->expires_at) {
+            $plan = $this->plan;
+            $expiry = $plan && !$plan->isFree()
+                ? $plan->calculateExpiryDate(now(), $this->billing_interval ?: $plan->defaultInterval())
+                : null;
+
+            if ($expiry) {
+                $this->update([
+                    'status' => 'active',
+                    'starts_at' => $this->starts_at ?? now(),
+                    'expires_at' => $expiry,
+                    'suspended_at' => null,
+                ]);
+
+                $this->tenant->unlock();
+
+                return;
+            }
+        }
+
         if (!$this->suspended_at) {
             $this->update(['status' => 'active']);
             $this->tenant->unlock();
@@ -383,6 +436,27 @@ class Subscription extends Model
             'cancelled_at' => now(),
             'expires_at' => now(),
         ]);
+    }
+
+    /**
+     * Void the active (scheduled) cancellation because the merchant renewed or
+     * changed plans and will continue using the subscription. The request is
+     * retained for history (never deleted), only its status changes.
+     */
+    public function resolvePendingCancellation(string $reason): bool
+    {
+        $request = $this->activeCancellationRequest()->first();
+
+        if (!$request) {
+            return false;
+        }
+
+        $request->update([
+            'status' => SubscriptionCancellationRequest::STATUS_SUPERSEDED,
+            'review_note' => $reason,
+        ]);
+
+        return true;
     }
 
     /* ── Plan change (upgrade / downgrade) ── */

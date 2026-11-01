@@ -116,6 +116,8 @@ class TenantAccessIsolationTest extends TenantIsolationTestCase
 
     public function test_owner_role_resolution_is_tenant_scoped(): void
     {
+        app()->instance('current.tenant', $this->tenantA);
+
         // OwnerA has admin role in tenantA
         $this->assertTrue($this->ownerA->hasRole('admin'));
 
@@ -131,12 +133,16 @@ class TenantAccessIsolationTest extends TenantIsolationTestCase
 
     public function test_permissions_are_resolved_through_membership(): void
     {
+        app()->instance('current.tenant', $this->tenantA);
+
         // OwnerA has all permissions through owner status
         $this->assertTrue($this->ownerA->hasPermissionTo('products.view'));
     }
 
     public function test_permissions_do_not_leak_across_tenants(): void
     {
+        app()->instance('current.tenant', $this->tenantA);
+
         // CustomerA should only have permissions from their role
         $permissions = $this->customerA->getAllPermissions();
 

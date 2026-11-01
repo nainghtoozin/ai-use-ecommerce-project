@@ -9,10 +9,26 @@ class SubscriptionCancellationRequest extends Model
 {
     use TenantAware;
 
+    // Self-service cancellation: scheduled immediately by the merchant, effective
+    // at the end of the paid period. No SuperAdmin approval is required.
+    public const STATUS_SCHEDULED = 'scheduled';
+
+    // Legacy statuses retained for historical rows and audit.
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
     public const STATUS_WITHDRAWN = 'withdrawn';
+    public const STATUS_SUPERSEDED = 'superseded';
+
+    /**
+     * Statuses that represent a cancellation currently in effect (or awaiting no
+     * further action). Used for duplicate prevention and auto-resolution.
+     */
+    public const EFFECTIVE_STATUSES = [
+        self::STATUS_SCHEDULED,
+        self::STATUS_APPROVED,
+        self::STATUS_PENDING,
+    ];
 
     public const REASONS = [
         'too_expensive' => 'Too expensive',

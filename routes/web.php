@@ -346,7 +346,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
     Route::post('/billing/renew', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renew'])->name('billing.renew');
     Route::get('/billing/renew-plan', [\App\Http\Controllers\Admin\AdminBillingController::class, 'renewPlan'])->name('billing.renew-plan');
     Route::post('/billing/cancel-request', [\App\Http\Controllers\Admin\AdminBillingController::class, 'requestCancellation'])->name('billing.cancel-request');
-    Route::post('/billing/cancel-request/withdraw', [\App\Http\Controllers\Admin\AdminBillingController::class, 'withdrawCancellation'])->name('billing.cancel-request.withdraw');
     Route::post('/billing/change-plan/preview', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanPreview'])->name('billing.change-plan.preview');
     Route::post('/billing/change-plan/submit', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanSubmit'])->name('billing.change-plan.submit');
     Route::post('/billing/change-plan/execute', [\App\Http\Controllers\Admin\AdminBillingController::class, 'changePlanExecute'])->name('billing.change-plan.execute');
@@ -358,6 +357,30 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::get('/billing/invoices/{invoice}/download', [\App\Http\Controllers\Admin\InvoiceController::class, 'download'])->name('billing.invoices.download');
         Route::get('/billing/invoices/{invoice}/receipt', [\App\Http\Controllers\Admin\InvoiceController::class, 'downloadReceipt'])->name('billing.invoices.receipt');
         Route::delete('/billing/invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'destroy'])->name('billing.invoices.destroy');
+
+    // ── Data export (Account route — accessible even when subscription expired) ──
+    Route::middleware('tenant.access')->group(function () {
+        Route::get('/data-export', [\App\Http\Controllers\Admin\DataExportController::class, 'index'])->name('data-export.index');
+        Route::get('/data-export/all', [\App\Http\Controllers\Admin\DataExportController::class, 'downloadAll'])->name('data-export.all');
+        Route::get('/data-export/category/{category}', [\App\Http\Controllers\Admin\DataExportController::class, 'download'])->name('data-export.category');
+    });
+
+    // ── Merchant backup (Account route — signed archive, throttled per tenant) ──
+    Route::middleware('tenant.access')->group(function () {
+        Route::get('/backups', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'index'])->name('backups.index');
+        Route::get('/backups/download', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'download'])
+            ->middleware('throttle:merchant-backup')
+            ->name('backups.download');
+        Route::get('/backups/preview', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'preview'])->name('backups.preview');
+        Route::post('/backups/verify', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'verifyUpload'])
+            ->middleware('throttle:merchant-backup-verify')
+            ->name('backups.verify');
+        Route::post('/backups/recover', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'recover'])
+            ->middleware('throttle:merchant-backup-recover')
+            ->name('backups.recover');
+        Route::get('/backups/recovered', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'recovered'])
+            ->name('backups.recovered');
+    });
 
     // ── Language switcher ──
     Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');
@@ -795,7 +818,6 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::post('/subscriptions/{subscription}/activate', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'activate'])->name('subscriptions.activate');
 
     Route::get('/cancellation-requests', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancellationRequests'])->name('cancellation-requests.index');
-    Route::post('/cancellation-requests/{cancellationRequest}/review', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'reviewCancellation'])->name('cancellation-requests.review');
 
     Route::get('/billing', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'index'])->name('billing.index');
     Route::post('/billing/{intent}/approve', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'approve'])->name('billing.approve');

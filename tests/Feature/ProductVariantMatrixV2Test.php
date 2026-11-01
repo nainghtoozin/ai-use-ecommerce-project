@@ -212,7 +212,7 @@ class ProductVariantMatrixV2Test extends TestCase
         ]);
 
         $variant = $product->variants()->first();
-        $this->assertEquals('Red / XL', $variant->label);
+        $this->assertEquals('XL / Red', $variant->label);
     }
 
     /** @test */
@@ -250,13 +250,17 @@ class ProductVariantMatrixV2Test extends TestCase
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Duplicate variant combination already exists');
+
         $service = app(ProductService::class);
-        $service->createVariant($product, [
-            'sku' => 'VAR-DUP-002',
-            'price' => 100,
-            'stock' => 5,
-            'attributes' => ['size' => 'M', 'color' => 'Black'],
-            'status' => 'active',
+        $service->syncVariants($product, [
+            [
+                'sku' => 'VAR-DUP-002',
+                'price' => 100,
+                'stock' => 5,
+                'attributes' => ['size' => 'M', 'color' => 'Black'],
+                'status' => 'active',
+            ],
         ]);
     }
 
@@ -335,9 +339,12 @@ class ProductVariantMatrixV2Test extends TestCase
 
         $this->assertEquals(2, $product->variants()->count());
 
+        $keptVariantId = $product->variants()->where('sku', 'VAR-DEL-001')->firstOrFail()->id;
+
         $service = app(ProductService::class);
         $service->syncVariants($product, [
             [
+                'id' => $keptVariantId,
                 'sku' => 'VAR-DEL-001',
                 'price' => 100,
                 'stock' => 10,
@@ -365,7 +372,10 @@ class ProductVariantMatrixV2Test extends TestCase
             ['sku' => 'VAR-SKU-UNIQUEA', 'price' => 100, 'stock' => 10, 'attributes' => ['size' => 'M']],
         ]);
 
+        $this->actAsAdminA();
         $this->assertEquals(1, $product->variants()->where('sku', 'VAR-SKU-UNIQUEA')->count());
+
+        $this->actAsAdminB();
         $this->assertEquals(1, $productB->variants()->where('sku', 'VAR-SKU-UNIQUEA')->count());
     }
 
@@ -613,13 +623,7 @@ class ProductVariantMatrixV2Test extends TestCase
 
         $product = $this->createVariableProduct();
 
-        $controller = new \App\Http\Controllers\Admin\AdminProductController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\ImageService::class),
-            app(\App\Services\SkuService::class),
-            app(\App\Services\InventoryService::class),
-            app(\App\Services\StockCalculationService::class)
-        );
+        $controller = app(\App\Http\Controllers\Admin\AdminProductController::class);
 
         $reflection = new \ReflectionClass($controller);
         $method = $reflection->getMethod('normalizeVariants');

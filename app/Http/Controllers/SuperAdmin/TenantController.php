@@ -7,7 +7,6 @@ use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\TenantBootstrapService;
-use App\Services\TenantDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
@@ -218,17 +217,9 @@ class TenantController extends Controller
             ->with('success', "Tenant \"{$tenant->name}\" {$action} successfully.");
     }
 
-    public function destroy(Tenant $tenant, TenantDeletionService $deletionService)
+    public function destroy(Tenant $tenant)
     {
-        if ($tenant->slug === 'default') {
-            return redirect()->route('superadmin.tenants.index')
-                ->with('error', 'The default tenant cannot be deleted.');
-        }
-
-        $deletionService->delete($tenant);
-
-        return redirect()->route('superadmin.tenants.index')
-            ->with('success', "Tenant \"{$tenant->name}\" deleted successfully.");
+        abort(403, 'Tenant deletion is temporarily unavailable while the archival workflow is reviewed.');
     }
 
 }

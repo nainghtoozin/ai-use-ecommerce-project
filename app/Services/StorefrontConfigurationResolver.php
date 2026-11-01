@@ -748,7 +748,7 @@ class StorefrontConfigurationResolver
         $promotions = $query->limit((int) ($configuration['limit'] ?? 6))->get();
 
         return [
-            'promotions' => $promotions->filter(fn ($promotion) => (int) $promotion->tenant_id === $tenantId && $promotion->title && ($forRevision || !$this->isPromotionBannerExpired($promotion)))->map(fn ($promotion) => [
+            'promotions' => $promotions->filter(fn ($promotion) => (int) $promotion->tenant_id === $tenantId && $promotion->title && ($forRevision || $promotion->isCurrentlyVisible()))->map(fn ($promotion) => [
                 'id' => $promotion->id,
                 'title' => $promotion->title,
                 'description' => $promotion->description,
@@ -767,15 +767,10 @@ class StorefrontConfigurationResolver
         ];
     }
 
-    private function isPromotionBannerExpired(PromotionBanner $promotion): bool
-    {
-        return (bool) ($promotion->ends_at && now()->gt($promotion->ends_at));
-    }
-
     private function discountBadgeLabel(string $type, mixed $value): string
     {
         return match ($type) {
-            Promotion::TYPE_PERCENTAGE => "-{$value}%",
+            Promotion::TYPE_PERCENTAGE => '-' . (float) $value . '%',
             Promotion::TYPE_FIXED => '-' . number_format((float) $value, 0),
             Promotion::TYPE_FREE_SHIPPING => 'Free Shipping',
             default => 'Sale',

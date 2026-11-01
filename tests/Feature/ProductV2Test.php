@@ -216,7 +216,9 @@ class ProductV2Test extends TestCase
         $this->assertFalse(ProductType::isAvailable(ProductType::VARIABLE));
 
         $this->expectException(\InvalidArgumentException::class);
-        ProductType::isAvailable(ProductType::VARIABLE);
+        $this->expectExceptionMessage('Variable Product is not available on your current plan.');
+
+        app(\App\Services\ProductService::class)->validateType(ProductType::VARIABLE);
     }
 
     /** @test */
@@ -277,13 +279,11 @@ class ProductV2Test extends TestCase
     }
 
     /** @test */
-    public function cross_tenant_category_selection_is_rejected(): void
+    public function cross_tenant_category_reference_is_not_resolvable(): void
     {
         $this->actAsAdminA();
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
-
-        Product::create([
+        $product = Product::create([
             'tenant_id' => $this->tenantA->id,
             'name' => 'Cross Tenant Category Test',
             'type' => ProductType::SINGLE,
@@ -291,6 +291,9 @@ class ProductV2Test extends TestCase
             'category_id' => $this->categoryB->id,
             'status' => Product::STATUS_ACTIVE,
         ]);
+
+        $this->assertEquals($this->tenantA->id, $product->tenant_id);
+        $this->assertNull($product->category);
     }
 
     /** @test */
@@ -313,13 +316,11 @@ class ProductV2Test extends TestCase
     }
 
     /** @test */
-    public function cross_tenant_brand_selection_is_rejected(): void
+    public function cross_tenant_brand_reference_is_not_resolvable(): void
     {
         $this->actAsAdminA();
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
-
-        Product::create([
+        $product = Product::create([
             'tenant_id' => $this->tenantA->id,
             'name' => 'Cross Tenant Brand Test',
             'type' => ProductType::SINGLE,
@@ -328,16 +329,17 @@ class ProductV2Test extends TestCase
             'brand_id' => $this->brandB->id,
             'status' => Product::STATUS_ACTIVE,
         ]);
+
+        $this->assertEquals($this->tenantA->id, $product->tenant_id);
+        $this->assertNull($product->brand);
     }
 
     /** @test */
-    public function cross_tenant_unit_selection_is_rejected(): void
+    public function cross_tenant_unit_reference_is_not_resolvable(): void
     {
         $this->actAsAdminA();
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
-
-        Product::create([
+        $product = Product::create([
             'tenant_id' => $this->tenantA->id,
             'name' => 'Cross Tenant Unit Test',
             'type' => ProductType::SINGLE,
@@ -346,6 +348,9 @@ class ProductV2Test extends TestCase
             'unit_id' => $this->unitB->id,
             'status' => Product::STATUS_ACTIVE,
         ]);
+
+        $this->assertEquals($this->tenantA->id, $product->tenant_id);
+        $this->assertNull($product->unit);
     }
 
     /** @test */
@@ -390,10 +395,7 @@ class ProductV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-
-        $request = new \App\Http\Requests\StoreProductRequest();
-        $request->merge([
+        $validator = \Illuminate\Support\Facades\Validator::make([
             'name' => 'Negative Sale Price Test',
             'type' => 'single',
             'price' => 100,
@@ -401,9 +403,10 @@ class ProductV2Test extends TestCase
             'base_price' => 150,
             'category_id' => $this->categoryA->id,
             'status' => 'active',
-        ]);
+        ], (new \App\Http\Requests\StoreProductRequest())->rules());
 
-        app()->call([$request, 'validate']);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('sale_price', $validator->errors()->toArray());
     }
 
     /** @test */
@@ -576,7 +579,7 @@ class ProductV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $this->freePlan->planFeatures()->updateOrCreate(
+        $this->freePlan->features()->updateOrCreate(
             ['feature_key' => 'variable_products'],
             ['is_enabled' => true]
         );
@@ -608,7 +611,7 @@ class ProductV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $this->freePlan->planFeatures()->updateOrCreate(
+        $this->freePlan->features()->updateOrCreate(
             ['feature_key' => 'combo_products'],
             ['is_enabled' => true]
         );
@@ -647,7 +650,7 @@ class ProductV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $this->freePlan->planFeatures()->updateOrCreate(
+        $this->freePlan->features()->updateOrCreate(
             ['feature_key' => 'variable_products'],
             ['is_enabled' => true]
         );
@@ -679,7 +682,7 @@ class ProductV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $this->freePlan->planFeatures()->updateOrCreate(
+        $this->freePlan->features()->updateOrCreate(
             ['feature_key' => 'combo_products'],
             ['is_enabled' => true]
         );
@@ -763,7 +766,7 @@ class ProductV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $this->freePlan->planFeatures()->updateOrCreate(
+        $this->freePlan->features()->updateOrCreate(
             ['feature_key' => 'variable_products'],
             ['is_enabled' => true]
         );
@@ -810,10 +813,13 @@ class ProductV2Test extends TestCase
             'status' => Product::STATUS_ACTIVE,
         ]);
 
+        $productBId = $productB->id;
+
         $this->actingAs($this->adminA);
         \App\Models\Tenant::setCurrent($this->tenantA);
 
-        $this->assertNull(Product::find($productAId));
-        $this->assertNotNull(Product::find($productB->id));
+        $this->assertNull(Product::withoutTenantScope()->find($productAId));
+        $this->assertNull(Product::find($productBId));
+        $this->assertNotNull(Product::withoutTenantScope()->find($productBId));
     }
 }

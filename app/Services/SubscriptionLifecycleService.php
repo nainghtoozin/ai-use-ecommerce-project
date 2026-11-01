@@ -41,6 +41,7 @@ class SubscriptionLifecycleService
 
         if (($intent->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE) {
             $this->applyProratedUpgrade($subscription, $plan, $intent);
+            $subscription->resolvePendingCancellation('Superseded by plan upgrade.');
             $this->markSubscriptionApplied($intent);
             return;
         }
@@ -58,6 +59,10 @@ class SubscriptionLifecycleService
         } elseif ($subscription->isActive() && !$isUpgrade) {
             $this->renewSubscription($subscription, $plan, $intent);
         }
+
+        $subscription->resolvePendingCancellation(
+            $isUpgrade ? 'Superseded by plan change.' : 'Superseded by renewal.'
+        );
 
         FeatureGate::clearCache($plan);
 

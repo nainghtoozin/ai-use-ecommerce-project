@@ -52,6 +52,8 @@ class OrderController extends Controller
             ->with(['items.product', 'items.variant', 'paymentMethod', 'city', 'township'])
             ->findOrFail($id);
 
+        $order->items->each(fn ($item) => $item->product?->makeHidden(['cost_price']));
+
         return Inertia::render('Client/Orders/Show', [
             'order' => $order,
             'isCodOrder' => app(\App\Services\OrderWorkflow::class)->isCod($order),

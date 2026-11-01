@@ -13,6 +13,8 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Role;
+use App\Models\Setting;
+use App\Models\StockMovement;
 use App\Models\Tenant;
 use App\Models\Township;
 use App\Models\User;
@@ -54,12 +56,18 @@ class StorefrontCheckoutIntegrationTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->grantStorefrontEntitlement($this->tenant);
+
         $this->otherTenant = Tenant::create([
             'name' => 'Other Store',
             'slug' => 'other-store',
             'store_url' => '/store/other-store',
             'status' => 'active',
         ]);
+
+        $this->grantStorefrontEntitlement($this->otherTenant);
+
+        Tenant::setCurrent($this->tenant);
 
         $this->category = Category::create([
             'tenant_id' => $this->tenant->id,
@@ -167,8 +175,25 @@ class StorefrontCheckoutIntegrationTest extends TestCase
             'guard_name' => 'web',
             'tenant_id' => $this->tenant->id,
         ]);
-
         $this->user->assignRole($role);
+
+        StockMovement::create([
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $this->singleProduct->id,
+            'product_variant_id' => null,
+            'type' => StockMovement::TYPE_OPENING_STOCK,
+            'quantity' => 50,
+        ]);
+
+        StockMovement::create([
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $this->variableProduct->id,
+            'product_variant_id' => $this->variant->id,
+            'type' => StockMovement::TYPE_OPENING_STOCK,
+            'quantity' => 30,
+        ]);
+
+        app()->forgetInstance('current.tenant');
     }
 
     /** @test */
@@ -196,6 +221,8 @@ class StorefrontCheckoutIntegrationTest extends TestCase
     /** @test */
     public function cross_tenant_product_is_isolated(): void
     {
+        Tenant::setCurrent($this->otherTenant);
+
         $otherCategory = Category::create([
             'tenant_id' => $this->otherTenant->id,
             'name' => 'Other',
@@ -213,6 +240,8 @@ class StorefrontCheckoutIntegrationTest extends TestCase
             'status' => 'active',
         ]);
 
+        app()->forgetInstance('current.tenant');
+
         // Adding cross-tenant product to cart using non-prefixed route
         $response = $this->post('/cart/add', [
             'product_id' => $otherProduct->id,
@@ -228,6 +257,12 @@ class StorefrontCheckoutIntegrationTest extends TestCase
         $this->actingAs($this->user, 'accounts');
         app()->instance('current.tenant', $this->tenant);
 
+        $add = $this->post('/store/test-store/cart/add', [
+            'product_id' => $this->singleProduct->id,
+            'quantity' => 2,
+        ]);
+        $this->assertSame(200, $add->status());
+
         $response = $this->get('/store/test-store/checkout');
 
         $response->assertStatus(200);
@@ -239,7 +274,7 @@ class StorefrontCheckoutIntegrationTest extends TestCase
         $this->actingAs($this->user, 'accounts');
         app()->instance('current.tenant', $this->tenant);
 
-        $this->post('/cart/add', [
+        $this->post('/store/test-store/cart/add', [
             'product_id' => $this->variableProduct->id,
             'variant_id' => $this->variant->id,
             'quantity' => 1,
@@ -262,14 +297,15 @@ class StorefrontCheckoutIntegrationTest extends TestCase
         ]);
 
         $response = $this->post('/store/test-store/checkout', [
-            'full_name' => 'Test Customer',
+            'first_name' => 'Test',
+            'last_name' => 'Customer',
             'email' => 'customer@test.com',
             'phone' => '0979123456',
             'address' => 'Test Address',
             'city_id' => $this->city->id,
             'township_id' => $this->township->id,
             'postal_code' => '11041',
-            'payment_method' => 'bank_transfer',
+            'payment_method_id' => $this->bankPaymentMethod->id,
         ]);
 
         // Order should be created and redirect
@@ -283,20 +319,23 @@ class StorefrontCheckoutIntegrationTest extends TestCase
         $this->actingAs($this->user, 'accounts');
         app()->instance('current.tenant', $this->tenant);
 
+        Setting::set('cod_availability_mode', 'all');
+
         $this->post('/cart/add', [
             'product_id' => $this->singleProduct->id,
             'quantity' => 1,
         ]);
 
         $response = $this->post('/store/test-store/checkout', [
-            'full_name' => 'Test Customer',
+            'first_name' => 'Test',
+            'last_name' => 'Customer',
             'email' => 'customer@test.com',
             'phone' => '0979123456',
             'address' => 'Test Address',
             'city_id' => $this->city->id,
             'township_id' => $this->township->id,
             'postal_code' => '11041',
-            'payment_method' => 'cod',
+            'payment_method_id' => 'cod',
         ]);
 
         // Order should be created and redirect
@@ -307,6 +346,8 @@ class StorefrontCheckoutIntegrationTest extends TestCase
     /** @test */
     public function cross_tenant_product_cannot_be_checkout(): void
     {
+        Tenant::setCurrent($this->otherTenant);
+
         $otherCategory = Category::create([
             'tenant_id' => $this->otherTenant->id,
             'name' => 'Other',
@@ -327,6 +368,13 @@ class StorefrontCheckoutIntegrationTest extends TestCase
         $this->actingAs($this->user, 'accounts');
         app()->instance('current.tenant', $this->tenant);
 
+        session()->put('cart.p' . $otherProduct->id . '_v0', [
+            'product_id' => $otherProduct->id,
+            'variant_id' => null,
+            'quantity' => 1,
+            'price' => 50,
+        ]);
+
         $response = $this->get('/store/test-store/checkout');
 
         // After tenant filtering, cart should be empty (only cross-tenant product was added)
@@ -337,12 +385,49 @@ class StorefrontCheckoutIntegrationTest extends TestCase
     /** @test */
     public function cart_preserves_tenant_isolation(): void
     {
+        Tenant::setCurrent($this->otherTenant);
+
+        $otherCategory = Category::create([
+            'tenant_id' => $this->otherTenant->id,
+            'name' => 'Other Isolation',
+            'slug' => 'other-isolation',
+            'is_active' => true,
+        ]);
+
+        $otherProduct = Product::create([
+            'tenant_id' => $this->otherTenant->id,
+            'name' => 'Other Isolation Product',
+            'type' => 'single',
+            'price' => 50,
+            'stock' => 10,
+            'category_id' => $otherCategory->id,
+            'status' => 'active',
+        ]);
+
         $this->actingAs($this->user, 'accounts');
         app()->instance('current.tenant', $this->tenant);
+
+        session()->put('cart', [
+            'p' . $this->singleProduct->id . '_v0' => [
+                'product_id' => $this->singleProduct->id,
+                'variant_id' => null,
+                'quantity' => 1,
+                'price' => 100,
+            ],
+            'p' . $otherProduct->id . '_v0' => [
+                'product_id' => $otherProduct->id,
+                'variant_id' => null,
+                'quantity' => 1,
+                'price' => 50,
+            ],
+        ]);
 
         $response = $this->get('/store/test-store/checkout');
 
         // After tenant filtering, only the tenant's product remains
         $response->assertStatus(200);
+        $cartItems = $response->viewData('page')['props']['cartItems'];
+        $this->assertCount(1, $cartItems);
+        $this->assertSame('Single Product', $cartItems[0]['name']);
     }
 }

@@ -73,6 +73,12 @@ class PermissionSeeder extends Seeder
             'billing.manage',
             'billing.renew',
 
+            // Merchant Backup
+            'backup.view',
+            'backup.download',
+            'backup.verify',
+            'backup.recover',
+
             // Dashboard
             'dashboard.view',
 

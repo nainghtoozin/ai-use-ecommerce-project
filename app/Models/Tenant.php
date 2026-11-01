@@ -188,6 +188,64 @@ class Tenant extends Model
         return $this->locked_at !== null;
     }
 
+    /**
+     * Statuses that are allowed to serve the public storefront at all.
+     * Pending (awaiting activation), suspended, expired and deleted stores are excluded.
+     */
+    public const PUBLIC_STATUSES = ['active', 'trialing'];
+
+    public function isPubliclyVisible(): bool
+    {
+        return in_array($this->status, self::PUBLIC_STATUSES, true);
+    }
+
+    /**
+     * A public storefront may only serve traffic when the tenant is in a public
+     * status AND holds a current entitlement (free plan, active/trial period,
+     * grace period or paid-cancelled remainder). This blocks a recovered tenant
+     * that was never activated or billed from becoming indefinitely public.
+     *
+     * A tenant without a subscription record is NOT treated as an implicit free
+     * plan. Every provisioning path (TenantBootstrapService) creates a
+     * subscription row, including for free plans, so a missing row signals a
+     * broken or tampered tenant and must fail closed.
+     */
+    public function canServePublicStorefront(): bool
+    {
+        if (!$this->isPubliclyVisible()) {
+            return false;
+        }
+
+        // Resolve the subscription explicitly for this tenant. The relation is
+        // tenant scoped (and latestOfMany embeds that scope in its subquery),
+        // so using the ambient current tenant would silently return null and
+        // fail closed whenever the visitor's session still points at another
+        // store.
+        $subscription = Subscription::withoutTenantScope()
+            ->where('tenant_id', $this->id)
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$subscription) {
+            return false;
+        }
+
+        return $subscription->grantsService();
+    }
+
+    public function isOwnedBy(User|Account $identity): bool
+    {
+        if ($identity instanceof Account) {
+            return $this->memberships()
+                ->where('account_id', $identity->id)
+                ->where('is_owner', true)
+                ->where('status', 'active')
+                ->exists();
+        }
+
+        return (int) $identity->tenant_id === (int) $this->id && $identity->isOwner();
+    }
+
     public function lock(): void
     {
         if ($this->locked_at) {

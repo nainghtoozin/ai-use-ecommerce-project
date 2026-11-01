@@ -149,6 +149,14 @@ class ProductComboV2Test extends TestCase
         ], $overrides));
     }
 
+    private function invokeComboItemValidation(array $items): void
+    {
+        $controller = app(\App\Http\Controllers\Admin\AdminProductController::class);
+        $method = new \ReflectionMethod($controller, 'validateComboItems');
+        $method->setAccessible(true);
+        $method->invoke($controller, $items);
+    }
+
     /** @test */
     public function combo_product_can_have_components(): void
     {
@@ -191,15 +199,14 @@ class ProductComboV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $combo = $this->createComboProduct();
         $product = $this->createProduct();
 
-        $item = $combo->comboItems()->create([
-            'combo_product_id' => $product->id,
-            'quantity' => 0,
-        ]);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectExceptionMessage('Quantity must be at least 1.');
 
-        $this->assertEquals(1, $item->quantity);
+        $this->invokeComboItemValidation([
+            ['combo_product_id' => $product->id, 'quantity' => 0],
+        ]);
     }
 
     /** @test */
@@ -220,12 +227,14 @@ class ProductComboV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $comboA = $this->createComboProduct(['name' => 'Combo A']);
         $comboB = $this->createComboProduct(['name' => 'Combo B']);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $service = app(ProductService::class);
-        $service->addToCombo($comboA, $comboB, 1);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectExceptionMessage('Combo products cannot include other combos.');
+
+        $this->invokeComboItemValidation([
+            ['combo_product_id' => $comboB->id, 'quantity' => 1],
+        ]);
     }
 
     /** @test */
@@ -250,19 +259,17 @@ class ProductComboV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $combo = $this->createComboProduct();
-
         $this->actAsAdminB();
         $productB = $this->createProduct(['tenant_id' => $this->tenantB->id]);
 
         $this->actAsAdminA();
 
-        $item = $combo->comboItems()->create([
-            'combo_product_id' => $productB->id,
-            'quantity' => 1,
-        ]);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectExceptionMessage('Component product is invalid or unavailable.');
 
-        $this->assertNull($item->combo_product_id);
+        $this->invokeComboItemValidation([
+            ['combo_product_id' => $productB->id, 'quantity' => 1],
+        ]);
     }
 
     /** @test */
@@ -414,20 +421,12 @@ class ProductComboV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $combo = $this->createComboProduct();
         $product = $this->createProduct();
 
-        $combo->comboItems()->create(['combo_product_id' => $product->id, 'quantity' => 1]);
-
         $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $controller = new \App\Http\Controllers\Admin\AdminProductController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\ImageService::class),
-            app(\App\Services\SkuService::class),
-            app(\App\Services\InventoryService::class),
-            app(\App\Services\StockCalculationService::class)
-        );
-        $controller->validateComboItems([
+        $this->expectExceptionMessage('Duplicate component detected.');
+
+        $this->invokeComboItemValidation([
             ['combo_product_id' => $product->id, 'quantity' => 1],
             ['combo_product_id' => $product->id, 'quantity' => 2],
         ]);
@@ -438,7 +437,6 @@ class ProductComboV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $combo = $this->createComboProduct();
         $product = $this->createProduct();
         $variant = $product->variants()->create([
             'sku' => 'VAR-TEST-002',
@@ -451,20 +449,15 @@ class ProductComboV2Test extends TestCase
         $otherProduct = $this->createProduct(['name' => 'Other Product']);
 
         $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $controller = new \App\Http\Controllers\Admin\AdminProductController(
-            app(\App\Services\ProductService::class),
-            app(\App\Services\ImageService::class),
-            app(\App\Services\SkuService::class),
-            app(\App\Services\InventoryService::class),
-            app(\App\Services\StockCalculationService::class)
-        );
-        $controller->validateComboItems([
+        $this->expectExceptionMessage('Variant does not belong to the selected product.');
+
+        $this->invokeComboItemValidation([
             ['combo_product_id' => $otherProduct->id, 'linked_variant_id' => $variant->id, 'quantity' => 1],
         ]);
     }
 
     /** @test */
-    public function combo_items_deleted_when_product_type_changes(): void
+    public function combo_items_are_retained_when_product_type_changes(): void
     {
         $this->actAsAdminA();
 
@@ -477,7 +470,9 @@ class ProductComboV2Test extends TestCase
         $product->update(['type' => ProductType::SINGLE]);
 
         $product->refresh();
-        $this->assertEquals(0, $product->comboItems()->count());
+        $this->assertTrue($product->isSingle());
+        $this->assertFalse($product->isCombo());
+        $this->assertEquals(1, $product->comboItems()->count());
     }
 
     /** @test */

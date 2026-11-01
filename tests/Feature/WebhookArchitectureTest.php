@@ -19,7 +19,6 @@ use App\Services\Webhook\WebhookProcessor;
 use App\Services\Webhook\WebhookRouter;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class WebhookArchitectureTest extends TestCase
@@ -37,8 +36,6 @@ class WebhookArchitectureTest extends TestCase
     {
         parent::setUp();
 
-        $this->createMinimalSchema();
-
         $this->tenant = Tenant::create([
             'slug' => 'webhook-test',
             'name' => 'Webhook Test',
@@ -55,6 +52,16 @@ class WebhookArchitectureTest extends TestCase
             'promotion_limit' => 10, 'flash_sale_limit' => 5,
             'branch_limit' => 3, 'warehouse_limit' => 2, 'pos_device_limit' => 3,
         ]);
+
+        $subscription = new \App\Models\Subscription();
+        $subscription->forceFill([
+            'tenant_id' => $this->tenant->id,
+            'plan_id' => $this->plan->id,
+            'billing_interval' => 'monthly',
+            'status' => 'active',
+            'starts_at' => now(),
+            'expires_at' => now()->addMonth(),
+        ])->save();
 
         $this->manual = $this->app->make(ManualPaymentService::class);
         $this->reviews = $this->app->make(PaymentReviewService::class);
@@ -517,173 +524,5 @@ class WebhookArchitectureTest extends TestCase
         $log = WebhookLog::where('gateway_event_id', 'evt_security')->first();
         $this->assertSame('[REDACTED]', $log->request_headers['authorization']);
         $this->assertSame('[REDACTED]', $log->request_headers['x-signature']);
-    }
-
-    private function createMinimalSchema(): void
-    {
-        Schema::create('tenants', function ($table) {
-            $table->id(); $table->string('slug')->unique();
-            $table->string('name'); $table->string('email')->nullable();
-            $table->string('status')->default('active');
-            $table->timestamp('activated_at')->nullable();
-            $table->unsignedBigInteger('plan_id')->nullable();
-            $table->json('settings')->nullable();
-            $table->string('logo')->nullable();
-            $table->timestamp('trial_ends_at')->nullable();
-            $table->timestamp('locked_at')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('plans', function ($table) {
-            $table->id(); $table->string('name'); $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->decimal('monthly_price', 10, 2)->nullable();
-            $table->decimal('yearly_price', 10, 2)->nullable();
-            $table->integer('product_limit')->nullable();
-            $table->integer('staff_limit')->nullable();
-            $table->bigInteger('storage_limit')->nullable();
-            $table->integer('orders_monthly_limit')->nullable();
-            $table->integer('coupon_limit')->nullable();
-            $table->integer('promotion_limit')->nullable();
-            $table->integer('flash_sale_limit')->nullable();
-            $table->integer('branch_limit')->nullable();
-            $table->integer('warehouse_limit')->nullable();
-            $table->integer('pos_device_limit')->nullable();
-            $table->boolean('analytics_enabled')->default(false);
-            $table->boolean('custom_domain_enabled')->default(false);
-            $table->string('status', 20)->default('active');
-            $table->string('price')->nullable();
-            $table->string('currency')->nullable();
-            $table->string('interval')->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
-            $table->timestamps();
-        });
-
-        Schema::create('payment_intents', function ($table) {
-            $table->id();
-            $table->unsignedBigInteger('tenant_id');
-            $table->unsignedBigInteger('plan_id');
-            $table->unsignedBigInteger('subscription_id')->nullable();
-            $table->string('billing_cycle');
-            $table->decimal('amount', 10, 2);
-            $table->string('currency', 3);
-            $table->string('gateway');
-            $table->string('status');
-            $table->timestamp('expires_at')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamp('completed_at')->nullable();
-            $table->timestamp('cancelled_at')->nullable();
-            $table->timestamp('rejected_at')->nullable();
-            $table->string('reference_number')->nullable()->unique();
-            $table->string('idempotency_key')->nullable();
-            $table->timestamps();
-            $table->index('tenant_id');
-            $table->index('status');
-            $table->index('expires_at');
-        });
-
-        Schema::create('reference_numbers', function ($table) {
-            $table->id();
-            $table->string('prefix', 10);
-            $table->date('date');
-            $table->unsignedInteger('last_sequence')->default(0);
-            $table->timestamps();
-            $table->unique(['prefix', 'date']);
-        });
-
-        Schema::create('payment_evidences', function ($table) {
-            $table->id();
-            $table->unsignedBigInteger('payment_intent_id');
-            $table->string('type');
-            $table->string('file_path')->nullable();
-            $table->text('note')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamps();
-            $table->index('payment_intent_id');
-        });
-
-        Schema::create('payment_reviews', function ($table) {
-            $table->id();
-            $table->unsignedBigInteger('payment_intent_id');
-            $table->string('action');
-            $table->unsignedBigInteger('reviewer_id')->nullable();
-            $table->string('reviewer_name')->nullable();
-            $table->text('reason')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamps();
-            $table->index('payment_intent_id');
-            $table->index('action');
-        });
-
-        Schema::create('payment_transactions', function ($table) {
-            $table->id();
-            $table->unsignedBigInteger('payment_intent_id')->unique();
-            $table->string('transaction_number')->unique();
-            $table->unsignedBigInteger('tenant_id');
-            $table->unsignedBigInteger('plan_id');
-            $table->unsignedBigInteger('subscription_id')->nullable();
-            $table->decimal('amount', 10, 2);
-            $table->string('currency', 3);
-            $table->string('gateway');
-            $table->string('status')->default('completed');
-            $table->string('gateway_reference')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamps();
-            $table->index('tenant_id');
-            $table->index('transaction_number');
-            $table->index('status');
-        });
-
-        Schema::create('payment_timeline_events', function ($table) {
-            $table->id();
-            $table->unsignedBigInteger('payment_intent_id');
-            $table->string('type');
-            $table->text('description')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamp('occurred_at');
-            $table->timestamps();
-            $table->index('payment_intent_id');
-            $table->index('type');
-            $table->index('occurred_at');
-        });
-
-        Schema::create('ledger_entries', function ($table) {
-            $table->id();
-            $table->unsignedBigInteger('transaction_id')->nullable();
-            $table->unsignedBigInteger('payment_intent_id')->nullable();
-            $table->string('type');
-            $table->decimal('amount', 10, 2);
-            $table->string('currency', 3);
-            $table->text('description')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamp('recorded_at');
-            $table->timestamps();
-            $table->index('transaction_id');
-            $table->index('payment_intent_id');
-            $table->index('type');
-        });
-
-        Schema::create('webhook_logs', function ($table) {
-            $table->id();
-            $table->string('gateway');
-            $table->string('event_type')->nullable();
-            $table->string('gateway_event_id')->nullable();
-            $table->string('gateway_reference')->nullable();
-            $table->unsignedBigInteger('payment_intent_id')->nullable();
-            $table->string('status');
-            $table->json('request_headers')->nullable();
-            $table->longText('request_payload')->nullable();
-            $table->string('failure_reason')->nullable();
-            $table->timestamp('verified_at')->nullable();
-            $table->timestamp('processed_at')->nullable();
-            $table->timestamps();
-            $table->index('gateway');
-            $table->index('gateway_event_id');
-            $table->index('status');
-            $table->index('payment_intent_id');
-            $table->index(['gateway', 'gateway_event_id']);
-        });
     }
 }

@@ -76,12 +76,14 @@ class SubscriptionExpiryService
                         : "[" . now() . "] Expired — entered 7-day grace period (past_due).",
                 ]);
 
+                $cancellation = $sub->activeCancellationRequest()->first();
+
                 if ($this->preferenceService->tenantAllows($sub->tenant_id)) {
-                    $sub->tenant->notifyAdmins(new SubscriptionPastDue($sub));
+                    $sub->tenant->notifyAdmins(new SubscriptionPastDue($sub, $cancellation));
                 }
                 SendTelegramMessageJob::dispatchForTenant(
                     $sub->tenant_id,
-                    $this->telegramBuilder->billingSubscriptionPastDue($sub),
+                    $this->telegramBuilder->billingSubscriptionPastDue($sub, $cancellation),
                 );
                 return ['old_status' => $oldStatus, 'event' => 'past_due'];
             }
@@ -108,12 +110,15 @@ class SubscriptionExpiryService
                 ]);
 
                 $sub->tenant->lock();
+
+                $cancellation = $sub->activeCancellationRequest()->first();
+
                 if ($this->preferenceService->tenantAllows($sub->tenant_id)) {
-                    $sub->tenant->notifyAdmins(new SubscriptionExpired($sub));
+                    $sub->tenant->notifyAdmins(new SubscriptionExpired($sub, $cancellation));
                 }
                 SendTelegramMessageJob::dispatchForTenant(
                     $sub->tenant_id,
-                    $this->telegramBuilder->billingSubscriptionExpired($sub),
+                    $this->telegramBuilder->billingSubscriptionExpired($sub, $cancellation),
                 );
 
                 return ['old_status' => $oldStatus, 'event' => 'expired'];

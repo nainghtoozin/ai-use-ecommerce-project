@@ -6,7 +6,6 @@ use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class SubscriptionLimitTest extends TestCase
@@ -22,9 +21,7 @@ class SubscriptionLimitTest extends TestCase
     {
         parent::setUp();
 
-        $this->createMinimalSchema();
-
-        $this->freePlan = Plan::create([
+        $this->freePlan = Plan::updateOrCreate(['slug' => 'free'], [
             'name' => 'Free', 'slug' => 'free', 'description' => 'Free plan',
             'monthly_price' => 0, 'yearly_price' => 0, 'status' => 'active',
             'analytics_enabled' => false, 'custom_domain_enabled' => false,
@@ -36,7 +33,7 @@ class SubscriptionLimitTest extends TestCase
             'warehouse_limit' => 1, 'pos_device_limit' => 1,
         ]);
 
-        $this->starterPlan = Plan::create([
+        $this->starterPlan = Plan::updateOrCreate(['slug' => 'starter'], [
             'name' => 'Starter', 'slug' => 'starter', 'description' => 'Starter plan',
             'monthly_price' => 29, 'yearly_price' => 290, 'status' => 'active',
             'analytics_enabled' => true, 'custom_domain_enabled' => true,
@@ -48,7 +45,7 @@ class SubscriptionLimitTest extends TestCase
             'warehouse_limit' => 2, 'pos_device_limit' => 3,
         ]);
 
-        $this->businessPlan = Plan::create([
+        $this->businessPlan = Plan::updateOrCreate(['slug' => 'business'], [
             'name' => 'Business', 'slug' => 'business', 'description' => 'Business plan',
             'monthly_price' => 99, 'yearly_price' => 990, 'status' => 'active',
             'analytics_enabled' => true, 'custom_domain_enabled' => true,
@@ -64,51 +61,8 @@ class SubscriptionLimitTest extends TestCase
             'slug' => 'test-tenant',
             'name' => 'Test Tenant',
             'status' => 'active',
-            'plan_id' => $this->freePlan->id,
+            'subscription_plan_id' => $this->freePlan->id,
         ]);
-    }
-
-    private function createMinimalSchema(): void
-    {
-        Schema::create('tenants', function ($table) {
-            $table->id(); $table->string('slug')->unique();
-            $table->string('name'); $table->string('email')->nullable();
-            $table->string('status')->default('active');
-            $table->unsignedBigInteger('plan_id')->nullable();
-            $table->json('settings')->nullable();
-            $table->string('logo')->nullable(); $table->timestamp('trial_ends_at')->nullable();
-            $table->timestamp('locked_at')->nullable();
-            $table->timestamps();
-        });
-        Schema::create('plans', function ($table) {
-            $table->id(); $table->string('name'); $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->decimal('monthly_price', 10, 2)->nullable();
-            $table->decimal('yearly_price', 10, 2)->nullable();
-            $table->integer('product_limit')->nullable();
-            $table->integer('staff_limit')->nullable();
-            $table->bigInteger('storage_limit')->nullable();
-            $table->integer('orders_monthly_limit')->nullable();
-            $table->integer('coupon_limit')->nullable();
-            $table->integer('promotion_limit')->nullable();
-            $table->integer('flash_sale_limit')->nullable();
-            $table->integer('api_request_limit')->nullable();
-            $table->integer('image_limit')->nullable();
-            $table->integer('image_max_size_kb')->nullable();
-            $table->integer('branch_limit')->nullable();
-            $table->integer('warehouse_limit')->nullable();
-            $table->integer('pos_device_limit')->nullable();
-            $table->boolean('analytics_enabled')->default(false);
-            $table->boolean('custom_domain_enabled')->default(false);
-            $table->string('price')->nullable();
-            $table->string('currency')->nullable();
-            $table->string('interval')->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
-            $table->string('status', 20)->default('active');
-            $table->timestamps();
-        });
     }
 
     private function service(?Plan $plan = null): SubscriptionLimitService
@@ -266,7 +220,7 @@ class SubscriptionLimitTest extends TestCase
 
     public function test_assert_can_create_throws_when_limit_reached(): void
     {
-        $plan = Plan::create([
+        $plan = Plan::updateOrCreate(['slug' => 'tiny'], [
             'name' => 'Tiny', 'slug' => 'tiny', 'description' => 'Tiny plan',
             'monthly_price' => 0, 'yearly_price' => 0, 'status' => 'active',
             'analytics_enabled' => false, 'custom_domain_enabled' => false,

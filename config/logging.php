@@ -65,6 +65,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'backups' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/system-backups.log'),
+            'level' => 'info',
+            'replace_placeholders' => false,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

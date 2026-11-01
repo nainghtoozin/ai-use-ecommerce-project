@@ -66,8 +66,10 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
 
     const activeCancellation = cancellation?.active || null;
     const latestCancellation = cancellation?.latest || null;
-    const canCancel = !!subscription && can('billing.manage') && !activeCancellation
-        && ['active', 'trialing', 'past_due'].includes(subscription.status);
+    // Authoritative backend eligibility — a paid, active subscription with no
+    // request already pending, independent of how close expiry is.
+    const canCancel = !!cancellation?.can_request;
+    const paidThrough = activeCancellation?.paid_through_at || subscription?.expires_at;
 
     const handleRenew = () => {
         router.post(adminUrl('/admin/billing/renew'), {}, { preserveScroll: true });
@@ -89,12 +91,6 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
             onFinish: () => setCancelSubmitting(false),
             onSuccess: () => { setCancelOpen(false); setCancelReason(''); setCancelComment(''); },
         });
-    };
-
-    const withdrawCancellation = () => {
-        if (window.confirm('Withdraw your pending cancellation request? Your subscription stays unchanged.')) {
-            router.post(adminUrl('/admin/billing/cancel-request/withdraw'), {}, { preserveScroll: true });
-        }
     };
 
     const scrollToPlans = () => {
@@ -174,13 +170,13 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                     {renewalPending
                                         ? 'A renewal payment is under review. See the payment notice above; renewal stays locked until it is resolved.'
-                                        : `Request cancellation (effective at the end of your paid period). Renewal opens within ${renewalThresholdDays} days of expiry.`}
+                                        : 'Request cancellation (effective at the end of your paid period). Your store and data stay intact until then.'}
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {activeCancellation ? (
-                                    <span className="text-xs text-amber-700 dark:text-amber-400 self-center">
-                                        Request pending review — see the status panel below to withdraw it.
+                                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400 self-center">
+                                        Cancellation scheduled
                                     </span>
                                 ) : canCancel && (
                                     <button
@@ -197,25 +193,24 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
 
                 {activeCancellation && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                            <div className="flex-1">
-                                <p className="text-sm font-semibold text-amber-800">Cancellation status: pending review</p>
-                                <p className="text-xs text-amber-700 mt-0.5">
-                                    Reason: {activeCancellation.reason_label}
-                                    {activeCancellation.comment ? ` — ${activeCancellation.comment}` : ''}
-                                </p>
-                                <p className="text-xs text-amber-600 mt-0.5">
-                                    Your paid access continues until {subscription?.expires_at || 'your existing expiry date'}.
-                                    Withdrawing now cancels this request and keeps your subscription unchanged — it is only possible before review.
-                                </p>
-                            </div>
-                            <button
-                                onClick={withdrawCancellation}
-                                className="px-3 py-1.5 bg-white dark:bg-gray-900 text-amber-700 border border-amber-300 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors flex-shrink-0"
-                            >
-                                Withdraw Pending Request
-                            </button>
-                        </div>
+                        <p className="text-sm font-semibold text-amber-800">Cancellation scheduled</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                            Reason: {activeCancellation.reason_label}
+                            {activeCancellation.comment ? ` — ${activeCancellation.comment}` : ''}
+                        </p>
+                        <p className="text-xs text-amber-600 mt-0.5">
+                            Your subscription will not renew. Your store and paid features remain available until {paidThrough || 'your existing expiry date'}.
+                        </p>
+                        <p className="text-xs text-amber-600 mt-0.5">
+                            Your data will not be deleted automatically. You can{' '}
+                            <a href={adminUrl('/admin/data-export')} className="font-semibold underline">
+                                export your data
+                            </a>{' '}
+                            at any time.
+                        </p>
+                        <p className="text-xs text-amber-600 mt-0.5">
+                            Renewing or changing your plan cancels this automatically.
+                        </p>
                     </div>
                 )}
 
@@ -228,16 +223,14 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                             Reason: {latestCancellation.reason_label}
                             {latestCancellation.review_note ? ` — Review note: ${latestCancellation.review_note}` : ''}
                         </p>
-                        {latestCancellation.status === 'approved' && latestCancellation.effective_at && (
-                            <div className="mt-1.5 space-y-0.5">
-                                <p className="text-xs text-red-700">
-                                    Paid access continues until {latestCancellation.effective_at}, then the subscription will not renew. This cannot be undone here — renew to keep your store.
-                                </p>
-                            </div>
+                        {latestCancellation.status === 'approved' && (
+                            <p className="text-xs text-red-700 mt-0.5">
+                                Paid through {latestCancellation.effective_at || latestCancellation.paid_through_at || subscription?.expires_at}. After that the subscription will not renew — renew before then to continue.
+                            </p>
                         )}
-                        {(latestCancellation.status === 'rejected' || latestCancellation.status === 'withdrawn') && (
+                        {(latestCancellation.status === 'rejected' || latestCancellation.status === 'withdrawn' || latestCancellation.status === 'superseded') && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Your subscription is unchanged. You may submit a new cancellation request if needed.
+                                Your subscription is unchanged.
                             </p>
                         )}
                     </div>
@@ -347,14 +340,27 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm font-semibold text-red-800">
-                                    {subscription.status === 'expired' && 'Your subscription has expired.'}
-                                    {subscription.status === 'past_due' && 'Your payment is past due.'}
-                                    {subscription.status === 'canceled' && 'Your subscription has been canceled.'}
+                                    {activeCancellation && subscription.status === 'expired' && 'Your subscription has ended as scheduled.'}
+                                    {activeCancellation && subscription.status === 'past_due' && 'Your subscription ended as scheduled.'}
+                                    {!activeCancellation && subscription.status === 'expired' && 'Your subscription has expired.'}
+                                    {!activeCancellation && subscription.status === 'past_due' && 'Your payment is past due.'}
+                                    {!activeCancellation && subscription.status === 'canceled' && 'Your subscription has been canceled.'}
                                 </p>
                                 {subscription.status === 'expired' && subscription.days_since_expiry > 0 && (
                                     <p className="text-xs text-red-600 mt-0.5">Expired {subscription.days_since_expiry} day{subscription.days_since_expiry > 1 ? 's' : ''} ago</p>
                                 )}
-                                <p className="text-xs text-red-600 mt-0.5">Renew your subscription to restore full access to your store.</p>
+                                <p className="text-xs text-red-600 mt-0.5">
+                                    {activeCancellation
+                                        ? 'Your data has not been deleted automatically. You can export it at any time or renew to restore access.'
+                                        : 'Renew your subscription to restore full access to your store.'}
+                                </p>
+                                {activeCancellation && (
+                                    <p className="text-xs text-red-700 mt-1.5">
+                                        <a href={adminUrl('/admin/data-export')} className="font-semibold underline">
+                                            Export my data
+                                        </a>
+                                    </p>
+                                )}
                                 {subscription.status === 'canceled' && subscription.expires_at && (
                                     <div className="text-xs text-red-700 mt-1.5 space-y-0.5">
                                         <p>Paid access continues until {subscription.expires_at}.</p>
@@ -395,6 +401,7 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                     secondaryLinks={[
                         { label: 'Payment history', href: adminUrl('/admin/billing/payment-history') },
                         { label: 'Invoices', href: adminUrl('/admin/billing/invoices') },
+                        { label: 'Export my data', href: adminUrl('/admin/data-export') },
                     ]}
                 />
 
@@ -447,7 +454,7 @@ export default function AdminBillingIndex({ subscription, usage, plans, featureC
                         <div className="px-5 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
                             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Cancel Subscription</h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Your store continues until the request is reviewed and your existing expiry is reached.
+                                Your store and business data stay intact, and paid features remain available until {subscription?.expires_at || 'the end of your current paid period'}. Cancellation stops future renewals and no refund is issued for the current period.
                             </p>
                         </div>
                         <form onSubmit={submitCancellation} className="p-5 space-y-4">

@@ -133,8 +133,12 @@ class IdentityResolver
                 )
             )->get($columns);
         }
-        return User::role('admin')
+        return User::query()
             ->where('users.tenant_id', $tenantId)
+            ->whereHas('roles', fn ($q) => $q
+                ->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                ->where('roles.name', 'admin')
+            )
             ->get($columns);
     }
 
@@ -150,7 +154,11 @@ class IdentityResolver
         }
         return User::where('tenant_id', $tenantId)
             ->where(function ($q) {
-                $q->where('is_owner', true)->orWhereHas('roles', fn($r) => $r->where('name', 'admin'));
+                $q->where('is_owner', true)
+                    ->orWhereHas('roles', fn ($r) => $r
+                        ->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                        ->where('roles.name', 'admin')
+                    );
             })
             ->pluck('id');
     }

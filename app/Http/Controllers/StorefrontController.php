@@ -697,7 +697,7 @@ class StorefrontController extends Controller
     private function formatPromotionBadge($promotion, string $currencySymbol = 'K'): string
     {
         return match ($promotion->type) {
-            Promotion::TYPE_PERCENTAGE => "-{$promotion->value}%",
+            Promotion::TYPE_PERCENTAGE => '-' . (float) $promotion->value . '%',
             Promotion::TYPE_FIXED => "-" . number_format((float) $promotion->value, 0) . ' ' . $currencySymbol,
             Promotion::TYPE_FREE_SHIPPING => 'Free Shipping',
             default => 'Sale',

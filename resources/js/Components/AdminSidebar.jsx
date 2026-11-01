@@ -18,7 +18,7 @@ import {
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
-    Truck,
+    Truck, Database,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -51,7 +51,7 @@ const iconMap = {
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
-    Truck,
+    Truck, Database,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -235,6 +235,8 @@ export default function AdminSidebar() {
                     ...(isVis('billing.overview') ? [{ label: 'Overview', href: '/admin/billing', icon: 'CreditCard' }] : []),
                     ...(isVis('billing.invoices') ? [{ label: 'Invoices', href: '/admin/billing/invoices', icon: 'Receipt' }] : []),
                     ...(isVis('billing.history') ? [{ label: 'Payment History', href: '/admin/billing/payment-history', icon: 'Clock' }] : []),
+                    ...(isVis('billing.overview') ? [{ label: 'Export My Data', href: '/admin/data-export', icon: 'Database' }] : []),
+                    ...(isVis('billing.overview') ? [{ label: 'Merchant Backup', href: '/admin/backups', icon: 'Archive' }] : []),
                 ]
             }] : []),
             ...(can('reports.sales') && hasFeature('reports') ? [{

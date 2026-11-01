@@ -34,6 +34,10 @@ class RegisteredUserController extends Controller
                 ->with('error', 'Please register from a specific store.');
         }
 
+        if (!$tenant->canServePublicStorefront()) {
+            abort(404);
+        }
+
         return Inertia::render('Storefront/Register', [
             'tenant' => [
                 'id' => $tenant->id,
@@ -56,6 +60,10 @@ class RegisteredUserController extends Controller
         if (!$tenant) {
             return redirect()->route('login')
                 ->with('error', 'Please register from a specific store.');
+        }
+
+        if (!$tenant->canServePublicStorefront()) {
+            abort(404);
         }
 
         $useAccounts = config('identity.use_accounts');

@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -367,5 +369,88 @@ class MerchantManagementTest extends TestCase
 
         $tenant->refresh();
         $this->assertEquals('/store/new-store', $tenant->store_url);
+    }
+
+    public function test_superadmin_can_list_tenants(): void
+    {
+        Tenant::create([
+            'name' => 'Listed Store',
+            'slug' => 'listed-store-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($this->superadmin)
+            ->get('/superadmin/tenants')
+            ->assertOk();
+    }
+
+    public function test_superadmin_can_view_tenant(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Viewed Store',
+            'slug' => 'viewed-store-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($this->superadmin)
+            ->get("/superadmin/tenants/{$tenant->id}")
+            ->assertOk();
+    }
+
+    public function test_tenant_delete_endpoint_is_disabled_for_superadmin(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Delete Guard Store',
+            'slug' => 'delete-guard-store-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $plan = Plan::create([
+            'name' => 'Delete Guard Plan',
+            'slug' => 'delete-guard-plan-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $subscriptionId = DB::table('subscriptions')->insertGetId([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $plan->id,
+            'billing_interval' => 'monthly',
+            'status' => 'active',
+            'starts_at' => now(),
+            'expires_at' => now()->addMonth(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->superadmin)
+            ->delete("/superadmin/tenants/{$tenant->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tenants', ['id' => $tenant->id]);
+        $this->assertDatabaseHas('subscriptions', ['id' => $subscriptionId]);
+    }
+
+    public function test_tenant_delete_endpoint_is_forbidden_for_non_superadmin(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Protected Store',
+            'slug' => 'protected-store-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $staff = User::create([
+            'name' => 'Store Staff',
+            'email' => 'delete-staff-' . uniqid() . '@example.com',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'tenant_id' => $tenant->id,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($staff)
+            ->delete("/superadmin/tenants/{$tenant->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tenants', ['id' => $tenant->id]);
     }
 }

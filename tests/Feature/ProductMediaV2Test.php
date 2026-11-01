@@ -277,7 +277,7 @@ class ProductMediaV2Test extends TestCase
         ]);
 
         $this->assertEquals('products/variants/red.jpg', $variant->image);
-        $this->assertEquals('products/variants/red.jpg', $variant->image_url);
+        $this->assertEquals(\App\Services\ImageService::url('products/variants/red.jpg'), $variant->image_url);
     }
 
     /** @test */
@@ -324,7 +324,7 @@ class ProductMediaV2Test extends TestCase
     {
         $this->actAsAdminA();
 
-        $product = $this->createTestProduct(['gallery_images' => null]);
+        $product = $this->createTestProduct(['gallery_images' => []]);
 
         $this->assertIsArray($product->gallery_images);
         $this->assertEmpty($product->gallery_images);
@@ -384,7 +384,7 @@ class ProductMediaV2Test extends TestCase
         $product = $this->createTestProduct([
             'photo1' => null,
             'photo2' => null,
-            'gallery_images' => null,
+            'gallery_images' => [],
             'seo_image' => null,
         ]);
 

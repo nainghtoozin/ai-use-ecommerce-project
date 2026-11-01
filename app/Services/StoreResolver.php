@@ -9,9 +9,15 @@ class StoreResolver
 {
     public function resolve(string $storeSlug): ?Tenant
     {
-        return Cache::remember("store_resolver.{$storeSlug}", 3600, function () use ($storeSlug) {
-            return Tenant::where('slug', $storeSlug)->first();
+        $tenantId = Cache::remember("store_resolver.{$storeSlug}", 3600, function () use ($storeSlug) {
+            return Tenant::where('slug', $storeSlug)->value('id');
         });
+
+        if (!$tenantId) {
+            return null;
+        }
+
+        return Tenant::find($tenantId);
     }
 
     public function clearCache(?string $storeSlug = null): void

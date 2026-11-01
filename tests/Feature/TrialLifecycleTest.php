@@ -48,9 +48,8 @@ class TrialLifecycleTest extends TestCase
         ]);
         PlatformSetting::clearCache();
 
-        $this->freePlan = Plan::create([
+        $this->freePlan = Plan::updateOrCreate(['slug' => 'free'], [
             'name' => 'Free',
-            'slug' => 'free',
             'monthly_price' => 0,
             'yearly_price' => 0,
             'product_limit' => 10,
@@ -60,9 +59,8 @@ class TrialLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->paidPlan = Plan::create([
+        $this->paidPlan = Plan::updateOrCreate(['slug' => 'starter'], [
             'name' => 'Starter',
-            'slug' => 'starter',
             'monthly_price' => 9.99,
             'yearly_price' => 99.99,
             'product_limit' => 100,
@@ -102,7 +100,7 @@ class TrialLifecycleTest extends TestCase
         $this->assertEquals(14, $subscription->daysLeftInTrial());
     }
 
-    public function test_free_plan_skips_trial(): void
+    public function test_default_plan_receives_trial_when_trial_enabled(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 6, 28, 12, 0, 0));
 
@@ -123,10 +121,12 @@ class TrialLifecycleTest extends TestCase
         $subscription = $tenant->subscription()->first();
 
         $this->assertNotNull($subscription);
-        $this->assertEquals('pending', $subscription->status);
-        $this->assertNull($subscription->trial_ends_at);
-        $this->assertFalse($subscription->isTrialing());
-        $this->assertFalse($subscription->onTrial());
+        $this->assertEquals($this->freePlan->id, $subscription->plan_id);
+        $this->assertEquals('trialing', $subscription->status);
+        $this->assertTrue($subscription->isTrialing());
+        $this->assertTrue($subscription->onTrial());
+        $this->assertTrue($subscription->trial_ends_at->eq(Carbon::now()->addDays(14)));
+        $this->assertTrue($subscription->expires_at->eq($subscription->trial_ends_at));
     }
 
     public function test_trial_disabled_skips_trial(): void
@@ -160,7 +160,7 @@ class TrialLifecycleTest extends TestCase
         $this->assertFalse($subscription->isTrialing());
     }
 
-    public function test_trial_enabled_auto_selects_paid_plan_when_no_plan_id(): void
+    public function test_trial_enabled_auto_selects_default_plan_when_no_plan_id(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 6, 28, 12, 0, 0));
 
@@ -181,7 +181,7 @@ class TrialLifecycleTest extends TestCase
 
         $this->assertNotNull($subscription);
         $this->assertTrue($subscription->isTrialing());
-        $this->assertEquals($this->paidPlan->id, $subscription->plan_id);
+        $this->assertEquals($this->freePlan->id, $subscription->plan_id);
         $this->assertTrue($subscription->starts_at->eq(Carbon::now()));
         $this->assertTrue($subscription->trial_ends_at->eq(Carbon::now()->addDays(14)));
         $this->assertTrue($subscription->expires_at->eq($subscription->trial_ends_at));
@@ -247,7 +247,7 @@ class TrialLifecycleTest extends TestCase
         $this->assertEquals(21, $subscription->daysLeftInTrial());
     }
 
-    public function test_trial_enabled_explicit_free_plan_skips_trial(): void
+    public function test_trial_enabled_explicit_default_plan_starts_trial(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 6, 28, 12, 0, 0));
 
@@ -268,10 +268,11 @@ class TrialLifecycleTest extends TestCase
         $subscription = $tenant->subscription()->first();
 
         $this->assertNotNull($subscription);
-        $this->assertEquals('pending', $subscription->status);
-        $this->assertNull($subscription->trial_ends_at);
-        $this->assertNull($subscription->expires_at);
-        $this->assertFalse($subscription->isTrialing());
+        $this->assertEquals('trialing', $subscription->status);
+        $this->assertEquals($this->freePlan->id, $subscription->plan_id);
+        $this->assertTrue($subscription->isTrialing());
+        $this->assertTrue($subscription->trial_ends_at->eq(Carbon::now()->addDays(14)));
+        $this->assertTrue($subscription->expires_at->eq($subscription->trial_ends_at));
     }
 
     public function test_trial_disabled_uses_free_plan_when_no_plan_id(): void
@@ -306,7 +307,7 @@ class TrialLifecycleTest extends TestCase
         $this->assertFalse($subscription->isTrialing());
     }
 
-    public function test_trial_enabled_no_paid_plans_falls_back_to_free(): void
+    public function test_trial_enabled_without_paid_plans_uses_default_plan_trial(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 6, 28, 12, 0, 0));
 
@@ -329,10 +330,10 @@ class TrialLifecycleTest extends TestCase
         $subscription = $tenant->subscription()->first();
 
         $this->assertNotNull($subscription);
-        $this->assertEquals('pending', $subscription->status);
+        $this->assertEquals('trialing', $subscription->status);
         $this->assertEquals($this->freePlan->id, $subscription->plan_id);
-        $this->assertNull($subscription->trial_ends_at);
-        $this->assertFalse($subscription->isTrialing());
+        $this->assertTrue($subscription->isTrialing());
+        $this->assertTrue($subscription->trial_ends_at->eq(Carbon::now()->addDays(14)));
     }
 
     public function test_activate_tenant_leaves_trialing_subscription(): void

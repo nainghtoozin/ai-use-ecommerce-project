@@ -241,6 +241,8 @@ class SubscriptionController extends Controller
 
         $subscription->renew($expiresAt, $validated['notes'] ?? null);
 
+        $subscription->resolvePendingCancellation('Superseded by renewal.');
+
         SubscriptionAuditService::log($subscription, 'renewed', [
             'reason' => $validated['notes'] ?? null,
         ]);
@@ -256,6 +258,8 @@ class SubscriptionController extends Controller
         ]);
 
         $subscription->renewFromInterval($validated['notes'] ?? null);
+
+        $subscription->resolvePendingCancellation('Superseded by renewal.');
 
         SubscriptionAuditService::log($subscription, 'renewed', [
             'reason' => $validated['notes'] ?? 'Renewed via interval',
@@ -340,7 +344,7 @@ class SubscriptionController extends Controller
 
     public function cancellationRequests(Request $request)
     {
-        $status = $request->get('status', 'pending');
+        $status = $request->get('status', '');
 
         $requests = SubscriptionCancellationRequest::withoutTenantScope()
             ->with(['tenant:id,name,slug', 'subscription:id,plan_id,status,expires_at'])
@@ -366,43 +370,6 @@ class SubscriptionController extends Controller
             'filters' => ['status' => $status],
             'reasons' => SubscriptionCancellationRequest::REASONS,
         ]);
-    }
-
-    public function reviewCancellation(Request $request, SubscriptionCancellationRequest $cancellationRequest)
-    {
-        $data = $request->validate([
-            'action' => ['required', 'in:approve,reject'],
-            'review_note' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        if ($cancellationRequest->status !== SubscriptionCancellationRequest::STATUS_PENDING) {
-            return redirect()->back()->with('error', 'This cancellation request has already been processed.');
-        }
-
-        $cancellationRequest->update([
-            'status' => $data['action'] === 'approve'
-                ? SubscriptionCancellationRequest::STATUS_APPROVED
-                : SubscriptionCancellationRequest::STATUS_REJECTED,
-            'reviewed_by' => auth()->id(),
-            'review_note' => $data['review_note'] ?? null,
-            'reviewed_at' => now(),
-        ]);
-
-        $subscription = $cancellationRequest->subscription;
-        if ($subscription && $data['action'] === 'approve' && !$subscription->cancelled_at) {
-            $subscription->update(['cancelled_at' => now()]);
-
-            SubscriptionAuditService::log($subscription, 'cancel_requested', [
-                'reason' => 'Cancellation approved by SuperAdmin.',
-            ]);
-        }
-
-        return redirect()->back()->with(
-            'success',
-            $data['action'] === 'approve'
-                ? 'Cancellation request approved.'
-                : 'Cancellation request rejected.'
-        );
     }
 
     private function getTenantUsage(Tenant $tenant): array

@@ -119,6 +119,10 @@ class RoleAndPermissionSeeder extends Seeder
             'orders.create',
             'orders.cancel-own',
             'payments.upload-proof',
+
+            // Owner-only — granted directly to the store owner by
+            // TenantBootstrapService. Staff never receive recovery rights.
+            'backup.recover',
         ])->pluck('name')->toArray();
     }
 

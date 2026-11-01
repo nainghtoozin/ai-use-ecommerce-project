@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Data\Currency;
 use App\Enums\CurrencyCode;
+use App\Jobs\SendTelegramMessageJob;
 use App\Models\BillingPaymentMethod;
 use App\Models\PaymentIntent;
 use App\Models\Plan;
@@ -15,8 +16,10 @@ use App\Models\Product;
 use App\Models\SubscriptionCancellationRequest;
 use App\Models\Tenant;
 use App\Models\WebsiteInfo;
+use App\Notifications\SubscriptionCancellationScheduled;
 use App\Services\FeatureGate;
 use App\Services\ImageService;
+use App\Services\NotificationPreferenceService;
 use App\Services\Payment\Platform\CheckoutService;
 use App\Services\Payment\Platform\ManualPaymentService;
 use App\Services\Payment\Platform\PaymentEvidenceService;
@@ -24,6 +27,7 @@ use App\Services\Payment\Platform\PaymentIntentService;
 use App\Services\SubscriptionAuditService;
 use App\Services\SubscriptionLimitService;
 use App\Services\SubscriptionPlanChangeService;
+use App\Services\TelegramSystemAlertMessageBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -220,6 +224,8 @@ class AdminBillingController extends Controller
                 'active' => $activeCancellation ? $this->cancellationPayload($activeCancellation, $subscription) : null,
                 'latest' => $latestCancellation ? $this->cancellationPayload($latestCancellation, $subscription) : null,
                 'reasons' => SubscriptionCancellationRequest::REASONS,
+                // Authoritative eligibility: a paid, active subscription with no cancellation already scheduled.
+                'can_request' => $this->canRequestCancellation($subscription, $activeCancellation),
             ],
         ]);
     }
@@ -1335,6 +1341,8 @@ class AdminBillingController extends Controller
             $subscription->renewTrial();
             $subscription->refresh();
 
+            $subscription->resolvePendingCancellation('Superseded by trial renewal.');
+
             SubscriptionAuditService::log($subscription, 'trial_renewed', [
                 'reason' => 'Trial extended via self-service.',
                 'metadata' => [
@@ -1484,45 +1492,39 @@ class AdminBillingController extends Controller
 
         if ($subscription->activeCancellationRequest()->exists()) {
             return admin_redirect('admin.billing')
-                ->with('error', 'You already have a pending cancellation request.');
+                ->with('error', 'Your subscription cancellation is already scheduled.');
         }
 
-        SubscriptionCancellationRequest::create([
+        $cancellation = SubscriptionCancellationRequest::create([
             'tenant_id' => $tenant->id,
             'subscription_id' => $subscription->id,
             'reason' => $data['reason'],
             'comment' => $data['comment'] ?? null,
-            'status' => SubscriptionCancellationRequest::STATUS_PENDING,
+            'status' => SubscriptionCancellationRequest::STATUS_SCHEDULED,
             'requested_by' => auth()->id(),
         ]);
 
-        return admin_redirect('admin.billing')
-            ->with('success', 'Your cancellation request has been submitted and is pending review.');
-    }
+        SubscriptionAuditService::log($subscription, 'cancellation_scheduled', [
+            'reason' => 'Merchant scheduled cancellation at the end of the paid period.',
+            'metadata' => [
+                'cancellation_request_id' => $cancellation->id,
+                'reason_code' => $cancellation->reason,
+                'effective_at' => $subscription->expires_at?->toDateTimeString(),
+            ],
+        ]);
 
-    public function withdrawCancellation(Request $request)
-    {
-        if (!auth()->user()->can('billing.manage')) {
-            abort(403, 'Unauthorized');
+        if (app(NotificationPreferenceService::class)->tenantAllows($tenant->id)) {
+            $tenant->notifyAdmins(new SubscriptionCancellationScheduled($subscription, $cancellation));
         }
 
-        $tenant = Tenant::getCurrent();
-        if (!$tenant) {
-            abort(403, 'Store not found.');
-        }
-
-        $subscription = $tenant->subscription;
-        $active = $subscription?->activeCancellationRequest()->first();
-
-        if (!$active) {
-            return admin_redirect('admin.billing')
-                ->with('info', 'No pending cancellation request found.');
-        }
-
-        $active->update(['status' => SubscriptionCancellationRequest::STATUS_WITHDRAWN]);
+        SendTelegramMessageJob::dispatchForTenant(
+            $tenant->id,
+            app(TelegramSystemAlertMessageBuilder::class)
+                ->billingSubscriptionCancellationScheduled($subscription, $cancellation),
+        );
 
         return admin_redirect('admin.billing')
-            ->with('success', 'Your cancellation request has been withdrawn.');
+            ->with('success', 'Cancellation scheduled. Your subscription will not renew and your store stays available until ' . ($subscription->expires_at?->toFormattedDateString() ?? 'the end of the paid period') . '.');
     }
 
     /**
@@ -1604,7 +1606,10 @@ class AdminBillingController extends Controller
     private function cancellationPayload(SubscriptionCancellationRequest $request, ?Subscription $subscription = null): array
     {
         $effectiveAt = null;
-        if ($request->status === SubscriptionCancellationRequest::STATUS_APPROVED && $subscription) {
+        if (in_array($request->status, [
+            SubscriptionCancellationRequest::STATUS_SCHEDULED,
+            SubscriptionCancellationRequest::STATUS_APPROVED,
+        ], true) && $subscription) {
             // Access continues until the paid period ends (cancellation is not immediate).
             $effectiveAt = $subscription->expires_at && $subscription->expires_at->isFuture()
                 ? $subscription->expires_at->toDateString()
@@ -1621,7 +1626,31 @@ class AdminBillingController extends Controller
             'review_note' => $request->review_note,
             'reviewed_at' => $request->reviewed_at?->toDateTimeString(),
             'effective_at' => $effectiveAt,
+            // The date paid access is retained through, regardless of request status.
+            'paid_through_at' => $subscription?->expires_at?->toDateString(),
         ];
+    }
+
+    /**
+     * Whether the merchant may schedule a cancellation right now.
+     * Time-independent: any paid, active (or past due) subscription qualifies,
+     * not only near expiry. An already-scheduled cancellation blocks a second one.
+     */
+    private function canRequestCancellation(?Subscription $subscription, ?SubscriptionCancellationRequest $active): bool
+    {
+        if (!$subscription || $active) {
+            return false;
+        }
+
+        if (!auth()->user()?->can('billing.manage')) {
+            return false;
+        }
+
+        if ($subscription->plan?->isFree() ?? false) {
+            return false;
+        }
+
+        return in_array($subscription->status, ['active', 'past_due'], true);
     }
 
     private function paymentFormContext(?Subscription $subscription, ?Plan $targetPlan, ?PaymentIntent $intent): array

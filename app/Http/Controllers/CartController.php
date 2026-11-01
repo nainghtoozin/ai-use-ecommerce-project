@@ -56,32 +56,41 @@ class CartController extends Controller
         ]);
 
         $cart = session()->get('cart', []);
-        $key = $this->buildCartKey($request->product_id, $request->variant_id);
+        $key = $this->buildCartKey((int) $request->product_id, $request->variant_id ? (int) $request->variant_id : null);
 
-        $product = Product::find($request->product_id);
-        $basePrice = $product->price;
+        try {
+            $purchasable = $this->productService->resolvePurchasable(
+                (int) $request->product_id,
+                $request->variant_id ? (int) $request->variant_id : null
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
 
-        if ($request->variant_id) {
-            $variant = ProductVariant::find($request->variant_id);
-            if ($variant) {
-                $basePrice = $variant->price;
-            }
+        $requestedQuantity = (int) $request->quantity;
+        $existingQuantity = (int) ($cart[$key]['quantity'] ?? 0);
+        $basePrice = (float) $purchasable['price'];
+
+        if ($purchasable['stock'] < $existingQuantity + $requestedQuantity) {
+            return response()->json([
+                'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
+            ], 422);
         }
 
         $flashPriceData = $this->flashSaleService->resolveEffectivePrice(
-            $request->product_id,
-            $request->variant_id,
-            (float) $basePrice
+            (int) $request->product_id,
+            $request->variant_id ? (int) $request->variant_id : null,
+            $basePrice
         );
 
         if (isset($cart[$key])) {
-            $cart[$key]['quantity'] += $request->quantity;
+            $cart[$key]['quantity'] = $existingQuantity + $requestedQuantity;
         } else {
             $cart[$key] = [
-                'product_id' => $request->product_id,
-                'variant_id' => $request->variant_id,
-                'quantity' => $request->quantity,
-                'price' => (float) $basePrice,
+                'product_id' => $purchasable['product_id'],
+                'variant_id' => $purchasable['variant_id'],
+                'quantity' => $requestedQuantity,
+                'price' => $basePrice,
             ];
         }
 
@@ -104,6 +113,21 @@ class CartController extends Controller
         $cart = session()->get('cart', []);
 
         if (isset($cart[$key])) {
+            try {
+                $purchasable = $this->productService->resolvePurchasable(
+                    (int) $cart[$key]['product_id'],
+                    !empty($cart[$key]['variant_id']) ? (int) $cart[$key]['variant_id'] : null
+                );
+            } catch (\InvalidArgumentException $e) {
+                return response()->json(['error' => $e->getMessage()], 422);
+            }
+
+            if ($purchasable['stock'] < (int) $request->quantity) {
+                return response()->json([
+                    'error' => 'Insufficient stock. Available: ' . $purchasable['stock'],
+                ], 422);
+            }
+
             $cart[$key]['quantity'] = $request->quantity;
             session()->put('cart', $cart);
             session()->save();

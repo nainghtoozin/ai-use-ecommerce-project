@@ -2,10 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\WebsiteInfo;
 use App\Models\Account;
+use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
+use App\Models\WebsiteInfo;
 use App\Services\StoreResolver;
 use Closure;
 use Illuminate\Http\Request;
@@ -27,6 +28,10 @@ class Storefront
 
         if (!$tenant) {
             abort(404);
+        }
+
+        if (!$this->isManagementRequest($request) && !$tenant->canServePublicStorefront()) {
+            return $this->denyStorefront($request, $tenant);
         }
 
         $authenticatable = Auth::guard('accounts')->check()
@@ -55,5 +60,37 @@ class Storefront
         \Inertia\Inertia::share('website_info', $settings ? $settings->toArray() : []);
 
         return $next($request);
+    }
+
+    /**
+     * Store admin, storefront preview and recovery-result screens must stay
+     * reachable while a store is inactive so the owner can finish activation.
+     */
+    private function isManagementRequest(Request $request): bool
+    {
+        $name = $request->route()?->getName();
+
+        if (!is_string($name)) {
+            return false;
+        }
+
+        return str_starts_with($name, 'storefront.admin.') || $name === 'storefront.preview';
+    }
+
+    private function denyStorefront(Request $request, Tenant $tenant)
+    {
+        $readOnly = $request->isMethod('GET') || $request->isMethod('HEAD');
+
+        if ($readOnly && ($tenant->isLocked() || in_array($tenant->status, ['suspended', 'expired', 'locked'], true))) {
+            return \Inertia\Inertia::render('Storefront/Locked', [
+                'tenant' => [
+                    'name' => $tenant->name,
+                    'slug' => $tenant->slug,
+                    'logo' => $tenant->logo,
+                ],
+            ]);
+        }
+
+        abort(404);
     }
 }

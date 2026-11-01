@@ -11,7 +11,6 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -29,19 +28,16 @@ class FeatureGateTest extends TestCase
     {
         parent::setUp();
 
-        $this->createMinimalSchema();
-
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Permission::create(['name' => 'dashboard.view', 'guard_name' => 'web']);
-        $superadminRole = Role::create(['name' => 'superadmin', 'guard_name' => 'web']);
+        Permission::findOrCreate('dashboard.view', 'web');
+        $superadminRole = Role::findOrCreate('superadmin', 'web');
         $superadminRole->syncPermissions(Permission::all());
-        Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        Role::create(['name' => 'customer', 'guard_name' => 'web']);
+        Role::findOrCreate('admin', 'web');
+        Role::findOrCreate('customer', 'web');
 
-        $this->freePlan = Plan::create([
+        $this->freePlan = Plan::firstOrCreate(['slug' => 'free'], [
             'name' => 'Free',
-            'slug' => 'free',
             'monthly_price' => 0,
             'yearly_price' => 0,
             'product_limit' => 10,
@@ -51,9 +47,8 @@ class FeatureGateTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->starterPlan = Plan::create([
+        $this->starterPlan = Plan::firstOrCreate(['slug' => 'starter'], [
             'name' => 'Starter',
-            'slug' => 'starter',
             'monthly_price' => 9.99,
             'yearly_price' => 99.99,
             'product_limit' => 100,
@@ -63,9 +58,8 @@ class FeatureGateTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->businessPlan = Plan::create([
+        $this->businessPlan = Plan::firstOrCreate(['slug' => 'business'], [
             'name' => 'Business',
-            'slug' => 'business',
             'monthly_price' => 29.99,
             'yearly_price' => 299.99,
             'product_limit' => null,
@@ -321,143 +315,5 @@ class FeatureGateTest extends TestCase
         ]);
 
         return $user;
-    }
-
-    private function createMinimalSchema(): void
-    {
-        $tables = [
-            'permissions' => function ($table) {
-                $table->id();
-                $table->string('name');
-                $table->string('guard_name');
-                $table->timestamps();
-                $table->unique(['name', 'guard_name']);
-            },
-            'roles' => function ($table) {
-                $table->id();
-                $table->string('name');
-                $table->string('guard_name');
-                $table->unsignedBigInteger('tenant_id')->nullable();
-                $table->timestamps();
-                $table->unique(['name', 'guard_name', 'tenant_id']);
-            },
-            'model_has_roles' => function ($table) {
-                $table->unsignedBigInteger('role_id');
-                $table->string('model_type');
-                $table->unsignedBigInteger('model_id');
-                $table->index(['model_id', 'model_type']);
-                $table->primary(['role_id', 'model_id', 'model_type']);
-            },
-            'role_has_permissions' => function ($table) {
-                $table->unsignedBigInteger('permission_id');
-                $table->unsignedBigInteger('role_id');
-                $table->primary(['permission_id', 'role_id']);
-            },
-            'model_has_permissions' => function ($table) {
-                $table->unsignedBigInteger('permission_id');
-                $table->string('model_type');
-                $table->unsignedBigInteger('model_id');
-                $table->index(['model_id', 'model_type']);
-                $table->primary(['permission_id', 'model_id', 'model_type']);
-            },
-            'users' => function ($table) {
-                $table->id();
-                $table->unsignedBigInteger('tenant_id')->nullable();
-                $table->string('name');
-                $table->string('email')->unique();
-                $table->timestamp('email_verified_at')->nullable();
-                $table->string('password');
-                $table->string('status')->default('active');
-                $table->string('profile_image')->nullable();
-                $table->boolean('is_owner')->default(false);
-                $table->rememberToken();
-                $table->timestamps();
-            },
-            'tenants' => function ($table) {
-                $table->id();
-                $table->string('name');
-                $table->string('slug')->unique();
-                $table->string('domain')->nullable()->unique();
-                $table->string('store_url')->nullable();
-                $table->string('email')->nullable();
-                $table->string('logo')->nullable();
-                $table->string('status')->default('active');
-                $table->timestamp('activated_at')->nullable();
-                $table->json('settings')->nullable();
-                $table->unsignedBigInteger('subscription_plan_id')->nullable();
-                $table->timestamp('expires_at')->nullable();
-                $table->bigInteger('used_storage_bytes')->default(0);
-                $table->timestamps();
-            },
-            'plans' => function ($table) {
-                $table->id();
-                $table->string('name');
-                $table->string('slug')->unique();
-                $table->decimal('price', 10, 2)->default(0);
-                $table->string('currency')->default('USD');
-                $table->string('interval')->default('monthly');
-                $table->text('description')->nullable();
-                $table->boolean('is_default')->default(false);
-                $table->boolean('is_active')->default(true);
-                $table->unsignedInteger('sort_order')->default(0);
-                $table->decimal('monthly_price', 10, 2)->nullable();
-                $table->decimal('yearly_price', 10, 2)->nullable();
-                $table->unsignedInteger('product_limit')->nullable();
-                $table->unsignedInteger('staff_limit')->nullable();
-                $table->unsignedInteger('storage_limit')->nullable();
-                $table->boolean('analytics_enabled')->default(false);
-                $table->boolean('custom_domain_enabled')->default(false);
-                $table->string('status', 20)->default('active');
-                $table->timestamps();
-            },
-            'plan_features' => function ($table) {
-                $table->id();
-                $table->unsignedBigInteger('plan_id');
-                $table->string('feature_key');
-                $table->boolean('is_enabled')->default(true);
-                $table->string('display_label')->nullable();
-                $table->text('description')->nullable();
-                $table->timestamps();
-                $table->unique(['plan_id', 'feature_key']);
-            },
-            'subscriptions' => function ($table) {
-                $table->id();
-                $table->unsignedBigInteger('tenant_id');
-                $table->unsignedBigInteger('plan_id')->nullable();
-                $table->string('billing_interval')->default('monthly');
-                $table->string('status')->default('active');
-                $table->timestamp('starts_at')->nullable();
-                $table->timestamp('expires_at')->nullable();
-                $table->timestamp('trial_ends_at')->nullable();
-                $table->timestamp('cancelled_at')->nullable();
-                $table->timestamp('suspended_at')->nullable();
-                $table->text('notes')->nullable();
-                $table->timestamps();
-            },
-            'activity_logs' => function ($table) {
-                $table->id();
-                $table->string('log_name');
-                $table->text('description');
-                $table->string('subject_type')->nullable();
-                $table->unsignedBigInteger('subject_id')->nullable();
-                $table->string('causer_type')->nullable();
-                $table->unsignedBigInteger('causer_id')->nullable();
-                $table->unsignedBigInteger('impersonator_id')->nullable();
-                $table->unsignedBigInteger('impersonated_user_id')->nullable();
-                $table->text('properties')->nullable();
-                $table->string('event')->nullable();
-                $table->string('batch_uuid')->nullable();
-                $table->unsignedBigInteger('tenant_id')->nullable();
-                $table->index(['subject_type', 'subject_id']);
-                $table->index(['causer_type', 'causer_id']);
-                $table->timestamps();
-            },
-        ];
-
-        foreach ($tables as $name => $callback) {
-            if (!Schema::hasTable($name)) {
-                Schema::create($name, $callback);
-            }
-        }
     }
 }

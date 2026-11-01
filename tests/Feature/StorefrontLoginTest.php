@@ -183,6 +183,15 @@ class StorefrontLoginTest extends TestCase
 
         $user->assignRole($role);
 
+        $account = \App\Models\Account::where('email', $email)->firstOrFail();
+        \App\Models\TenantMembership::create([
+            'account_id' => $account->id,
+            'tenant_id' => $tenant->id,
+            'role_id' => $role->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
         return $user;
     }
 
@@ -213,7 +222,7 @@ class StorefrontLoginTest extends TestCase
         ]);
 
         $response->assertRedirect(route('storefront.index', ['store_slug' => $tenant->slug], absolute: false));
-        $this->assertAuthenticated();
+        $this->assertAuthenticated('accounts');
     }
 
     public function test_customer_cannot_login_at_different_store(): void
@@ -249,12 +258,13 @@ class StorefrontLoginTest extends TestCase
 
     public function test_global_login_still_works_for_admin(): void
     {
-        // Create a superadmin user (tenant_id = null)
-        $user = new User();
-        $user->name = 'Super Admin';
-        $user->email = 'admin@test.com';
-        $user->password = Hash::make('password');
-        $user->save();
+        $account = \App\Models\Account::create([
+            'name' => 'Super Admin',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('password'),
+            'status' => \App\Models\Account::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
 
         $role = \App\Models\Role::firstOrCreate([
             'name' => 'superadmin',
@@ -262,27 +272,20 @@ class StorefrontLoginTest extends TestCase
             'tenant_id' => null,
         ]);
 
-        $user->assignRole($role);
+        $account->assignRole($role);
 
         $response = $this->post('/login', [
             'email' => 'admin@test.com',
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('admin.dashboard', absolute: false));
-        $this->assertAuthenticated();
+        $response->assertRedirect(route('superadmin.dashboard', absolute: false));
+        $this->assertAuthenticated('accounts');
     }
 
     public function test_storefront_login_redirects_admin_to_admin_dashboard(): void
     {
         $tenant = $this->createTenantWithSettings('Store X', 'store-x');
-
-        $adminUser = new User();
-        $adminUser->name = 'Store Admin';
-        $adminUser->email = 'admin@store-x.com';
-        $adminUser->password = Hash::make('password');
-        $adminUser->tenant_id = $tenant->id;
-        $adminUser->save();
 
         $adminRole = \App\Models\Role::firstOrCreate([
             'name' => 'admin',
@@ -290,7 +293,24 @@ class StorefrontLoginTest extends TestCase
             'tenant_id' => $tenant->id,
         ]);
 
-        $adminUser->assignRole($adminRole);
+        $account = \App\Models\Account::create([
+            'name' => 'Store Admin',
+            'email' => 'admin@store-x.com',
+            'password' => Hash::make('password'),
+            'status' => \App\Models\Account::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        $account->assignRole($adminRole);
+
+        \App\Models\TenantMembership::create([
+            'account_id' => $account->id,
+            'tenant_id' => $tenant->id,
+            'role_id' => $adminRole->id,
+            'status' => 'active',
+            'is_owner' => true,
+            'joined_at' => now(),
+        ]);
 
         $response = $this->post("/store/{$tenant->slug}/login", [
             'email' => 'admin@store-x.com',
@@ -298,6 +318,6 @@ class StorefrontLoginTest extends TestCase
         ]);
 
         $response->assertRedirect(route('storefront.admin.dashboard', ['store_slug' => $tenant->slug], absolute: false));
-        $this->assertAuthenticated();
+        $this->assertAuthenticated('accounts');
     }
 }

@@ -96,6 +96,179 @@ class TenantBootstrapService
     }
 
     /**
+     * Bootstrap a recovered tenant without provisioning default content.
+     *
+     * Creates tenant-scoped roles, a pending subscription on the given plan,
+     * and a secure owner membership. Default payment methods, warehouses,
+     * FAQs, locations and storefront data are intentionally skipped because
+     * the recovered archive is authoritative.
+     *
+     * Ownership is handed to the source store's owner, never to a staff member
+     * who merely initiated the recovery.
+     *
+     * @return array{owner: User|Account|null, handoff_required: bool}
+     */
+    public function bootstrapRecovery(Tenant $tenant, Tenant $source, User|Account|null $actor, ?Plan $plan): array
+    {
+        $this->createRoles($tenant);
+
+        if ($plan) {
+            $tenant->subscription()->create([
+                'plan_id' => $plan->id,
+                'billing_interval' => $plan->defaultInterval(),
+                'status' => 'pending',
+                'starts_at' => null,
+                'expires_at' => null,
+            ]);
+
+            $tenant->update(['subscription_plan_id' => $plan->id]);
+        }
+
+        $adminRole = Role::withoutTenantScope()
+            ->where('name', 'admin')
+            ->where('guard_name', 'web')
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        if (!$adminRole) {
+            throw new \RuntimeException("Recovery owner role 'admin' was not created for tenant '{$tenant->slug}'.");
+        }
+
+        $ownerIdentity = $this->resolveRecoveryOwner($source, $actor);
+        $handoffRequired = $ownerIdentity === null;
+
+        if (config('identity.use_accounts')) {
+            $owner = $ownerIdentity instanceof Account
+                ? $ownerIdentity
+                : $this->createRecoveryAccount($tenant, $ownerIdentity);
+
+            if (!$ownerIdentity instanceof Account) {
+                $handoffRequired = true;
+            }
+
+            TenantMembership::updateOrCreate(
+                [
+                    'account_id' => $owner->id,
+                    'tenant_id' => $tenant->id,
+                ],
+                [
+                    'role_id' => $adminRole->id,
+                    'is_owner' => true,
+                    'status' => 'active',
+                    'joined_at' => now(),
+                    'is_default' => false,
+                ]
+            );
+
+            return ['owner' => $owner, 'handoff_required' => $handoffRequired];
+        }
+
+        $owner = $this->createRecoveryUser($tenant, $ownerIdentity);
+        $owner->assignRole($adminRole);
+        $this->grantRecoveryPermission($owner);
+
+        // Legacy identity users are tenant-bound, so the recovered store always
+        // receives a new owner row that an administrator must activate.
+        return ['owner' => $owner, 'handoff_required' => true];
+    }
+
+    /**
+     * The recovered store belongs to the source store's owner. A SuperAdmin
+     * acting on behalf of the merchant never becomes the tenant owner.
+     */
+    private function resolveRecoveryOwner(Tenant $source, User|Account|null $actor): User|Account|null
+    {
+        if ($actor && !$actor->isSuperAdmin() && $source->isOwnedBy($actor)) {
+            return $actor;
+        }
+
+        if (config('identity.use_accounts')) {
+            return $source->ownerMembership()
+                ->where('status', 'active')
+                ->with('account')
+                ->first()
+                ?->account;
+        }
+
+        return User::where('tenant_id', $source->id)
+            ->where('is_owner', true)
+            ->first();
+    }
+
+    private function grantRecoveryPermission(User|Account $owner): void
+    {
+        if (!Permission::where('name', 'backup.recover')->exists()) {
+            return;
+        }
+
+        $owner->givePermissionTo('backup.recover');
+    }
+
+    private function createRecoveryAccount(Tenant $tenant, User|Account|null $actor): Account
+    {
+        $name = $actor?->name ?: 'Recovered Store Owner';
+        $email = $this->aliasIdentityEmail(
+            $actor?->email,
+            $tenant->id,
+            'owner-' . $tenant->id
+        );
+
+        return Account::create([
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make(\Illuminate\Support\Str::random(48)),
+            'status' => Account::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+    }
+
+    private function createRecoveryUser(Tenant $tenant, User|Account|null $actor): User
+    {
+        $name = $actor?->name ?: 'Recovered Store Owner';
+        $email = $this->aliasIdentityEmail(
+            $actor?->email,
+            $tenant->id,
+            'owner-' . $tenant->id
+        );
+
+        return User::create([
+            'tenant_id' => $tenant->id,
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make(\Illuminate\Support\Str::random(48)),
+            'status' => User::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+            'is_owner' => true,
+            'allow_cod' => true,
+        ]);
+    }
+
+    private function aliasIdentityEmail(?string $email, int $tenantId, string $tag): string
+    {
+        $email = is_string($email) ? trim($email) : '';
+        $domain = 'restored.invalid';
+        $local = 'owner';
+
+        if ($email !== '' && str_contains($email, '@')) {
+            [$local, $domain] = explode('@', $email, 2);
+            $local = preg_replace('/[^a-zA-Z0-9._-]/', '', $local) ?: 'owner';
+            $domain = preg_replace('/[^a-zA-Z0-9.-]/', '', $domain) ?: 'restored.invalid';
+        }
+
+        $tag = preg_replace('/[^a-zA-Z0-9._-]/', '-', $tag) ?: (string) $tenantId;
+        $baseLocal = substr($local, 0, 120) . '+' . $tag;
+        $candidate = $baseLocal . '@' . $domain;
+        $suffix = 1;
+
+        while (User::where('email', $candidate)->exists() || Account::where('email', $candidate)->exists()) {
+            $suffix++;
+            $candidate = $baseLocal . '-' . $suffix . '@' . $domain;
+        }
+
+        return $candidate;
+    }
+
+    /**
      * Ensure a customer role exists for a tenant.
      */
     public function ensureCustomerRole(Tenant $tenant): Role
@@ -303,6 +476,7 @@ class TenantBootstrapService
         }
 
         $owner->assignRole($adminRole);
+        $this->grantRecoveryPermission($owner);
     }
 
     /**

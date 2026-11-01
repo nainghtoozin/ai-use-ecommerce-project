@@ -13,6 +13,10 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $categories = Category::pluck('id')->toArray();
+
+        if ($categories === []) {
+            $categories = [Category::factory()->create()->id];
+        }
         
         $productNames = [
             'Wireless Bluetooth Headphones',

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentMethod;
@@ -18,6 +19,7 @@ class StorefrontOrderCustomerTest extends TestCase
 
     private Tenant $tenant;
     private Tenant $otherTenant;
+    private Category $category;
     private Product $singleProduct;
     private Product $variableProduct;
     private ProductVariant $variant;
@@ -61,7 +63,17 @@ class StorefrontOrderCustomerTest extends TestCase
             'status' => 'active',
         ]);
 
+        Tenant::setCurrent($this->tenant);
+
+        $this->category = Category::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Default Category',
+            'slug' => 'default-category',
+            'is_active' => true,
+        ]);
+
         $this->singleProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Single Product',
             'type' => 'single',
@@ -71,6 +83,7 @@ class StorefrontOrderCustomerTest extends TestCase
         ]);
 
         $this->variableProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Variable Product',
             'type' => 'variable',
@@ -267,10 +280,11 @@ class StorefrontOrderCustomerTest extends TestCase
         $response = $this->actingAs($user)->get('/orders/' . $this->order->id);
 
         $response->assertOk();
-        $content = $response->getContent();
+        $order = $response->viewData('page')['props']['order'];
+        $product = $order['items'][0]['product'];
 
-        $this->assertStringNotContainsString('cost_price', strtolower($content));
-        $this->assertStringNotContainsString('supplier', strtolower($content));
+        $this->assertArrayNotHasKey('cost_price', $product);
+        $this->assertArrayNotHasKey('supplier', $product);
     }
 
     /** @test */
@@ -289,6 +303,7 @@ class StorefrontOrderCustomerTest extends TestCase
     public function combo_order_remains_compatible(): void
     {
         $comboProduct = Product::create([
+            'category_id' => $this->category->id,
             'tenant_id' => $this->tenant->id,
             'name' => 'Combo Product',
             'type' => 'combo',
@@ -377,7 +392,8 @@ class StorefrontOrderCustomerTest extends TestCase
         $response = $this->actingAs($user)->get('/orders/' . $this->order->id);
 
         $response->assertOk();
-        $response->assertSee('Cancel Order');
+        $order = $response->viewData('page')['props']['order'];
+        $this->assertTrue($order['can_cancel']);
     }
 
     /** @test */

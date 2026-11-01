@@ -179,15 +179,14 @@ class StorefrontRegistrationTest extends TestCase
         }
     }
 
-    public function test_global_register_get_redirects_with_message(): void
+    public function test_global_register_get_renders_registration_screen(): void
     {
         $response = $this->get('/register');
 
-        $response->assertRedirect(route('login'));
-        $response->assertSessionHas('error', 'Please register from a specific store.');
+        $response->assertOk();
     }
 
-    public function test_global_register_post_redirects_with_message(): void
+    public function test_global_register_creates_account_and_redirects_to_verification(): void
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
@@ -196,8 +195,9 @@ class StorefrontRegistrationTest extends TestCase
             'password_confirmation' => 'Password123',
         ]);
 
-        $response->assertRedirect(route('login'));
-        $response->assertSessionHas('error', 'Please register from a specific store.');
+        $response->assertRedirect(route('verification.notice'));
+        $this->assertAuthenticated('accounts');
+        $this->assertDatabaseHas('accounts', ['email' => 'test@example.com']);
     }
 
     public function test_storefront_register_get_returns_ok(): void
@@ -209,7 +209,7 @@ class StorefrontRegistrationTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_storefront_register_creates_user_with_tenant_and_customer_role(): void
+    public function test_storefront_register_creates_account_with_membership_and_customer_role(): void
     {
         $tenant = $this->createTenantWithSettings('May Fashion', 'may-fashion');
 
@@ -218,17 +218,23 @@ class StorefrontRegistrationTest extends TestCase
             'email' => 'customer@mayfashion.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'phone' => '09123456789',
         ]);
 
         $response->assertRedirect(route('storefront.index', ['store_slug' => $tenant->slug], absolute: false));
-        $this->assertAuthenticated();
+        $this->assertAuthenticated('accounts');
 
-        $user = User::where('email', 'customer@mayfashion.com')->first();
-        $this->assertNotNull($user);
-        $this->assertEquals($tenant->id, $user->tenant_id);
-        $this->assertTrue(Hash::check('Password123', $user->password));
+        $account = \App\Models\Account::where('email', 'customer@mayfashion.com')->first();
+        $this->assertNotNull($account);
+        $this->assertTrue(Hash::check('Password123', $account->password));
 
-        $this->assertTrue($user->hasRole('customer'));
+        $membership = \App\Models\TenantMembership::where('account_id', $account->id)
+            ->where('tenant_id', $tenant->id)
+            ->first();
+        $this->assertNotNull($membership);
+        $role = \App\Models\Role::withoutTenantScope()->find($membership->role_id);
+        $this->assertNotNull($role);
+        $this->assertEquals('customer', $role->name);
     }
 
     public function test_storefront_register_creates_tenant_scoped_customer_role(): void
@@ -242,13 +248,14 @@ class StorefrontRegistrationTest extends TestCase
             'email' => 'usera@example.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'phone' => '09111111111',
         ]);
 
-        $this->assertAuthenticated();
+        $this->assertAuthenticated('accounts');
         $responseA->assertRedirect(route('storefront.index', ['store_slug' => $tenantA->slug], absolute: false));
 
         $this->post('/logout');
-        $this->assertGuest();
+        $this->assertGuest('accounts');
 
         // Register at Store B
         $responseB = $this->post("/store/{$tenantB->slug}/register", [
@@ -256,25 +263,31 @@ class StorefrontRegistrationTest extends TestCase
             'email' => 'userb@example.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'phone' => '09222222222',
         ]);
 
-        $this->assertAuthenticated();
+        $this->assertAuthenticated('accounts');
 
-        $userA = User::where('email', 'usera@example.com')->first();
-        $userB = User::where('email', 'userb@example.com')->first();
+        $accountA = \App\Models\Account::where('email', 'usera@example.com')->first();
+        $accountB = \App\Models\Account::where('email', 'userb@example.com')->first();
 
-        $this->assertNotNull($userA, 'User A not found');
-        $this->assertNotNull($userB, 'User B not found');
+        $this->assertNotNull($accountA, 'Account A not found');
+        $this->assertNotNull($accountB, 'Account B not found');
 
-        $this->assertEquals($tenantA->id, $userA->tenant_id);
-        $this->assertEquals($tenantB->id, $userB->tenant_id);
+        $membershipA = \App\Models\TenantMembership::where('account_id', $accountA->id)->first();
+        $membershipB = \App\Models\TenantMembership::where('account_id', $accountB->id)->first();
 
-        // Each user should have a tenant-scoped customer role
-        $rolesA = $userA->getRoleNames();
-        $rolesB = $userB->getRoleNames();
-        $this->assertCount(1, $rolesA);
-        $this->assertEquals('customer', $rolesA->first());
-        $this->assertCount(1, $rolesB);
-        $this->assertEquals('customer', $rolesB->first());
+        $this->assertEquals($tenantA->id, $membershipA->tenant_id);
+        $this->assertEquals($tenantB->id, $membershipB->tenant_id);
+
+        // Each membership should reference a customer role scoped to its own tenant
+        $roleA = \App\Models\Role::withoutTenantScope()->find($membershipA->role_id);
+        $roleB = \App\Models\Role::withoutTenantScope()->find($membershipB->role_id);
+        $this->assertNotNull($roleA);
+        $this->assertNotNull($roleB);
+        $this->assertEquals('customer', $roleA->name);
+        $this->assertEquals($tenantA->id, $roleA->tenant_id);
+        $this->assertEquals('customer', $roleB->name);
+        $this->assertEquals($tenantB->id, $roleB->tenant_id);
     }
 }

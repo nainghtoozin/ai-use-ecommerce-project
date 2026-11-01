@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\PaymentIntent;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Models\SubscriptionCancellationRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -95,12 +96,39 @@ class TelegramSystemAlertMessageBuilder
         );
     }
 
-    public function billingSubscriptionExpiring(Subscription $subscription, int $days): TelegramPayload
+    public function billingSubscriptionExpiring(Subscription $subscription, int $days, ?SubscriptionCancellationRequest $cancellation = null): TelegramPayload
     {
         $subscription->loadMissing('plan', 'tenant');
         $planName = $subscription->plan?->name ?? 'Current';
 
         $lines = [];
+
+        if ($cancellation) {
+            $lines[] = "<b>Subscription Ending Soon</b>";
+            $lines[] = "";
+            $lines[] = "<b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+            $lines[] = "<b>Plan:</b> " . e($planName);
+            $lines[] = "<b>Paid through:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+            $lines[] = "<b>Remaining:</b> {$days} day(s)";
+            $lines[] = "Cancellation is scheduled. The subscription will not renew.";
+            $lines[] = "Data will not be deleted automatically; the merchant can export it.";
+            $lines[] = "";
+            $lines[] = now()->format('M j, Y g:i A');
+
+            return new TelegramPayload(
+                message: implode("\n", $lines),
+                notificationType: 'billing.subscription_expiring',
+                destination: 'payment',
+                context: [
+                    'notification_type' => 'billing.subscription_expiring',
+                    'tenant_id' => $subscription->tenant_id,
+                    'subscription_id' => $subscription->id,
+                    'days_remaining' => $days,
+                    'cancellation_scheduled' => true,
+                    'created_at' => now()->toIso8601String(),
+                ],
+            );
+        }
         $lines[] = "<b>⏳ Subscription Expiring Soon</b>";
         $lines[] = "";
         $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
@@ -124,12 +152,36 @@ class TelegramSystemAlertMessageBuilder
         );
     }
 
-    public function billingSubscriptionPastDue(Subscription $subscription): TelegramPayload
+    public function billingSubscriptionPastDue(Subscription $subscription, ?SubscriptionCancellationRequest $cancellation = null): TelegramPayload
     {
         $subscription->loadMissing('plan', 'tenant');
         $planName = $subscription->plan?->name ?? 'Current';
 
         $lines = [];
+
+        if ($cancellation) {
+            $lines[] = "<b>Subscription Ended as Scheduled</b>";
+            $lines[] = "";
+            $lines[] = "<b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+            $lines[] = "<b>Plan:</b> " . e($planName);
+            $lines[] = "<b>Paid through:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+            $lines[] = "The 7-day grace period has started. Data has not been deleted.";
+            $lines[] = "";
+            $lines[] = now()->format('M j, Y g:i A');
+
+            return new TelegramPayload(
+                message: implode("\n", $lines),
+                notificationType: 'billing.subscription_past_due',
+                destination: 'payment',
+                context: [
+                    'notification_type' => 'billing.subscription_past_due',
+                    'tenant_id' => $subscription->tenant_id,
+                    'subscription_id' => $subscription->id,
+                    'cancellation_scheduled' => true,
+                    'created_at' => now()->toIso8601String(),
+                ],
+            );
+        }
         $lines[] = "<b>⚠️ Subscription Past Due</b>";
         $lines[] = "";
         $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
@@ -152,12 +204,37 @@ class TelegramSystemAlertMessageBuilder
         );
     }
 
-    public function billingSubscriptionExpired(Subscription $subscription): TelegramPayload
+    public function billingSubscriptionExpired(Subscription $subscription, ?SubscriptionCancellationRequest $cancellation = null): TelegramPayload
     {
         $subscription->loadMissing('plan', 'tenant');
         $planName = $subscription->plan?->name ?? 'Current';
 
         $lines = [];
+
+        if ($cancellation) {
+            $lines[] = "<b>Subscription Ended</b>";
+            $lines[] = "";
+            $lines[] = "<b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+            $lines[] = "<b>Plan:</b> " . e($planName);
+            $lines[] = "<b>Paid through:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+            $lines[] = "The grace period has passed and store operations are restricted.";
+            $lines[] = "Data has not been deleted automatically; the merchant can export it.";
+            $lines[] = "";
+            $lines[] = now()->format('M j, Y g:i A');
+
+            return new TelegramPayload(
+                message: implode("\n", $lines),
+                notificationType: 'billing.subscription_expired',
+                destination: 'payment',
+                context: [
+                    'notification_type' => 'billing.subscription_expired',
+                    'tenant_id' => $subscription->tenant_id,
+                    'subscription_id' => $subscription->id,
+                    'cancellation_scheduled' => true,
+                    'created_at' => now()->toIso8601String(),
+                ],
+            );
+        }
         $lines[] = "<b>⛔ Subscription Expired</b>";
         $lines[] = "";
         $lines[] = "🏪 <b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
@@ -201,6 +278,36 @@ class TelegramSystemAlertMessageBuilder
                 'notification_type' => 'billing.subscription_renewed',
                 'tenant_id' => $subscription->tenant_id,
                 'subscription_id' => $subscription->id,
+                'created_at' => now()->toIso8601String(),
+            ],
+        );
+    }
+
+    public function billingSubscriptionCancellationScheduled(Subscription $subscription, ?SubscriptionCancellationRequest $cancellation = null): TelegramPayload
+    {
+        $subscription->loadMissing('plan', 'tenant');
+        $planName = $subscription->plan?->name ?? 'Current';
+
+        $lines = [];
+        $lines[] = "<b>Cancellation Scheduled</b>";
+        $lines[] = "";
+        $lines[] = "<b>Shop:</b> " . e($subscription->tenant?->name ?? 'N/A');
+        $lines[] = "<b>Plan:</b> " . e($planName);
+        $lines[] = "<b>Paid through:</b> " . ($subscription->expires_at?->format('M j, Y') ?? 'N/A');
+        $lines[] = "The subscription will not renew. Access continues until the paid period ends.";
+        $lines[] = "Data will not be deleted automatically; the merchant can export it.";
+        $lines[] = "";
+        $lines[] = now()->format('M j, Y g:i A');
+
+        return new TelegramPayload(
+            message: implode("\n", $lines),
+            notificationType: 'billing.subscription_cancellation_scheduled',
+            destination: 'payment',
+            context: [
+                'notification_type' => 'billing.subscription_cancellation_scheduled',
+                'tenant_id' => $subscription->tenant_id,
+                'subscription_id' => $subscription->id,
+                'cancellation_request_id' => $cancellation?->id,
                 'created_at' => now()->toIso8601String(),
             ],
         );

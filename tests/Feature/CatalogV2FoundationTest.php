@@ -31,6 +31,8 @@ class CatalogV2FoundationTest extends TestCase
     private Plan $starterPlan;
     private Plan $businessPlan;
     private User $admin;
+    private Category $categoryA;
+    private Category $categoryB;
 
     protected function setUp(): void
     {
@@ -264,27 +266,26 @@ class CatalogV2FoundationTest extends TestCase
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Permission::create(['name' => 'dashboard.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'categories.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'categories.create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'categories.update', 'guard_name' => 'web']);
-        Permission::create(['name' => 'categories.delete', 'guard_name' => 'web']);
-        Permission::create(['name' => 'products.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'products.create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'products.edit', 'guard_name' => 'web']);
-        Permission::create(['name' => 'products.delete', 'guard_name' => 'web']);
+        Permission::findOrCreate('dashboard.view', 'web');
+        Permission::findOrCreate('categories.view', 'web');
+        Permission::findOrCreate('categories.create', 'web');
+        Permission::findOrCreate('categories.update', 'web');
+        Permission::findOrCreate('categories.delete', 'web');
+        Permission::findOrCreate('products.view', 'web');
+        Permission::findOrCreate('products.create', 'web');
+        Permission::findOrCreate('products.edit', 'web');
+        Permission::findOrCreate('products.delete', 'web');
 
-        $superadminRole = Role::create(['name' => 'superadmin', 'guard_name' => 'web']);
+        $superadminRole = Role::findOrCreate('superadmin', 'web');
         $superadminRole->syncPermissions(Permission::all());
 
-        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $adminRole = Role::findOrCreate('admin', 'web');
         $adminRole->syncPermissions(Permission::all());
 
-        Role::create(['name' => 'customer', 'guard_name' => 'web']);
+        Role::findOrCreate('customer', 'web');
 
-        $this->freePlan = Plan::create([
+        $this->freePlan = Plan::firstOrCreate(['slug' => 'free'], [
             'name' => 'Free',
-            'slug' => 'free',
             'monthly_price' => 0,
             'yearly_price' => 0,
             'product_limit' => 10,
@@ -294,9 +295,8 @@ class CatalogV2FoundationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->starterPlan = Plan::create([
+        $this->starterPlan = Plan::firstOrCreate(['slug' => 'starter'], [
             'name' => 'Starter',
-            'slug' => 'starter',
             'monthly_price' => 9.99,
             'yearly_price' => 99.99,
             'product_limit' => 100,
@@ -306,9 +306,8 @@ class CatalogV2FoundationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->businessPlan = Plan::create([
+        $this->businessPlan = Plan::firstOrCreate(['slug' => 'business'], [
             'name' => 'Business',
-            'slug' => 'business',
             'monthly_price' => 29.99,
             'yearly_price' => 299.99,
             'product_limit' => null,
@@ -348,23 +347,35 @@ class CatalogV2FoundationTest extends TestCase
             'store_url' => '/store/store-b',
         ]);
 
-        $subscriptionA = \App\Models\Subscription::create([
+        $this->categoryA = Category::create([
+            'tenant_id' => $this->tenantA->id,
+            'name' => 'Default A',
+        ]);
+
+        $this->categoryB = Category::create([
+            'tenant_id' => $this->tenantB->id,
+            'name' => 'Default B',
+        ]);
+
+        $subscriptionA = new \App\Models\Subscription();
+        $subscriptionA->forceFill([
             'tenant_id' => $this->tenantA->id,
             'plan_id' => $this->starterPlan->id,
             'billing_interval' => 'monthly',
             'status' => 'active',
             'starts_at' => now(),
             'expires_at' => now()->addMonth(),
-        ]);
+        ])->save();
 
-        $subscriptionB = \App\Models\Subscription::create([
+        $subscriptionB = new \App\Models\Subscription();
+        $subscriptionB->forceFill([
             'tenant_id' => $this->tenantB->id,
             'plan_id' => $this->freePlan->id,
             'billing_interval' => 'monthly',
             'status' => 'active',
             'starts_at' => now(),
             'expires_at' => now()->addMonth(),
-        ]);
+        ])->save();
 
         $this->tenantA->subscription_plan_id = $this->starterPlan->id;
         $this->tenantA->save();
@@ -510,41 +521,22 @@ class CatalogV2FoundationTest extends TestCase
     {
         $this->actAsAdminForTenantA();
 
-        $parentTenantA = Category::create([
-            'tenant_id' => $this->tenantA->id,
-            'name' => 'Parent A',
-        ]);
-
-        $this->actAsAdminForTenantB();
-
         $parentTenantB = Category::create([
             'tenant_id' => $this->tenantB->id,
             'name' => 'Parent B',
         ]);
 
-        $this->actingAs($this->admin);
-        \App\Models\Tenant::setCurrent($this->tenantB);
+        $request = \App\Http\Requests\StoreCategoryRequest::create(
+            '/store/store-a/admin/categories',
+            'POST',
+            ['name' => 'Child A', 'parent_id' => $parentTenantB->id]
+        );
 
-        $childTenantB = Category::create([
-            'tenant_id' => $this->tenantB->id,
-            'name' => 'Child B',
-        ]);
-
-        $this->actingAs($this->admin);
-        \App\Models\Tenant::setCurrent($this->tenantA);
-
-        $childTenantA = Category::create([
-            'tenant_id' => $this->tenantA->id,
-            'name' => 'Child A',
-        ]);
-
-        $childTenantA->parent_id = $parentTenantB->id;
-
-        $validator = validator(['parent_id' => $parentTenantB->id], [
-            'parent_id' => 'nullable|integer|exists:categories,id',
-        ]);
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $request->rules());
+        $request->withValidator($validator);
 
         $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('parent_id', $validator->errors()->toArray());
     }
 
     /** @test */
@@ -587,11 +579,19 @@ class CatalogV2FoundationTest extends TestCase
     {
         $this->actAsAdminForTenantA();
 
-        $category = Category::create([
+        $id = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
             'tenant_id' => $this->tenantA->id,
             'name' => 'Legacy Category',
             'description' => 'Existing category without slug',
+            'is_active' => true,
+            'featured' => false,
+            'sort_order' => 0,
+            'slug' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
+
+        $category = Category::withoutGlobalScopes()->find($id);
 
         $this->assertNotNull($category->id);
         $this->assertEquals('Legacy Category', $category->name);
@@ -612,6 +612,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $product = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Test Product',
             'price' => 100.00,
@@ -629,6 +630,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $product = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Test Product Sale',
             'price' => 100.00,
@@ -646,6 +648,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $component = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Component A',
             'price' => 50.00,
@@ -654,6 +657,7 @@ class CatalogV2FoundationTest extends TestCase
         ]);
 
         $combo = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Combo Product',
             'price' => 80.00,
@@ -679,6 +683,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $product = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Legacy Product',
             'price' => 199.99,
@@ -698,6 +703,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $product = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Variable Product',
             'price' => 100.00,
@@ -808,6 +814,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $prodA = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Product A',
             'price' => 10,
@@ -819,6 +826,7 @@ class CatalogV2FoundationTest extends TestCase
         \App\Models\Tenant::setCurrent($this->tenantB);
 
         $prodB = Product::create([
+            'category_id' => $this->categoryB->id,
             'tenant_id' => $this->tenantB->id,
             'name' => 'Product B',
             'price' => 20,
@@ -843,8 +851,8 @@ class CatalogV2FoundationTest extends TestCase
         Category::create(['tenant_id' => $this->tenantA->id, 'name' => 'Inactive Cat', 'is_active' => false]);
 
         $activeCategories = Category::forCurrentTenant()->active()->get();
-        $this->assertCount(1, $activeCategories);
-        $this->assertEquals('Active Cat', $activeCategories->first()->name);
+        $this->assertTrue($activeCategories->contains('name', 'Active Cat'));
+        $this->assertFalse($activeCategories->contains('name', 'Inactive Cat'));
     }
 
     /** @test */
@@ -856,8 +864,13 @@ class CatalogV2FoundationTest extends TestCase
         Category::create(['tenant_id' => $this->tenantA->id, 'name' => 'Child', 'parent_id' => $parent->id]);
         Category::create(['tenant_id' => $this->tenantA->id, 'name' => 'Root']);
 
-        $this->assertCount(2, Category::forCurrentTenant()->rootOnly()->get());
-        $this->assertCount(1, Category::forCurrentTenant()->withParent()->get());
+        $roots = Category::forCurrentTenant()->rootOnly()->get();
+        $withParent = Category::forCurrentTenant()->withParent()->get();
+
+        $this->assertTrue($roots->contains('name', 'Parent'));
+        $this->assertTrue($roots->contains('name', 'Root'));
+        $this->assertFalse($roots->contains('name', 'Child'));
+        $this->assertTrue($withParent->contains('name', 'Child'));
     }
 
     /** @test */
@@ -890,6 +903,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $product = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Sale Product',
             'price' => 100.00,
@@ -912,6 +926,7 @@ class CatalogV2FoundationTest extends TestCase
         $this->actAsAdminForTenantA();
 
         $product = Product::create([
+            'category_id' => $this->categoryA->id,
             'tenant_id' => $this->tenantA->id,
             'name' => 'Regular Product',
             'price' => 100.00,
@@ -927,3 +942,4 @@ class CatalogV2FoundationTest extends TestCase
         $this->assertNull($summary['sale_price']);
     }
 }
+

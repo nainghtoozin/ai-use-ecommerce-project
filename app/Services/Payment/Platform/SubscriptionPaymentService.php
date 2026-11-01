@@ -86,6 +86,8 @@ class SubscriptionPaymentService
     ): void {
         $subscription->renewFromInterval('Auto-renewed via ' . $gateway . ' (' . $transactionId . ')');
 
+        $subscription->resolvePendingCancellation('Superseded by renewal.');
+
         $this->audit->log(
             subscription: $subscription,
             event: 'payment_completed',

@@ -192,6 +192,12 @@ class BillingEmailService
                 return false;
             }
 
+            // A scheduled cancellation already tells the merchant the subscription
+            // will not renew; a "renews soon" email would contradict it.
+            if ($subscription->activeCancellationRequest()->exists()) {
+                return false;
+            }
+
             $daysRemaining = (int) now()->startOfDay()
                 ->diffInDays($subscription->expires_at->copy()->startOfDay(), false);
 
