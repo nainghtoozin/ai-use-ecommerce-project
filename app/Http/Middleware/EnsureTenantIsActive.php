@@ -54,8 +54,19 @@ class EnsureTenantIsActive
 
         // Banned or inactive — block all operations
         if (! in_array($tenant->status, ['active', 'trialing'])) {
-            return $this->redirectToSuspended($storeSlug)
-                ->with('error', 'Your account is currently restricted. Please contact support.');
+            $allowPendingOwner = false;
+            if ($tenant->status === 'pending' && $user->hasVerifiedEmail()) {
+                if ($user instanceof Account) {
+                    $allowPendingOwner = $tenant->isOwnedBy($user);
+                } elseif ($user instanceof \App\Models\User) {
+                    $allowPendingOwner = $user->isOwner() && (int) $user->tenant_id === (int) $tenant->id;
+                }
+            }
+
+            if (! $allowPendingOwner) {
+                return $this->redirectToSuspended($storeSlug)
+                    ->with('error', 'Your account is currently restricted. Please contact support.');
+            }
         }
 
         $subscription = $tenant->subscription;

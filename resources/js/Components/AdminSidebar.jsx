@@ -18,7 +18,7 @@ import {
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
-    Truck, Database,
+    Truck, Database, AlertTriangle, RotateCcw,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -51,7 +51,7 @@ const iconMap = {
     LayoutTemplate, Images, LayoutList,
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
-    Truck, Database,
+    Truck, Database, AlertTriangle, RotateCcw,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -237,6 +237,7 @@ export default function AdminSidebar() {
                     ...(isVis('billing.history') ? [{ label: 'Payment History', href: '/admin/billing/payment-history', icon: 'Clock' }] : []),
                     ...(isVis('billing.overview') ? [{ label: 'Export My Data', href: '/admin/data-export', icon: 'Database' }] : []),
                     ...(isVis('billing.overview') ? [{ label: 'Merchant Backup', href: '/admin/backups', icon: 'Archive' }] : []),
+                    ...(isOwner ? [{ label: 'Store Data Reset', href: '/admin/store-reset', icon: 'AlertTriangle' }] : []),
                 ]
             }] : []),
             ...(can('reports.sales') && hasFeature('reports') ? [{
@@ -257,6 +258,7 @@ export default function AdminSidebar() {
                     ...(isOwner && isVis('settings.menu_visibility') ? [{ label: 'Menu Visibility', href: '/admin/settings/menu-visibility', icon: 'Layers' }] : []),
                     ...(can('activity.view') && isVis('staff.activity') ? [{ label: 'Activity Log', href: '/admin/activity-logs', icon: 'Activity' }] : []),
                     ...(can('audit.view') && isVis('staff.audit') ? [{ label: 'Audit Log', href: '/admin/audit-logs', icon: 'ShieldCheck' }] : []),
+                    ...(isOwner ? [{ label: 'Store Data Reset', href: '/admin/store-reset', icon: 'AlertTriangle' }] : []),
                 ]
             }
         ];

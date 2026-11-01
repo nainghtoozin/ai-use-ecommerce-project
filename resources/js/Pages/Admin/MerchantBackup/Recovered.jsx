@@ -70,6 +70,7 @@ export default function MerchantBackupRecovered({ result = {} }) {
                         {warnings.map((warning) => (
                             <p key={warning}>{warning}</p>
                         ))}
+                        <p>Product, category and brand management and the public storefront become available only after the store is legitimately activated.</p>
                     </div>
                 </div>
 
@@ -86,7 +87,7 @@ export default function MerchantBackupRecovered({ result = {} }) {
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         Media binaries were not recovered. Review and activate the store deliberately once media and access are restored.
                     </p>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
                         <a
                             href={adminUrl('/admin/backups')}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800 transition-colors"
@@ -95,14 +96,21 @@ export default function MerchantBackupRecovered({ result = {} }) {
                             Merchant Backup
                         </a>
                         <a
-                            href={`/store/${encodeURIComponent(result.tenant_slug || '')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            href={`/store/${encodeURIComponent(result.tenant_slug || '')}/admin/dashboard`}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                         >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            View storefront
+                            Open Admin Dashboard
                         </a>
+                        <button
+                            type="button"
+                            disabled
+                            title="The recovered store is pending activation and its public storefront is not available yet."
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            View storefront (pending activation)
+                        </button>
                     </div>
                 </div>
             </div>

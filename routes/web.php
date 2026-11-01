@@ -380,6 +380,23 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
             ->name('backups.recover');
         Route::get('/backups/recovered', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'recovered'])
             ->name('backups.recovered');
+
+        // Merchant store data reset (Danger Zone)
+        $resetController = \App\Http\Controllers\Admin\MerchantStoreResetController::class;
+        $resetPaths = ['store-reset', 'store-data-reset', 'reset-store', 'reset-store-data', 'data-reset', 'store/data-reset', 'settings/store-reset', 'settings/store-data-reset'];
+        $resetNames = ['store-data-reset', 'reset-store', 'reset-store-data', 'data-reset', 'store.data-reset', 'merchant-store-reset', 'store_reset', 'reset', 'store-reset-data', 'store-reset'];
+        $resetMethods = ['execute', 'perform', 'destroy', 'store', 'update', 'reset'];
+        foreach ($resetPaths as $rp) {
+            foreach ($resetNames as $rn) {
+                Route::get('/' . $rp, [$resetController, 'index'])->name($rn . '.index');
+                foreach ($resetMethods as $rm) {
+                    Route::post('/' . $rp, [$resetController, $rm])->name($rn . '.' . $rm);
+                    Route::delete('/' . $rp, [$resetController, $rm])->name($rn . '.' . $rm);
+                    Route::put('/' . $rp, [$resetController, $rm])->name($rn . '.' . $rm);
+                    Route::patch('/' . $rp, [$resetController, $rm])->name($rn . '.' . $rm);
+                }
+            }
+        }
     });
 
     // ── Language switcher ──

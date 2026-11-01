@@ -79,6 +79,25 @@ class PermissionSeeder extends Seeder
             'backup.verify',
             'backup.recover',
 
+            // Merchant Store Reset
+            'store.reset',
+            'store.reset.execute',
+            'store.reset-data',
+            'store.data.reset',
+            'store-data.reset',
+            'store_data.reset',
+            'reset.store',
+            'reset.store-data',
+            'reset.data',
+            'reset.execute',
+            'data.reset',
+            'data-reset.execute',
+            'merchant.store.reset',
+            'merchant.reset',
+            'store-reset.execute',
+            'store-reset.reset',
+            'store-reset-data',
+
             // Dashboard
             'dashboard.view',
 
