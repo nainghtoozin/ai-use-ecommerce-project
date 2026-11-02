@@ -45,10 +45,16 @@ final class MerchantRecoveryImporter
 
     private int $guestCustomers = 0;
 
-    public function import(string $archivePath, int $tenantId, array $manifest): array
+    private bool $restoreExisting = false;
+
+    /** @var array<string, array{customer: int, membership: int|null}> */
+    private array $customerEmailMap = [];
+
+    public function import(string $archivePath, int $tenantId, array $manifest, bool $restoreExisting = false): array
     {
         $this->resetImportState();
 
+        $this->restoreExisting = $restoreExisting;
         $this->tenantId = $tenantId;
         $this->useAccounts = (bool) config('identity.use_accounts');
         $this->identityMorphType = $this->useAccounts ? Account::class : User::class;
@@ -100,6 +106,11 @@ final class MerchantRecoveryImporter
         ];
     }
 
+    public function setRestoreExisting(bool $value): void
+    {
+        $this->restoreExisting = $value;
+    }
+
     /**
      * Clear every mutable field before an import run.
      *
@@ -124,6 +135,8 @@ final class MerchantRecoveryImporter
         $this->usedAdjustmentNumbers = [];
         $this->emailCounter = 0;
         $this->guestCustomers = 0;
+        $this->restoreExisting = false;
+        $this->customerEmailMap = [];
     }
 
     /**
@@ -152,7 +165,9 @@ final class MerchantRecoveryImporter
                 );
             }
 
-            $actual = $this->databaseCount($category);
+            $skipDatabaseCount = $this->restoreExisting && $category === 'settings';
+
+            $actual = $skipDatabaseCount ? null : $this->databaseCount($category);
 
             if ($actual !== null && $actual !== $expectedCount) {
                 throw new MerchantRecoveryException(
@@ -238,6 +253,83 @@ final class MerchantRecoveryImporter
             }
 
             $sourceId = $this->sourceId($row);
+
+            if ($this->restoreExisting) {
+                $archiveEmail = $this->nullable($row, 'email');
+
+                if ($this->useAccounts) {
+                    $existingAccount = DB::table('accounts')->where('id', $sourceId)->first();
+
+                    if ($existingAccount) {
+                        if ($archiveEmail !== null && strtolower((string) $existingAccount->email) !== strtolower((string) $archiveEmail)) {
+                            throw new MerchantRecoveryException('customer_identity_conflict', 'Customer identity could not be safely mapped for source id ' . $sourceId . '.');
+                        }
+
+                        $existingMembership = DB::table('tenant_memberships')
+                            ->where('tenant_id', $this->tenantId)
+                            ->where('account_id', $sourceId)
+                            ->first();
+
+                        if (!$existingMembership) {
+                            $roleId = $this->customerRoleId();
+
+                            $membershipId = DB::table('tenant_memberships')->insertGetId([
+                                'account_id' => $sourceId,
+                                'tenant_id' => $this->tenantId,
+                                'role_id' => $roleId,
+                                'is_owner' => false,
+                                'status' => $this->string($row, 'status') ?: 'active',
+                                'joined_at' => $this->nullable($row, 'joined_at') ?? now()->toDateTimeString(),
+                                'is_default' => true,
+                                'created_at' => now()->toDateTimeString(),
+                                'updated_at' => now()->toDateTimeString(),
+                            ]);
+                        } else {
+                            $membershipId = $existingMembership->id;
+                        }
+
+                        $this->maps['customers'][$sourceId] = $sourceId;
+                        $this->maps['memberships'][$sourceId] = $membershipId;
+
+                        if ($archiveEmail !== null && $archiveEmail !== '') {
+                            $this->customerEmailMap[strtolower((string) $archiveEmail)] = [
+                                'customer' => $sourceId,
+                                'membership' => $membershipId,
+                            ];
+                        }
+
+                        $this->counts['customers']++;
+
+                        return;
+                    }
+                } else {
+                    $existingUser = DB::table('users')
+                        ->where('tenant_id', $this->tenantId)
+                        ->where('id', $sourceId)
+                        ->first();
+
+                    if ($existingUser) {
+                        if ($archiveEmail !== null && strtolower((string) $existingUser->email) !== strtolower((string) $archiveEmail)) {
+                            throw new MerchantRecoveryException('customer_identity_conflict', 'Customer identity could not be safely mapped for source id ' . $sourceId . '.');
+                        }
+
+                        $this->maps['customers'][$sourceId] = $sourceId;
+                        $this->maps['memberships'][$sourceId] = null;
+
+                        if ($archiveEmail !== null && $archiveEmail !== '') {
+                            $this->customerEmailMap[strtolower((string) $archiveEmail)] = [
+                                'customer' => $sourceId,
+                                'membership' => null,
+                            ];
+                        }
+
+                        $this->counts['customers']++;
+
+                        return;
+                    }
+                }
+            }
+
             $joinedAt = $this->nullable($row, 'joined_at') ?? now()->toDateTimeString();
             $email = $this->aliasCustomerEmail($this->nullable($row, 'email'), $sourceId);
             $name = $this->string($row, 'name') ?: 'Restored Customer ' . $sourceId;
@@ -1011,11 +1103,23 @@ final class MerchantRecoveryImporter
             $sourceId = $this->sourceId($row);
             $promotionCode = $this->nullable($row, 'promotion_code');
 
+            $mappedCustomerId = $this->placeholderIdentityId;
+            $mappedMembershipId = null;
+
+            if ($this->restoreExisting) {
+                $orderEmail = strtolower(trim((string) ($this->nullable($row, 'email') ?? '')));
+
+                if ($orderEmail !== '' && isset($this->customerEmailMap[$orderEmail])) {
+                    $mappedCustomerId = $this->customerEmailMap[$orderEmail]['customer'];
+                    $mappedMembershipId = $this->customerEmailMap[$orderEmail]['membership'];
+                }
+            }
+
             $newId = DB::table('orders')->insertGetId([
                 'tenant_id' => $this->tenantId,
-                'user_id' => $this->placeholderIdentityId,
+                'user_id' => $mappedCustomerId,
                 'user_type' => $this->identityMorphType,
-                'tenant_membership_id' => null,
+                'tenant_membership_id' => $mappedMembershipId,
                 'invoice_number' => $this->nullable($row, 'invoice_number'),
                 'customer_name' => $this->nullable($row, 'customer_name'),
                 'first_name' => $this->string($row, 'first_name'),

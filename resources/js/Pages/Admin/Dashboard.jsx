@@ -46,6 +46,17 @@ export default function AdminDashboard({
     onboarding,
 }) {
     const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const tenantStatus = usePage().props.tenant?.status;
+    const subscriptionStatus = usePage().props.auth?.user?.subscription?.status;
+    const storeStatusLabel = tenantStatus === 'active' && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing')
+        ? 'Store Active'
+        : tenantStatus === 'pending'
+            ? 'Pending Activation'
+            : tenantStatus === 'suspended'
+                ? 'Store Suspended'
+                : subscriptionStatus === 'expired'
+                    ? 'Subscription Expired'
+                    : 'Store Status';
     const paymentSetupRequired = usePage().props.paymentSetupRequired === true;
     const { t } = useTranslation();
     const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
@@ -194,6 +205,9 @@ export default function AdminDashboard({
             <Head title={t('navigation.dashboard')} />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {storeStatusLabel}
+                </div>
                 {paymentSetupRequired && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5 dark:border-amber-900/40 dark:bg-amber-900/20">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

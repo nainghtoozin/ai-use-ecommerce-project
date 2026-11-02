@@ -378,6 +378,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/backups/recover', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'recover'])
             ->middleware('throttle:merchant-backup-recover')
             ->name('backups.recover');
+        Route::post('/backups/restore-existing', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'restoreExisting'])
+            ->middleware('throttle:merchant-backup-recover')
+            ->name('backups.restore-existing');
+        Route::post('/backups/restore', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'restoreExisting'])
+            ->middleware('throttle:merchant-backup-recover')
+            ->name('backups.restore');
+        Route::post('/backups/restore-to-existing', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'restoreToExisting'])
+            ->middleware('throttle:merchant-backup-recover')
+            ->name('backups.restore-to-existing');
         Route::get('/backups/recovered', [\App\Http\Controllers\Admin\MerchantBackupController::class, 'recovered'])
             ->name('backups.recovered');
 

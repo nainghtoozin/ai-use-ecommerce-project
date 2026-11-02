@@ -116,6 +116,15 @@ Route::prefix('store/{store_slug}/admin')
     Route::post('/backups/recover', [MerchantBackupController::class, 'recover'])
         ->middleware('throttle:merchant-backup-recover')
         ->name('backups.recover');
+    Route::post('/backups/restore-existing', [MerchantBackupController::class, 'restoreExisting'])
+        ->middleware('throttle:merchant-backup-recover')
+        ->name('backups.restore-existing');
+    Route::post('/backups/restore', [MerchantBackupController::class, 'restoreExisting'])
+        ->middleware('throttle:merchant-backup-recover')
+        ->name('backups.restore');
+    Route::post('/backups/restore-to-existing', [MerchantBackupController::class, 'restoreToExisting'])
+        ->middleware('throttle:merchant-backup-recover')
+        ->name('backups.restore-to-existing');
     Route::get('/backups/recovered', [MerchantBackupController::class, 'recovered'])
         ->name('backups.recovered');
 

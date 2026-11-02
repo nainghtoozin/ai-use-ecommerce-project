@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Tenant;
+use App\Models\PaymentIntent;
 use App\Services\ActivityLogger;
 use App\Services\Export\MerchantBackupPreviewService;
 use App\Services\Export\MerchantBackupSigner;
@@ -13,6 +14,7 @@ use App\Services\Export\MerchantBackupVerifier;
 use App\Services\Export\MerchantDataExportService;
 use App\Services\Recovery\MerchantRecoveryException;
 use App\Services\Recovery\MerchantRecoveryService;
+use App\Services\Recovery\MerchantStoreRestoreExistingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -33,7 +35,8 @@ class MerchantBackupController extends Controller
         private readonly MerchantDataExportService $exporter,
         private readonly MerchantBackupVerifier $verifier,
         private readonly MerchantBackupPreviewService $previewService,
-        private readonly MerchantRecoveryService $recoveryService
+        private readonly MerchantRecoveryService $recoveryService,
+        private readonly ?MerchantStoreRestoreExistingService $restoreExistingService = null
     ) {}
 
     public function index(Request $request)
@@ -303,6 +306,87 @@ class MerchantBackupController extends Controller
             ->with('success', 'Recovery completed into a new inactive store.');
     }
 
+    public function restoreExisting(Request $request)
+    {
+        return $this->handleRestoreExisting($request);
+    }
+
+    public function restoreToExisting(Request $request)
+    {
+        return $this->handleRestoreExisting($request);
+    }
+
+    public function restoreToExistingStore(Request $request)
+    {
+        return $this->handleRestoreExisting($request);
+    }
+
+    private function handleRestoreExisting(Request $request)
+    {
+        $tenant = $this->authorizeBackup('backup.recover', true);
+
+        $request->validate([
+            'confirmation' => ['required', 'string', 'max:255'],
+            'accept' => ['accepted'],
+        ]);
+
+        $pending = $this->pendingUpload($request, $tenant);
+
+        if (!$pending) {
+            $request->session()->forget([self::PREVIEW_SESSION_KEY, self::PENDING_SESSION_KEY]);
+
+            return admin_redirect('admin.backups.index')
+                ->withErrors(['recovery' => 'The verified upload has expired. Verify the archive again before restoring.']);
+        }
+
+        $actor = auth()->user();
+
+        if (!$actor) {
+            abort(403, 'Unauthorized');
+        }
+
+        $service = $this->restoreExistingService ?? app(MerchantStoreRestoreExistingService::class);
+
+        try {
+            $result = $service->restoreExisting(
+                $tenant,
+                $pending['path'],
+                (string) $pending['archive_id'],
+                (string) $request->input('confirmation'),
+                $actor,
+                true
+            );
+        } catch (MerchantRecoveryException $exception) {
+            if (in_array($exception->reason(), [
+                'reverification_failed',
+                'archive_mismatch',
+                'archive_missing',
+                'archive_expired',
+                'corrupt_archive',
+            ], true)) {
+                $this->verifier->forgetUpload($pending['path']);
+                $request->session()->forget([self::PREVIEW_SESSION_KEY, self::PENDING_SESSION_KEY]);
+            }
+
+            return back()
+                ->withErrors(['recovery' => $exception->getMessage()])
+                ->with('error', $exception->getMessage());
+        }
+
+        $request->session()->forget([self::PREVIEW_SESSION_KEY, self::PENDING_SESSION_KEY]);
+        $request->session()->put(self::RECOVERY_SESSION_KEY, [
+            'result' => $result,
+            'scope' => [
+                'actor_type' => get_class($actor),
+                'actor_id' => (string) $actor->getAuthIdentifier(),
+                'tenant_id' => (int) $tenant->id,
+                'tenant_slug' => (string) $tenant->slug,
+            ],
+        ]);
+
+        return admin_redirect('admin.backups.recovered')
+            ->with('success', 'Restore completed into the existing store.');
+    }
     public function recovered(Request $request)
     {
         $this->authorizeBackup('backup.view');
@@ -316,8 +400,46 @@ class MerchantBackupController extends Controller
                 ->with('info', 'No recovery result is available for this store and account.');
         }
 
+        $tenant = Tenant::getCurrent();
+        $subscription = $tenant?->subscription;
+        $latestIntent = $tenant
+            ? PaymentIntent::withoutTenantScope()->where('tenant_id', $tenant->id)->latest('id')->first()
+            : null;
+
+        $activationState = 'unknown';
+        $nextAction = 'Review the store status in the admin dashboard.';
+
+        if ($tenant && $tenant->status === 'active' && $subscription && $subscription->grantsService()) {
+            $activationState = 'active';
+            $nextAction = 'Your store is active. Customers can visit your storefront.';
+        } elseif ($tenant && $tenant->status === 'suspended') {
+            $activationState = 'suspended';
+            $nextAction = 'Your store is temporarily suspended. Contact the platform administrator.';
+        } elseif ($subscription && $subscription->isExpired()) {
+            $activationState = 'expired';
+            $nextAction = 'Your subscription has expired. Renew your plan to restore service.';
+        } elseif ($tenant && $tenant->status === 'pending') {
+            if ($subscription?->plan?->isFree()) {
+                $activationState = 'awaiting_admin';
+                $nextAction = 'Waiting for store activation by the platform administrator.';
+            } elseif ($latestIntent && $latestIntent->status()->isPending()) {
+                $activationState = 'payment_under_review';
+                $nextAction = 'Payment under review — Waiting for SuperAdmin approval.';
+            } elseif ($latestIntent) {
+                $activationState = 'payment_required';
+                $nextAction = 'Payment required — Submit your subscription payment for approval.';
+            } else {
+                $activationState = 'payment_required';
+                $nextAction = 'Payment required — Submit your subscription payment for approval.';
+            }
+        }
+
         return Inertia::render('Admin/MerchantBackup/Recovered', [
             'result' => $result,
+            'activation' => [
+                'state' => $activationState,
+                'next_action' => $nextAction,
+            ],
         ]);
     }
 

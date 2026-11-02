@@ -35,9 +35,19 @@ export default function MerchantBackupPreview({ preview = {}, recoveryEnabled = 
         accept: false,
     });
 
+    const existingRestoreForm = useForm({
+        confirmation: '',
+        accept: false,
+    });
+
     const submitRecovery = (event) => {
         event.preventDefault();
         form.post(adminUrl('/admin/backups/recover'), { preserveScroll: true });
+    };
+
+    const submitExistingRestore = (event) => {
+        event.preventDefault();
+        existingRestoreForm.post(adminUrl('/admin/backups/restore-existing'), { preserveScroll: true });
     };
 
     return (
@@ -123,19 +133,83 @@ export default function MerchantBackupPreview({ preview = {}, recoveryEnabled = 
                 </div>
 
                 {recoveryAvailable && (
-                    <form
-                        onSubmit={submitRecovery}
-                        className="rounded-xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 space-y-4"
-                    >
-                        <div className="flex items-start gap-3">
-                            <Lock className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                            <div>
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Start recovery into a new inactive store</p>
-                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    This creates a new pending store and imports the archive with remapped identifiers. The live store is never modified, merged into or deleted. Media binaries are not recovered.
+                    <div className="space-y-4">
+                        <form
+                            onSubmit={submitExistingRestore}
+                            className="rounded-xl border border-red-300 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 space-y-4"
+                        >
+                            <div className="flex items-start gap-3">
+                                <Store className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Restore to My Existing Store</p>
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Restore this backup into your current store. Your existing store URL, custom domain, merchant login, tenant identity and subscription remain unchanged. Existing business data will be replaced by the selected backup.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-800 dark:text-red-200">
+                                <p className="font-semibold">Destructive action</p>
+                                <p className="mt-1">
+                                    Current business data (products, categories, brands, orders, inventory, customers' business data, promotions, coupons, storefront content and settings allowlisted in the archive) will be replaced. A fresh backup of the current store is strongly recommended before continuing.
+                                </p>
+                                <p className="mt-1">
+                                    Store: <span className="font-semibold">{recovery.source_slug || target.slug || 'current store'}</span>
                                 </p>
                             </div>
-                        </div>
+
+                            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Type the current store name or slug to confirm
+                                <input
+                                    type="text"
+                                    value={existingRestoreForm.data.confirmation}
+                                    onChange={(event) => existingRestoreForm.setData('confirmation', event.target.value)}
+                                    placeholder={recovery.source_slug || 'current-store-slug'}
+                                    autoComplete="off"
+                                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-3 py-2 font-mono text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                />
+                                {existingRestoreForm.errors.confirmation && <span className="mt-1 block text-red-600 dark:text-red-400">{existingRestoreForm.errors.confirmation}</span>}
+                            </label>
+
+                            <label className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                                <input
+                                    type="checkbox"
+                                    checked={existingRestoreForm.data.accept}
+                                    onChange={(event) => existingRestoreForm.setData('accept', event.target.checked)}
+                                    className="mt-0.5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                />
+                                <span>
+                                    I understand this replaces the current store's business data with the selected backup. Store URL, custom domain, login and subscription remain unchanged.
+                                </span>
+                            </label>
+                            {existingRestoreForm.errors.accept && <p className="text-xs text-red-600 dark:text-red-400">{existingRestoreForm.errors.accept}</p>}
+                            {existingRestoreForm.errors.recovery && (
+                                <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs text-red-700 dark:text-red-300">{existingRestoreForm.errors.recovery}</p>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={existingRestoreForm.processing}
+                                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                            >
+                                <ShieldCheck className="w-4 h-4" />
+                                {existingRestoreForm.processing ? 'Restoring...' : 'Restore to My Existing Store'}
+                            </button>
+                        </form>
+
+                        <form
+                            onSubmit={submitRecovery}
+                            className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4"
+                        >
+                            <div className="flex items-start gap-3">
+                                <Lock className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Restore to a New Store</p>
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Create a separate inactive store from this backup. A new store slug and activation will be required. The live store is never modified, merged into or deleted. Media binaries are not recovered.
+                                    </p>
+                                </div>
+                            </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -190,6 +264,7 @@ export default function MerchantBackupPreview({ preview = {}, recoveryEnabled = 
                             {form.processing ? 'Recovering...' : 'Recover into new inactive store'}
                         </button>
                     </form>
+                    </div>
                 )}
 
                 <div>

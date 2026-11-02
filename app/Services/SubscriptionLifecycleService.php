@@ -39,6 +39,12 @@ class SubscriptionLifecycleService
             return;
         }
 
+        if ($subscription->isPending()) {
+            $this->activatePendingSubscription($subscription, $plan, $intent);
+            $this->markSubscriptionApplied($intent);
+            return;
+        }
+
         if (($intent->metadata['type'] ?? null) === SubscriptionPlanChangeService::TYPE_PLAN_UPGRADE) {
             $this->applyProratedUpgrade($subscription, $plan, $intent);
             $subscription->resolvePendingCancellation('Superseded by plan upgrade.');
@@ -94,6 +100,38 @@ class SubscriptionLifecycleService
         ]);
 
         $this->markSubscriptionApplied($intent);
+    }
+
+    private function activatePendingSubscription(Subscription $subscription, $plan, PaymentIntent $intent): void
+    {
+        $interval = $intent->billing_cycle ?? $subscription->billing_interval ?? $plan->defaultInterval();
+
+        $expiresAt = $plan->calculateExpiryDate(now(), $interval);
+
+        $subscription->update([
+            'plan_id' => $plan->id,
+            'billing_interval' => $interval,
+            'status' => 'active',
+            'starts_at' => now(),
+            'expires_at' => $expiresAt,
+        ]);
+
+        if ($subscription->tenant) {
+            $subscription->tenant->update(['status' => 'active']);
+            $subscription->tenant->unlock();
+        }
+
+        $this->timeline->record(
+            intent: $intent,
+            type: 'subscription_activated',
+            description: sprintf('Pending subscription activated. Plan: %s (%s)', $plan->name, $interval),
+        );
+
+        $this->audit::log($subscription, 'payment_completed', [
+            'old_status' => 'pending',
+            'new_plan_id' => $plan->id,
+            'reason' => 'Pending recovered store subscription activated via payment approval.',
+        ]);
     }
 
     private function markSubscriptionApplied(PaymentIntent $intent): void

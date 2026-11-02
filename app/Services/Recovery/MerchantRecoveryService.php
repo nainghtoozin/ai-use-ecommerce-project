@@ -103,7 +103,7 @@ final class MerchantRecoveryService
             throw new MerchantRecoveryException('target_slug_taken', 'That target store slug is already in use.');
         }
 
-        if ($this->archiveAlreadyRecovered($archiveId)) {
+        if ($this->archiveAlreadyRecovered($archiveId, 'new_store')) {
             $this->auditFailure($source, $actor, 'duplicate_recovery', $archiveId);
 
             throw new MerchantRecoveryException('duplicate_recovery', 'This archive has already been recovered. Duplicate recovery is blocked.');
@@ -337,6 +337,7 @@ final class MerchantRecoveryService
         try {
             return MerchantRecoveryClaim::create([
                 'archive_id' => $archiveId,
+                'mode' => 'new_store',
                 'source_tenant_id' => $source->id,
                 'target_slug' => $targetSlug,
                 'archive_name' => basename($archivePath),
@@ -540,13 +541,20 @@ final class MerchantRecoveryService
      * tenant settings lookup covers archives recovered before claims existed.
      * The previous implementation hydrated every tenant's settings into PHP.
      */
-    private function archiveAlreadyRecovered(string $archiveId): bool
+    private function archiveAlreadyRecovered(string $archiveId, string $mode = 'new_store'): bool
     {
         if (MerchantRecoveryClaim::query()
             ->where('archive_id', $archiveId)
+            ->where('mode', $mode)
             ->where('status', MerchantRecoveryClaim::STATUS_COMPLETED)
             ->exists()) {
             return true;
+        }
+
+        if ($mode === 'existing_store') {
+            return Tenant::query()
+                ->where('settings->restore_existing->archive_id', $archiveId)
+                ->exists();
         }
 
         return Tenant::query()
