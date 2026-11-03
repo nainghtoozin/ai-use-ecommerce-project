@@ -42,6 +42,6 @@ class WorkspaceSwitchController extends Controller
             ]
         );
 
-        return redirect()->intended(route('admin.dashboard'));
+        return redirect()->intended(route('storefront.admin.dashboard', ['store_slug' => $tenantSlug]));
     }
 }

@@ -25,6 +25,11 @@ export default function AdminHeader() {
     };
 
     const storeSlug = url?.match(/^\/store\/([^/]+)\//)?.[1] ?? null;
+    const tenantStatus = props?.tenant?.status;
+    const subscriptionStatus = props?.auth?.user?.subscription?.status;
+    const storefrontEligible = storeSlug
+        && (tenantStatus === 'active' || tenantStatus === 'trialing')
+        && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing');
 
     const stopImpersonating = () => {
         router.post('/superadmin/impersonate/leave', {}, {
@@ -113,15 +118,26 @@ export default function AdminHeader() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-3">
-                    {storeSlug && (
+                    {storeSlug && storefrontEligible ? (
                         <Link
                             href={`/store/${storeSlug}`}
                             className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Open the customer storefront"
                         >
                             <i className="bi bi-eye"></i>
                             View Store
                         </Link>
-                    )}
+                    ) : storeSlug ? (
+                        <button
+                            type="button"
+                            disabled
+                            title="Your store is waiting for activation. Customers will be able to visit it after your subscription and store access are activated."
+                            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"
+                        >
+                            <i className="bi bi-eye"></i>
+                            View Store
+                        </button>
+                    ) : null}
                     {showSubscriptionStatus && (
                         <Link
                             href={adminUrl('/admin/billing')}
