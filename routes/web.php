@@ -846,6 +846,8 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::get('/cancellation-requests', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'cancellationRequests'])->name('cancellation-requests.index');
 
     Route::get('/billing', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'index'])->name('billing.index');
+    Route::get('/billing/approvals', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'approvals'])->name('billing.approvals');
+    Route::get('/billing/evidence/{evidence}', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'evidence'])->name('billing.evidence');
     Route::post('/billing/{intent}/approve', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'approve'])->name('billing.approve');
     Route::post('/billing/{intent}/reject', [\App\Http\Controllers\SuperAdmin\SuperAdminBillingController::class, 'reject'])->name('billing.reject');
 

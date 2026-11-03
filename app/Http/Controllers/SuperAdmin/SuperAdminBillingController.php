@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PaymentEvidence;
 use App\Models\PaymentIntent;
 use App\Models\Plan;
 use App\Services\ImageService;
@@ -16,7 +17,7 @@ class SuperAdminBillingController extends Controller
         private readonly PaymentReviewService $paymentReview,
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request, string $mode = 'billing')
     {
         $query = PaymentIntent::withoutTenantScope()
             ->whereNotIn('status', ['draft', 'pending', 'waiting_payment'])
@@ -90,7 +91,8 @@ class SuperAdminBillingController extends Controller
                 'evidences' => $intent->evidences->map(fn($ev) => [
                     'id' => $ev->id,
                     'type' => $ev->type,
-                    'file_path' => ImageService::url($ev->file_path),
+                    'file_path' => $ev->file_path,
+                    'file_path_url' => route('superadmin.billing.evidence', $ev->id),
                     'note' => $ev->note,
                     'sender_name' => $ev->sender_name,
                     'sender_account' => $ev->sender_account,
@@ -133,7 +135,51 @@ class SuperAdminBillingController extends Controller
                 ->map(fn ($label, $value) => ['value' => $value, 'label' => $label])
                 ->values(),
             'stats' => $this->getStats(),
+            'mode' => $mode,
         ]);
+    }
+
+    public function evidence(int $id)
+    {
+        $evidence = PaymentEvidence::findOrFail($id);
+
+        $path = $evidence->file_path;
+
+        if (empty($path) || str_starts_with($path, 'http')) {
+            abort(404);
+        }
+
+        $disk = 'public';
+        $root = (string) config("filesystems.disks.{$disk}.root", storage_path('app/public'));
+        $fullPath = $root . '/' . ltrim($path, '/');
+
+        $realRoot = realpath($root);
+        $realFile = realpath($fullPath);
+
+        if ($realRoot === false || $realFile === false || !str_starts_with($realFile, $realRoot . DIRECTORY_SEPARATOR)) {
+            abort(404);
+        }
+
+        if (!is_file($realFile)) {
+            abort(404);
+        }
+
+        $mime = mime_content_type($realFile) ?: 'application/octet-stream';
+
+        return response()->file($realFile, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
+    public function approvals(Request $request)
+    {
+        if (!$request->filled('status')) {
+            $request->merge(['status' => 'waiting_review']);
+        }
+
+        return $this->index($request, 'approvals');
     }
 
     public function approve(Request $request, int $id)

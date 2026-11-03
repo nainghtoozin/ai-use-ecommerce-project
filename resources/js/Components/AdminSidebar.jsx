@@ -109,9 +109,12 @@ export default function AdminSidebar() {
     const isVis = (key) => vis[key] !== false;
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [collapsed, setCollapsed] = useState(false);
-    const [openGroup, setOpenGroup] = useState(null);
-    const userToggledRef = useRef(false);
+    const [collapsed, setCollapsed] = useState(() => {
+        try { return localStorage.getItem('adminSidebarCollapsed') === 'true'; } catch { return false; }
+    });
+    const [openGroup, setOpenGroup] = useState(() => {
+        try { return localStorage.getItem('adminSidebarOpenGroup') || null; } catch { return null; }
+    });
 
     const brandLogo = isSuperAdmin ? platform_setting?.site_logo : website_info?.logo;
     const brandName = isSuperAdmin ? (platform_setting?.site_name || 'SuperAdmin') : (tenant?.name || website_info?.site_name || 'My Store');
@@ -121,46 +124,44 @@ export default function AdminSidebar() {
         if (isSuperAdmin) {
             return [
                 {
-                    title: t('navigation.overview'),
+                    title: 'Overview',
                     items: [
                         { label: t('navigation.dashboard'), href: '/superadmin', icon: 'LayoutDashboard' },
+                        { label: 'Notifications', href: '/admin/notifications', icon: 'Bell' },
                     ]
                 },
                 {
-                    title: t('navigation.marketing'),
+                    title: 'SaaS Management',
                     items: [
-                        { label: t('navigation.dashboard'), href: '/superadmin/tenants', icon: 'Building2' },
-                    ]
-                },
-                {
-                    title: t('navigation.billing'),
-                    items: [
-                        { label: 'Plans', href: '/superadmin/plans', icon: 'FileText' },
+                        { label: 'Stores / Tenants', href: '/superadmin/tenants', icon: 'Building2' },
                         { label: 'Subscriptions', href: '/superadmin/subscriptions', icon: 'CreditCard' },
-                        { label: 'Payment Reviews', href: '/superadmin/billing', icon: 'Receipt' },
+                        { label: 'Plans & Pricing', href: '/superadmin/plans', icon: 'FileText' },
+                    ]
+                },
+                {
+                    title: 'Finance',
+                    items: [
+                        { label: 'Billing', href: '/superadmin/billing', icon: 'Receipt' },
+                        { label: 'Payment Approvals', href: '/superadmin/billing/approvals', icon: 'ShieldCheck' },
                         { label: 'Financial Console', href: '/superadmin/financial', icon: 'BarChart3' },
                         { label: 'Billing Methods', href: '/superadmin/billing-payment-methods', icon: 'CreditCard' },
                     ]
                 },
                 {
-                    title: 'Operations',
+                    title: 'Platform Management',
                     items: [
-                        { label: 'Webhooks', href: '/superadmin/operations', icon: 'Zap' },
+                        { label: 'Reports & Analytics', href: '/superadmin/financial', icon: 'BarChart3' },
                     ]
                 },
                 {
-                    title: t('navigation.settings'),
+                    title: 'System',
                     items: [
-                        { label: 'Platform', href: '/superadmin/platform-settings', icon: 'Settings' },
+                        { label: 'Platform Settings', href: '/superadmin/platform-settings', icon: 'Settings' },
                         { label: 'FAQ Management', href: '/superadmin/faqs', icon: 'HelpCircle' },
                         { label: 'Store Categories', href: '/superadmin/store-categories', icon: 'Store' },
-                    ]
-                },
-                {
-                    title: 'Logs',
-                    items: [
-                        { label: 'Activity', href: '/admin/activity-logs', icon: 'Activity' },
-                        { label: 'Audit Log', href: '/admin/audit-logs', icon: 'Shield' },
+                        { label: 'Operations / Webhooks', href: '/superadmin/operations', icon: 'Zap' },
+                        { label: 'Activity Logs', href: '/admin/activity-logs', icon: 'Activity' },
+                        { label: 'Audit Logs', href: '/admin/audit-logs', icon: 'Shield' },
                     ]
                 },
             ];
@@ -266,6 +267,10 @@ export default function AdminSidebar() {
 
     function matchPath(href) {
         if (href === '/') return url === '/' ? 1 : 0;
+        // The bare SuperAdmin dashboard path must not match every /superadmin/* route.
+        if (href === '/superadmin') {
+            return (url === '/superadmin' || url === '/superadmin/') ? href.length : 0;
+        }
         const candidates = [href, adminUrl(href)];
         for (const candidate of candidates) {
             const hrefPath = candidate.replace(/\/+$/, '');
@@ -309,16 +314,26 @@ export default function AdminSidebar() {
         store_slug: storeSlug,
     });
 
-    const visibleSections = menuSections.filter((section) => {
+    const visibleSections = useMemo(() => menuSections.filter((section) => {
         const visibilityKey = section.visibilityKey || SECTION_VIS_KEY[section.title];
         return section.items.length > 0 && (!visibilityKey || isVis(visibilityKey));
-    });
+    }), [menuSections]);
 
     const merchant = !isSuperAdmin;
 
     useEffect(() => {
+        try { localStorage.setItem('adminSidebarCollapsed', String(collapsed)); } catch {}
+    }, [collapsed]);
+
+    useEffect(() => {
+        try {
+            if (openGroup) localStorage.setItem('adminSidebarOpenGroup', openGroup);
+            else localStorage.removeItem('adminSidebarOpenGroup');
+        } catch {}
+    }, [openGroup]);
+
+    useEffect(() => {
         if (collapsed) return;
-        if (userToggledRef.current) return;
         const activeSection = visibleSections.find(s => sectionHasActiveItem(s));
         if (activeSection) {
             setOpenGroup(activeSection.title);
@@ -332,7 +347,6 @@ export default function AdminSidebar() {
     }, [collapsed]);
 
     const handleToggleGroup = useCallback((title) => {
-        userToggledRef.current = true;
         setOpenGroup(prev => prev === title ? null : title);
     }, []);
 

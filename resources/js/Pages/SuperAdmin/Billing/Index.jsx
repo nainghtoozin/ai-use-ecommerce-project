@@ -381,12 +381,18 @@ function PaymentDetailDrawer({ intent, open, onClose, onApprove, onReject, proce
                                             )}
                                         </div>
                                         <div className="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
-                                            <img
-                                                src={ev.file_path_url}
-                                                alt="Payment evidence"
-                                                className="w-full max-h-64 object-contain cursor-pointer"
-                                                onClick={() => window.open(ev.file_path_url, '_blank')}
-                                            />
+                                            {ev.file_path_url ? (
+                                                <img
+                                                    src={ev.file_path_url}
+                                                    alt="Payment evidence"
+                                                    className="w-full max-h-64 object-contain cursor-pointer"
+                                                    onClick={() => window.open(ev.file_path_url, '_blank')}
+                                                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.querySelector('.evidence-missing')?.classList.remove('hidden'); }}
+                                                />
+                                            ) : null}
+                                            <div className={`evidence-missing ${ev.file_path_url ? 'hidden' : ''} p-6 text-center text-sm text-gray-500 dark:text-gray-400`}>
+                                                Payment evidence is unavailable.
+                                            </div>
                                         </div>
                                         {ev.note && <p className="text-xs text-gray-500 dark:text-gray-400 italic">"{ev.note}"</p>}
                                     </div>
@@ -492,7 +498,7 @@ function Pagination({ links }) {
     );
 }
 
-export default function SuperAdminBillingConsole({ intents, filters, plans, stats, paymentTypes = [] }) {
+export default function SuperAdminBillingConsole({ intents, filters, plans, stats, paymentTypes = [], mode = 'billing' }) {
     const { platform_setting } = usePage().props;
     const pc = getPlatformCurrencyConfig(platform_setting);
     const fmt = (a, c) => a == null ? '—' : _formatCurrency(a, { code: c || pc.code, symbol: pc.symbol, position: pc.position, decimals: pc.decimals });
@@ -572,8 +578,8 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
             <div className="p-6 lg:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Billing Console</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review and manage all subscription payments across the platform</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{mode === 'approvals' ? 'Payment Approvals' : 'Billing Console'}</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{mode === 'approvals' ? 'Review and approve payments awaiting SuperAdmin action' : 'Review and manage all subscription payments across the platform'}</p>
                     </div>
                     {pendingPriority > 0 && (
                         <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-xl border border-purple-200">
@@ -714,7 +720,7 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Submitted</th>
                                         <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                                        <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-950 z-10">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -752,10 +758,10 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                                             <td className="px-5 py-4 whitespace-nowrap">
                                                 <PaymentIntentBadge status={intent.status} size="sm" />
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-right">
+                                            <td className="px-5 py-4 whitespace-nowrap text-right sticky right-0 bg-white dark:bg-gray-900 z-10">
                                                 <button
                                                     onClick={() => setSelectedIntent(intent)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                                                     aria-label={`Review payment ${intent.reference_number}`}
                                                 >
                                                     <Eye className="w-3.5 h-3.5" />

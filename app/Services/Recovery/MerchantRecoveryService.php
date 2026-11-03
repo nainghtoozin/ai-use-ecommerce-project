@@ -29,7 +29,8 @@ final class MerchantRecoveryService
     public function __construct(
         private readonly MerchantBackupVerifier $verifier,
         private readonly TenantBootstrapService $bootstrap,
-        private readonly MerchantRecoveryImporter $importer
+        private readonly MerchantRecoveryImporter $importer,
+        private readonly ?\App\Services\PlatformNotificationService $platformNotifications = null
     ) {}
 
     /**
@@ -280,6 +281,20 @@ final class MerchantRecoveryService
         $owner = $result['owner'];
 
         $this->completeClaim($claim, $tenant);
+
+        try {
+            $notifications = $this->platformNotifications ?? app(\App\Services\PlatformNotificationService::class);
+            $notifications->notifyNewRecoveredStore($tenant, $source, [
+                'plan_name' => $plan->name,
+                'owner_email' => $owner?->email,
+            ], $archiveId);
+        } catch (\Throwable $e) {
+            Log::warning('New recovered store platform notification failed.', [
+                'tenant_id' => $tenant->id,
+                'archive_id' => $archiveId,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $this->verifier->forgetUpload($archivePath);
 
