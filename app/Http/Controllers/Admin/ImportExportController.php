@@ -6,8 +6,10 @@ use App\Exports\ErrorReportExport;
 use App\Exports\ProductImportTemplate;
 use App\Exceptions\SubscriptionLimitException;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\ImportHistory;
 use App\Models\Product;
+use App\Models\User;
 use App\Services\ImportExport\ColumnMapper;
 use App\Services\ImportExport\FormatHandlers\MultiSheetExcelReader;
 use App\Services\ImportExport\FormatHandlers\ProductImportReader;
@@ -39,6 +41,21 @@ class ImportExportController extends Controller
         private readonly ReportExportService $reportExportService,
         private readonly GoogleSheetsHandler $sheetsHandler,
     ) {}
+
+    protected function resolveImportUserId(): ?int
+    {
+        $authenticatable = auth()->user();
+
+        if ($authenticatable instanceof User) {
+            return $authenticatable->id;
+        }
+
+        if ($authenticatable instanceof Account) {
+            return User::where('email', $authenticatable->email)->value('id');
+        }
+
+        return null;
+    }
 
     public function parseFile(Request $request)
     {
@@ -346,7 +363,15 @@ class ImportExportController extends Controller
 
     public function validateMultiSheet(Request $request)
     {
-        if (!auth()->user()->can('products.create')) {
+        $u = auth()->user();
+        if (!$u || !$u->can('products.create')) {
+            $perm = \Spatie\Permission\Models\Permission::findByName('products.create', 'web');
+            $ref = new \ReflectionClass($u);
+            $m = $ref->getMethod('hasPermissionViaRole');
+            $m->setAccessible(true);
+            $viaRole = $m->invoke($u, $perm);
+            $row = \Illuminate\Support\Facades\DB::table('role_has_permissions')->where('permission_id', $perm->id)->first();
+            file_put_contents('C:/xampp/htdocs/ai-use-ecommerce-project/debug_ms.txt', date('c') . ' user=' . ($u ? get_class($u) . ':' . $u->id : 'null') . ' can=' . var_export($u ? $u->can('products.create') : null, true) . ' viaRole=' . var_export($viaRole, true) . ' permId=' . $perm->id . ' rolesSql=' . $perm->roles()->toSql() . ' bindings=' . implode(',', $perm->roles()->getBindings()) . ' count=' . $perm->roles()->count() . "\n", FILE_APPEND);
             abort(403, 'Unauthorized');
         }
 
@@ -469,7 +494,7 @@ class ImportExportController extends Controller
 
             $history = ImportHistory::create([
                 'tenant_id' => $tenantId,
-                'user_id' => auth()->id(),
+                'user_id' => $this->resolveImportUserId(),
                 'file_name' => $request->file('file')->getClientOriginalName(),
                 'file_type' => 'xlsx',
                 'import_type' => 'products',
@@ -650,7 +675,7 @@ class ImportExportController extends Controller
         try {
             $history = ImportHistory::create([
                 'tenant_id' => $tenantId,
-                'user_id' => auth()->id(),
+                'user_id' => $this->resolveImportUserId(),
                 'file_name' => $request->file('file')->getClientOriginalName(),
                 'file_type' => 'xlsx',
                 'import_type' => 'variants',

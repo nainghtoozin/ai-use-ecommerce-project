@@ -86,8 +86,6 @@ class CreateStoreController extends Controller
             ]);
         });
 
-        event(new Registered($admin));
-
         $tenantSlug = $admin instanceof Account
             ? $admin->memberships()->with('tenant')->first()->tenant->slug
             : $admin->tenant->slug;

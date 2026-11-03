@@ -48,10 +48,7 @@ class ProductImportTest extends TestCase
         Permission::create(['name' => 'products.update', 'guard_name' => 'web']);
         Permission::create(['name' => 'products.delete', 'guard_name' => 'web']);
 
-        $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        $role->syncPermissions(Permission::whereIn('name', [
-            'products.view', 'products.create', 'products.update', 'products.delete',
-        ])->get());
+        // Role created in setupTenantAndUser after tenant exists
     }
 
     private function setupTenantAndUser(): void
@@ -84,10 +81,15 @@ class ProductImportTest extends TestCase
         $this->unit = Unit::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Piece',
+            'short_name' => 'pcs',
             'slug' => 'piece-' . uniqid(),
         ]);
 
-        $this->admin->assignRole('admin');
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => $this->tenant->id]);
+        $role->syncPermissions(Permission::whereIn('name', [
+            'products.view', 'products.create', 'products.update', 'products.delete',
+        ])->get());
+        $this->admin->assignRole($role);
     }
 
     private function createTestExcelFile(array $productsSheetData, array $variantsSheetData): string

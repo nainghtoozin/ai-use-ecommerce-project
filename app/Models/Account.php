@@ -39,6 +39,8 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
 
     private bool $membershipCached = false;
 
+    private ?int $resolvedMembershipTenantId = null;
+
     protected $guard_name = 'web';
 
     const ROLE_CUSTOMER = 'customer';
@@ -377,14 +379,21 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
             return null;
         }
 
-        if ($this->membershipCached) {
+        $tenantId = Tenant::getCurrent()?->id;
+
+        // Only reuse a cached result when it was computed for the same tenant
+        // context. An earlier call (e.g. during Inertia prop sharing before the
+        // Storefront middleware has resolved the tenant) may have cached null;
+        // that must not poison later permission checks in the same request.
+        if ($this->membershipCached && $this->resolvedMembershipTenantId === $tenantId) {
             return $this->resolvedMembership;
         }
 
         $this->membershipCached = true;
+        $this->resolvedMembershipTenantId = $tenantId;
 
-        $tenantId = Tenant::getCurrent()?->id;
         if (!$tenantId) {
+            $this->resolvedMembership = null;
             return null;
         }
 

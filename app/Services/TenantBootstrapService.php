@@ -16,6 +16,7 @@ use App\Models\Warehouse;
 use App\Models\WebsiteFaq;
 use App\Services\SubscriptionAuditService;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -78,6 +79,10 @@ class TenantBootstrapService
 
                 if (Schema::hasTable('storefronts')) {
                     app(StorefrontConfigurationResolver::class)->provision($tenant);
+                }
+
+                if ($owner) {
+                    event(new Registered($owner));
                 }
 
                 TenantCreated::dispatch($tenant, $owner);
