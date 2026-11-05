@@ -171,6 +171,34 @@ class IdentityResolver
         return User::role('superadmin')->pluck('id');
     }
 
+    /**
+     * Resolve all SuperAdmin notifiable models across both identity types.
+     * Ensures in-app notifications reach whichever identity the SuperAdmin
+     * actually uses, even when only one identity system is configured.
+     */
+    public static function resolveSuperAdminNotifiables(): \Illuminate\Support\Collection
+    {
+        $notifiables = collect();
+
+        try {
+            $notifiables = $notifiables->merge(
+                Account::whereHas('roles', fn ($q) => $q->where('name', 'superadmin'))->get()
+            );
+        } catch (\Throwable $e) {
+            // Role may not exist in this environment.
+        }
+
+        try {
+            $notifiables = $notifiables->merge(
+                User::whereHas('roles', fn ($q) => $q->where('name', 'superadmin'))->get()
+            );
+        } catch (\Throwable $e) {
+            // Role may not exist in this environment.
+        }
+
+        return $notifiables->unique(fn ($n) => $n::class . ':' . $n->id)->values();
+    }
+
     public static function resolveRoleCount(int $roleId, ?int $tenantId): int
     {
         if (config('identity.use_accounts')) {

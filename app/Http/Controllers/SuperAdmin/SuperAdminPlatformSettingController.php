@@ -24,6 +24,13 @@ class SuperAdminPlatformSettingController extends Controller
         ]);
     }
 
+    public function preview()
+    {
+        $settings = $this->platformSettingService->get();
+
+        return response()->view('errors.platform-maintenance', ['settings' => $settings], 200);
+    }
+
     public function update(Request $request)
     {
         $settings = $this->platformSettingService->get();
@@ -32,6 +39,11 @@ class SuperAdminPlatformSettingController extends Controller
             'site_name' => 'required|string|max:255',
             'support_email' => 'nullable|email|max:255',
             'support_page_url' => 'nullable|url|max:2048',
+            'support_phone' => 'nullable|string|max:50',
+            'maintenance_title' => 'nullable|string|max:255',
+            'maintenance_message' => 'nullable|string|max:2000',
+            'maintenance_return_time' => 'nullable|date',
+            'support_button_text' => 'nullable|string|max:100',
             'maintenance_mode' => 'boolean',
             'registration_enabled' => 'boolean',
             'trial_enabled' => 'boolean',
@@ -51,6 +63,11 @@ class SuperAdminPlatformSettingController extends Controller
             'site_name' => $validated['site_name'],
             'support_email' => $validated['support_email'],
             'support_page_url' => $validated['support_page_url'] ?? null,
+            'support_phone' => $validated['support_phone'] ?? null,
+            'maintenance_title' => $validated['maintenance_title'] ?? null,
+            'maintenance_message' => $validated['maintenance_message'] ?? null,
+            'maintenance_return_time' => $validated['maintenance_return_time'] ?? null,
+            'support_button_text' => $validated['support_button_text'] ?? null,
             'maintenance_mode' => $request->boolean('maintenance_mode'),
             'registration_enabled' => $request->boolean('registration_enabled'),
             'trial_enabled' => $request->boolean('trial_enabled'),

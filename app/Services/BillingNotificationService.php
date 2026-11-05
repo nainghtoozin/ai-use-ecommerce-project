@@ -27,16 +27,10 @@ class BillingNotificationService
     public function notifyPaymentSubmitted(PaymentIntent $intent): void
     {
         try {
-            $superAdminIds = IdentityResolver::resolveSuperAdmins();
+            $superAdmins = IdentityResolver::resolveSuperAdminNotifiables();
 
-            if ($superAdminIds->isNotEmpty()) {
-                $superAdmins = config('identity.use_accounts')
-                    ? Account::whereIn('id', $superAdminIds)->get()
-                    : User::whereIn('id', $superAdminIds)->get();
-
-                if ($superAdmins->isNotEmpty()) {
-                    Notification::send($superAdmins, new BillingPaymentSubmittedAdminNotification($intent));
-                }
+            if ($superAdmins->isNotEmpty()) {
+                Notification::send($superAdmins, new BillingPaymentSubmittedAdminNotification($intent));
             }
 
             $this->billingEmails->sendSubmittedEmail($intent);

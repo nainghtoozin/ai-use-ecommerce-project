@@ -19,6 +19,11 @@ class PlatformSetting extends Model
         'favicon',
         'support_email',
         'support_page_url',
+        'support_phone',
+        'maintenance_title',
+        'maintenance_message',
+        'maintenance_return_time',
+        'support_button_text',
         'maintenance_mode',
         'registration_enabled',
         'trial_enabled',
@@ -36,6 +41,7 @@ class PlatformSetting extends Model
 
     protected $casts = [
         'maintenance_mode' => 'boolean',
+        'maintenance_return_time' => 'datetime',
         'registration_enabled' => 'boolean',
         'trial_enabled' => 'boolean',
         'trial_days' => 'integer',

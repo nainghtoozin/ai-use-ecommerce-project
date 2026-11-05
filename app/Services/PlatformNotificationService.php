@@ -34,13 +34,7 @@ class PlatformNotificationService
                 return;
             }
 
-            $superAdminIds = IdentityResolver::resolveSuperAdmins();
-
-            $modelClass = config('identity.use_accounts') ? Account::class : User::class;
-
-            $superAdmins = $superAdminIds->isNotEmpty()
-                ? $modelClass::whereIn('id', $superAdminIds)->get()
-                : collect();
+            $superAdmins = IdentityResolver::resolveSuperAdminNotifiables();
 
             $newTenant->loadMissing('subscription.plan');
 

@@ -7,6 +7,11 @@ export default function PlatformSettingsIndex({ settings }) {
     const [siteName, setSiteName] = useState(settings.site_name || '');
     const [supportEmail, setSupportEmail] = useState(settings.support_email || '');
     const [supportPageUrl, setSupportPageUrl] = useState(settings.support_page_url || '');
+    const [supportPhone, setSupportPhone] = useState(settings.support_phone || '');
+    const [maintenanceTitle, setMaintenanceTitle] = useState(settings.maintenance_title || '');
+    const [maintenanceMessage, setMaintenanceMessage] = useState(settings.maintenance_message || '');
+    const [maintenanceReturnTime, setMaintenanceReturnTime] = useState(settings.maintenance_return_time ? settings.maintenance_return_time.slice(0, 16) : '');
+    const [supportButtonText, setSupportButtonText] = useState(settings.support_button_text || '');
     const [logo, setLogo] = useState(settings.site_logo || null);
     const [favicon, setFavicon] = useState(settings.favicon || null);
     const [maintenanceMode, setMaintenanceMode] = useState(settings.maintenance_mode || false);
@@ -32,6 +37,11 @@ export default function PlatformSettingsIndex({ settings }) {
         formData.append('site_name', siteName);
         formData.append('support_email', supportEmail);
         formData.append('support_page_url', supportPageUrl);
+        formData.append('support_phone', supportPhone);
+        formData.append('maintenance_title', maintenanceTitle);
+        formData.append('maintenance_message', maintenanceMessage);
+        formData.append('maintenance_return_time', maintenanceReturnTime);
+        formData.append('support_button_text', supportButtonText);
         formData.append('maintenance_mode', maintenanceMode ? '1' : '0');
         formData.append('registration_enabled', registrationEnabled ? '1' : '0');
         formData.append('trial_enabled', trialEnabled ? '1' : '0');
@@ -116,6 +126,20 @@ export default function PlatformSettingsIndex({ settings }) {
                                             placeholder="https://example.com/support"
                                         />
                                         {errors.support_page_url && <p className="text-xs text-red-600 mt-1">{errors.support_page_url}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="support_phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Support Phone
+                                        </label>
+                                        <input
+                                            id="support_phone"
+                                            type="text"
+                                            value={supportPhone}
+                                            onChange={(e) => setSupportPhone(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="+1 234 567 890"
+                                        />
+                                        {errors.support_phone && <p className="text-xs text-red-600 mt-1">{errors.support_phone}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -300,6 +324,69 @@ export default function PlatformSettingsIndex({ settings }) {
                                 </div>
                             </div>
 
+                            {/* Section: Maintenance Page Configuration */}
+                            <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Maintenance Page</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Customize the page shown during maintenance.</p>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label htmlFor="maintenance_title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Maintenance Title
+                                        </label>
+                                        <input
+                                            id="maintenance_title"
+                                            type="text"
+                                            value={maintenanceTitle}
+                                            onChange={(e) => setMaintenanceTitle(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="We'll be right back"
+                                        />
+                                        {errors.maintenance_title && <p className="text-xs text-red-600 mt-1">{errors.maintenance_title}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="maintenance_message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Maintenance Message
+                                        </label>
+                                        <textarea
+                                            id="maintenance_message"
+                                            rows={4}
+                                            value={maintenanceMessage}
+                                            onChange={(e) => setMaintenanceMessage(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="We are currently performing scheduled maintenance..."
+                                        />
+                                        {errors.maintenance_message && <p className="text-xs text-red-600 mt-1">{errors.maintenance_message}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="maintenance_return_time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Expected Return Time
+                                        </label>
+                                        <input
+                                            id="maintenance_return_time"
+                                            type="datetime-local"
+                                            value={maintenanceReturnTime}
+                                            onChange={(e) => setMaintenanceReturnTime(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        />
+                                        {errors.maintenance_return_time && <p className="text-xs text-red-600 mt-1">{errors.maintenance_return_time}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="support_button_text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Support Button Text
+                                        </label>
+                                        <input
+                                            id="support_button_text"
+                                            type="text"
+                                            value={supportButtonText}
+                                            onChange={(e) => setSupportButtonText(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            placeholder="Contact Support"
+                                        />
+                                        {errors.support_button_text && <p className="text-xs text-red-600 mt-1">{errors.support_button_text}</p>}
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Section 5: System Settings */}
                             <div className="pb-6">
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">System Settings</h3>
@@ -340,6 +427,14 @@ export default function PlatformSettingsIndex({ settings }) {
 
                             {/* Submit */}
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                                <a
+                                    href="/superadmin/platform-settings/preview"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    Preview Maintenance Page
+                                </a>
                                 <button
                                     type="submit"
                                     disabled={processing}

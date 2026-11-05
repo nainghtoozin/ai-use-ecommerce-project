@@ -158,7 +158,7 @@ export default function AdminSidebar() {
                     items: [
                         { label: 'Platform Settings', href: '/superadmin/platform-settings', icon: 'Settings' },
                         { label: 'FAQ Management', href: '/superadmin/faqs', icon: 'HelpCircle' },
-                        { label: 'Store Categories', href: '/superadmin/store-categories', icon: 'Store' },
+                        { label: 'Store Categories', href: '/superadmin/store-categories', icon: 'Tags' },
                         { label: 'Operations / Webhooks', href: '/superadmin/operations', icon: 'Zap' },
                         { label: 'Activity Logs', href: '/admin/activity-logs', icon: 'Activity' },
                         { label: 'Audit Logs', href: '/admin/audit-logs', icon: 'Shield' },

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import PaymentIntentBadge from '@/Components/Billing/PaymentIntentBadge';
 import { formatCurrency as _formatCurrency, getPlatformCurrencyConfig } from '@/Utils/currency';
@@ -581,11 +581,11 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{mode === 'approvals' ? 'Payment Approvals' : 'Billing Console'}</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{mode === 'approvals' ? 'Review and approve payments awaiting SuperAdmin action' : 'Review and manage all subscription payments across the platform'}</p>
                     </div>
-                    {pendingPriority > 0 && (
-                        <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-xl border border-purple-200">
+                    {stats?.pending_review > 0 && (
+                        <Link href="/superadmin/billing?status=waiting_review" className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-xl border border-purple-200 hover:bg-purple-100 transition-colors">
                             <Clock className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm font-semibold text-purple-700">{pendingPriority} pending review</span>
-                        </div>
+                            <span className="text-sm font-semibold text-purple-700">{stats.pending_review} pending review</span>
+                        </Link>
                     )}
                 </div>
 
@@ -713,59 +713,48 @@ export default function SuperAdminBillingConsole({ intents, filters, plans, stat
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                                 <thead className="bg-gray-50 dark:bg-gray-950">
                                     <tr>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Merchant</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Submitted</th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-950 z-10">Actions</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Merchant</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment Details</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount & Submitted</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-950 z-10">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {items.map((intent) => (
                                         <tr key={intent.id} className={`hover:bg-gray-50 dark:bg-gray-950/50 transition-colors ${intent.status === 'waiting_review' ? 'bg-purple-50/30' : ''}`}>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">{intent.reference_number}</span>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <span className="text-xs font-mono font-semibold text-gray-900 dark:text-gray-100">{intent.reference_number}</span>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                                        <Building2 className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{intent.tenant?.name || '—'}</p>
-                                                        <p className="text-xs text-gray-400 dark:text-gray-500">{intent.tenant?.email || ''}</p>
-                                                    </div>
-                                                </div>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate max-w-[140px]">{intent.tenant?.name || '—'}</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[140px]">{intent.tenant?.email || ''}</p>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <PaymentTypeBadge type={intent.payment_type} label={intent.payment_type_label} />
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[150px]">
+                                                    {intent.plan?.name || '—'}
+                                                    {intent.from_plan && intent.to_plan && intent.from_plan !== intent.to_plan && (
+                                                        <span> ({intent.from_plan} → {intent.to_plan})</span>
+                                                    )}
+                                                </p>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">{intent.plan?.name || '—'}</span>
-                                                {intent.from_plan && intent.to_plan && intent.from_plan !== intent.to_plan && (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500">{intent.from_plan} → {intent.to_plan}</p>
-                                                )}
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{fmt(intent.amount, intent.currency)}</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(intent.created_at)}</p>
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fmt(intent.amount, intent.currency)}</span>
-                                            </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(intent.created_at)}</span>
-                                            </td>
-                                            <td className="px-5 py-4 whitespace-nowrap">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <PaymentIntentBadge status={intent.status} size="sm" />
                                             </td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-right sticky right-0 bg-white dark:bg-gray-900 z-10">
+                                            <td className="px-4 py-3 whitespace-nowrap text-right sticky right-0 bg-white dark:bg-gray-900 z-10">
                                                 <button
                                                     onClick={() => setSelectedIntent(intent)}
                                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                                                     aria-label={`Review payment ${intent.reference_number}`}
                                                 >
                                                     <Eye className="w-3.5 h-3.5" />
-                                                    Review
+                                                    {intent.status === 'waiting_review' ? 'Review' : 'View'}
                                                 </button>
                                             </td>
                                         </tr>

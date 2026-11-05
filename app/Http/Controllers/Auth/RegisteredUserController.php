@@ -24,8 +24,8 @@ class RegisteredUserController extends Controller
     public function create(): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
         $settings = \App\Models\WebsiteInfo::getSettings();
-        if (!$settings->allow_registration) {
-            return redirect()->route('login')->with('error', 'Registration is currently disabled.');
+        if (!$settings->allow_registration || !(\App\Models\PlatformSetting::current()->registration_enabled ?? true)) {
+            return redirect()->route('login')->with('error', 'New account registration is temporarily unavailable. Please try again later.');
         }
 
         $tenant = \App\Models\Tenant::getCurrent();
@@ -52,8 +52,8 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $settings = \App\Models\WebsiteInfo::getSettings();
-        if (!$settings->allow_registration) {
-            return redirect()->route('login')->with('error', 'Registration is currently disabled.');
+        if (!$settings->allow_registration || !(\App\Models\PlatformSetting::current()->registration_enabled ?? true)) {
+            return redirect()->route('login')->with('error', 'New account registration is temporarily unavailable. Please try again later.');
         }
 
         $tenant = \App\Models\Tenant::getCurrent();

@@ -866,6 +866,7 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::post('/billing-payment-methods/{id}/restore', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'restore'])->name('billing-payment-methods.restore');
 
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
+    Route::get('/platform-settings/preview', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'preview'])->name('platform-settings.preview');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');
 
     Route::get('/store-categories', [\App\Http\Controllers\SuperAdmin\StoreCategoryController::class, 'index'])->name('store-categories.index');
