@@ -5,13 +5,10 @@ import ImageUpload from '@/Components/ImageUpload';
 
 export default function PlatformSettingsIndex({ settings }) {
     const [siteName, setSiteName] = useState(settings.site_name || '');
-    const [supportEmail, setSupportEmail] = useState(settings.support_email || '');
-    const [supportPageUrl, setSupportPageUrl] = useState(settings.support_page_url || '');
-    const [supportPhone, setSupportPhone] = useState(settings.support_phone || '');
+    // support fields moved to Support Center page
     const [maintenanceTitle, setMaintenanceTitle] = useState(settings.maintenance_title || '');
     const [maintenanceMessage, setMaintenanceMessage] = useState(settings.maintenance_message || '');
     const [maintenanceReturnTime, setMaintenanceReturnTime] = useState(settings.maintenance_return_time ? settings.maintenance_return_time.slice(0, 16) : '');
-    const [supportButtonText, setSupportButtonText] = useState(settings.support_button_text || '');
     const [logo, setLogo] = useState(settings.site_logo || null);
     const [favicon, setFavicon] = useState(settings.favicon || null);
     const [maintenanceMode, setMaintenanceMode] = useState(settings.maintenance_mode || false);
@@ -35,13 +32,10 @@ export default function PlatformSettingsIndex({ settings }) {
 
         const formData = new FormData();
         formData.append('site_name', siteName);
-        formData.append('support_email', supportEmail);
-        formData.append('support_page_url', supportPageUrl);
-        formData.append('support_phone', supportPhone);
+        // support fields managed in Support Center page
         formData.append('maintenance_title', maintenanceTitle);
         formData.append('maintenance_message', maintenanceMessage);
         formData.append('maintenance_return_time', maintenanceReturnTime);
-        formData.append('support_button_text', supportButtonText);
         formData.append('maintenance_mode', maintenanceMode ? '1' : '0');
         formData.append('registration_enabled', registrationEnabled ? '1' : '0');
         formData.append('trial_enabled', trialEnabled ? '1' : '0');
@@ -99,48 +93,7 @@ export default function PlatformSettingsIndex({ settings }) {
                                         />
                                         {errors.site_name && <p className="text-xs text-red-600 mt-1">{errors.site_name}</p>}
                                     </div>
-                                    <div>
-                                        <label htmlFor="support_email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Support Email
-                                        </label>
-                                        <input
-                                            id="support_email"
-                                            type="email"
-                                            value={supportEmail}
-                                            onChange={(e) => setSupportEmail(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                                            placeholder="support@example.com"
-                                        />
-                                        {errors.support_email && <p className="text-xs text-red-600 mt-1">{errors.support_email}</p>}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="support_page_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Support Page URL
-                                        </label>
-                                        <input
-                                            id="support_page_url"
-                                            type="url"
-                                            value={supportPageUrl}
-                                            onChange={(e) => setSupportPageUrl(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                                            placeholder="https://example.com/support"
-                                        />
-                                        {errors.support_page_url && <p className="text-xs text-red-600 mt-1">{errors.support_page_url}</p>}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="support_phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Support Phone
-                                        </label>
-                                        <input
-                                            id="support_phone"
-                                            type="text"
-                                            value={supportPhone}
-                                            onChange={(e) => setSupportPhone(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                                            placeholder="+1 234 567 890"
-                                        />
-                                        {errors.support_phone && <p className="text-xs text-red-600 mt-1">{errors.support_phone}</p>}
-                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Support contact settings have moved to the dedicated Support Center page.</p>
                                 </div>
                             </div>
 
@@ -370,20 +323,7 @@ export default function PlatformSettingsIndex({ settings }) {
                                         />
                                         {errors.maintenance_return_time && <p className="text-xs text-red-600 mt-1">{errors.maintenance_return_time}</p>}
                                     </div>
-                                    <div>
-                                        <label htmlFor="support_button_text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Support Button Text
-                                        </label>
-                                        <input
-                                            id="support_button_text"
-                                            type="text"
-                                            value={supportButtonText}
-                                            onChange={(e) => setSupportButtonText(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                                            placeholder="Contact Support"
-                                        />
-                                        {errors.support_button_text && <p className="text-xs text-red-600 mt-1">{errors.support_button_text}</p>}
-                                    </div>
+
                                 </div>
                             </div>
 

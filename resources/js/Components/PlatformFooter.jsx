@@ -22,6 +22,7 @@ export default function PlatformFooter() {
         { label: t('landing.footer.privacy_policy'), href: '/client/privacy' },
         { label: t('landing.footer.terms_of_service'), href: '/client/terms' },
         { label: t('landing.footer.contact'), href: '/client/contact' },
+        { label: 'Contact Support', href: '/support' },
     ];
 
     return (

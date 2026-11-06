@@ -19,6 +19,7 @@ import {
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
     Truck, Database, AlertTriangle, RotateCcw,
+    MessageCircle,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -52,6 +53,7 @@ const iconMap = {
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
     Truck, Database, AlertTriangle, RotateCcw,
+    MessageCircle,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -157,6 +159,7 @@ export default function AdminSidebar() {
                     title: 'System',
                     items: [
                         { label: 'Platform Settings', href: '/superadmin/platform-settings', icon: 'Settings' },
+                        { label: 'Support Center', href: '/superadmin/support-center', icon: 'MessageCircle' },
                         { label: 'FAQ Management', href: '/superadmin/faqs', icon: 'HelpCircle' },
                         { label: 'Store Categories', href: '/superadmin/store-categories', icon: 'Tags' },
                         { label: 'Operations / Webhooks', href: '/superadmin/operations', icon: 'Zap' },

@@ -229,6 +229,15 @@ Route::middleware('guest')->group(function () {
 });
 
 // ============================================================
+// PUBLIC SUPPORT CENTER
+// ============================================================
+Route::get('/support', function () {
+    return \Inertia\Inertia::render('Support/Index', [
+        'settings' => \App\Models\PlatformSetting::current(),
+    ]);
+})->name('support.index');
+
+// ============================================================
 // AUTHENTICATED ROUTES
 // ============================================================
 Route::middleware('auth:web,accounts')->group(function () {
@@ -866,6 +875,8 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::post('/billing-payment-methods/{id}/restore', [\App\Http\Controllers\SuperAdmin\BillingPaymentMethodController::class, 'restore'])->name('billing-payment-methods.restore');
 
     Route::get('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'index'])->name('platform-settings.index');
+    Route::get('/support-center', [\App\Http\Controllers\SuperAdmin\SuperAdminSupportCenterController::class, 'index'])->name('support-center.index');
+    Route::post('/support-center', [\App\Http\Controllers\SuperAdmin\SuperAdminSupportCenterController::class, 'update'])->name('support-center.update');
     Route::get('/platform-settings/preview', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'preview'])->name('platform-settings.preview');
     Route::post('/platform-settings', [\App\Http\Controllers\SuperAdmin\SuperAdminPlatformSettingController::class, 'update'])->name('platform-settings.update');
 

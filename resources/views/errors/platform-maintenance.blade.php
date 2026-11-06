@@ -95,7 +95,9 @@
                     @if($settings->support_phone)
                         <a href="tel:{{ $settings->support_phone }}">Phone: {{ $settings->support_phone }}</a>
                     @endif
-                    @if($settings->support_page_url)
+                    @if($settings->support_center_enabled ?? true)
+                        <a href="/support" class="btn">{{ $settings->support_button_text ?: 'Contact Support' }}</a>
+                    @elseif($settings->support_page_url)
                         <a href="{{ $settings->support_page_url }}" target="_blank" rel="noopener noreferrer">{{ $settings->support_button_text ?: 'Contact Support' }}</a>
                     @elseif($settings->support_email)
                         <a href="mailto:{{ $settings->support_email }}">{{ $settings->support_button_text ?: 'Contact Support' }}</a>

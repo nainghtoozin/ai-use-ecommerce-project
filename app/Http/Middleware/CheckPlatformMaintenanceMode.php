@@ -23,19 +23,21 @@ class CheckPlatformMaintenanceMode
         }
 
         $user = Auth::user();
+        if (!$user) {
+            $user = Auth::guard('web')->user() ?? Auth::guard('accounts')->user();
+        }
         if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $next($request);
         }
 
-        if ($request->is('login', 'logout', 'register', 'forgot-password', 'reset-password/*', 'up', 'storage/*', 'build/*', 'favicon.ico')) {
+        if ($request->is('login', 'logout', 'register', 'forgot-password', 'reset-password/*', 'up', 'support', 'superadmin/login', 'superadmin/logout', 'storage/*', 'build/*', 'favicon.ico')) {
             return $next($request);
         }
 
-        if ($request->routeIs('login', 'logout', 'register', 'password.*', 'verification.*')) {
+        if ($request->routeIs('login', 'logout', 'register', 'password.*', 'verification.*', 'superadmin.login')) {
             return $next($request);
         }
 
-        $settings = PlatformSetting::current();
         return response()->view('errors.platform-maintenance', ['settings' => $settings], 503);
     }
 }
