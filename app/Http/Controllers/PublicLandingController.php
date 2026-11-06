@@ -101,12 +101,26 @@ class PublicLandingController extends Controller
             'answer' => $faq->answer,
         ]);
 
+        $supportSettings = \App\Models\PlatformSetting::current();
         return Inertia::render('Public/Landing', [
             'plans' => $plans,
             'featureCategories' => $featureCategories,
             'allFeatureDefs' => $allFeatureDefs,
             'featuredStores' => $featuredStores,
             'platformFaqs' => $faqs,
+            'supportSettings' => [
+                'support_email' => $supportSettings->support_email,
+                'support_phone' => $supportSettings->support_phone,
+                'support_page_url' => $supportSettings->support_page_url,
+                'support_title' => $supportSettings->support_title,
+                'support_description' => $supportSettings->support_description,
+                'telegram_url' => $supportSettings->telegram_url,
+                'viber_url' => $supportSettings->viber_url,
+                'whatsapp_url' => $supportSettings->whatsapp_url,
+                'facebook_url' => $supportSettings->facebook_url,
+                'messenger_url' => $supportSettings->messenger_url,
+                'site_logo_url' => $supportSettings->site_logo_url,
+            ],
         ]);
     }
 }

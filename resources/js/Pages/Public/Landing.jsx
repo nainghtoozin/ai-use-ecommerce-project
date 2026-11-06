@@ -7,6 +7,7 @@ import PricingSection from '@/Components/PublicLanding/PricingSection';
 import TestimonialsSection from '@/Components/PublicLanding/TestimonialsSection';
 import StoreDirectorySection from '@/Components/PublicLanding/StoreDirectorySection';
 import FaqSection from '@/Components/PublicLanding/FaqSection';
+import SupportSection from '@/Components/PublicLanding/SupportSection';
 import CtaSection from '@/Components/PublicLanding/CtaSection';
 import { useTranslation } from '@/Utils/useTranslation';
 
@@ -34,6 +35,7 @@ export default function Landing() {
             <TestimonialsSection />
             <StoreDirectorySection stores={safeStores} />
             <FaqSection />
+            <SupportSection />
             <CtaSection />
         </PlatformLayout>
     );

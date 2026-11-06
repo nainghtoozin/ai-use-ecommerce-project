@@ -142,11 +142,11 @@ export default function PlatformNavbar() {
                                 <Link href="/login" className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
                                     {t('landing.nav.sign_in')}
                                 </Link>
-                                <Link href="/client/contact" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
+                                <Link href="/support" className="px-3 lg:px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
                                     style={{ backgroundColor: 'var(--theme-color, #3B82F6)' }}
                                     onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                                     onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
-                                    {t('landing.nav.contact')}
+                                    Support Center
                                 </Link>
                             </div>
                         )}

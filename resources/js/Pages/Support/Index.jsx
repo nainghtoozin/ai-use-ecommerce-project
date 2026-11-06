@@ -133,6 +133,16 @@ export default function SupportCenter({ settings }) {
                         </div>
                     </div>
 
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Need quick answers?</h2>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">Browse our frequently asked questions.</p>
+                        </div>
+                        <a href="/#faq" className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            Visit FAQ
+                        </a>
+                    </div>
+
                     {s.live_chat_enabled && (
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
