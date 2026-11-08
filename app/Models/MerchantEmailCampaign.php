@@ -15,11 +15,13 @@ class MerchantEmailCampaign extends Model
         'recipient_mode',
         'recipient_count',
         'status',
+        'previous_status',
         'reply_to',
         'filters',
         'scheduled_at',
         'started_at',
         'completed_at',
+        'archived_at',
     ];
 
     protected $casts = [
@@ -27,10 +29,16 @@ class MerchantEmailCampaign extends Model
         'scheduled_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function recipients(): HasMany
     {
         return $this->hasMany(MerchantEmailRecipient::class, 'campaign_id');
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MerchantEmailAttachment::class, 'campaign_id');
     }
 }

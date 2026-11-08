@@ -19,7 +19,7 @@ import {
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
     Truck, Database, AlertTriangle, RotateCcw,
-    MessageCircle,
+    MessageCircle, Mail,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -53,7 +53,7 @@ const iconMap = {
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
     Truck, Database, AlertTriangle, RotateCcw,
-    MessageCircle,
+    MessageCircle, Mail,
 };
 
 function Icon({ name, className = '', ...props }) {

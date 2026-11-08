@@ -8,10 +8,14 @@ export default function EmailCommunicationsIndex({ stats, email_types, recent_ca
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
                         <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6">
                             <p className="text-sm text-gray-500">Eligible Merchants</p>
                             <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.eligible_merchants}</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6">
+                            <p className="text-sm text-gray-500">Total Campaigns</p>
+                            <p className="mt-1 text-2xl font-semibold text-indigo-600">{stats.total_campaigns}</p>
                         </div>
                         <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6">
                             <p className="text-sm text-gray-500">Emails Sent</p>
@@ -19,7 +23,7 @@ export default function EmailCommunicationsIndex({ stats, email_types, recent_ca
                         </div>
                         <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6">
                             <p className="text-sm text-gray-500">Pending</p>
-                            <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.pending}</p>
+                            <p className="mt-1 text-2xl font-semibold text-amber-600">{stats.pending}</p>
                         </div>
                         <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6">
                             <p className="text-sm text-gray-500">Failed</p>
@@ -37,7 +41,7 @@ export default function EmailCommunicationsIndex({ stats, email_types, recent_ca
                     </div>
 
                     <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6">
-                        <h3 className="text-lg font-semibold mb-4">Recent Communications</h3>
+                        <h3 className="text-lg font-semibold mb-4">Recent Emails</h3>
                         {recent_campaigns.length === 0 && (
                             <p className="text-sm text-gray-500">No communications yet.</p>
                         )}

@@ -72,6 +72,12 @@ class SendMerchantEmailJob implements ShouldQueue
             return;
         }
 
+        if (in_array($campaign->status, ['cancelled', 'archived'], true)) {
+            $recipient->update(['status' => 'cancelled']);
+            app(MerchantEmailCommunicationService::class)->markCampaignCompletion($campaign->id);
+            return;
+        }
+
         $rateKey = 'merchant-email-sends';
         $maxPerMinute = (int) config('merchant_email.rate_limit_per_minute', 30);
         if (RateLimiter::tooManyAttempts($rateKey, $maxPerMinute)) {
@@ -88,6 +94,16 @@ class SendMerchantEmailJob implements ShouldQueue
                 recipientName: $recipient->recipient_name,
                 replyToAddress: $campaign->reply_to,
             );
+
+            foreach ($campaign->attachments as $attachment) {
+                $disk = \Illuminate\Support\Facades\Storage::disk('local');
+                if ($disk->exists($attachment->storage_path)) {
+                    $mail->attach($disk->path($attachment->storage_path), [
+                        'as' => $attachment->original_filename,
+                        'mime' => $attachment->mime_type ?: 'application/octet-stream',
+                    ]);
+                }
+            }
 
             Mail::to($recipient->recipient_email)->send($mail);
 

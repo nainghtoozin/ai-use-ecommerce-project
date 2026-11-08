@@ -8,10 +8,11 @@ export default function History({ campaigns, filters, email_types }) {
     const [status, setStatus] = useState(filters?.status || '');
     const [from, setFrom] = useState(filters?.from || '');
     const [to, setTo] = useState(filters?.to || '');
+    const [archived, setArchived] = useState(filters?.archived || '');
 
     function apply() {
         router.get('/superadmin/email-communications/history', {
-            search, email_type: emailType, status, from, to,
+            search, email_type: emailType, status, from, to, archived,
         }, { preserveState: true, replace: true });
     }
 
@@ -34,6 +35,10 @@ export default function History({ campaigns, filters, email_types }) {
                                 <option value="sending">Sending</option>
                                 <option value="completed">Completed</option>
                                 <option value="failed">Failed</option>
+                            </select>
+                            <select value={archived} onChange={(e) => setArchived(e.target.value)} className="border rounded px-3 py-1.5 text-sm">
+                                <option value="">Active</option>
+                                <option value="1">Archived</option>
                             </select>
                             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border rounded px-3 py-1.5 text-sm" />
                             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border rounded px-3 py-1.5 text-sm" />

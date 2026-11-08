@@ -307,6 +307,7 @@ class MerchantEmailCommunicationService
             'eligible_merchants' => Tenant::query()->get()->filter(function (Tenant $tenant) {
                 return $this->resolveOwner($tenant)['valid'];
             })->count(),
+            'total_campaigns' => MerchantEmailCampaign::count(),
             'total_sent' => MerchantEmailRecipient::where('status', 'sent')->count(),
             'pending' => MerchantEmailRecipient::whereIn('status', ['pending', 'processing'])->count(),
             'failed' => MerchantEmailRecipient::where('status', 'failed')->count(),
@@ -320,6 +321,10 @@ class MerchantEmailCommunicationService
             return;
         }
 
+        if (in_array($campaign->status, ['cancelled', 'archived', 'draft'], true)) {
+            return;
+        }
+
         $pending = $campaign->recipients()->whereIn('status', ['pending', 'processing'])->count();
         if ($pending > 0) {
             return;
@@ -327,11 +332,24 @@ class MerchantEmailCommunicationService
 
         $failedCount = $campaign->recipients()->where('status', 'failed')->count();
         $sentCount = $campaign->recipients()->where('status', 'sent')->count();
+        $cancelledCount = $campaign->recipients()->where('status', 'cancelled')->count();
+
+        if ($sentCount > 0 && $failedCount > 0) {
+            $status = 'partially_failed';
+        } elseif ($sentCount > 0) {
+            $status = 'completed';
+        } elseif ($failedCount > 0) {
+            $status = 'failed';
+        } elseif ($cancelledCount > 0) {
+            $status = 'cancelled';
+        } else {
+            $status = 'completed';
+        }
 
         MerchantEmailCampaign::where('id', $campaignId)
             ->whereNull('completed_at')
             ->update([
-                'status' => $failedCount > 0 && $sentCount === 0 ? 'failed' : 'completed',
+                'status' => $status,
                 'completed_at' => now(),
             ]);
     }

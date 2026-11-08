@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\MerchantEmailAttachment;
 use App\Models\MerchantEmailCampaign;
+use App\Models\MerchantEmailRecipient;
 use App\Models\Tenant;
 use App\Services\ActivityLogger;
 use App\Services\MerchantEmailCommunicationService;
@@ -80,10 +82,28 @@ class MerchantEmailCommunicationController extends Controller
     {
         $validated = $this->validatePayload($request, false);
 
+        $request->validate([
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:5120|mimes:pdf,doc,docx,xls,xlsx,csv,png,jpg,jpeg',
+        ]);
+
         try {
             $campaign = $this->service->createCampaign($validated, $request->user());
         } catch (\RuntimeException $e) {
             return back()->withErrors(['recipients' => $e->getMessage()]);
+        }
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('merchant-email-attachments/' . $campaign->id, 'local');
+                \App\Models\MerchantEmailAttachment::create([
+                    'campaign_id' => $campaign->id,
+                    'original_filename' => $file->getClientOriginalName(),
+                    'storage_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'file_size' => $file->getSize(),
+                ]);
+            }
         }
 
         ActivityLogger::log(
@@ -97,7 +117,7 @@ class MerchantEmailCommunicationController extends Controller
         );
 
         return redirect()->route('superadmin.email-communications.show', $campaign)
-            ->with('success', "Campaign queued for {$campaign->recipient_count} recipient(s).");
+            ->with('success', 'Your email is now in the delivery queue. You can check delivery progress in Email Details.');
     }
 
     public function history(Request $request)
@@ -108,6 +128,7 @@ class MerchantEmailCommunicationController extends Controller
         $tenantId = $request->get('tenant_id');
         $from = $request->get('from');
         $to = $request->get('to');
+        $archived = $request->get('archived');
 
         $campaigns = MerchantEmailCampaign::query()
             ->withCount(['recipients as sent_count' => fn($q) => $q->where('status', 'sent')])
@@ -119,6 +140,8 @@ class MerchantEmailCommunicationController extends Controller
             ->when($tenantId, fn($q, $id) => $q->whereHas('recipients', fn($r) => $r->where('tenant_id', $id)))
             ->when($from, fn($q, $d) => $q->whereDate('created_at', '>=', $d))
             ->when($to, fn($q, $d) => $q->whereDate('created_at', '<=', $d))
+            ->when($archived === '1', fn($q) => $q->whereNotNull('archived_at'))
+            ->when($archived !== '1', fn($q) => $q->whereNull('archived_at'))
             ->orderByDesc('created_at')
             ->paginate(20)
             ->withQueryString();
@@ -140,6 +163,8 @@ class MerchantEmailCommunicationController extends Controller
     public function show(MerchantEmailCampaign $campaign, Request $request)
     {
         $status = $request->get('status');
+        $campaign->load('attachments');
+
         $recipients = $campaign->recipients()
             ->when($status, fn($q, $s) => $q->where('status', $s))
             ->orderByDesc('id')
@@ -176,8 +201,257 @@ class MerchantEmailCommunicationController extends Controller
         return back()->with('success', "Retried {$count} failed recipient(s).");
     }
 
+    public function cancel(MerchantEmailCampaign $campaign)
+    {
+        if (!in_array($campaign->status, ['queued', 'sending', 'processing'], true)) {
+            return back()->withErrors(['status' => 'Campaign cannot be cancelled.']);
+        }
+
+        $campaign->recipients()->where('status', 'pending')->update(['status' => 'cancelled']);
+        $campaign->update(['status' => 'cancelled', 'completed_at' => now()]);
+
+        ActivityLogger::log('Cancelled merchant email campaign: ' . $campaign->subject, 'merchant_email_cancelled', $campaign);
+
+        return back()->with('success', 'Remaining email deliveries have been cancelled.');
+    }
+
+    public function archive(MerchantEmailCampaign $campaign)
+    {
+        if (!in_array($campaign->status, ['completed', 'failed', 'cancelled'], true)) {
+            return back()->withErrors(['status' => 'Campaign cannot be archived.']);
+        }
+
+        $campaign->update(['archived_at' => now()]);
+
+        ActivityLogger::log('Archived merchant email campaign: ' . $campaign->subject, 'merchant_email_archived', $campaign);
+
+        return back()->with('success', 'Email moved to Archive. You can restore it later.');
+    }
+
+    public function restore(MerchantEmailCampaign $campaign)
+    {
+        if (!$campaign->archived_at) {
+            return back()->withErrors(['status' => 'Email is not archived.']);
+        }
+
+        $campaign->update(['archived_at' => null]);
+
+        ActivityLogger::log('Restored merchant email campaign: ' . $campaign->subject, 'merchant_email_restored', $campaign);
+
+        return back()->with('success', 'Email restored successfully.');
+    }
+
+    public function destroy(MerchantEmailCampaign $campaign)
+    {
+        if (in_array($campaign->status, ['queued', 'sending'], true)) {
+            return back()->withErrors(['status' => 'Cancel the delivery before deleting this email.']);
+        }
+
+        if (!$campaign->archived_at && $campaign->recipients()->where('status', 'sent')->exists()) {
+            return back()->withErrors(['status' => 'Archive this email before permanently deleting delivered emails.']);
+        }
+
+        foreach ($campaign->attachments as $attachment) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($attachment->storage_path);
+        }
+
+        $campaign->delete();
+
+        ActivityLogger::log('Deleted merchant email campaign: ' . $campaign->subject, 'merchant_email_deleted', $campaign);
+
+        return redirect()->route('superadmin.email-communications.history')->with('success', 'Email record permanently deleted.');
+    }
+
+    public function downloadAttachment(\App\Models\MerchantEmailAttachment $attachment)
+    {
+        $path = $attachment->storage_path;
+        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+            abort(404);
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->download($path, $attachment->original_filename);
+    }
+
+    public function storeDraft(Request $request)
+    {
+        $validated = $this->validatePayload($request, false);
+
+        $request->validate([
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:5120|mimes:pdf,doc,docx,xls,xlsx,csv,png,jpg,jpeg',
+        ]);
+
+        $result = $this->service->preview($validated);
+        $recipients = $result['recipients'];
+
+        $campaign = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $request, $recipients) {
+            $campaign = MerchantEmailCampaign::create([
+                'created_by' => $request->user()?->id,
+                'subject' => $validated['subject'],
+                'email_type' => $validated['email_type'],
+                'message' => $validated['message'],
+                'recipient_mode' => $validated['recipient_mode'],
+                'recipient_count' => count($recipients),
+                'status' => 'draft',
+                'reply_to' => $validated['reply_to'] ?? null,
+                'filters' => $validated['recipient_mode'] === 'all' ? ['statuses' => $validated['statuses'] ?? []] : null,
+            ]);
+
+            foreach ($recipients as $recipient) {
+                MerchantEmailRecipient::create([
+                    'campaign_id' => $campaign->id,
+                    'tenant_id' => $recipient['tenant_id'],
+                    'recipient_email' => $recipient['recipient_email'],
+                    'recipient_name' => $recipient['recipient_name'],
+                    'status' => 'draft',
+                ]);
+            }
+
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('merchant-email-attachments/' . $campaign->id, 'local');
+                    \App\Models\MerchantEmailAttachment::create([
+                        'campaign_id' => $campaign->id,
+                        'original_filename' => $file->getClientOriginalName(),
+                        'storage_path' => $path,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
+                    ]);
+                }
+            }
+
+            return $campaign;
+        });
+
+        ActivityLogger::log('Saved draft merchant email campaign: ' . $campaign->subject, 'merchant_email_draft_saved', $campaign);
+
+        return redirect()->route('superadmin.email-communications.show', $campaign)->with('success', 'Draft saved successfully.');
+    }
+
+    public function edit(MerchantEmailCampaign $campaign)
+    {
+        if ($campaign->status !== 'draft') {
+            return redirect()->route('superadmin.email-communications.show', $campaign);
+        }
+
+        $campaign->load(['recipients', 'attachments']);
+
+        $selectedTenantIds = $campaign->recipients->pluck('tenant_id')->filter()->values()->all();
+
+        $existingRecipients = $campaign->recipients->map(function ($r) {
+            return [
+                'id' => $r->id,
+                'name' => $r->recipient_name,
+                'email' => $r->recipient_email,
+                'status' => $r->status,
+            ];
+        })->values()->all();
+
+        return Inertia::render('SuperAdmin/EmailCommunications/Compose', [
+            'campaign' => $campaign,
+            'selectedTenantIds' => $selectedTenantIds,
+            'existingRecipients' => $existingRecipients,
+            'email_types' => $this->service->emailTypes(),
+            'tenant_statuses' => $this->service->tenantStatuses(),
+            'default_statuses' => $campaign->filters['statuses'] ?? \App\Services\MerchantEmailCommunicationService::DEFAULT_STATUSES,
+            'tenants' => \App\Models\Tenant::query()->orderBy('name')->paginate(15),
+        ]);
+    }
+
+    public function update(MerchantEmailCampaign $campaign, Request $request)
+    {
+        if ($campaign->status !== 'draft') {
+            return back()->withErrors(['status' => 'Only drafts can be edited.']);
+        }
+
+        $validated = $request->validate([
+            'email_type' => 'required|string|in:' . implode(',', array_keys(\App\Services\MerchantEmailCommunicationService::EMAIL_TYPES)),
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:10000',
+            'reply_to' => 'nullable|email|max:255',
+        ]);
+
+        $request->validate([
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:5120|mimes:pdf,doc,docx,xls,xlsx,csv,png,jpg,jpeg',
+            'remove_attachments' => 'nullable|array',
+            'remove_attachments.*' => 'integer|exists:merchant_email_attachments,id',
+        ]);
+
+        if ($request->filled('remove_attachments')) {
+            foreach (\App\Models\MerchantEmailAttachment::where('campaign_id', $campaign->id)->whereIn('id', $request->input('remove_attachments'))->get() as $attachment) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($attachment->storage_path);
+                $attachment->delete();
+            }
+        }
+
+        $campaign->update([
+            'subject' => $validated['subject'],
+            'email_type' => $validated['email_type'],
+            'message' => $validated['message'],
+            'reply_to' => $validated['reply_to'] ?? null,
+        ]);
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('merchant-email-attachments/' . $campaign->id, 'local');
+                \App\Models\MerchantEmailAttachment::create([
+                    'campaign_id' => $campaign->id,
+                    'original_filename' => $file->getClientOriginalName(),
+                    'storage_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'file_size' => $file->getSize(),
+                ]);
+            }
+        }
+
+        ActivityLogger::log('Updated draft merchant email campaign: ' . $campaign->subject, 'merchant_email_draft_updated', $campaign);
+
+        return redirect()->route('superadmin.email-communications.show', $campaign)->with('success', 'Draft updated successfully.');
+    }
+
+    public function sendDraft(MerchantEmailCampaign $campaign)
+    {
+        $locked = null;
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($campaign, &$locked) {
+                $locked = MerchantEmailCampaign::lockForUpdate()->find($campaign->id);
+                if (!$locked || $locked->status !== 'draft') {
+                    throw new \RuntimeException('Only drafts can be sent.');
+                }
+
+                $locked->recipients()->where('status', 'draft')->update(['status' => 'pending']);
+                $locked->update([
+                    'status' => 'queued',
+                    'recipient_count' => $locked->recipients()->count(),
+                    'started_at' => now(),
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
+
+        try {
+            $this->service->dispatchCampaign($locked);
+        } catch (\Throwable $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
+
+        return redirect()->route('superadmin.email-communications.show', $locked)->with('success', 'Your email is now in the delivery queue. You can check delivery progress in Email Details.');
+    }
+
     private function validatePayload(Request $request, bool $preview): array
     {
+        foreach (['statuses', 'tenant_ids'] as $field) {
+            $value = $request->input($field);
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                if (is_array($decoded)) {
+                    $request->merge([$field => $decoded]);
+                }
+            }
+        }
         $rules = [
             'email_type' => 'required|string|in:' . implode(',', array_keys(MerchantEmailCommunicationService::EMAIL_TYPES)),
             'subject' => 'required|string|max:255',

@@ -903,9 +903,18 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::get('/email-communications/compose', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'compose'])->name('email-communications.compose');
     Route::post('/email-communications/preview', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'preview'])->name('email-communications.preview');
     Route::post('/email-communications', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'store'])->name('email-communications.store');
+    Route::post('/email-communications/drafts', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'storeDraft'])->name('email-communications.drafts.store');
+    Route::get('/email-communications/{campaign}/edit', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'edit'])->name('email-communications.edit');
+    Route::put('/email-communications/{campaign}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'update'])->name('email-communications.update');
+    Route::post('/email-communications/{campaign}/send', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'sendDraft'])->name('email-communications.send');
     Route::get('/email-communications/history', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'history'])->name('email-communications.history');
     Route::get('/email-communications/{campaign}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'show'])->name('email-communications.show');
     Route::post('/email-communications/{campaign}/retry-failed', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'retryFailed'])->name('email-communications.retry-failed');
+    Route::post('/email-communications/{campaign}/cancel', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'cancel'])->name('email-communications.cancel');
+    Route::post('/email-communications/{campaign}/archive', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'archive'])->name('email-communications.archive');
+    Route::post('/email-communications/{campaign}/restore', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'restore'])->name('email-communications.restore');
+    Route::delete('/email-communications/{campaign}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'destroy'])->name('email-communications.destroy');
+    Route::get('/email-communications/attachments/{attachment}/download', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'downloadAttachment'])->name('email-communications.attachments.download');
 
     Route::post('/impersonate/{user}', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
 

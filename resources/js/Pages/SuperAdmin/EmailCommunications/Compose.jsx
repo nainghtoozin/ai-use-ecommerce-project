@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const EMAIL_TYPES = {
@@ -11,16 +11,19 @@ const EMAIL_TYPES = {
     general: 'General Message',
 };
 
-export default function Compose({ tenants, filters, email_types, tenant_statuses, default_statuses }) {
-    const [mode, setMode] = useState('all');
-    const [emailType, setEmailType] = useState('general');
-    const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
-    const [replyTo, setReplyTo] = useState('');
-    const [statuses, setStatuses] = useState(default_statuses || ['active', 'trialing']);
-    const [selectedIds, setSelectedIds] = useState([]);
+export default function Compose({ tenants, filters, email_types, tenant_statuses, default_statuses, campaign, selectedTenantIds, selectedStatuses, existingRecipients }) {
+    const pageErrors = usePage().props.errors || {};
+    const [mode, setMode] = useState(campaign?.recipient_mode || 'all');
+    const [emailType, setEmailType] = useState(campaign?.email_type || 'general');
+    const [subject, setSubject] = useState(campaign?.subject || '');
+    const [message, setMessage] = useState(campaign?.message || '');
+    const [replyTo, setReplyTo] = useState(campaign?.reply_to || '');
+    const [statuses, setStatuses] = useState(selectedStatuses || default_statuses || ['active', 'trialing']);
+    const [selectedIds, setSelectedIds] = useState(selectedTenantIds || []);
     const [selectAllMatching, setSelectAllMatching] = useState(false);
     const [singleId, setSingleId] = useState(null);
+    const [attachments, setAttachments] = useState([]);
+    const [removeAttachmentIds, setRemoveAttachmentIds] = useState([]);
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
     const [preview, setPreview] = useState(null);
@@ -58,6 +61,9 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
             reply_to: replyTo || null,
             recipient_mode: mode,
         };
+        if (campaign) {
+            payload.remove_attachments = removeAttachmentIds;
+        }
         if (mode === 'all') {
             payload.statuses = statuses;
         } else if (mode === 'selected') {
@@ -72,6 +78,25 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
             payload.tenant_id = singleId;
         }
         return payload;
+    }
+
+    function saveDraft() {
+        const payload = buildPayload();
+        const formData = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+            if (v === null || v === undefined) return;
+            if (Array.isArray(v)) v.forEach((item) => formData.append(`${k}[]`, item));
+            else if (typeof v === 'object') formData.append(k, JSON.stringify(v));
+            else formData.append(k, v);
+        });
+        attachments.forEach((f) => formData.append('attachments[]', f));
+        const url = campaign ? `/superadmin/email-communications/${campaign.id}` : '/superadmin/email-communications/drafts';
+        if (campaign) {
+            formData.append('_method', 'PUT');
+            router.post(url, formData, { preserveState: true });
+        } else {
+            router.post(url, formData, { preserveState: true });
+        }
     }
 
     async function handlePreview() {
@@ -94,7 +119,20 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
         if (sending) return;
         setSending(true);
         const payload = buildPayload();
-        router.post('/superadmin/email-communications', payload, {
+        const formData = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+            if (v === null || v === undefined) return;
+            if (Array.isArray(v)) {
+                v.forEach((item) => formData.append(`${k}[]`, item));
+            } else if (typeof v === 'object') {
+                formData.append(k, JSON.stringify(v));
+            } else {
+                formData.append(k, v);
+            }
+        });
+        attachments.forEach((f) => formData.append('attachments[]', f));
+        const url = campaign ? `/superadmin/email-communications/${campaign.id}/send` : '/superadmin/email-communications';
+        router.post(url, formData, {
             preserveState: true,
             onSuccess: () => {
                 setShowPreview(false);
@@ -116,8 +154,14 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
+                    {Object.keys(pageErrors).length > 0 && (
+                        <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                            {Object.values(pageErrors).map((e, i) => <div key={i}>{e}</div>)}
+                        </div>
+                    )}
 
                     <div className="bg-white dark:bg-gray-900 shadow-sm sm:rounded-lg p-6 space-y-4">
+                        {!campaign && (
                         <div>
                             <label className="block text-sm font-medium mb-1">Recipient Mode</label>
                             <div className="flex gap-2">
@@ -129,8 +173,9 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
                                 ))}
                             </div>
                         </div>
+                        )}
 
-                        {mode === 'all' && (
+                        {!campaign && mode === 'all' && (
                             <div>
                                 <label className="block text-sm font-medium mb-1">Tenant Statuses</label>
                                 <div className="flex flex-wrap gap-2">
@@ -145,7 +190,7 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
                             </div>
                         )}
 
-                        {mode === 'selected' && (
+                        {!campaign && mode === 'selected' && (
                             <div className="space-y-3">
                                 <form onSubmit={handleSearch} className="flex gap-2">
                                     <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search merchants..." className="border rounded-lg px-3 py-1.5 text-sm flex-1" />
@@ -200,7 +245,7 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
                             </div>
                         )}
 
-                        {mode === 'single' && (
+                        {!campaign && mode === 'single' && (
                             <div className="space-y-2">
                                 <form onSubmit={handleSearch} className="flex gap-2">
                                     <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search merchant..." className="border rounded-lg px-3 py-1.5 text-sm flex-1" />
@@ -223,6 +268,18 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
                             </div>
                         )}
 
+                        {campaign && (
+                            <div className="border rounded-lg p-4 bg-gray-50">
+                                <p className="text-sm font-medium mb-2">Recipients (Locked)</p>
+                                <p className="text-xs text-gray-500 mb-2">{(existingRecipients || []).length} recipient(s) preserved</p>
+                                <ul className="text-sm space-y-1 max-h-48 overflow-y-auto">
+                                    {(existingRecipients || []).map((r) => (
+                                        <li key={r.id}>{r.name} — {r.email}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-sm font-medium mb-1">Email Type</label>
                             <select value={emailType} onChange={(e) => setEmailType(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm w-full">
@@ -240,12 +297,42 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
                             <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={6} className="border rounded-lg px-3 py-1.5 text-sm w-full" />
                         </div>
 
+                        {campaign?.attachments?.length > 0 && (
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Existing Attachments</label>
+                                <ul className="text-xs space-y-1 mb-2">
+                                    {campaign.attachments.map((a) => (
+                                        <li key={a.id} className="flex items-center gap-2">
+                                            <input type="checkbox" checked={removeAttachmentIds.includes(a.id)} onChange={() => setRemoveAttachmentIds((prev) => prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id])} />
+                                            <span>{a.original_filename} ({Math.round(a.file_size / 1024)} KB) — remove</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Attachments (optional)</label>
+                            <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg"
+                                onChange={(e) => setAttachments(Array.from(e.target.files || []))} className="border rounded-lg px-3 py-1.5 text-sm w-full" />
+                            {attachments.length > 0 && (
+                                <ul className="mt-2 text-xs space-y-1">
+                                    {attachments.map((f, i) => (
+                                        <li key={i}>{f.name} ({Math.round(f.size / 1024)} KB)</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium mb-1">Reply-To (optional)</label>
                             <input type="email" value={replyTo} onChange={(e) => setReplyTo(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm w-full" />
                         </div>
 
                         <div className="flex gap-3">
+                            <button onClick={saveDraft} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200">
+                                {campaign ? 'Update Draft' : 'Save Draft'}
+                            </button>
                             <button onClick={handlePreview} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200">
                                 Preview & Confirm
                             </button>
