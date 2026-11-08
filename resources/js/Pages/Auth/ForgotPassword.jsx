@@ -35,3 +35,5 @@ export default function ForgotPassword({ status, store_slug }) {
         </PlatformGuestLayout>
     );
 }
+
+

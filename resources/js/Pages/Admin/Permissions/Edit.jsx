@@ -81,3 +81,5 @@ export default function PermissionsEdit({ permission }) {
         </AdminLayout>
     );
 }
+
+

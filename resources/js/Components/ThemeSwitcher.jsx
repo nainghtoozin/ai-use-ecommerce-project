@@ -88,3 +88,5 @@ export default function ThemeSwitcher({ compact = false }) {
         </div>
     );
 }
+
+

@@ -152,3 +152,5 @@ export default function PermissionsIndex({ permissions, grouped, filters }) {
         </AdminLayout>
     );
 }
+
+

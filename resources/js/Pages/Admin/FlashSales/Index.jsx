@@ -194,3 +194,5 @@ export default function FlashSalesIndex({ flashSales, query = '' }) {
         </AdminLayout>
     );
 }
+
+

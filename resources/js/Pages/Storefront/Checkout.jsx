@@ -861,3 +861,5 @@ export default function StorefrontCheckout({ tenant, cartItems, subtotal, paymen
         </ShopLayout>
     );
 }
+
+

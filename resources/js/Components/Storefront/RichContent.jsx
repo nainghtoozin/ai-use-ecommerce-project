@@ -32,3 +32,5 @@ export default function RichContent({ content, className = '' }) {
         />
     );
 }
+
+

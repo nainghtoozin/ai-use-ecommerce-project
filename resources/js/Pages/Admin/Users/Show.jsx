@@ -144,3 +144,5 @@ export default function UsersShow({ user, activities }) {
         </AdminLayout>
     );
 }
+
+

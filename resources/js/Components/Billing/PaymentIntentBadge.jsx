@@ -21,3 +21,5 @@ export default function PaymentIntentBadge({ status, size = 'md' }) {
         </span>
     );
 }
+
+

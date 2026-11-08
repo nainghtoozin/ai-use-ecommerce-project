@@ -233,3 +233,5 @@ export default function BrandsIndex({ brands }) {
         </AdminLayout>
     );
 }
+
+

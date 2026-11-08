@@ -196,3 +196,5 @@ export default function Contact({ tenant, contact }) {
         </ShopLayout>
     );
 }
+
+

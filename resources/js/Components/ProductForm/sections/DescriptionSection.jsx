@@ -18,3 +18,5 @@ export default function DescriptionSection({ data, setData, errors, mediaLibrary
         </div>
     );
 }
+
+

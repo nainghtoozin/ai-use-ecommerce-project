@@ -274,3 +274,5 @@ export default function ProductStockHistory({ product = null, movements = [] }) 
         </AdminLayout>
     );
 }
+
+

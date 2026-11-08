@@ -126,3 +126,5 @@ export default function ProductEdit({ product, categories, units = [], brands = 
         </AdminLayout>
     );
 }
+
+

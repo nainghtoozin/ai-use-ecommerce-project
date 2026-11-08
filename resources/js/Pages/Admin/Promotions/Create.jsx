@@ -489,3 +489,5 @@ export default function PromotionCreate({ products, categories }) {
         </AdminLayout>
     );
 }
+
+

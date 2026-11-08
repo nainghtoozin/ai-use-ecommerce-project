@@ -55,3 +55,4 @@ export default function About({ about_title, about_description, mission_title, m
         </ShopLayout>
     );
 }
+

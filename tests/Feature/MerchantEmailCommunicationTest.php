@@ -295,3 +295,4 @@ class MerchantEmailCommunicationTest extends TestCase
         ]);
     }
 }
+

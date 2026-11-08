@@ -12,3 +12,5 @@ export default function StorefrontCompare({ comparison, revisions = [] }) {
 
 function Select({ label, value, onChange, revisions }) { return <label className="flex-1 w-full text-sm font-medium text-gray-700 dark:text-gray-300">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal">{revisions.map((revision) => <option key={revision.id} value={revision.id}>Revision {revision.revision_number} ({revision.status})</option>)}</select></label>; }
 function Summary({ label, value }) { return <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"><p className="text-xs uppercase tracking-wide text-gray-500">{label}</p><p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{value}</p></div>; }
+
+

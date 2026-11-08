@@ -246,3 +246,5 @@ export default function StockHistory({ movements = { data: [], meta: {} }, wareh
         </AdminLayout>
     );
 }
+
+

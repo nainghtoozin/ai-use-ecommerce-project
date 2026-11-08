@@ -66,3 +66,5 @@ export default function FeaturedCategories({ categories, title = 'Categories', d
         </section>
     );
 }
+
+

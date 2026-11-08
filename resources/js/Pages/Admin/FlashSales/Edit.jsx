@@ -284,3 +284,5 @@ export default function FlashSaleEdit({ flashSale, products }) {
         </AdminLayout>
     );
 }
+
+

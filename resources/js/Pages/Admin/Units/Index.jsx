@@ -125,3 +125,5 @@ export default function UnitsIndex({ units, query = '' }) {
         </AdminLayout>
     );
 }
+
+

@@ -194,3 +194,5 @@ export default function PromotionImageViewer({ images = [], index = 0, onClose, 
         </div>
     );
 }
+
+

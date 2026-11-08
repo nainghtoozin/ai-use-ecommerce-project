@@ -270,3 +270,5 @@ export default function SubscriptionsIndex({ subscriptions, filters, stats, plan
         </AdminLayout>
     );
 }
+
+

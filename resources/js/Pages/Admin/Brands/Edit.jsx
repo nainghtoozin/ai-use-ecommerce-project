@@ -202,3 +202,5 @@ export default function BrandEdit({ brand }) {
         </AdminLayout>
     );
 }
+
+

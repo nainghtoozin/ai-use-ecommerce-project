@@ -115,3 +115,5 @@ export default function RolesShow({ role, grouped_permissions }) {
         </AdminLayout>
     );
 }
+
+

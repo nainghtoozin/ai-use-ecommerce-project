@@ -389,3 +389,5 @@ export default function AuditLogsIndex({ logs, filters, showPagination = true, c
         </AdminLayout>
     );
 }
+
+

@@ -227,3 +227,5 @@ export default function EditPaymentMethod({ paymentMethod }) {
         </AdminLayout>
     );
 }
+
+

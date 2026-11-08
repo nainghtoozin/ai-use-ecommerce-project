@@ -390,3 +390,5 @@ export default function PlatformSettingsIndex({ settings }) {
         </AdminLayout>
     );
 }
+
+

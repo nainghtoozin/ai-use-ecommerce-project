@@ -428,3 +428,5 @@ export default function CouponCreate({ products, categories }) {
         </AdminLayout>
     );
 }
+
+

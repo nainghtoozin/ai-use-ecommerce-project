@@ -587,3 +587,5 @@ export default function ProductShow({ product, promotion, detail }) {
         </ShopLayout>
     );
 }
+
+

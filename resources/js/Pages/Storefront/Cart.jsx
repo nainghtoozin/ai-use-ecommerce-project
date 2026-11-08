@@ -472,3 +472,5 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
         </ShopLayout>
     );
 }
+
+

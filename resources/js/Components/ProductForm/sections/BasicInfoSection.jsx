@@ -432,3 +432,5 @@ export default function BasicInfoSection({ data, setData, errors, photo1File, se
         </div>
     );
 }
+
+

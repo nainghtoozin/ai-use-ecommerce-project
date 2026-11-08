@@ -41,3 +41,4 @@ export default function AdminLayout({ children, header = null }) {
         </>
     );
 }
+

@@ -244,3 +244,5 @@ export default function NotificationsIndex({ notifications, unread_count }) {
         </ShopLayout>
     );
 }
+
+

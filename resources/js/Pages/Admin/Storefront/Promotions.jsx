@@ -133,3 +133,5 @@ function discountBadge(promo) {
     if (promo.type === 'fixed') return `${Number(promo.value).toLocaleString()} OFF`;
     return 'Free Shipping';
 }
+
+

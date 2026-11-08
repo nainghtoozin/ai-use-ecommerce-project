@@ -414,3 +414,5 @@ export default function SalesReport({ orders, summary, filters }) {
         </AdminLayout>
     );
 }
+
+

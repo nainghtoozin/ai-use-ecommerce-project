@@ -221,3 +221,5 @@ export default function BillingPaymentMethodsIndex({ paymentMethods, filters }) 
         </AdminLayout>
     );
 }
+
+

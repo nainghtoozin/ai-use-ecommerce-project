@@ -596,3 +596,5 @@ export default function TeamIndex({ members, invitations, roles }) {
         </AdminLayout>
     );
 }
+
+

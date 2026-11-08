@@ -19,3 +19,5 @@ export default function NoPermission({ message = "You don't have permission to a
         </AdminLayout>
     );
 }
+
+

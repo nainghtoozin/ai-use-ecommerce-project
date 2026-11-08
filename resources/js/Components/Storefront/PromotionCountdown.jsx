@@ -79,3 +79,5 @@ export default function PromotionCountdown({ startsAt, endsAt, variant = 'text' 
         </p>
     );
 }
+
+

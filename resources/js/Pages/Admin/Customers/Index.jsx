@@ -406,3 +406,5 @@ export default function CustomersIndex({ customers, filters, showPagination = tr
         </AdminLayout>
     );
 }
+
+

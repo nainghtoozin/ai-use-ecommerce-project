@@ -39,3 +39,5 @@ export default function BrandStorySection({ data, variant = null }) {
         </section>
     );
 }
+
+

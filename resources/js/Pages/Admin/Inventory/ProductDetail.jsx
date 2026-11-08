@@ -224,3 +224,5 @@ export default function ProductDetail({ product = {}, movements = { data: [], me
         </AdminLayout>
     );
 }
+
+

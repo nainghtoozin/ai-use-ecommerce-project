@@ -89,3 +89,4 @@ export default function ActivityTimeline({ logs }) {
         </div>
     );
 }
+

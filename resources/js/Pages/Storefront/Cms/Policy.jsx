@@ -209,3 +209,5 @@ export default function Policy({ tenant, page }) {
         </ShopLayout>
     );
 }
+
+

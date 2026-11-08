@@ -518,3 +518,4 @@ export default function CartIndex({ cartItems: initialCartItems, subtotal: initi
         </ShopLayout>
     );
 }
+

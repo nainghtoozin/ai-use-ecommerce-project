@@ -215,3 +215,5 @@ export default function AcceptInvitation() {
         </GuestLayout>
     );
 }
+
+

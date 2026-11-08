@@ -249,3 +249,5 @@ export default function AdminBillingInvoiceDetail({ invoice }) {
         </AdminLayout>
     );
 }
+
+

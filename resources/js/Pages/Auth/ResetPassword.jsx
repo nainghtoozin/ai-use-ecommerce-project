@@ -58,3 +58,5 @@ export default function ResetPassword({ token, email, store_slug }) {
         </PlatformGuestLayout>
     );
 }
+
+

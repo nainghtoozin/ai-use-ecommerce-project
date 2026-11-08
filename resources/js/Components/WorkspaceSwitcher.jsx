@@ -128,3 +128,5 @@ export default function WorkspaceSwitcher({ collapsed = false, light = false }) 
         </div>
     );
 }
+
+

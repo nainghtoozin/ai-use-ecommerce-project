@@ -154,3 +154,5 @@ export default function WarehouseEdit({ warehouse }) {
         </AdminLayout>
     );
 }
+
+

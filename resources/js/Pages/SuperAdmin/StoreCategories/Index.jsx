@@ -181,3 +181,5 @@ export default function StoreCategoriesIndex({ categories, filters }) {
         </AdminLayout>
     );
 }
+
+

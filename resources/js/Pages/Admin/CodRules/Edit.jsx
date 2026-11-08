@@ -133,3 +133,5 @@ export default function CodRuleEdit({ codRule, cities }) {
         </AdminLayout>
     );
 }
+
+

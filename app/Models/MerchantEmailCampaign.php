@@ -7,7 +7,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MerchantEmailCampaign extends Model
 {
+    protected static function booted(): void
+    {
+        static::creating(function ($campaign) {
+            if (empty($campaign->public_id)) {
+                $campaign->public_id = 'eml_' . (string) \Illuminate\Support\Str::ulid();
+            }
+        });
+    }
+
     protected $fillable = [
+        'public_id',
         'created_by',
         'subject',
         'email_type',

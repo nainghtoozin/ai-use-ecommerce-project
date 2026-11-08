@@ -309,3 +309,5 @@ export default function VariantSelectModal({ product, onClose, onAddToCart }) {
         </div>
     );
 }
+
+

@@ -310,3 +310,5 @@ export default function PromotionsIndex({ promotions, stats, query = '' }) {
         </AdminLayout>
     );
 }
+
+

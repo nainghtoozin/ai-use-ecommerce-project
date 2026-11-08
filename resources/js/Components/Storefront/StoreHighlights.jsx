@@ -4,3 +4,5 @@ export default function StoreHighlights({ items = [] }) {
 }
 
 function icon(name) { return { truck: '↗', shield: '✓', headset: '◌', heart: '♥', star: '★' }[name] || '★'; }
+
+

@@ -360,3 +360,5 @@ export default function Adjustments({ adjustments = { data: [], meta: {} }, ware
         </AdminLayout>
     );
 }
+
+

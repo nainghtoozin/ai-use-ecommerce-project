@@ -80,3 +80,5 @@ export default function ActivityLogsShow({ log }) {
         </AdminLayout>
     );
 }
+
+

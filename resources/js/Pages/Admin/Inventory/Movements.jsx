@@ -165,3 +165,5 @@ export default function Movements({ movements = { data: [], meta: {} }, filters 
         </AdminLayout>
     );
 }
+
+

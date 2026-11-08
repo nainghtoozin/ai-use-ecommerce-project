@@ -190,3 +190,5 @@ export default function StockHistoryDetail({ movement = {} }) {
         </AdminLayout>
     );
 }
+
+

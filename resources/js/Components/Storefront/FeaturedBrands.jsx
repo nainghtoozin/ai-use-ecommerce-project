@@ -65,3 +65,5 @@ export default function FeaturedBrands({ brands, title = 'Featured Brands', desc
         </section>
     );
 }
+
+

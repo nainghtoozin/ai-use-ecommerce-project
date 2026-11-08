@@ -498,3 +498,5 @@ export default function PromotionEdit({ promotion, products, categories }) {
         </AdminLayout>
     );
 }
+
+

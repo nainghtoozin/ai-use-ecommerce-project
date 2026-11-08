@@ -14,3 +14,5 @@ export default function StorefrontRevisions({ revisions, publishedRevisionId, dr
 function formatDate(value) { return value ? new Date(value).toLocaleString() : 'unknown date'; }
 function Select({ label, value, onChange, revisions }) { return <label className="flex-1 w-full text-sm font-medium text-gray-700 dark:text-gray-300">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 font-normal">{revisions.map((revision) => <option key={revision.id} value={revision.id}>Revision {revision.revision_number}</option>)}</select></label>; }
 function Status({ status, isDraft, isPublished }) { if (isDraft) return <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs">Draft</span>; if (isPublished) return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">Published</span>; return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs">{status === 'archived' ? 'Archived' : status}</span>; }
+
+

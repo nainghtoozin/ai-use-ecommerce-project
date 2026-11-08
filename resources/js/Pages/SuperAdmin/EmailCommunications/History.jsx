@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import CampaignTable from '@/Components/SuperAdmin/EmailCommunications/CampaignTable';
 
 export default function History({ campaigns, filters, email_types }) {
     const [search, setSearch] = useState(filters?.search || '');
@@ -45,40 +46,7 @@ export default function History({ campaigns, filters, email_types }) {
                             <button onClick={apply} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Filter</button>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="p-2 text-left">Subject</th>
-                                        <th className="p-2 text-left">Type</th>
-                                        <th className="p-2 text-left">Recipients</th>
-                                        <th className="p-2 text-left">Sent</th>
-                                        <th className="p-2 text-left">Pending</th>
-                                        <th className="p-2 text-left">Failed</th>
-                                        <th className="p-2 text-left">Status</th>
-                                        <th className="p-2 text-left">Created</th>
-                                        <th className="p-2"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(campaigns?.data || []).map((c) => (
-                                        <tr key={c.id} className="border-b">
-                                            <td className="p-2">{c.subject}</td>
-                                            <td className="p-2">{c.email_type}</td>
-                                            <td className="p-2">{c.recipient_count}</td>
-                                            <td className="p-2">{c.sent_count}</td>
-                                            <td className="p-2">{c.pending_count}</td>
-                                            <td className="p-2">{c.failed_count}</td>
-                                            <td className="p-2">{c.status}</td>
-                                            <td className="p-2">{new Date(c.created_at).toLocaleString()}</td>
-                                            <td className="p-2">
-                                                <Link href={`/superadmin/email-communications/${c.id}`} className="text-blue-600 hover:underline">View</Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <CampaignTable campaigns={campaigns} returnTo="/superadmin/email-communications/history" />
 
                         {campaigns?.links && (
                             <div className="flex gap-1 flex-wrap text-sm mt-4">
@@ -96,3 +64,5 @@ export default function History({ campaigns, filters, email_types }) {
         </AdminLayout>
     );
 }
+
+

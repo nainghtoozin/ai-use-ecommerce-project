@@ -908,6 +908,7 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::put('/email-communications/{campaign}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'update'])->name('email-communications.update');
     Route::post('/email-communications/{campaign}/send', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'sendDraft'])->name('email-communications.send');
     Route::get('/email-communications/history', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'history'])->name('email-communications.history');
+    Route::get('/email-communications/legacy/{id}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'legacyRedirect'])->where('id', '[0-9]+')->name('email-communications.legacy');
     Route::get('/email-communications/{campaign}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'show'])->name('email-communications.show');
     Route::post('/email-communications/{campaign}/retry-failed', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'retryFailed'])->name('email-communications.retry-failed');
     Route::post('/email-communications/{campaign}/cancel', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'cancel'])->name('email-communications.cancel');

@@ -20,3 +20,5 @@ export default function ProductImagePlaceholder({ className = '', compact = fals
         </div>
     );
 }
+
+

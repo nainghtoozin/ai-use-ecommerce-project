@@ -118,3 +118,4 @@ export default function StorefrontHero({ store, websiteInfo, storefront }) {
         </div>
     );
 }
+

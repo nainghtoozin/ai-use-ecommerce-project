@@ -29,3 +29,5 @@ export default function ShopLayout({ children, previewMode = null }) {
         </>
     );
 }
+
+

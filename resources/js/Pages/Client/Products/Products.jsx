@@ -140,3 +140,5 @@ export default function ClientProducts({ products, categories, searchQuery, filt
         </ShopLayout>
     );
 }
+
+

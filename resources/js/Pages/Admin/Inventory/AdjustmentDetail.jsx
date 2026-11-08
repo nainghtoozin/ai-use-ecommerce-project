@@ -165,3 +165,5 @@ export default function AdjustmentDetail({ adjustment = {} }) {
         </AdminLayout>
     );
 }
+
+

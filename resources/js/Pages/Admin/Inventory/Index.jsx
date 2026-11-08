@@ -212,3 +212,5 @@ export default function Index({ products = { data: [], meta: {} }, filters: rawF
         </AdminLayout>
     );
 }
+
+

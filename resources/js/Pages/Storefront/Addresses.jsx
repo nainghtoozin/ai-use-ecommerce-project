@@ -280,3 +280,5 @@ export default function Addresses({ tenant, addresses, cities, customer }) {
         </ShopLayout>
     );
 }
+
+

@@ -121,3 +121,5 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
         </AdminLayout>
     );
 }
+
+

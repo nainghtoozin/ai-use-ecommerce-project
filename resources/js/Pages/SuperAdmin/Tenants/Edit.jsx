@@ -146,3 +146,5 @@ export default function EditTenant({ tenant, plans, currentPlanId }) {
         </AdminLayout>
     );
 }
+
+

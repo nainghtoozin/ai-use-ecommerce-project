@@ -403,3 +403,5 @@ export default function ActivityLogsIndex({ logs, filters, showPagination = true
         </AdminLayout>
     );
 }
+
+

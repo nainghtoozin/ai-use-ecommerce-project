@@ -261,3 +261,5 @@ export default function Faq({ tenant, faqs = [], categories = {} }) {
         </ShopLayout>
     );
 }
+
+

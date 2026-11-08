@@ -21,3 +21,5 @@ export default function PlatformGuestLayout({ children }) {
         </div>
     );
 }
+
+

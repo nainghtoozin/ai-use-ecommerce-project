@@ -142,3 +142,5 @@ export default function RelatedProducts({ products = [], title }) {
         </section>
     );
 }
+
+

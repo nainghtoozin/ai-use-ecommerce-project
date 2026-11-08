@@ -112,3 +112,5 @@ export default function CodRulesIndex({ codRules }) {
         </AdminLayout>
     );
 }
+
+

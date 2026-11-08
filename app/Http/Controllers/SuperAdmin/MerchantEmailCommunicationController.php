@@ -17,17 +17,60 @@ class MerchantEmailCommunicationController extends Controller
 {
     public function __construct(private MerchantEmailCommunicationService $service) {}
 
-    public function index()
+    public function legacyRedirect($id, Request $request)
     {
+        $campaign = MerchantEmailCampaign::findOrFail($id);
+        $returnTo = $this->safeReturnUrl($request->get('return_to'));
+        $url = route('superadmin.email-communications.show', ['campaign' => $campaign->public_id]);
+        if ($returnTo) {
+            $url .= '?return_to=' . urlencode($returnTo);
+        }
+        return redirect($url);
+    }
+
+    public function index(Request $request)
+    {
+        $search = $request->get('search');
+        $emailType = $request->get('email_type');
+        $status = $request->get('status');
+        $archived = $request->get('archived');
+        $from = $request->get('from');
+        $to = $request->get('to');
+        $perPage = (int) $request->get('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
         $campaigns = MerchantEmailCampaign::query()
+            ->withCount(['recipients as sent_count' => fn($q) => $q->where('status', 'sent')])
+            ->withCount(['recipients as pending_count' => fn($q) => $q->whereIn('status', ['pending', 'processing'])])
+            ->withCount(['recipients as failed_count' => fn($q) => $q->where('status', 'failed')])
+            ->when($search, fn($q, $s) => $q->where('subject', 'like', "%{$s}%"))
+            ->when($emailType, fn($q, $t) => $q->where('email_type', $t))
+            ->when($status, fn($q, $s) => $q->where('status', $s))
+            ->when($archived === '1', fn($q) => $q->whereNotNull('archived_at'))
+            ->when($archived !== '1', fn($q) => $q->whereNull('archived_at'))
+            ->when($from, fn($q, $d) => $q->whereDate('created_at', '>=', $d))
+            ->when($to, fn($q, $d) => $q->whereDate('created_at', '<=', $d))
             ->orderByDesc('created_at')
-            ->limit(10)
-            ->get();
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return Inertia::render('SuperAdmin/EmailCommunications/Index', [
             'stats' => $this->service->stats(),
             'email_types' => $this->service->emailTypes(),
-            'recent_campaigns' => $campaigns,
+            'campaigns' => $campaigns,
+            'recent_campaigns' => $campaigns->items(),
+            'filters' => [
+                'search' => $search,
+                'email_type' => $emailType,
+                'status' => $status,
+                'archived' => $archived,
+                'from' => $from,
+                'to' => $to,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
@@ -163,6 +206,7 @@ class MerchantEmailCommunicationController extends Controller
     public function show(MerchantEmailCampaign $campaign, Request $request)
     {
         $status = $request->get('status');
+        $returnUrl = $this->safeReturnUrl($request->get('return_to')) ?: '/superadmin/email-communications/history';
         $campaign->load('attachments');
 
         $recipients = $campaign->recipients()
@@ -183,6 +227,7 @@ class MerchantEmailCommunicationController extends Controller
             'recipients' => $recipients,
             'counts' => $counts,
             'filters' => ['status' => $status],
+            'return_url' => $returnUrl,
         ]);
     }
 
@@ -439,6 +484,18 @@ class MerchantEmailCommunicationController extends Controller
         }
 
         return redirect()->route('superadmin.email-communications.show', $locked)->with('success', 'Your email is now in the delivery queue. You can check delivery progress in Email Details.');
+    }
+
+    private function safeReturnUrl(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+        $path = parse_url($value, PHP_URL_PATH);
+        if (!$path || !str_starts_with($path, '/superadmin/email-communications')) {
+            return null;
+        }
+        return $value;
     }
 
     private function validatePayload(Request $request, bool $preview): array

@@ -179,3 +179,5 @@ export default function InventoryDashboard({ stats = {}, recentMovements = [], r
         </AdminLayout>
     );
 }
+
+

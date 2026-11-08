@@ -70,3 +70,5 @@ export default function CmsPage({ title, children, updatedAt, breadcrumbs = [], 
         </ShopLayout>
     );
 }
+
+

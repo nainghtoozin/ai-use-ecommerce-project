@@ -279,3 +279,5 @@ export default function AdminNotificationsIndex({ notifications, unread_count })
         </AdminLayout>
     );
 }
+
+

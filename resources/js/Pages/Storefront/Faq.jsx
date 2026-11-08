@@ -144,3 +144,5 @@ export default function StoreFaq({ tenant, faqs = [], categories = {} }) {
         </ShopLayout>
     );
 }
+
+

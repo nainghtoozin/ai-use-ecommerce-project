@@ -127,3 +127,5 @@ export default function UpgradeModal({ isOpen, onClose, featureName = '', upgrad
         </div>
     );
 }
+
+

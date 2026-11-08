@@ -48,3 +48,5 @@ createInertiaApp({
         showSpinner: true,
     },
 });
+
+

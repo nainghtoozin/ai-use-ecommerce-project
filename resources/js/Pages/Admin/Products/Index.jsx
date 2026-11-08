@@ -800,3 +800,5 @@ export default function AdminProductsIndex({ products, categories, brands = [], 
         </AdminLayout>
     );
 }
+
+

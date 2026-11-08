@@ -535,3 +535,5 @@ export default function AdjustmentCreate({ products = [], warehouses = [], reaso
 function max(a, b) {
     return a > b ? a : b;
 }
+
+

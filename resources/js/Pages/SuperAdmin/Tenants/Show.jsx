@@ -177,3 +177,5 @@ export default function ShowTenant({ tenant, users, stats }) {
         </AdminLayout>
     );
 }
+
+

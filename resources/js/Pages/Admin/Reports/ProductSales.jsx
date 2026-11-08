@@ -392,3 +392,4 @@ export default function ProductSalesReport({ products, summary, top_selling, slo
         </AdminLayout>
     );
 }
+

@@ -385,3 +385,5 @@ export default function CustomerProfile({ tenant, customer, mustVerifyEmail, sta
         </ShopLayout>
     );
 }
+
+

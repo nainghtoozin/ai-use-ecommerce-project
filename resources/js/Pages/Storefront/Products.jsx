@@ -210,3 +210,5 @@ export default function StoreProducts({ tenant, products, categories, brands, se
         </ShopLayout>
     );
 }
+
+

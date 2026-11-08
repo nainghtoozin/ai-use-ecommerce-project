@@ -162,3 +162,5 @@ export default function InventorySection({ data, setData, errors, isEdit = false
         </div>
     );
 }
+
+

@@ -28,3 +28,5 @@ export default function FeaturedProducts({ products, title, subtitle, variant = 
         </section>
     );
 }
+
+

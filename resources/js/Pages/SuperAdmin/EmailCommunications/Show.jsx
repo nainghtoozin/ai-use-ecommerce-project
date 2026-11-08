@@ -2,20 +2,27 @@ import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function Show({ campaign, recipients, counts, filters }) {
+export default function Show({ campaign, recipients, counts, filters, return_url }) {
     const flash = usePage().props.flash || {};
     const [status, setStatus] = useState(filters?.status || '');
 
     function applyStatus() {
-        router.get(`/superadmin/email-communications/${campaign.id}`, { status }, { preserveState: true, replace: true });
+        router.get(`/superadmin/email-communications/`, { status }, { preserveState: true, replace: true });
     }
 
     function retryFailed() {
-        router.post(`/superadmin/email-communications/${campaign.id}/retry-failed`, {}, { preserveState: true });
+        router.post(`/superadmin/email-communications//retry-failed`, {}, { preserveState: true });
     }
 
     return (
-        <AdminLayout header={<h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Email Details</h2>}>
+        <AdminLayout header={
+            <div className="flex items-center gap-3">
+                <button onClick={() => router.visit(return_url || '/superadmin/email-communications/history')} className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                    ← Back to Emails
+                </button>
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Email Details</h2>
+            </div>
+        }>
             <Head title="Campaign Details" />
 
             <div className="py-6">
@@ -51,27 +58,27 @@ export default function Show({ campaign, recipients, counts, filters }) {
                         <div className="mt-4 flex flex-wrap gap-2">
                             {campaign.archived_at && (
                                 <>
-                                    <button onClick={() => { if (confirm('Restore this email?')) router.post(`/superadmin/email-communications/${campaign.id}/restore`); }} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Restore</button>
+                                    <button onClick={() => { if (confirm('Restore this email?')) router.post(`/superadmin/email-communications//restore`); }} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Restore</button>
                                     {!campaign.recipients?.data?.some((r) => r.status === 'sent') && (
-                                        <button onClick={() => { if (confirm('Permanently delete this email?')) router.delete(`/superadmin/email-communications/${campaign.id}`); }} className="px-3 py-1.5 bg-red-700 text-white rounded text-sm">Delete Permanently</button>
+                                        <button onClick={() => { if (confirm('Permanently delete this email?')) router.delete(`/superadmin/email-communications/`); }} className="px-3 py-1.5 bg-red-700 text-white rounded text-sm">Delete Permanently</button>
                                     )}
                                 </>
                             )}
                             {!campaign.archived_at && campaign.status === 'draft' && (
                                 <>
-                                    <Link href={`/superadmin/email-communications/${campaign.id}/edit`} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Edit Draft</Link>
-                                    <button onClick={() => { if (confirm('Send this draft now?')) router.post(`/superadmin/email-communications/${campaign.id}/send`); }} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm">Preview & Send</button>
-                                    <button onClick={() => { if (confirm('Delete this draft permanently?')) router.delete(`/superadmin/email-communications/${campaign.id}`); }} className="px-3 py-1.5 bg-red-700 text-white rounded text-sm">Delete Draft</button>
+                                    <Link href={`/superadmin/email-communications//edit`} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Edit Draft</Link>
+                                    <button onClick={() => { if (confirm('Send this draft now?')) router.post(`/superadmin/email-communications//send`); }} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm">Preview & Send</button>
+                                    <button onClick={() => { if (confirm('Delete this draft permanently?')) router.delete(`/superadmin/email-communications/`); }} className="px-3 py-1.5 bg-red-700 text-white rounded text-sm">Delete Draft</button>
                                 </>
                             )}
                             {!campaign.archived_at && ['queued', 'sending'].includes(campaign.status) && (
-                                <button onClick={() => { if (confirm('Cancel remaining deliveries?')) router.post(`/superadmin/email-communications/${campaign.id}/cancel`); }} className="px-3 py-1.5 bg-red-600 text-white rounded text-sm">Cancel</button>
+                                <button onClick={() => { if (confirm('Cancel remaining deliveries?')) router.post(`/superadmin/email-communications//cancel`); }} className="px-3 py-1.5 bg-red-600 text-white rounded text-sm">Cancel</button>
                             )}
                             {!campaign.archived_at && ['completed', 'partially_failed', 'failed', 'cancelled'].includes(campaign.status) && (
-                                <button onClick={() => router.post(`/superadmin/email-communications/${campaign.id}/archive`)} className="px-3 py-1.5 bg-gray-600 text-white rounded text-sm">Archive</button>
+                                <button onClick={() => router.post(`/superadmin/email-communications//archive`)} className="px-3 py-1.5 bg-gray-600 text-white rounded text-sm">Archive</button>
                             )}
                             {!campaign.archived_at && ['partially_failed', 'failed'].includes(campaign.status) && (
-                                <button onClick={() => router.post(`/superadmin/email-communications/${campaign.id}/retry-failed`)} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Retry Failed</button>
+                                <button onClick={() => router.post(`/superadmin/email-communications//retry-failed`)} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Retry Failed</button>
                             )}
                         </div>
                     </div>
@@ -134,3 +141,5 @@ export default function Show({ campaign, recipients, counts, filters }) {
         </AdminLayout>
     );
 }
+
+

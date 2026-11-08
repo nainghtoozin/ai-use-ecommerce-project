@@ -81,3 +81,5 @@ export default function PricingSection({ data, setData, errors }) {
         </div>
     );
 }
+
+

@@ -139,3 +139,5 @@ export default function EditStoreCategory({ category }) {
         </AdminLayout>
     );
 }
+
+

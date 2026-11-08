@@ -125,3 +125,5 @@ export default function StoreIndex({ tenant, previewMode = null }) {
         </ShopLayout>
     );
 }
+
+

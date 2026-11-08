@@ -165,3 +165,5 @@ export default function CategoryEdit({ category, parentCategories }) {
         </AdminLayout>
     );
 }
+
+

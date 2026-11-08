@@ -160,3 +160,5 @@ export default function TenantsIndex({ tenants, filters }) {
         </AdminLayout>
     );
 }
+
+

@@ -166,3 +166,5 @@ export default function PricingSection({ plans }) {
         </section>
     );
 }
+
+

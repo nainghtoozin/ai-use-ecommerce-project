@@ -90,7 +90,7 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
             else formData.append(k, v);
         });
         attachments.forEach((f) => formData.append('attachments[]', f));
-        const url = campaign ? `/superadmin/email-communications/${campaign.id}` : '/superadmin/email-communications/drafts';
+        const url = campaign ? `/superadmin/email-communications/` : '/superadmin/email-communications/drafts';
         if (campaign) {
             formData.append('_method', 'PUT');
             router.post(url, formData, { preserveState: true });
@@ -131,7 +131,7 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
             }
         });
         attachments.forEach((f) => formData.append('attachments[]', f));
-        const url = campaign ? `/superadmin/email-communications/${campaign.id}/send` : '/superadmin/email-communications';
+        const url = campaign ? `/superadmin/email-communications//send` : '/superadmin/email-communications';
         router.post(url, formData, {
             preserveState: true,
             onSuccess: () => {
@@ -372,3 +372,5 @@ export default function Compose({ tenants, filters, email_types, tenant_statuses
         </AdminLayout>
     );
 }
+
+

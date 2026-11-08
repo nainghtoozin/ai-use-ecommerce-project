@@ -12,3 +12,5 @@ export default function AuthLayout({ children, title = '' }) {
         </>
     );
 }
+
+

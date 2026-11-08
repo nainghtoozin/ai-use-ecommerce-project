@@ -39,3 +39,5 @@ export default function CollapseCard({ title, subtitle, isOpen, onToggle, childr
         </div>
     );
 }
+
+

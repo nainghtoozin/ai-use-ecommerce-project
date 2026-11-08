@@ -183,3 +183,5 @@ export default function PlansIndex({ plans, filters }) {
         </AdminLayout>
     );
 }
+
+

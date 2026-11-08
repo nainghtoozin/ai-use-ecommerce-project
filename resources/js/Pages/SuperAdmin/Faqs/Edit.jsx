@@ -101,3 +101,5 @@ export default function FaqEdit({ faq, categories }) {
         </AdminLayout>
     );
 }
+
+

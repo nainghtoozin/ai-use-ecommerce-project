@@ -82,3 +82,4 @@ export default function Index({ storeName, storeSlug, result }) {
         </AdminLayout>
     );
 }
+
