@@ -899,6 +899,14 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::post('/faqs/reorder', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'reorder'])->name('faqs.reorder');
     Route::post('/faqs/bulk-action', [\App\Http\Controllers\SuperAdmin\SuperAdminFaqController::class, 'bulkAction'])->name('faqs.bulk-action');
 
+    Route::get('/email-communications', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'index'])->name('email-communications.index');
+    Route::get('/email-communications/compose', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'compose'])->name('email-communications.compose');
+    Route::post('/email-communications/preview', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'preview'])->name('email-communications.preview');
+    Route::post('/email-communications', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'store'])->name('email-communications.store');
+    Route::get('/email-communications/history', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'history'])->name('email-communications.history');
+    Route::get('/email-communications/{campaign}', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'show'])->name('email-communications.show');
+    Route::post('/email-communications/{campaign}/retry-failed', [\App\Http\Controllers\SuperAdmin\MerchantEmailCommunicationController::class, 'retryFailed'])->name('email-communications.retry-failed');
+
     Route::post('/impersonate/{user}', [\App\Http\Controllers\SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
 
     // ── Utility routes (SuperAdmin only) ──

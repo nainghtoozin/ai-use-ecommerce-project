@@ -138,6 +138,7 @@ export default function AdminSidebar() {
                         { label: 'Stores / Tenants', href: '/superadmin/tenants', icon: 'Building2' },
                         { label: 'Subscriptions', href: '/superadmin/subscriptions', icon: 'CreditCard' },
                         { label: 'Plans & Pricing', href: '/superadmin/plans', icon: 'FileText' },
+                        { label: 'Email Communications', href: '/superadmin/email-communications', icon: 'Mail' },
                     ]
                 },
                 {
