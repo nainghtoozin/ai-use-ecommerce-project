@@ -144,9 +144,19 @@ class StorefrontLoginController extends Controller
             }
         }
 
+        $otherGuard = $useAccounts ? 'web' : 'accounts';
+
+        if (Auth::guard($otherGuard)->check()) {
+            Auth::guard($otherGuard)->logout();
+        }
+
         $request->authenticate();
 
         $guard = $useAccounts ? 'accounts' : 'web';
+
+        if (Auth::guard($otherGuard)->check()) {
+            Auth::guard($otherGuard)->logout();
+        }
 
         if (!$useAccounts) {
             $user = Auth::guard($guard)->user();

@@ -9,15 +9,37 @@ class StoreResolver
 {
     public function resolve(string $storeSlug): ?Tenant
     {
-        $tenantId = Cache::remember("store_resolver.{$storeSlug}", 3600, function () use ($storeSlug) {
-            return Tenant::where('slug', $storeSlug)->value('id');
-        });
+        $cacheKey = "store_resolver.{$storeSlug}";
+
+        $tenantId = Cache::get($cacheKey);
+
+        if ($tenantId === null) {
+            $tenantId = Tenant::where('slug', $storeSlug)->value('id');
+            if ($tenantId) {
+                Cache::put($cacheKey, $tenantId, 3600);
+            } else {
+                Cache::forget($cacheKey);
+            }
+        }
 
         if (!$tenantId) {
             return null;
         }
 
-        return Tenant::find($tenantId);
+        $tenant = Tenant::find($tenantId);
+
+        if (!$tenant || $tenant->slug !== $storeSlug) {
+            Cache::forget($cacheKey);
+            $tenantId = Tenant::where('slug', $storeSlug)->value('id');
+            if ($tenantId) {
+                Cache::put($cacheKey, $tenantId, 3600);
+                $tenant = Tenant::find($tenantId);
+            } else {
+                return null;
+            }
+        }
+
+        return $tenant;
     }
 
     public function clearCache(?string $storeSlug = null): void

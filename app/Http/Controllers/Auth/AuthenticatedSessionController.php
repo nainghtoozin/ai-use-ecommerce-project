@@ -101,6 +101,12 @@ class AuthenticatedSessionController extends Controller
             }
         }
 
+        $otherGuard = $useAccounts ? 'web' : 'accounts';
+
+        if (Auth::guard($otherGuard)->check()) {
+            Auth::guard($otherGuard)->logout();
+        }
+
         $request->session()->forget([
             'current_tenant_slug',
             'current_tenant_id',
@@ -110,6 +116,10 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $guard = $useAccounts ? 'accounts' : 'web';
+
+        if (Auth::guard($otherGuard)->check()) {
+            Auth::guard($otherGuard)->logout();
+        }
 
         $request->session()->regenerate();
 
@@ -173,7 +183,12 @@ class AuthenticatedSessionController extends Controller
             ?: $request->session()->get('current_tenant_slug');
         $context = $request->input('context');
 
+        $otherGuard = $useAccounts ? 'web' : 'accounts';
+
         Auth::guard($guard)->logout();
+        if (Auth::guard($otherGuard)->check()) {
+            Auth::guard($otherGuard)->logout();
+        }
         $request->session()->forget([
             'current_tenant_slug',
             'current_tenant_id',

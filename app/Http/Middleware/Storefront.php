@@ -70,11 +70,35 @@ class Storefront
     {
         $name = $request->route()?->getName();
 
-        if (!is_string($name)) {
-            return false;
+        if (is_string($name)) {
+            if (str_starts_with($name, 'storefront.admin.')
+                || str_starts_with($name, 'storefront.customer.')
+                || $name === 'storefront.preview'
+                || $name === 'storefront.login'
+                || $name === 'storefront.admin.login'
+                || str_starts_with($name, 'storefront.password.')
+                || $name === 'storefront.register'
+                || str_starts_with($name, 'storefront.onboarding.')
+                || in_array($name, [
+                    'storefront.faq', 'storefront.about', 'storefront.contact',
+                    'storefront.support', 'storefront.privacy', 'storefront.terms',
+                    'storefront.shipping', 'storefront.returns', 'storefront.refunds',
+                ], true)) {
+                return true;
+            }
         }
 
-        return str_starts_with($name, 'storefront.admin.') || $name === 'storefront.preview';
+        $path = $request->path();
+        if (preg_match('#(^|/)login$#', $path)
+            || preg_match('#(^|/)admin/login$#', $path)
+            || preg_match('#(^|/)forgot-password$#', $path)
+            || preg_match('#(^|/)register$#', $path)
+            || preg_match('#/customer(/|$)#', $path)
+            || preg_match('#/(faq|about|contact|support|privacy-policy|terms-and-conditions|shipping-policy|return-policy|refund-policy)$#', $path)) {
+            return true;
+        }
+
+        return false;
     }
 
     private function denyStorefront(Request $request, Tenant $tenant)

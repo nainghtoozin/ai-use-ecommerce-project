@@ -41,6 +41,13 @@ class HandleInertiaRequests extends Middleware
                 $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
             } elseif ($authenticatable instanceof Account) {
                 $tenant = Tenant::getCurrent();
+                if (!$tenant && !$authenticatable->isSuperAdmin()) {
+                    $membership = $authenticatable->memberships()->with('tenant')->first();
+                    $tenant = $membership?->tenant;
+                    if ($tenant) {
+                        \App\Models\Tenant::setCurrent($tenant);
+                    }
+                }
                 $subscriptionExpired = $tenant ? $tenant->subscriptionExpired() : false;
                 $subscription = $tenant && $tenant->subscription ? $tenant->subscription : null;
             }
