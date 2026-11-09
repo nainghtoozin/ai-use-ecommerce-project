@@ -18,11 +18,51 @@ class AccountRegistrationController extends Controller
 {
     public function create(): Response
     {
+        if (! \App\Models\PlatformSetting::current()->registration_enabled) {
+            return Inertia::render('Auth/RegistrationUnavailable', [
+                'supportUrl' => $this->supportUrl(),
+            ]);
+        }
+
         return Inertia::render('Auth/Register');
+    }
+
+    public function unavailable(): Response
+    {
+        return Inertia::render('Auth/RegistrationUnavailable', [
+            'supportUrl' => $this->supportUrl(),
+        ]);
+    }
+
+    protected function supportUrl(): string
+    {
+        $settings = \App\Models\PlatformSetting::current();
+
+        if ($settings->support_center_enabled ?? true) {
+            return '/support';
+        }
+
+        if ($settings->support_page_url) {
+            return $settings->support_page_url;
+        }
+
+        if ($settings->support_email) {
+            return 'mailto:' . $settings->support_email;
+        }
+
+        if ($settings->support_phone) {
+            return 'tel:' . $settings->support_phone;
+        }
+
+        return '/support';
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if (! \App\Models\PlatformSetting::current()->registration_enabled) {
+            return redirect()->route('registration.unavailable');
+        }
+
         $useAccounts = config('identity.use_accounts');
 
         if ($useAccounts) {

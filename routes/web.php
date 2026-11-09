@@ -218,6 +218,9 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
 // ============================================================
 // LOGIN PAGES (guest-only, no tenant logic)
 // ============================================================
+Route::get('/registration-unavailable', [\App\Http\Controllers\Auth\AccountRegistrationController::class, 'unavailable'])
+    ->name('registration.unavailable');
+
 Route::middleware('guest')->group(function () {
     // SuperAdmin login page
     Route::get('/superadmin/login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'create'])

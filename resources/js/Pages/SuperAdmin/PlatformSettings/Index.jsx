@@ -350,7 +350,12 @@ export default function PlatformSettingsIndex({ settings }) {
                                     <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-950 rounded-lg">
                                         <div>
                                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Registration Enabled</span>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500">Allow new merchants to sign up.</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500">Allow new merchants to create accounts through the public registration page.</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                                {registrationEnabled
+                                                    ? 'New merchants can register through the public Sign Up page.'
+                                                    : 'New merchant registrations are currently closed. Visitors who click Sign Up will see the registration-unavailable page and can contact support.'}
+                                            </p>
                                         </div>
                                         <button
                                             type="button"

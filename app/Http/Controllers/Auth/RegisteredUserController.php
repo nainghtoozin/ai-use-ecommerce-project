@@ -25,7 +25,7 @@ class RegisteredUserController extends Controller
     {
         $settings = \App\Models\WebsiteInfo::getSettings();
         if (!$settings->allow_registration || !(\App\Models\PlatformSetting::current()->registration_enabled ?? true)) {
-            return redirect()->route('login')->with('error', 'New account registration is temporarily unavailable. Please try again later.');
+            return redirect()->route('registration.unavailable');
         }
 
         $tenant = \App\Models\Tenant::getCurrent();
@@ -53,7 +53,7 @@ class RegisteredUserController extends Controller
     {
         $settings = \App\Models\WebsiteInfo::getSettings();
         if (!$settings->allow_registration || !(\App\Models\PlatformSetting::current()->registration_enabled ?? true)) {
-            return redirect()->route('login')->with('error', 'New account registration is temporarily unavailable. Please try again later.');
+            return redirect()->route('registration.unavailable');
         }
 
         $tenant = \App\Models\Tenant::getCurrent();
