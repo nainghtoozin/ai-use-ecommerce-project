@@ -38,6 +38,18 @@ export default function PaymentMethodsIndex({ paymentMethods }) {
                     )}
                 </div>
 
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">How to Set Up Payment Methods</h2>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Follow these simple steps to make payment methods available to your customers.</p>
+                    <ol className="text-xs text-gray-700 dark:text-gray-300 space-y-1 list-decimal list-inside">
+                        <li><strong>Step 1 — Click Configure or Add Payment Method</strong>: Select an existing payment method and click Configure, or click Add Payment Method to create a new one.</li>
+                        <li><strong>Step 2 — Enter Payment Information</strong>: Fill in the required payment details, such as account name, account number, and bank name.</li>
+                        <li><strong>Step 3 — Enable Is Active</strong>: Make sure the Is Active checkbox is checked. Otherwise, customers cannot select this payment method during checkout.</li>
+                        <li><strong>Step 4 — Save Your Payment Method</strong>: Click Save or Create to finish setting up your payment method.</li>
+                    </ol>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-3 font-medium">Important: Saving payment information without enabling Is Active will not make the payment method available to customers.</p>
+                </div>
+
                 <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                         <thead className="bg-gray-50 dark:bg-gray-950">

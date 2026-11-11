@@ -102,14 +102,14 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                 <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span className="text-red-500">*</span></label>
                             <input id="name" type="text" value={data.name} onChange={(e) => setData('name', e.target.value)}
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                         </div>
 
                         <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type <span className="text-red-500">*</span></label>
                             <select id="type" value={data.type} onChange={(e) => handleTypeChange(e.target.value)}
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="bank_transfer">Bank Transfer</option>
@@ -123,21 +123,21 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                         {!isCod && (
                             <>
                                 <div>
-                                    <label htmlFor="account_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Name</label>
+                                    <label htmlFor="account_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Name {isCod ? '' : <span className="text-red-500">*</span>} <span className="text-xs text-gray-400">(required for bank transfer)</span></label>
                                     <input id="account_name" type="text" value={data.account_name} onChange={(e) => setData('account_name', e.target.value)}
                                         className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     {errors.account_name && <p className="mt-1 text-sm text-red-600">{errors.account_name}</p>}
                                 </div>
 
                                 <div>
-                                    <label htmlFor="account_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Number</label>
+                                    <label htmlFor="account_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Number {isCod ? '' : <span className="text-red-500">*</span>} <span className="text-xs text-gray-400">(required for bank transfer)</span></label>
                                     <input id="account_number" type="text" value={data.account_number} onChange={(e) => setData('account_number', e.target.value)}
                                         className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     {errors.account_number && <p className="mt-1 text-sm text-red-600">{errors.account_number}</p>}
                                 </div>
 
                                 <div>
-                                    <label htmlFor="qr_image" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">QR Code Image</label>
+                                    <label htmlFor="qr_image" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">QR Code Image <span className="text-xs text-gray-400">(optional)</span></label>
                                     <input id="qr_image" type="file" accept="image/jpg,image/jpeg,image/png,image/webp"
                                         onChange={handleQrFile}
                                         className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
@@ -151,7 +151,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="bank_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Name (optional)</label>
+                                    <label htmlFor="bank_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Name <span className="text-xs text-gray-400">(optional)</span></label>
                                     <input id="bank_name" type="text" value={data.bank_name} onChange={(e) => setData('bank_name', e.target.value)}
                                         className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     {errors.bank_name && <p className="mt-1 text-sm text-red-600">{errors.bank_name}</p>}
@@ -168,7 +168,7 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                         )}
 
                         <div>
-                            <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Instructions (optional)</label>
+                            <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Instructions <span className="text-xs text-gray-400">(optional)</span></label>
                             <textarea id="instructions" value={data.instructions} onChange={(e) => setData('instructions', e.target.value)}
                                 rows={3} placeholder="e.g. Pay when you collect your order."
                                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -178,8 +178,9 @@ export default function PaymentMethodEdit({ paymentMethod }) {
                         <div className="flex items-center gap-2">
                             <input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}
                                 className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
-                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
+                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">Is Active</label>
                         </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">When enabled, customers can select this payment method during checkout.</p>
 
                         <div className="flex justify-end gap-3">
                             <Link href={adminUrl('/admin/payment-methods')} className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-200">Cancel</Link>
