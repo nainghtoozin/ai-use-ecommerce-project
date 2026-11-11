@@ -81,7 +81,9 @@ class PlatformSetting extends Model
     public static function current(): self
     {
         return Cache::rememberForever('platform_settings', function () {
-            return static::first() ?? static::create();
+            $setting = static::first() ?? static::create();
+            $setting->refresh();
+            return $setting;
         });
     }
 

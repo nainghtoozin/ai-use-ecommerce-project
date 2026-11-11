@@ -15,6 +15,7 @@ use App\Http\Middleware\EnsureTenantIsActive;
 use App\Http\Middleware\CheckStoreLocked;
 use App\Http\Middleware\Storefront;
 use App\Http\Middleware\CheckTenantAccess;
+use App\Http\Middleware\EnsureTwoFactor;
 use App\Models\User;
 use App\Policies\UserPolicy;
 
@@ -55,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             CheckUserStatus::class,
             CheckMaintenanceMode::class,
             CheckPlatformMaintenanceMode::class,
+            EnsureTwoFactor::class,
         ]);
 
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);

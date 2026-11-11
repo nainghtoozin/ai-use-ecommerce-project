@@ -101,6 +101,8 @@ class AccountRegistrationController extends Controller
 
         Auth::guard('accounts')->login($account);
         $request->session()->regenerate();
+        $request->session()->put('2fa_verified', true);
+        $request->session()->put('2fa_enrollment_pending', false);
 
         return redirect()->route('verification.notice');
     }
@@ -134,6 +136,8 @@ class AccountRegistrationController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('2fa_verified', true);
+        $request->session()->put('2fa_enrollment_pending', false);
 
         return redirect()->route('verification.notice');
     }

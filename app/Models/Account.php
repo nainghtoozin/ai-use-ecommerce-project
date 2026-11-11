@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\Tenant;
 use Spatie\Permission\Models\Permission;
 use App\Models\TenantMembership;
+use App\Notifications\VerifyEmailNotification;
+use App\Models\Traits\HasAuthSecurity;
 use App\Models\Traits\LogsActivity;
 use App\Models\Traits\SyncsIdentity;
 use App\Services\ImageService;
@@ -28,7 +30,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Account extends Authenticatable implements MustVerifyEmailContract, HasSubscription
 {
-    use HasFactory, SoftDeletes, Notifiable, MustVerifyEmail, HasRoles, LogsActivity, SyncsIdentity;
+    use HasFactory, SoftDeletes, Notifiable, MustVerifyEmail, HasRoles, LogsActivity, SyncsIdentity, HasAuthSecurity;
 
     protected function getCounterpartClass(): string
     {
@@ -63,6 +65,15 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
         'notification_preferences',
         'last_login_at',
         'last_login_ip',
+        'google_id',
+        'google_email',
+        'google_avatar',
+        'google_verified',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'two_factor_required',
+        'two_factor_last_used_step',
     ];
 
     protected $hidden = [
@@ -84,6 +95,9 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
             'password' => 'hashed',
             'notification_preferences' => 'array',
             'last_login_at' => 'datetime',
+            'google_verified' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_required' => 'boolean',
         ];
     }
 
@@ -161,6 +175,11 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
         }
 
         return $this->email;
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
     }
 
     public function getRoleLabel(): string

@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -47,43 +48,101 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ─────────────────────────────────────────────────────────────
         // SUPERADMIN ACCOUNT (platform-only identity)
+        //
+        // Credentials are NEVER hard-coded. They come from environment
+        // variables (SUPERADMIN_NAME / SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD)
+        // or, when running interactively, from secure prompts.
+        // If none are provided, SuperAdmin creation is skipped and the
+        // developer is told how to create one (php artisan superadmin:create).
         // ─────────────────────────────────────────────────────────────
 
-        $superAdmin = Account::updateOrCreate(
-            ['email' => 'admin@shop.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => bcrypt('password'),
-                'status' => Account::STATUS_ACTIVE,
-                'email_verified_at' => now(),
-            ]
-        );
+        $name = env('SUPERADMIN_NAME');
+        $email = env('SUPERADMIN_EMAIL');
+        $password = env('SUPERADMIN_PASSWORD');
 
-        if (!$superAdmin->hasRole('superadmin')) {
-            $superAdmin->assignRole($superadminRole);
+        $interactive = $this->command
+            && method_exists($this->command, 'input')
+            && $this->command->input
+            && $this->command->input->isInteractive();
+
+        if ((!$email || !$password) && $interactive) {
+            $name = $name ?: $this->command->ask('SuperAdmin name', 'Super Admin');
+            $email = $this->command->ask('SuperAdmin email');
+            $password = $this->command->secret('SuperAdmin password');
+            $confirm = $this->command->secret('Confirm password');
+            if ($password !== $confirm) {
+                $this->command->error('Passwords do not match. SuperAdmin not created.');
+                $email = null;
+                $password = null;
+            }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // LEGACY USER RECORD (backward compatibility)
-        // ─────────────────────────────────────────────────────────────
+        if ($email && $password) {
+            $name = $name ?: 'Super Admin';
 
-        $superAdminUser = User::updateOrCreate(
-            ['email' => 'admin@shop.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => bcrypt('password'),
-                'status' => User::STATUS_ACTIVE,
-                'email_verified_at' => now(),
-            ]
-        );
+            $superAdmin = Account::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $name,
+                    'password' => bcrypt($password),
+                    'status' => Account::STATUS_ACTIVE,
+                    'email_verified_at' => now(),
+                ]
+            );
 
-        if (!$superAdminUser->hasRole('superadmin')) {
-            $superAdminUser->assignRole($superadminRole);
+            if ($superAdmin->wasRecentlyCreated) {
+                // password already set above
+            } else {
+                $superAdmin->name = $name;
+                $superAdmin->status = Account::STATUS_ACTIVE;
+                if (!$superAdmin->email_verified_at) {
+                    $superAdmin->email_verified_at = now();
+                }
+                $superAdmin->save();
+            }
+
+            if (!$superAdmin->hasRole('superadmin')) {
+                $superAdmin->assignRole($superadminRole);
+            }
+
+            // LEGACY USER RECORD (backward compatibility)
+            $superAdminUser = User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $name,
+                    'password' => bcrypt($password),
+                    'status' => User::STATUS_ACTIVE,
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            if (!$superAdminUser->wasRecentlyCreated) {
+                $superAdminUser->name = $name;
+                $superAdminUser->status = User::STATUS_ACTIVE;
+                if (!$superAdminUser->email_verified_at) {
+                    $superAdminUser->email_verified_at = now();
+                }
+                $superAdminUser->save();
+            }
+
+            if (!$superAdminUser->hasRole('superadmin')) {
+                $superAdminUser->assignRole($superadminRole);
+            }
+
+            if ($this->command) {
+                $this->command->info("Platform seeder: SuperAdmin created ({$email}).");
+            }
+        } else {
+            if ($this->command) {
+                $this->command->warn('Platform seeder: SuperAdmin not created (no credentials provided).');
+                $this->command->warn('Set SUPERADMIN_NAME/SUPERADMIN_EMAIL/SUPERADMIN_PASSWORD or run: php artisan superadmin:create');
+            }
         }
 
-        $this->command->info('Platform seeder: SuperAdmin created (accounts + users).');
-        $this->command->info('Platform seeder: Global superadmin role created.');
-        $this->command->info('Platform seeder: Global template roles (admin, customer) created.');
+        if ($this->command) {
+            $this->command->info('Platform seeder: Global superadmin role created.');
+            $this->command->info('Platform seeder: Global template roles (admin, customer) created.');
+        }
     }
 
     protected function createGlobalTemplateRole(string $name, array $permissions): Role

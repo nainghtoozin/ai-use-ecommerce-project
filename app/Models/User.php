@@ -6,16 +6,18 @@ use App\Services\ImageService;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Contracts\HasSubscription;
+use App\Models\Traits\HasAuthSecurity;
 use App\Models\Traits\LogsActivity;
 use App\Models\Traits\SyncsIdentity;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail, HasSubscription
 {
-    use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, SyncsIdentity;
+    use \Illuminate\Auth\MustVerifyEmail, HasFactory, Notifiable, LogsActivity, SyncsIdentity, HasAuthSecurity;
     use HasRoles {
         getAllPermissions as getSpatieAllPermissions;
     }
@@ -55,6 +57,15 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         'notification_preferences',
         'locale',
         'theme',
+        'google_id',
+        'google_email',
+        'google_avatar',
+        'google_verified',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'two_factor_required',
+        'two_factor_last_used_step',
     ];
 
     protected $hidden = [
@@ -72,6 +83,9 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
             'notification_preferences' => 'array',
             'plan_started_at' => 'datetime',
             'plan_expires_at' => 'datetime',
+            'google_verified' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_required' => 'boolean',
         ];
     }
 
@@ -118,6 +132,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
     public function getDisplayName(): string
     {
         return $this->name ?: $this->email;
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
     }
 
     public function getRoleNameAttribute(): ?string

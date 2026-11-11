@@ -257,6 +257,7 @@ export default function AdminSidebar() {
                 title: t('navigation.settings'),
                 items: [
                     ...(can('settings.view') && isVis('settings.general') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
+                    { label: 'Security Settings', href: '/security', icon: 'Shield' },
                     ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
                     ...(can('settings.telegram') && isVis('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),
                     ...(isOwner && isVis('settings.setup_guide') ? [{ label: 'Setup Guide', href: '/admin/settings/onboarding', icon: 'Rocket' }] : []),

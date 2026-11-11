@@ -41,4 +41,10 @@ return [
         'redirect_uri' => env('GOOGLE_REDIRECT_URI', '/admin/google-sheets/callback'),
     ],
 
+    'google_oauth' => [
+        'client_id' => env('GOOGLE_OAUTH_CLIENT_ID', env('GOOGLE_CLIENT_ID')),
+        'client_secret' => env('GOOGLE_OAUTH_CLIENT_SECRET', env('GOOGLE_CLIENT_SECRET')),
+        'redirect_uri' => env('GOOGLE_OAUTH_REDIRECT_URI', env('GOOGLE_REDIRECT_URI', '/auth/google/callback')),
+    ],
+
 ];

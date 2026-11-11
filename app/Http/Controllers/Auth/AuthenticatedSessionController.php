@@ -21,9 +21,12 @@ class AuthenticatedSessionController extends Controller
 {
     public function create(): Response
     {
+        $purpose = request()->is('superadmin/*') ? 'superadmin' : 'merchant';
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'googlePurpose' => $purpose,
         ]);
     }
 
@@ -124,6 +127,9 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $authenticatable = Auth::guard($guard)->user();
+
+        $request->session()->put('2fa_verified', $authenticatable && method_exists($authenticatable, 'hasTwoFactorEnabled') ? !$authenticatable->hasTwoFactorEnabled() : true);
+        $request->session()->put('2fa_enrollment_pending', $authenticatable && method_exists($authenticatable, 'requiresTwoFactor') && $authenticatable->requiresTwoFactor() && !($authenticatable->hasTwoFactorEnabled()));
 
         if (!$authenticatable->hasVerifiedEmail()) {
             return redirect()->route('verification.notice')

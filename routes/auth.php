@@ -4,11 +4,15 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\AccountRegistrationController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SecuritySettingsController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\TwoFactorSetupController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +41,16 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->middleware('throttle:auth')
         ->name('password.store');
+
+    // Google OAuth
+    Route::get('auth/google/redirect/{purpose}', [GoogleAuthController::class, 'redirect'])
+        ->whereIn('purpose', ['superadmin', 'merchant', 'register'])
+        ->name('auth.google.redirect')
+        ->middleware('throttle:auth');
+
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])
+        ->name('auth.google.callback')
+        ->middleware('throttle:auth');
 });
 
 Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
@@ -60,4 +74,36 @@ Route::middleware('auth:web,accounts')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+    // Google account linking
+    Route::get('auth/google/redirect/link', [GoogleAuthController::class, 'redirect'])
+        ->defaults('purpose', 'link')
+        ->name('auth.google.link');
+
+    // 2FA
+    Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])
+        ->name('two-factor.challenge');
+    Route::post('two-factor/challenge', [TwoFactorChallengeController::class, 'verify'])
+        ->name('two-factor.verify')
+        ->middleware('throttle:auth');
+
+    Route::get('two-factor/setup', [TwoFactorSetupController::class, 'show'])
+        ->name('two-factor.setup');
+    Route::post('two-factor/setup', [TwoFactorSetupController::class, 'enable'])
+        ->name('two-factor.enable')
+        ->middleware('throttle:auth');
+    Route::post('two-factor/disable', [TwoFactorSetupController::class, 'disable'])
+        ->name('two-factor.disable')
+        ->middleware('throttle:auth');
+    Route::post('two-factor/recovery-codes/regenerate', [TwoFactorSetupController::class, 'regenerateRecoveryCodes'])
+        ->name('two-factor.recovery-codes.regenerate')
+        ->middleware('throttle:auth');
+
+    Route::post('auth/google/unlink', [GoogleAuthController::class, 'unlink'])
+        ->name('auth.google.unlink')
+        ->middleware('throttle:auth');
+
+    // Security settings
+    Route::get('security', [SecuritySettingsController::class, 'show'])
+        ->name('security.settings');
 });
