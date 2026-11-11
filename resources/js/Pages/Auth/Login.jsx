@@ -141,6 +141,13 @@ export default function Login({ status, googlePurpose = 'merchant' }) {
                         Create one
                     </Link>
                 </div>
+
+                <div className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+                    New to password login?{' '}
+                    <Link href="/forgot-password" className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-medium">
+                        Set up your password
+                    </Link>
+                </div>
             </form>
         </PlatformGuestLayout>
     );

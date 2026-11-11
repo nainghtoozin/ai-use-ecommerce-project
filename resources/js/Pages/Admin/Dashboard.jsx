@@ -58,6 +58,15 @@ export default function AdminDashboard({
                     ? 'Subscription Expired'
                     : 'Store Status';
     const paymentSetupRequired = usePage().props.paymentSetupRequired === true;
+    const emailVerified = !!usePage().props.auth?.user?.email_verified_at;
+    const [resending, setResending] = useState(false);
+    const resendVerification = () => {
+        if (resending) return;
+        setResending(true);
+        router.post('/email/verification-notification', {}, {
+            onFinish: () => setResending(false),
+        });
+    };
     const { t } = useTranslation();
     const [showCustomDate, setShowCustomDate] = useState(selectedPeriod === 'custom');
     const [customStartDate, setCustomStartDate] = useState(startDate || '');
@@ -208,6 +217,28 @@ export default function AdminDashboard({
                 <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {storeStatusLabel}
                 </div>
+                {!emailVerified && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 sm:p-5 dark:border-blue-900/40 dark:bg-blue-900/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                                    <i className="bi bi-envelope text-xl"></i>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Verify Your Email Address</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Your email address has not been verified yet. Please check your inbox and click the verification link to confirm your email address.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={resendVerification}
+                                disabled={resending}
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {resending ? 'Sending...' : 'Resend Verification Email'}
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {paymentSetupRequired && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5 dark:border-amber-900/40 dark:bg-amber-900/20">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

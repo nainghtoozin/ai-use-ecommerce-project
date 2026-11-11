@@ -206,6 +206,10 @@ class GoogleAuthController extends Controller
             $request->session()->regenerate();
             $this->setTwoFactorSession($request, $account);
 
+            if ($verified && !$account->hasVerifiedEmail()) {
+                $account->markEmailAsVerified();
+            }
+
             if (!$account->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice')
                     ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
@@ -257,6 +261,10 @@ class GoogleAuthController extends Controller
         $request->session()->regenerate();
         $this->setTwoFactorSession($request, $user);
 
+        if ($verified && !$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
         if (!$user->hasVerifiedEmail()) {
             return redirect()->route('verification.notice')
                 ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
@@ -290,6 +298,9 @@ class GoogleAuthController extends Controller
                 $account->google_email = $email;
                 $account->google_verified = $verified;
                 if ($avatar) $account->google_avatar = $avatar;
+                if ($verified && !$account->hasVerifiedEmail()) {
+                    $account->markEmailAsVerified();
+                }
                 $account->save();
             } else {
                 $account = Account::create([
@@ -311,7 +322,11 @@ class GoogleAuthController extends Controller
                         'system_alerts' => true,
                     ],
                 ]);
-                event(new Registered($account));
+                if ($verified) {
+                    $account->markEmailAsVerified();
+                } else {
+                    event(new Registered($account));
+                }
             }
 
             if ($tenantSlug) {
@@ -369,6 +384,9 @@ class GoogleAuthController extends Controller
             $user->google_email = $email;
             $user->google_verified = $verified;
             if ($avatar) $user->google_avatar = $avatar;
+            if ($verified && !$user->hasVerifiedEmail()) {
+                $user->markEmailAsVerified();
+            }
             $user->save();
         } else {
             $user = User::create([
@@ -382,7 +400,11 @@ class GoogleAuthController extends Controller
                 'google_verified' => $verified,
                 'two_factor_required' => false,
             ]);
-            event(new Registered($user));
+            if ($verified) {
+                $user->markEmailAsVerified();
+            } else {
+                event(new Registered($user));
+            }
         }
 
         if ($tenantSlug) {
