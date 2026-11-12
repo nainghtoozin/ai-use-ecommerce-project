@@ -76,34 +76,57 @@ class AccountRegistrationController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:accounts,email', 'unique:users,email'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ], [
-            'email.unique' => 'This email already has an account. Please sign in to continue.',
         ]);
 
-        $account = Account::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'status' => Account::STATUS_ACTIVE,
-            'password_set_at' => now(),
-            'notification_preferences' => [
-                'email' => true,
-                'browser' => true,
-                'telegram' => false,
-                'marketing' => false,
-                'order_updates' => true,
-                'system_alerts' => true,
-            ],
-        ]);
+        $existingAccount = Account::where('email', $request->email)->first();
 
-        event(new Registered($account));
+        if ($existingAccount) {
+            if (empty($existingAccount->password) || !Hash::check($request->password, $existingAccount->password)) {
+                return back()->withInput($request->only('email', 'name'))
+                    ->withErrors(['email' => 'These credentials do not match our records.']);
+            }
+            $account = $existingAccount;
+            $wasExisting = true;
+        } else {
+            $account = Account::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'status' => Account::STATUS_ACTIVE,
+                'password_set_at' => now(),
+                'notification_preferences' => [
+                    'email' => true,
+                    'browser' => true,
+                    'telegram' => false,
+                    'marketing' => false,
+                    'order_updates' => true,
+                    'system_alerts' => true,
+                ],
+            ]);
 
+            event(new Registered($account));
+            $wasExisting = false;
+        }
+
+        $request->session()->forget(['current_tenant_slug', 'current_tenant_id', 'current_tenant_membership_id']);
         Auth::guard('accounts')->login($account);
         $request->session()->regenerate();
         $request->session()->put('2fa_verified', true);
         $request->session()->put('2fa_enrollment_pending', false);
+
+        if ($wasExisting) {
+            // Existing account (e.g. customer) registering as merchant:
+            // send to onboarding if no owner membership.
+            $hasOwnerMembership = \App\Models\TenantMembership::where('account_id', $account->id)
+                ->where('is_owner', true)
+                ->exists();
+
+            if (!$hasOwnerMembership) {
+                return redirect()->route('onboarding.store-setup');
+            }
+        }
 
         return redirect()->route('verification.notice');
     }

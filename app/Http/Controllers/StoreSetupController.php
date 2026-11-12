@@ -24,7 +24,7 @@ class StoreSetupController extends Controller
     {
         $user = $request->user();
 
-        if ($user instanceof Account && $user->memberships()->exists()) {
+        if ($user instanceof Account && $user->memberships()->where('is_owner', true)->exists()) {
             return redirect()->route('home');
         }
 
@@ -46,7 +46,7 @@ class StoreSetupController extends Controller
     {
         $user = $request->user();
 
-        if ($user instanceof Account && $user->memberships()->exists()) {
+        if ($user instanceof Account && $user->memberships()->where('is_owner', true)->exists()) {
             return back()->withErrors(['slug' => 'You already own a store.']);
         }
 
