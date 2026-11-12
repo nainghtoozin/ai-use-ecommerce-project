@@ -447,10 +447,35 @@ export default function StoreSetup() {
     const handleSubmit = () => {
         post('/onboarding/store-setup', {
             onError: (serverErrors) => {
-                if (serverErrors.slug) {
-                    setStep(0);
-                    setStepErrors({ store_slug: serverErrors.slug });
+                const fieldStepMap = {
+                    store_name: 0,
+                    store_slug: 0,
+                    business_email: 0,
+                    phone: 0,
+                    language: 1,
+                    currency: 1,
+                    timezone: 1,
+                    country: 1,
+                    theme_color: 2,
+                    description: 0,
+                    store_category_id: 0,
+                };
+                let targetStep = 0;
+                for (const field of Object.keys(serverErrors || {})) {
+                    if (fieldStepMap[field] !== undefined) {
+                        targetStep = Math.min(targetStep, fieldStepMap[field]);
+                    }
                 }
+                // navigate to the earliest step with an error
+                let earliest = 3;
+                for (const field of Object.keys(serverErrors || {})) {
+                    const s = fieldStepMap[field];
+                    if (s !== undefined && s < earliest) earliest = s;
+                }
+                if (Object.keys(serverErrors || {}).length > 0) {
+                    setStep(earliest === 3 ? 0 : earliest);
+                }
+                setStepErrors(serverErrors || {});
             },
         });
     };

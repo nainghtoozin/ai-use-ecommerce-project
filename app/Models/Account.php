@@ -65,6 +65,7 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
         'notification_preferences',
         'last_login_at',
         'last_login_ip',
+        'password_set_at',
         'google_id',
         'google_email',
         'google_avatar',
@@ -98,6 +99,7 @@ class Account extends Authenticatable implements MustVerifyEmailContract, HasSub
             'google_verified' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_required' => 'boolean',
+            'password_set_at' => 'datetime',
         ];
     }
 

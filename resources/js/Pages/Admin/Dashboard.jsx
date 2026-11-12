@@ -59,7 +59,12 @@ export default function AdminDashboard({
                     : 'Store Status';
     const paymentSetupRequired = usePage().props.paymentSetupRequired === true;
     const emailVerified = !!usePage().props.auth?.user?.email_verified_at;
+    const hasPassword = !!usePage().props.auth?.user?.has_password;
     const [resending, setResending] = useState(false);
+    const [showCreatePassword, setShowCreatePassword] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const resendVerification = () => {
         if (resending) return;
         setResending(true);
@@ -235,6 +240,27 @@ export default function AdminDashboard({
                                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                             >
                                 {resending ? 'Sending...' : 'Resend Verification Email'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {!hasPassword && (
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 sm:p-5 dark:border-indigo-900/40 dark:bg-indigo-900/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
+                                    <i className="bi bi-key text-xl"></i>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Set Up Your Password</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">You signed in with Google successfully. Set up a password so you can also sign in using your email and password next time.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowCreatePassword(true)}
+                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                            >
+                                Create Password
                             </button>
                         </div>
                     </div>
@@ -645,6 +671,41 @@ export default function AdminDashboard({
                         )}
                     </div>
                 ) : null}
+            {showCreatePassword && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md">
+                        <h2 className="text-lg font-semibold mb-4">Create Password</h2>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            if (newPassword !== confirmPassword) return;
+                            setCreating(true);
+                            router.post('/password/create', { password: newPassword, password_confirmation: confirmPassword }, {
+                                onSuccess: () => {
+                                    setShowCreatePassword(false);
+                                    setNewPassword('');
+                                    setConfirmPassword('');
+                                },
+                                onFinish: () => setCreating(false),
+                            });
+                        }} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">New Password</label>
+                                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full border rounded-lg px-4 py-2" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+                                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full border rounded-lg px-4 py-2" required />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button type="button" onClick={() => setShowCreatePassword(false)} className="px-4 py-2 text-gray-600">Cancel</button>
+                                <button type="submit" disabled={creating} className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-50">
+                                    {creating ? 'Creating...' : 'Create Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
             </div>
         </AdminLayout>
     );

@@ -72,6 +72,10 @@ Route::middleware('auth:web,accounts')->group(function () {
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
+    Route::post('password/create', [PasswordController::class, 'create'])
+        ->name('password.create')
+        ->middleware('throttle:auth');
+
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 

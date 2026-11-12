@@ -61,6 +61,7 @@ Route::get('/marketplace', [\App\Http\Controllers\MarketplaceController::class, 
 // ============================================================
 Route::middleware(['auth:web,accounts', 'verified'])->group(function () {
     Route::get('/onboarding/store', [OnboardingController::class, 'store'])->name('onboarding.store');
+    Route::get('/onboarding/create-password', [OnboardingController::class, 'createPassword'])->name('onboarding.create-password');
     Route::get('/onboarding/store-setup', [StoreSetupController::class, 'create'])->name('onboarding.store-setup');
     Route::post('/onboarding/store-setup', [StoreSetupController::class, 'store'])->name('onboarding.store-setup.store');
     Route::get('/onboarding/check-slug', [StoreSetupController::class, 'checkSlug'])->name('onboarding.check-slug');

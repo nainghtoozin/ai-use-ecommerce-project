@@ -87,6 +87,8 @@ class IdentityProjection
             'tenant_slug' => $tenantSlug,
             'permissions' => $permissions,
             'email_verified_at' => $user->email_verified_at,
+            'has_password' => method_exists($user, 'hasConfiguredPassword') ? $user->hasConfiguredPassword() : !empty($user->password),
+            'has_password' => !empty($user->password),
             'joined_at' => $joinedAt,
             'created_at' => $user->created_at?->toDateString(),
             'last_login_at' => $user->last_login_at?->toISOString() ?? ($membership?->last_login_at?->toISOString()),

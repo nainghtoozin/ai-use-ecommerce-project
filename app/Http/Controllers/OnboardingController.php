@@ -23,4 +23,9 @@ class OnboardingController extends Controller
 
         return redirect()->route('onboarding.store-setup');
     }
+
+    public function createPassword(Request $request)
+    {
+        return Inertia::render('Onboarding/CreatePassword');
+    }
 }

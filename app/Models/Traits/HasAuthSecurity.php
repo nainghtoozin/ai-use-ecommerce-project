@@ -11,6 +11,19 @@ trait HasAuthSecurity
         return !empty($this->google_id);
     }
 
+    public function hasConfiguredPassword(): bool
+    {
+        if (empty($this->password)) {
+            return false;
+        }
+
+        if ($this->google_id) {
+            return !empty($this->password_set_at);
+        }
+
+        return true;
+    }
+
     public function hasTwoFactorEnabled(): bool
     {
         return !empty($this->two_factor_secret) && !empty($this->two_factor_confirmed_at);

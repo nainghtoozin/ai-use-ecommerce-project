@@ -368,8 +368,12 @@ class GoogleAuthController extends Controller
             $request->session()->regenerate();
             $this->setTwoFactorSession($request, $account);
 
-            return redirect()->route('verification.notice')
+            if (!$account->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice')
                     ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
+            }
+
+            return redirect()->route('onboarding.create-password');
         }
 
         $user = User::where('google_id', $googleId)->first();

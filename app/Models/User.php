@@ -57,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
         'notification_preferences',
         'locale',
         'theme',
+        'password_set_at',
         'google_id',
         'google_email',
         'google_avatar',
@@ -86,6 +87,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasSubscription
             'google_verified' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_required' => 'boolean',
+            'password_set_at' => 'datetime',
         ];
     }
 

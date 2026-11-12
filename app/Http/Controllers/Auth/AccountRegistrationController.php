@@ -87,6 +87,7 @@ class AccountRegistrationController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status' => Account::STATUS_ACTIVE,
+            'password_set_at' => now(),
             'notification_preferences' => [
                 'email' => true,
                 'browser' => true,
@@ -122,6 +123,7 @@ class AccountRegistrationController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status' => 'active',
+            'password_set_at' => now(),
             'notification_preferences' => [
                 'email' => true,
                 'browser' => true,

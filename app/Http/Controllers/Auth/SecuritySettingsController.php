@@ -23,7 +23,7 @@ class SecuritySettingsController extends Controller
             'recoveryCodesRemaining' => $user->remainingRecoveryCodes(),
             'googleLinked' => $user->hasGoogleLinked(),
             'googleEmail' => $user->google_email,
-            'hasPassword' => !empty($user->password),
+            'hasPassword' => method_exists($user, 'hasConfiguredPassword') ? $user->hasConfiguredPassword() : !empty($user->password),
         ]);
     }
 }

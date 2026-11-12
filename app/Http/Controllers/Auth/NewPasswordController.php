@@ -31,7 +31,7 @@ class NewPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Rules\Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
 
         $useAccounts = config('identity.use_accounts');
@@ -49,6 +49,7 @@ class NewPasswordController extends Controller
                 $authenticatable->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),
+                    'password_set_at' => now(),
                 ])->save();
 
                 if (!$storeSlug) {
