@@ -25,7 +25,7 @@ class CustomerVerifyEmailNotification extends BaseVerifyEmail
         }
 
         $platform = \App\Models\PlatformSetting::current();
-        $fromAddress = $platform->support_email ?: config('mail.from.address');
+        $fromAddress = config('mail.from.address');
 
         $recipientName = method_exists($notifiable, 'getDisplayName')
             ? $notifiable->getDisplayName()
@@ -44,8 +44,9 @@ class CustomerVerifyEmailNotification extends BaseVerifyEmail
             ]);
 
         $message->from($fromAddress, $storeName);
-        if ($storeSupportEmail) {
-            $message->replyTo($storeSupportEmail, $storeName);
+        $replyTo = $storeSupportEmail ?: $platform->support_email;
+        if ($replyTo) {
+            $message->replyTo($replyTo, $storeName);
         }
 
         return $message;

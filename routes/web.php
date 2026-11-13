@@ -165,6 +165,9 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
     Route::get('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('login');
     Route::post('/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);
 
+    // Customer email verification success
+    Route::get('/customer/email-verified', [\App\Http\Controllers\StorefrontCustomerController::class, 'emailVerified'])->name('customer.email-verified');
+
     // Store-based admin login
     Route::get('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'create'])->name('admin.login');
     Route::post('/admin/login', [\App\Http\Controllers\StorefrontLoginController::class, 'store']);

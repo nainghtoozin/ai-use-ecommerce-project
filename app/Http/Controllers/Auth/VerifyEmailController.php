@@ -53,6 +53,20 @@ class VerifyEmailController extends Controller
 
     private function redirectAfterVerification(User|Account $authenticatable): RedirectResponse
     {
+        if ($authenticatable instanceof Account) {
+            $hasOwnerMembership = \App\Models\TenantMembership::where('account_id', $authenticatable->id)
+                ->where('is_owner', true)
+                ->exists();
+
+            if (!$hasOwnerMembership) {
+                $membership = $authenticatable->memberships()->with('tenant')->first();
+                if ($membership && $membership->tenant) {
+                    return redirect()->route('storefront.customer.email-verified', ['store_slug' => $membership->tenant->slug])
+                        ->with('status', 'email-verified');
+                }
+            }
+        }
+
         $url = app(LoginRedirectResolver::class)->resolveAfterEmailVerification($authenticatable);
 
         if ($authenticatable instanceof Account) {

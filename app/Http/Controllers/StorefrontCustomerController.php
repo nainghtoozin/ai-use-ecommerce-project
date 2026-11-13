@@ -69,6 +69,17 @@ class StorefrontCustomerController extends Controller
         ];
     }
 
+    public function emailVerified(Request $request, $store_slug = null)
+    {
+        $storeSlug = $store_slug ?: $request->route('store_slug');
+        $tenant = Tenant::where('slug', $storeSlug)->firstOrFail();
+
+        return Inertia::render('Storefront/EmailVerified', [
+            'tenant' => $this->tenantData($tenant),
+            'storeUrl' => url('/store/' . $tenant->slug),
+        ]);
+    }
+
     public function account(Request $request, $storeSlug = null)
     {
         $tenant = $this->ensureTenantAccess($request);
