@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use App\Services\TenantBootstrapService;
+use App\Notifications\CustomerVerifyEmailNotification;
 
 class RegisteredUserController extends Controller
 {
@@ -169,10 +170,8 @@ class RegisteredUserController extends Controller
 
         $account->assignRole($customerRole);
 
-        if ($isNewAccount) {
-            event(new Registered($account));
-        } elseif (!$account->hasVerifiedEmail()) {
-            event(new Registered($account));
+        if ($isNewAccount || !$account->hasVerifiedEmail()) {
+            $account->notify(new CustomerVerifyEmailNotification($tenant));
         }
 
         Auth::guard('accounts')->login($account);

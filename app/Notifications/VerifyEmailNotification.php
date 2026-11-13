@@ -22,7 +22,7 @@ class VerifyEmailNotification extends BaseVerifyEmail
             ? $notifiable->getDisplayName()
             : ($notifiable->name ?? $notifiable->email);
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject('Verify your email address | ' . $platformName)
             ->view('emails.verify-email', [
                 'platformName' => $platformName,
@@ -34,5 +34,13 @@ class VerifyEmailNotification extends BaseVerifyEmail
                 'supportUrl' => $supportUrl,
                 'year' => date('Y'),
             ]);
+
+        $fromAddress = config('mail.from.address');
+        $message->from($fromAddress, $platformName);
+        if ($supportEmail) {
+            $message->replyTo($supportEmail, $platformName);
+        }
+
+        return $message;
     }
 }
