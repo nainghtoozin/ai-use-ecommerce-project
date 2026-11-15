@@ -178,6 +178,17 @@ class StorefrontLoginController extends Controller
             'auth'
         );
 
-        return app(LoginRedirectResolver::class)->intended($authenticatable, $tenant);
+        if ($authenticatable instanceof Account) {
+            $membership = \App\Models\TenantMembership::where('account_id', $authenticatable->id)
+                ->where('tenant_id', $tenant->id)
+                ->first();
+            if ($membership && ($membership->is_owner || $membership->role?->name === 'admin')) {
+                return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]);
+            }
+        } elseif ($authenticatable instanceof User && $authenticatable->isAdmin()) {
+            return redirect()->route('storefront.admin.dashboard', ['store_slug' => $tenant->slug]);
+        }
+
+        return redirect()->route('storefront.index', ['store_slug' => $tenant->slug]);
     }
 }

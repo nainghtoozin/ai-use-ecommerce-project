@@ -47,6 +47,8 @@ class GoogleAuthController extends Controller
             if (!$settings->allow_registration || !(PlatformSetting::current()->registration_enabled ?? true)) {
                 return redirect()->route('registration.unavailable');
             }
+
+            $request->session()->put('merchant_registration_intent', true);
         }
 
         $state = $this->google->generateState();
@@ -215,6 +217,20 @@ class GoogleAuthController extends Controller
                     ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
             }
 
+            if ($tenantSlug) {
+                $resolvedTenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+                $membership = $resolvedTenant
+                    ? \App\Models\TenantMembership::where('account_id', $account->id)
+                        ->where('tenant_id', $resolvedTenant->id)
+                        ->where('status', 'active')
+                        ->first()
+                    : null;
+                if ($resolvedTenant && $membership && ($membership->is_owner || $membership->role?->name === 'admin')) {
+                    return redirect()->route('storefront.admin.dashboard', ['store_slug' => $resolvedTenant->slug]);
+                }
+                return redirect()->route('storefront.index', ['store_slug' => $resolvedTenant->slug]);
+            }
+
             $redirectResolver = app(\App\Auth\LoginRedirectResolver::class);
             $tenant = $redirectResolver->resolveTenant($account);
             if ($tenant) {
@@ -268,6 +284,14 @@ class GoogleAuthController extends Controller
         if (!$user->hasVerifiedEmail()) {
             return redirect()->route('verification.notice')
                 ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
+        }
+
+        if ($tenantSlug) {
+            $resolvedTenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            if ($resolvedTenant && $user->isAdmin()) {
+                return redirect()->route('storefront.admin.dashboard', ['store_slug' => $resolvedTenant->slug]);
+            }
+            return redirect()->route('storefront.index', ['store_slug' => $resolvedTenant->slug]);
         }
 
         $redirectResolver = app(\App\Auth\LoginRedirectResolver::class);

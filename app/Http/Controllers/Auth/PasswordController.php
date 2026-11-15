@@ -39,7 +39,15 @@ class PasswordController extends Controller
         );
 
         $user = $request->user();
-        if ($user instanceof \App\Models\Account && !$user->memberships()->exists()) {
+
+        $registrationIntent = $request->session()->get('merchant_registration_intent');
+        $request->session()->forget('merchant_registration_intent');
+
+        if ($registrationIntent) {
+            return redirect()->route('onboarding.store-setup')->with('status', 'Password created successfully. You can now sign in using Google or your email and password.');
+        }
+
+        if ($user instanceof \App\Models\Account && !$user->memberships()->where('is_owner', true)->exists()) {
             return redirect()->route('onboarding.store')->with('status', 'Password created successfully. You can now sign in using Google or your email and password.');
         }
         return redirect()->route('security.settings')->with('status', 'Password created successfully. You can now sign in using Google or your email and password.');
