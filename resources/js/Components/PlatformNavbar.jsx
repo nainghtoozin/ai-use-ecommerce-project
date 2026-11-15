@@ -114,14 +114,6 @@ export default function PlatformNavbar() {
                                                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{auth.user.email}</p>
                                                 </div>
                                                 <div className="py-1">
-                                                    <Link href="/customer/account" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
-                                                        <i className="bi bi-grid text-gray-400 dark:text-gray-500"></i>
-                                                        {t('landing.nav.my_account')}
-                                                    </Link>
-                                                    <Link href="/customer/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
-                                                        <i className="bi bi-receipt text-gray-400 dark:text-gray-500"></i>
-                                                        {t('landing.nav.my_orders')}
-                                                    </Link>
                                                     <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
                                                         <button onClick={logout} className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                                             <i className="bi bi-box-arrow-right text-gray-400 dark:text-gray-500"></i>

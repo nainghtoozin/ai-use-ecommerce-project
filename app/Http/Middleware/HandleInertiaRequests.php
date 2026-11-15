@@ -77,6 +77,9 @@ class HandleInertiaRequests extends Middleware
                     : 0,
             ] : null;
             $projection['is_super_admin'] = $isSuperAdmin;
+            $projection['is_merchant_owner'] = $isSuperAdmin || ($authenticatable instanceof Account
+                ? $authenticatable->memberships()->where('is_owner', true)->exists()
+                : ($authenticatable instanceof User ? (bool) $authenticatable->is_owner : false));
             $projection['is_impersonating'] = $isImpersonating;
             $projection['impersonator_name'] = $impersonatorName;
         }
