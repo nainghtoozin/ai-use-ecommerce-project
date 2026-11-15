@@ -53,18 +53,26 @@ class VerifyEmailController extends Controller
 
     private function redirectAfterVerification(User|Account $authenticatable): RedirectResponse
     {
-        if ($authenticatable instanceof Account) {
-            $hasOwnerMembership = \App\Models\TenantMembership::where('account_id', $authenticatable->id)
-                ->where('is_owner', true)
-                ->exists();
+        $purpose = request()->query('purpose');
 
-            if (!$hasOwnerMembership) {
-                $membership = $authenticatable->memberships()->with('tenant')->first();
-                if ($membership && $membership->tenant) {
-                    return redirect()->route('storefront.customer.email-verified', ['store_slug' => $membership->tenant->slug])
-                        ->with('status', 'email-verified');
-                }
+        if ($authenticatable instanceof Account && $purpose === 'customer') {
+            $membership = $authenticatable->memberships()->with('tenant')->first();
+            if ($membership && $membership->tenant) {
+                return redirect()->route('storefront.customer.email-verified', ['store_slug' => $membership->tenant->slug])
+                    ->with('status', 'email-verified');
             }
+        }
+
+        if ($authenticatable instanceof Account && $purpose === 'merchant_onboarding') {
+            // Mark any pending intent as ready_for_setup.
+            \App\Models\MerchantOnboardingIntent::where('account_id', $authenticatable->id)
+                ->where('status', 'pending_verification')
+                ->update([
+                    'status' => 'ready_for_setup',
+                    'verified_at' => now(),
+                ]);
+
+            return redirect()->route('onboarding.store-setup')->with('status', 'email-verified');
         }
 
         $url = app(LoginRedirectResolver::class)->resolveAfterEmailVerification($authenticatable);

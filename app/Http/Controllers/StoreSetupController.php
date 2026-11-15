@@ -28,6 +28,18 @@ class StoreSetupController extends Controller
             return redirect()->route('home');
         }
 
+        if ($user instanceof Account) {
+            $intentId = $request->session()->get('merchant_onboarding_intent_id');
+            if ($intentId) {
+                $intent = \App\Models\MerchantOnboardingIntent::where('id', $intentId)
+                    ->where('account_id', $user->id)
+                    ->first();
+                if ($intent && $intent->expires_at && $intent->expires_at->isPast()) {
+                    return redirect()->route('login')->with('error', 'Onboarding session expired. Please register again.');
+                }
+            }
+        }
+
         $platform = PlatformSetting::current();
 
         return Inertia::render('Onboarding/StoreSetup', [
@@ -134,6 +146,14 @@ class StoreSetupController extends Controller
 
             if ($request->user() instanceof Account) {
                 $request->session()->put('current_tenant_slug', $tenant->slug);
+
+                $intentId = $request->session()->get('merchant_onboarding_intent_id');
+                if ($intentId) {
+                    \App\Models\MerchantOnboardingIntent::where('id', $intentId)
+                        ->where('account_id', $request->user()->id)
+                        ->update(['status' => 'completed', 'completed_at' => now()]);
+                    $request->session()->forget('merchant_onboarding_intent_id');
+                }
             }
 
             return redirect()->route('onboarding.success', [

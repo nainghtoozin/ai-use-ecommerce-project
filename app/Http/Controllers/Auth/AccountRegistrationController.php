@@ -116,16 +116,36 @@ class AccountRegistrationController extends Controller
         $request->session()->put('2fa_verified', true);
         $request->session()->put('2fa_enrollment_pending', false);
 
-        if ($wasExisting) {
-            // Existing account (e.g. customer) registering as merchant:
-            // send to onboarding if no owner membership.
-            $hasOwnerMembership = \App\Models\TenantMembership::where('account_id', $account->id)
-                ->where('is_owner', true)
-                ->exists();
+        // Determine if this is a merchant registration (no owner membership yet).
+        $hasOwnerMembership = \App\Models\TenantMembership::where('account_id', $account->id)
+            ->where('is_owner', true)
+            ->exists();
 
-            if (!$hasOwnerMembership) {
-                return redirect()->route('onboarding.store-setup');
+        if (!$hasOwnerMembership) {
+            // Create or resume a merchant onboarding intent.
+            $intent = \App\Models\MerchantOnboardingIntent::where('account_id', $account->id)
+                ->where('status', 'pending_verification')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->latest()
+                ->first();
+
+            if (!$intent) {
+                $intent = \App\Models\MerchantOnboardingIntent::create([
+                    'account_id' => $account->id,
+                    'status' => $account->hasVerifiedEmail() ? 'ready_for_setup' : 'pending_verification',
+                    'expires_at' => now()->addHours(24),
+                ]);
             }
+
+            $request->session()->put('merchant_onboarding_intent_id', $intent->id);
+
+            if (!$account->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
+            return redirect()->route('onboarding.store-setup');
         }
 
         return redirect()->route('verification.notice');
