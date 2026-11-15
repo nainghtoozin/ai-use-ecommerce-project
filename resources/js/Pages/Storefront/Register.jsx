@@ -121,7 +121,7 @@ export default function StorefrontRegister() {
                     <span className="text-base font-bold text-gray-900 dark:text-gray-100">{tenant.name}</span>
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-[0_2px_16px_rgb(0_0_0/0.06)] px-4 py-5 sm:px-8 sm:py-7">
+                <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-[0_2px_16px_rgb(0_0_0/0.06)] px-4 py-4 sm:px-6 sm:py-5">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                         Create your account
                     </h2>
@@ -147,11 +147,11 @@ export default function StorefrontRegister() {
                     </div>
                 </div>
 
-                <form onSubmit={submit} noValidate className="mt-5">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+                <form onSubmit={submit} noValidate className="mt-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4">
                     <section aria-label="Account Information">
                     <SectionHeading>Account Information</SectionHeading>
-                    <div className="mt-3 space-y-3">
+                    <div className="mt-2 space-y-2">
                         <div>
                             <label htmlFor="name" className={labelClass}><span>Name <RequiredMark /></span></label>
                             <input
@@ -174,7 +174,7 @@ export default function StorefrontRegister() {
                             <FieldError message={errors.email} />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div>
                                 <label htmlFor="password" className={labelClass}><span>Password <RequiredMark /></span></label>
                                 <div className="relative">
@@ -208,7 +208,7 @@ export default function StorefrontRegister() {
 
                     <section aria-label="Delivery Information">
                     <SectionHeading>Delivery Information</SectionHeading>
-                    <div className="mt-3 space-y-3">
+                    <div className="mt-3 space-y-2">
                             <div>
                                 <label htmlFor="phone" className={labelClass}><span>Phone Number <RequiredMark /></span></label>
                                 <input
@@ -230,7 +230,7 @@ export default function StorefrontRegister() {
                             <FieldError message={errors.address} />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div>
                                 <label htmlFor="city_id" className={labelClass}><span>City</span><OptionalText /></label>
                                 <select
