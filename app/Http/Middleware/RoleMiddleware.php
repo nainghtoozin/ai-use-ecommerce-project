@@ -10,11 +10,11 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, $role)
     {
-        if (!Auth::check()) {
+        $user = $request->user();
+
+        if (!$user) {
             abort(403, 'Unauthorized');
         }
-
-        $user = Auth::user();
 
         // Exact role name match (e.g. user assigned the "admin" role)
         if ($user->hasRole($role)) {

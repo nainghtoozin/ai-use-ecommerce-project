@@ -19,7 +19,7 @@ export default function CreatePassword() {
         }, {
             onFinish: () => setProcessing(false),
             onSuccess: () => {
-                router.visit('/onboarding/store');
+                router.visit('/onboarding/store-setup');
             },
         });
     };

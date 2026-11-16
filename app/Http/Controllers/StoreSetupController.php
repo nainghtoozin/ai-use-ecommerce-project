@@ -34,7 +34,10 @@ class StoreSetupController extends Controller
                 $intent = \App\Models\MerchantOnboardingIntent::where('id', $intentId)
                     ->where('account_id', $user->id)
                     ->first();
-                if ($intent && $intent->expires_at && $intent->expires_at->isPast()) {
+                if (!$intent) {
+                    // Intent doesn't belong to this account — clear it
+                    $request->session()->forget('merchant_onboarding_intent_id');
+                } elseif ($intent->expires_at && $intent->expires_at->isPast()) {
                     return redirect()->route('login')->with('error', 'Onboarding session expired. Please register again.');
                 }
             }
@@ -57,6 +60,10 @@ class StoreSetupController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
+
+        // Clear any stale tenant context so store creation uses the
+        // authenticated account, not a previous storefront session.
+        $request->session()->forget(['current_tenant_slug', 'current_tenant_id', 'current_tenant_membership_id']);
 
         if ($user instanceof Account && $user->memberships()->where('is_owner', true)->exists()) {
             return back()->withErrors(['slug' => 'You already own a store.']);
@@ -118,6 +125,10 @@ class StoreSetupController extends Controller
                     'status' => 'active',
                     'email_verified' => true,
                 ]);
+
+                if (! $owner || $owner->id !== $user->id) {
+                    throw new \RuntimeException('Store owner identity mismatch.');
+                }
 
                 WebsiteInfo::withoutTenantScope(function () use ($tenant, $validated) {
                     WebsiteInfo::create([
