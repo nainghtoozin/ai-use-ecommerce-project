@@ -106,23 +106,6 @@ export default function SecuritySettings({ twoFactorEnabled, twoFactorRequired, 
                 </div>
 
                 <div className="p-4 border rounded-md dark:border-gray-700">
-                    <h2 className="font-semibold text-gray-900 dark:text-gray-100">Password Login</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Status: {hasPassword ? 'Enabled' : 'Not Set'}
-                    </p>
-                    {!hasPassword && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            You currently sign in with Google. Create a password to also sign in using your email address.
-                        </p>
-                    )}
-                    <div className="mt-3">
-                        <a href="/forgot-password" className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold">
-                            {hasPassword ? 'Change Password' : 'Create Password'}
-                        </a>
-                    </div>
-                </div>
-
-                <div className="p-4 border rounded-md dark:border-gray-700">
                     <h2 className="font-semibold text-gray-900 dark:text-gray-100">Google Account</h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {googleLinked ? `Linked: ${googleEmail}` : 'Not linked'}

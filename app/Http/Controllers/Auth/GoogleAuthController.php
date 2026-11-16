@@ -47,8 +47,6 @@ class GoogleAuthController extends Controller
             if (!$settings->allow_registration || !(PlatformSetting::current()->registration_enabled ?? true)) {
                 return redirect()->route('registration.unavailable');
             }
-
-            $request->session()->put('merchant_registration_intent', true);
         }
 
         $state = $this->google->generateState();
@@ -399,11 +397,7 @@ class GoogleAuthController extends Controller
                     ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
             }
 
-            if (method_exists($account, 'hasConfiguredPassword') && $account->hasConfiguredPassword()) {
-                return redirect()->route('onboarding.store');
-            }
-
-            return redirect()->route('onboarding.create-password');
+            return redirect()->route('onboarding.store');
         }
 
         $user = User::where('google_id', $googleId)->first();
