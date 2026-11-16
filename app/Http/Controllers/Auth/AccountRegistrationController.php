@@ -142,6 +142,11 @@ class AccountRegistrationController extends Controller
             $request->session()->put('merchant_onboarding_intent_id', $intent->id);
 
             if (!$account->hasVerifiedEmail()) {
+                // Send merchant verification email only for existing accounts
+                // (new accounts already got it via Registered event).
+                if ($wasExisting) {
+                    $account->notify(new \App\Notifications\VerifyEmailNotification());
+                }
                 return redirect()->route('verification.notice');
             }
 

@@ -97,8 +97,6 @@ class RegisteredUserController extends Controller
         $customerRole = app(TenantBootstrapService::class)->ensureCustomerRole($tenant);
         $user->assignRole($customerRole);
 
-        event(new Registered($user));
-
         Auth::login($user);
 
         return app(LoginRedirectResolver::class)->intended($user, $tenant);
@@ -169,10 +167,6 @@ class RegisteredUserController extends Controller
         $this->saveRegistrationContact($account, $tenant, $membership, $request, $cityId, $townshipId, $postalCode);
 
         $account->assignRole($customerRole);
-
-        if ($isNewAccount || !$account->hasVerifiedEmail()) {
-            $account->notify(new CustomerVerifyEmailNotification($tenant));
-        }
 
         Auth::guard('accounts')->login($account);
 

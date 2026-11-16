@@ -324,6 +324,9 @@ class GoogleAuthController extends Controller
                 if ($avatar) $account->google_avatar = $avatar;
                 if ($verified && !$account->hasVerifiedEmail()) {
                     $account->markEmailAsVerified();
+                } elseif (!$verified && !$account->hasVerifiedEmail()) {
+                    // Send merchant verification email for unverified existing accounts.
+                    $account->notify(new \App\Notifications\VerifyEmailNotification());
                 }
                 $account->save();
             } else {
@@ -376,14 +379,13 @@ class GoogleAuthController extends Controller
                         );
                         $account->assignRole($customerRole);
                     }
+                    if ($verified && !$account->hasVerifiedEmail()) {
+                        $account->markEmailAsVerified();
+                    }
                     $request->session()->put('current_tenant_slug', $tenant->slug);
                     Auth::guard('accounts')->login($account);
                     $request->session()->regenerate();
                     $this->setTwoFactorSession($request, $account);
-                    if (!$account->hasVerifiedEmail()) {
-                        return redirect()->route('verification.notice')
-                    ->with('status', 'Your Google sign-in was successful, but your email address still needs to be verified for this platform. Please open your Gmail inbox and click the verification link we sent you before continuing.');
-                    }
                     return redirect()->to(app(\App\Auth\LoginRedirectResolver::class)->resolveAfterRegistration($account, $tenant));
                 }
             }
