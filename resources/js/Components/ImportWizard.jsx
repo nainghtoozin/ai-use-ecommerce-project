@@ -203,17 +203,33 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
         formData.append('file', file);
         formData.append('import_mode', importMode);
 
+        const xsrfToken = document.cookie
+            .split('; ')
+            .find((c) => c.startsWith('XSRF-TOKEN='))
+            ?.split('=')
+            .slice(1)
+            .join('=');
+
         fetch(adminUrl(validateEndpoint), {
             method: 'POST',
             body: formData,
             credentials: 'include',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                ...(xsrfToken ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrfToken) } : { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }),
                 'Accept': 'application/json',
             },
         })
-        .then(r => r.json())
-        .then(data => {
+        .then(async (r) => {
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                if (r.status === 419) {
+                    setError('Your session expired. Please refresh the page and try again.');
+                } else {
+                    setError(data.error || data.message || 'Could not validate your file. Please check it and try again.');
+                }
+                setStep('upload');
+                return;
+            }
             if (data.error) {
                 setError(data.error);
                 setStep('upload');
@@ -239,16 +255,26 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
         formData.append('file', file);
         formData.append('import_mode', importMode);
 
+        const xsrfToken2 = document.cookie
+            .split('; ')
+            .find((c) => c.startsWith('XSRF-TOKEN='))
+            ?.split('=')
+            .slice(1)
+            .join('=');
+
         fetch(adminUrl(importEndpoint), {
             method: 'POST',
             body: formData,
             credentials: 'include',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                ...(xsrfToken2 ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrfToken2) } : { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }),
                 'Accept': 'application/json',
             },
         })
-        .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
+        .then(async (r) => {
+            const data = await r.json().catch(() => ({}));
+            return { ok: r.ok, status: r.status, data };
+        })
         .then(({ ok, status, data }) => {
             if (ok) {
                 setResult(data.result);
@@ -260,6 +286,8 @@ export default function ImportWizard({ isOpen, onClose, onComplete, type = 'prod
                 setHistoryId(data.history_id);
                 setError('Validation found errors. Please fix them and try again.');
                 setStep('preview');
+            } else if (status === 419) {
+                setError('Your session expired. Please refresh the page and try again.');
             } else {
                 setError(data.error || 'Something went wrong. Please check your file and try again.');
             }

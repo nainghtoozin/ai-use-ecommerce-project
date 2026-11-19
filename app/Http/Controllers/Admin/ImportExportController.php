@@ -363,15 +363,7 @@ class ImportExportController extends Controller
 
     public function validateMultiSheet(Request $request)
     {
-        $u = auth()->user();
-        if (!$u || !$u->can('products.create')) {
-            $perm = \Spatie\Permission\Models\Permission::findByName('products.create', 'web');
-            $ref = new \ReflectionClass($u);
-            $m = $ref->getMethod('hasPermissionViaRole');
-            $m->setAccessible(true);
-            $viaRole = $m->invoke($u, $perm);
-            $row = \Illuminate\Support\Facades\DB::table('role_has_permissions')->where('permission_id', $perm->id)->first();
-            file_put_contents('C:/xampp/htdocs/ai-use-ecommerce-project/debug_ms.txt', date('c') . ' user=' . ($u ? get_class($u) . ':' . $u->id : 'null') . ' can=' . var_export($u ? $u->can('products.create') : null, true) . ' viaRole=' . var_export($viaRole, true) . ' permId=' . $perm->id . ' rolesSql=' . $perm->roles()->toSql() . ' bindings=' . implode(',', $perm->roles()->getBindings()) . ' count=' . $perm->roles()->count() . "\n", FILE_APPEND);
+        if (!auth()->user() || !auth()->user()->can('products.create')) {
             abort(403, 'Unauthorized');
         }
 
