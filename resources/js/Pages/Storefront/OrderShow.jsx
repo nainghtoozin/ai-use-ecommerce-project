@@ -227,7 +227,7 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
         <ShopLayout>
             <Head title={`${order.invoice_number} - ${storefront?.identity?.site_title || tenant.name}`} />
 
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 {flash.success && !dismissedFlash.success && (
                     <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2">
                         <span>{flash.success}</span>
@@ -310,7 +310,7 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
 
 
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {/* Items */}
                     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                         <div className="px-4 pt-3 pb-1 flex items-center justify-between">
@@ -491,10 +491,17 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                                         <p className="text-xs text-gray-500 dark:text-gray-400">Method</p>
                                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</p>
                                     </div>
-                                    {order.payer_name && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Sender Name</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right">{order.payer_name}</p></div>}
-                                    {order.sender_account_number && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Sender Account</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right font-mono break-all">{order.sender_account_number}</p></div>}
-                                    {order.transaction_id && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Transaction ID</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right font-mono break-all">{order.transaction_id}</p></div>}
                                     {order.paid_amount && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Paid Amount</p><p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right">{formatCurrency(order.paid_amount, cc)}</p></div>}
+                                    {(order.payer_name || order.sender_account_number || order.transaction_id) && (
+                                        <details className="mt-2">
+                                            <summary className="cursor-pointer text-xs font-medium text-blue-600 dark:text-blue-400">Payment transaction details</summary>
+                                            <div className="mt-2 space-y-2">
+                                                {order.payer_name && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Sender Name</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right">{order.payer_name}</p></div>}
+                                                {order.sender_account_number && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Sender Account</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right font-mono break-all">{order.sender_account_number}</p></div>}
+                                                {order.transaction_id && <div className="flex items-start justify-between gap-3"><p className="text-xs text-gray-500 dark:text-gray-400">Transaction ID</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100 text-right font-mono break-all">{order.transaction_id}</p></div>}
+                                            </div>
+                                        </details>
+                                    )}
                                 </div>
                             )}
                         </div>
