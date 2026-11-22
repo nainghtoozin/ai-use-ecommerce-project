@@ -60,6 +60,28 @@ class PermissionSeeder extends Seeder
             'orders.cancel-own',
             'orders.cancel-any',
 
+            // Order Cancellations (after-sales)
+            'cancellations.view',
+            'cancellations.manage',
+            'cancellations.approve',
+            'cancellations.reject',
+            'cancellations.settings',
+
+            // Order Returns (after-sales)
+            'returns.view',
+            'returns.view-own',
+            'returns.create',
+            'returns.approve',
+            'returns.reject',
+            'returns.receive',
+            'returns.inspect',
+            'returns.settings',
+
+            // Order Refunds
+            'refunds.view',
+            'refunds.manage',
+            'refunds.process',
+
             // Payment Management
             'payments.upload-proof',
             'payments.view',

@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessOrderNotifications;
 use App\Jobs\ProcessOrderStatusChange;
 use App\Models\City;
 use App\Models\CustomerAddress;
 use App\Models\Order;
+use App\Models\OrderCancellation;
+use App\Models\OrderReturn;
 use App\Models\Tenant;
+use App\Services\AfterSalesHistoryService;
+use App\Services\AuthorizationService;
 use App\Services\ImageService;
-use App\Services\OrderService;
-use App\Services\OrderStatusTransitionService;
+use App\Services\OrderCancellationService;
+use App\Services\OrderReturnService;
 use App\Services\OrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,8 +27,9 @@ class StorefrontCustomerController extends Controller
 {
     public function __construct(
         private readonly ImageService $imageService,
-        private readonly OrderService $orderService,
-        private readonly OrderStatusTransitionService $transitionService,
+        private readonly OrderCancellationService $cancellationService,
+        private readonly OrderReturnService $returnService,
+        private readonly AfterSalesHistoryService $historyService,
     ) {}
     private function ensureTenantAccess(Request $request): Tenant
     {
@@ -352,11 +356,120 @@ class StorefrontCustomerController extends Controller
 
         $order->loadMissing(['items.product', 'items.variant', 'paymentMethod', 'city', 'township']);
 
+        $cancellation = $this->cancellationService->evaluate($order, OrderCancellation::ROLE_CUSTOMER, $user);
+        $return = $this->returnService->eligibility($order);
+
         return Inertia::render('Storefront/OrderShow', [
             'tenant' => $this->tenantData($tenant),
             'order' => $order,
             'isCodOrder' => app(OrderWorkflow::class)->isCod($order),
+            'afterSales' => [
+                'cancellation' => $cancellation,
+                'return' => $this->returnPayload($return),
+                'cancellations' => $order->cancellations()
+                    ->latest()
+                    ->get()
+                    ->map(fn (OrderCancellation $case) => [
+                        'id' => $case->id,
+                        'number' => $case->cancellation_number,
+                        'status' => $case->status,
+                        'mode' => $case->mode,
+                        'reason' => $case->reason_label,
+                        'note' => $case->customer_note,
+                        'rejection_reason' => $case->rejection_reason,
+                        'requested_at' => $case->requested_at?->toIso8601String(),
+                        'completed_at' => $case->completed_at?->toIso8601String(),
+                        'refund' => $case->refund ? [
+                            'number' => $case->refund->refund_number,
+                            'amount' => (float) $case->refund->amount,
+                            'status' => $case->refund->status,
+                        ] : null,
+                    ]),
+                'returns' => $order->returns()
+                    ->with(['items.orderItem'])
+                    ->latest()
+                    ->get()
+                    ->map(fn (OrderReturn $case) => $this->returnCasePayload($case)),
+                'refunds' => $order->refunds()
+                    ->latest()
+                    ->get()
+                    ->map(fn ($refund) => [
+                        'number' => $refund->refund_number,
+                        'amount' => (float) $refund->amount,
+                        'status' => $refund->status,
+                        'method' => $refund->method,
+                        'reference' => $refund->reference,
+                        'processed_at' => $refund->processed_at?->toIso8601String(),
+                    ]),
+            ],
         ]);
+    }
+
+    private function returnPayload(array $eligibility): array
+    {
+        $settings = $eligibility['settings'] ?? null;
+
+        return [
+            'allowed' => $eligibility['allowed'],
+            'reason' => $eligibility['reason'],
+            'window_days' => $eligibility['window_days'],
+            'delivered_at' => $eligibility['delivered_at'],
+            'days_remaining' => $eligibility['days_remaining'],
+            'items' => $eligibility['items'],
+            'settings' => $settings ? [
+                'return_window_days' => $settings->return_window_days,
+                'allow_full_return' => $settings->allow_full_return,
+                'allow_partial_return' => $settings->allow_partial_return,
+                'require_reason' => $settings->require_reason,
+                'require_note' => $settings->require_note,
+                'require_evidence' => $settings->require_evidence,
+                'allow_refund' => $settings->allow_refund,
+                'allow_exchange' => $settings->allow_exchange,
+                'allow_replacement' => $settings->allow_replacement,
+                'return_shipping_responsibility' => $settings->return_shipping_responsibility,
+                'refund_shipping_fee' => $settings->refund_shipping_fee,
+                'reasons' => $settings->reasons ?: \App\Models\ReturnSetting::DEFAULT_REASONS,
+                'instructions' => $settings->instructions,
+                'policy_text' => $settings->policy_text,
+            ] : null,
+        ];
+    }
+
+    private function returnCasePayload(OrderReturn $case): array
+    {
+        return [
+            'id' => $case->id,
+            'number' => $case->rma_number,
+            'status' => $case->status,
+            'resolution' => $case->resolution,
+            'reason' => $case->reason_label,
+            'note' => $case->customer_note,
+            'rejection_reason' => $case->rejection_reason,
+            'shipping_responsibility' => $case->shipping_responsibility,
+            'requested_at' => $case->requested_at?->toIso8601String(),
+            'received_at' => $case->received_at?->toIso8601String(),
+            'inspected_at' => $case->inspected_at?->toIso8601String(),
+            'completed_at' => $case->completed_at?->toIso8601String(),
+            'expires_at' => $case->expires_at?->toIso8601String(),
+            'order' => $case->relationLoaded('order') && $case->order ? [
+                'id' => $case->order->id,
+                'invoice_number' => $case->order->invoice_number,
+            ] : null,
+            'items' => $case->items->map(fn ($item) => [
+                'order_item_id' => $item->order_item_id,
+                'quantity' => $item->quantity,
+                'received_quantity' => $item->received_quantity,
+                'condition' => $item->condition,
+                'product_name' => $item->relationLoaded('orderItem') ? $item->orderItem?->product?->name : null,
+            ]),
+            'evidence' => $case->evidence_urls,
+            'tracking' => $case->trackingPayload(),
+            'refund' => $case->refund ? [
+                'number' => $case->refund->refund_number,
+                'amount' => (float) $case->refund->amount,
+                'status' => $case->refund->status,
+            ] : null,
+        ];
     }
 
     public function addresses(Request $request, $storeSlug = null)
@@ -500,23 +613,165 @@ class StorefrontCustomerController extends Controller
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
 
-        if ($order->user_id !== $user->id || $order->user_type !== $user->getMorphClass()) {
-            abort(404);
+        $this->ensureOrderOwnership($order, $user);
+
+        $validated = $request->validate([
+            'reason_code' => 'nullable|string|max:50',
+            'reason_label' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $this->cancellationService->request($order, $user, OrderCancellation::ROLE_CUSTOMER, [
+                'reason_code' => $validated['reason_code'] ?? null,
+                'reason_label' => $validated['reason_label'] ?? null,
+                'note' => $validated['note'] ?? null,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
 
-        if (!$order->canCancel()) {
-            return redirect()->back()->with('error', 'You cannot cancel this order.');
-        }
+        $fresh = $order->fresh();
 
-        $oldStatus = $order->order_status;
-        $this->transitionService->transition($order, Order::ORDER_STATUS_CANCELLED);
-
-        ProcessOrderStatusChange::dispatch($order, 'cancelled_by_customer', oldStatus: $oldStatus);
+        $message = $fresh?->order_status === Order::ORDER_STATUS_CANCELLED
+            ? 'Order cancelled. Stock has been restored.'
+            : 'Cancellation request submitted. The store will review it shortly.';
 
         return redirect()->route('storefront.customer.orders.show', [
             'store_slug' => $tenant->slug,
             'order' => $order->id,
-        ])->with('success', 'Order cancelled. Stock has been restored.');
+        ])->with('success', $message);
+    }
+
+    public function returns(Request $request, $storeSlug = null)
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        $this->ensureReturnsAccess($user);
+
+        $returns = OrderReturn::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->where('requested_by_type', $user->getMorphClass())
+            ->where('requested_by_id', $user->id)
+            ->with(['order:id,invoice_number,total_amount,order_status,payment_status', 'items', 'refund:id,refund_number,amount,status'])
+            ->latest()
+            ->paginate(10)
+            ->withQueryString()
+            ->through(fn (OrderReturn $case) => $this->returnCasePayload($case));
+
+        return Inertia::render('Storefront/Returns', [
+            'tenant' => $this->tenantData($tenant),
+            'returns' => $returns,
+        ]);
+    }
+
+    public function requestReturn(Request $request, $storeSlug, Order $order): RedirectResponse
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        $this->ensureOrderOwnership($order, $user);
+
+        $validated = $request->validate([
+            'resolution' => 'required|in:refund,exchange,replacement',
+            'reason_code' => 'nullable|string|max:50',
+            'reason_label' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:2000',
+            'items' => 'required|array|min:1',
+            'items.*.order_item_id' => 'required|integer',
+            'items.*.quantity' => 'required|integer|min:1',
+            'evidence' => 'nullable|array|max:6',
+            'evidence.*' => 'image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
+
+        $evidencePaths = [];
+
+        foreach ($request->file('evidence', []) as $file) {
+            $evidencePaths[] = $this->imageService->upload($file, 'return-evidence');
+        }
+
+        try {
+            $this->returnService->request($order, $user, [
+                'resolution' => $validated['resolution'],
+                'reason_code' => $validated['reason_code'] ?? null,
+                'reason_label' => $validated['reason_label'] ?? null,
+                'note' => $validated['note'] ?? null,
+                'items' => $validated['items'],
+                'evidence' => $evidencePaths,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('storefront.customer.orders.show', [
+            'store_slug' => $tenant->slug,
+            'order' => $order->id,
+        ])->with('success', 'Return request submitted.');
+    }
+
+    public function showReturn(Request $request, $storeSlug, OrderReturn $return)
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        if ((int) $return->tenant_id !== (int) $tenant->id
+            || $return->requested_by_type !== $user->getMorphClass()
+            || (int) $return->requested_by_id !== (int) $user->id) {
+            abort(404);
+        }
+
+        $this->ensureReturnsAccess($user);
+
+        $return->load(['order:id,invoice_number,total_amount,order_status,payment_status', 'items.orderItem.product', 'refund']);
+
+        return Inertia::render('Storefront/ReturnShow', [
+            'tenant' => $this->tenantData($tenant),
+            'returnRequest' => $this->returnCasePayload($return),
+            'timeline' => $this->historyService->timeline($return, true),
+        ]);
+    }
+
+    public function cancelReturn(Request $request, $storeSlug, OrderReturn $return): RedirectResponse
+    {
+        $tenant = $this->ensureTenantAccess($request);
+        $user = $request->user();
+
+        if ((int) $return->tenant_id !== (int) $tenant->id
+            || $return->requested_by_type !== $user->getMorphClass()
+            || (int) $return->requested_by_id !== (int) $user->id) {
+            abort(404);
+        }
+
+        $this->ensureReturnsAccess($user);
+
+        try {
+            $this->returnService->cancel($return, $user, OrderCancellation::ROLE_CUSTOMER);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Return request cancelled.');
+    }
+
+    private function ensureOrderOwnership(Order $order, $user): void
+    {
+        if ($order->user_id !== $user->id || $order->user_type !== $user->getMorphClass()) {
+            abort(404);
+        }
+    }
+
+    private function ensureReturnsAccess($user): void
+    {
+        if (AuthorizationService::can('returns.view-own', $user) || AuthorizationService::can('returns.create', $user)) {
+            return;
+        }
+
+        if ($user->getRoleNames()->isEmpty()) {
+            return;
+        }
+
+        abort(403, 'Unauthorized');
     }
 
     public function uploadPayment(Request $request, $storeSlug, Order $order): RedirectResponse

@@ -79,7 +79,13 @@ class OrderStatusTransitionService
 
         Log::info("Order #{$order->invoice_number} status transition: {$oldStatus} → {$newStatus}, inventory action: {$action}");
 
-        $order->update(['order_status' => $newStatus]);
+        $updates = ['order_status' => $newStatus];
+
+        if ($newStatus === Order::ORDER_STATUS_DELIVERED && !$order->delivered_at) {
+            $updates['delivered_at'] = now();
+        }
+
+        $order->update($updates);
 
         match ($action) {
             self::APPLY => $this->orderService->applyStockReduction($order),

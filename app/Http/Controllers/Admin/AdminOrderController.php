@@ -6,6 +6,10 @@ use App\Auth\IdentityResolver;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessOrderStatusChange;
 use App\Models\Order;
+use App\Models\OrderCancellation;
+use App\Models\OrderReturn;
+use App\Services\AfterSalesSettingsService;
+use App\Services\OrderCancellationService;
 use App\Services\OrderService;
 use App\Services\OrderWorkflow;
 use App\Services\PerPageTrait;
@@ -24,6 +28,8 @@ class AdminOrderController extends Controller
         OrderService $orderService,
         OrderWorkflow $orderWorkflow,
         private readonly IdentityResolver $identityResolver,
+        private readonly OrderCancellationService $cancellationService,
+        private readonly AfterSalesSettingsService $afterSalesSettings,
     ) {
         $this->orderService = $orderService;
         $this->orderWorkflow = $orderWorkflow;
@@ -143,7 +149,45 @@ class AdminOrderController extends Controller
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
             'isCodOrder' => $this->orderWorkflow->isCod($order),
+            'afterSales' => [
+                'cancellation' => $this->cancellationSummary($this->cancellationService->evaluate($order, OrderCancellation::ROLE_MERCHANT)),
+                'return' => $this->returnSummary(app(\App\Services\OrderReturnService::class)->eligibility($order)),
+                'cancellations' => $order->cancellations()->with('refund')->latest()->get(),
+                'returns' => $order->returns()->with(['items', 'refund'])->latest()->get(),
+                'refunds' => $order->refunds()->latest()->get(),
+            ],
+            'permissions' => [
+                'cancel' => auth()->user()->can('orders.update-status') || auth()->user()->can('cancellations.manage'),
+                'manage_returns' => auth()->user()->can('returns.view'),
+                'manage_refunds' => auth()->user()->can('refunds.view'),
+            ],
         ]);
+    }
+
+    private function cancellationSummary(array $evaluation): array
+    {
+        unset($evaluation['settings']);
+
+        return $evaluation;
+    }
+
+    private function returnSummary(array $evaluation): array
+    {
+        $settings = $evaluation['settings'] ?? null;
+        unset($evaluation['settings']);
+
+        $evaluation['settings'] = $settings ? [
+            'returns_enabled' => $settings->returns_enabled,
+            'return_window_days' => $settings->return_window_days,
+            'allow_partial_return' => $settings->allow_partial_return,
+            'allow_refund' => $settings->allow_refund,
+            'allow_exchange' => $settings->allow_exchange,
+            'allow_replacement' => $settings->allow_replacement,
+            'require_evidence' => $settings->require_evidence,
+            'refund_shipping_fee' => $settings->refund_shipping_fee,
+        ] : null;
+
+        return $evaluation;
     }
 
     public function updateOrderStatus(Request $request, string $id)
@@ -263,24 +307,32 @@ class AdminOrderController extends Controller
         }
     }
 
-    public function cancelOrder(string $id)
+    public function cancelOrder(Request $request, string $id)
     {
-        if (!auth()->user()->can('orders.update-status')) {
+        if (!auth()->user()->can('orders.update-status') && !auth()->user()->can('cancellations.manage')) {
             abort(403, 'Unauthorized');
         }
+
+        $validated = $request->validate([
+            'reason_code' => 'nullable|string|max:50',
+            'reason_label' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:1000',
+        ]);
 
         try {
             $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
 
-            if (!$order->canCancel()) {
-                return admin_redirect('admin.orders.show', $id)
-                    ->with('error', 'This order cannot be cancelled.');
-            }
-
-            $this->orderService->updateOrderStatus($order, Order::ORDER_STATUS_CANCELLED);
+            $this->cancellationService->request($order, $request->user(), OrderCancellation::ROLE_MERCHANT, [
+                'reason_code' => $validated['reason_code'] ?? null,
+                'reason_label' => $validated['reason_label'] ?? null,
+                'note' => $validated['note'] ?? null,
+            ]);
 
             return admin_redirect('admin.orders.show', $id)
-                ->with('success', 'Order cancelled. Stock has been restored.');
+                ->with('success', 'Order cancellation recorded.');
+        } catch (\InvalidArgumentException $e) {
+            return admin_redirect('admin.orders.show', $id)
+                ->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Order cancellation failed: ' . $e->getMessage());
 

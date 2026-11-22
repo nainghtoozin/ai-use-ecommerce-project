@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderRefund;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\PaymentMethod;
@@ -539,8 +540,8 @@ class AdminReportController extends Controller
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_PAID . "' THEN orders.total_amount ELSE 0 END), 0) as verified_amount"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_PAID . "' THEN 1 ELSE 0 END), 0) as verified_count"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as pending_verification_count"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN orders.total_amount ELSE 0 END), 0) as refunded_amount"),
-                DB::raw("COALESCE(SUM(CASE WHEN orders.order_status = '" . Order::ORDER_STATUS_CANCELLED . "' AND orders.payment_status IN ('" . Order::PAYMENT_STATUS_PAID . "', '" . Order::PAYMENT_STATUS_PENDING . "') THEN 1 ELSE 0 END), 0) as refunded_count"),
+                DB::raw("COALESCE(SUM((SELECT COALESCE(SUM(order_refunds.amount), 0) FROM order_refunds WHERE order_refunds.order_id = orders.id AND order_refunds.status = '" . OrderRefund::STATUS_COMPLETED . "')), 0) as refunded_amount"),
+                DB::raw("COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM order_refunds WHERE order_refunds.order_id = orders.id AND order_refunds.status = '" . OrderRefund::STATUS_COMPLETED . "') THEN 1 ELSE 0 END), 0) as refunded_count"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_FAILED . "' THEN 1 ELSE 0 END), 0) as failed_count"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_status = '" . Order::PAYMENT_STATUS_PAID . "' THEN COALESCE(orders.paid_amount, orders.total_amount) ELSE 0 END), 0) as net_received"),
                 DB::raw("COALESCE(SUM(CASE WHEN orders.payment_method_id = {$codId} THEN 1 ELSE 0 END), 0) as cod_count"),
@@ -564,11 +565,10 @@ class AdminReportController extends Controller
                         ->where('orders.payment_status', '!=', Order::PAYMENT_STATUS_PENDING);
                   });
             }),
-            'refunded' => $query->where('orders.order_status', Order::ORDER_STATUS_CANCELLED)
-                               ->whereIn('orders.payment_status', [
-                                   Order::PAYMENT_STATUS_PAID,
-                                   Order::PAYMENT_STATUS_PENDING,
-                               ]),
+            'refunded' => $query->whereIn('orders.payment_status', [
+                Order::PAYMENT_STATUS_REFUNDED,
+                Order::PAYMENT_STATUS_PARTIALLY_REFUNDED,
+            ]),
             default => null,
         };
     }

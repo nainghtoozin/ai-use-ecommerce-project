@@ -499,6 +499,115 @@ class OrderService
         });
     }
 
+    public function restoreStockForItems(
+        Order $order,
+        array $quantities,
+        string $referenceType = 'order_return',
+        ?int $referenceId = null,
+        string $description = 'Return stock restored'
+    ): void {
+        if (empty($quantities)) {
+            return;
+        }
+
+        $warehouseId = $this->resolveWarehouseId();
+
+        DB::transaction(function () use ($order, $quantities, $referenceType, $referenceId, $description, $warehouseId) {
+            $order->loadMissing('items.product.comboItems.comboProduct', 'items.product.comboItems.linkedVariant', 'items.variant.product');
+
+            foreach ($order->items as $item) {
+                $quantity = (int) ($quantities[$item->id] ?? 0);
+
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $product = $item->product;
+
+                if (!$product) {
+                    Log::warning('Order item has no product, skipping partial stock restoration:', [
+                        'order_item_id' => $item->id,
+                    ]);
+                    continue;
+                }
+
+                if ($product->isCombo()) {
+                    $this->restoreComboStockForQuantity(
+                        $product, $quantity, $item->id, $referenceType, $referenceId, $description, $warehouseId
+                    );
+                } elseif ($item->variant_id && $item->variant) {
+                    $this->stockMovementService->record(
+                        product: $product,
+                        type: StockMovement::TYPE_RETURN,
+                        quantity: $quantity,
+                        variant: $item->variant,
+                        referenceType: $referenceType,
+                        referenceId: $referenceId,
+                        description: $description,
+                        warehouseId: $warehouseId,
+                    );
+                } else {
+                    $this->stockMovementService->record(
+                        product: $product,
+                        type: StockMovement::TYPE_RETURN,
+                        quantity: $quantity,
+                        referenceType: $referenceType,
+                        referenceId: $referenceId,
+                        description: $description,
+                        warehouseId: $warehouseId,
+                    );
+                }
+            }
+        });
+    }
+
+    private function restoreComboStockForQuantity(
+        Product $combo,
+        int $returnedQuantity,
+        int $orderItemId,
+        string $referenceType,
+        ?int $referenceId,
+        string $description,
+        ?int $warehouseId
+    ): void {
+        $comboItems = $combo->comboItems;
+
+        if ($comboItems->isEmpty()) {
+            Log::warning('Combo product has no components, skipping partial stock restoration:', [
+                'combo_id' => $combo->id,
+                'order_item_id' => $orderItemId,
+            ]);
+            return;
+        }
+
+        foreach ($comboItems as $comboItem) {
+            $restoreQty = max(1, $comboItem->quantity) * $returnedQuantity;
+
+            if ($comboItem->linked_variant_id && $comboItem->linkedVariant) {
+                $this->stockMovementService->record(
+                    product: $comboItem->comboProduct,
+                    type: StockMovement::TYPE_RETURN,
+                    quantity: $restoreQty,
+                    variant: $comboItem->linkedVariant,
+                    referenceType: $referenceType,
+                    referenceId: $referenceId,
+                    description: $description . ' (combo component)',
+                    warehouseId: $warehouseId,
+                );
+            } elseif ($comboItem->comboProduct) {
+                $this->stockMovementService->record(
+                    product: $comboItem->comboProduct,
+                    type: StockMovement::TYPE_RETURN,
+                    quantity: $restoreQty,
+                    referenceType: $referenceType,
+                    referenceId: $referenceId,
+                    description: $description . ' (combo component)',
+                    warehouseId: $warehouseId,
+                );
+            }
+        }
+    }
+
     private function restoreComboStock(Product $combo, int $orderQuantity, int $orderItemId, Order $order, ?int $warehouseId = null): void
     {
         $comboItems = $combo->comboItems;

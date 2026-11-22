@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { adminUrl } from '@/Utils/adminUrl';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { usePermission } from '@/Hooks/usePermission';
+import AfterSalesPanel from '@/Components/Admin/AfterSalesPanel';
 import { isCodUnpaid, codPaymentStatusLabel, codPaymentMethodLabel } from '@/Utils/codDisplay';
 
-export default function AdminOrdersShow({ order, isCodOrder = false }) {
+export default function AdminOrdersShow({ order, isCodOrder = false, afterSales = {}, permissions = {} }) {
     const { auth, flash: pageFlash, platform_setting, website_info } = usePage().props;
     const cc = getCurrencyConfig(platform_setting, website_info);
     const flash = pageFlash || {};
@@ -16,6 +17,11 @@ export default function AdminOrdersShow({ order, isCodOrder = false }) {
     const [overrideModal, setOverrideModal] = useState(null);
     const [overrideNewStatus, setOverrideNewStatus] = useState('');
     const [overrideReason, setOverrideReason] = useState('');
+    const [dismissedFlash, setDismissedFlash] = useState({});
+
+    useEffect(() => {
+        setDismissedFlash({});
+    }, [order.id, flash.success, flash.error]);
 
     const { can } = usePermission();
     const canOverrideStatus = can('orders.override-status');
@@ -293,11 +299,21 @@ export default function AdminOrdersShow({ order, isCodOrder = false }) {
             <Head title={`Order #${order.invoice_number || order.id}`} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-                {flash.success && (
-                    <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-3 py-2.5 rounded-lg text-sm">{flash.success}</div>
+                {flash.success && !dismissedFlash.success && (
+                    <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-3 py-2.5 rounded-lg text-sm flex items-center justify-between gap-2">
+                        <span>{flash.success}</span>
+                        <button type="button" onClick={() => setDismissedFlash((p) => ({ ...p, success: true }))} aria-label="Dismiss notification" className="text-green-700 hover:text-green-900 p-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 )}
-                {flash.error && (
-                    <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-3 py-2.5 rounded-lg text-sm">{flash.error}</div>
+                {flash.error && !dismissedFlash.error && (
+                    <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-3 py-2.5 rounded-lg text-sm flex items-center justify-between gap-2">
+                        <span>{flash.error}</span>
+                        <button type="button" onClick={() => setDismissedFlash((p) => ({ ...p, error: true }))} aria-label="Dismiss notification" className="text-red-700 hover:text-red-900 p-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 )}
 
                 {/* Compact header */}
@@ -324,12 +340,7 @@ export default function AdminOrdersShow({ order, isCodOrder = false }) {
                 </div>
 
                 {/* Compact horizontal progress */}
-                {isCancelled ? (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 mb-4 flex items-center gap-2.5">
-                        <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        <p className="text-sm font-semibold text-red-700">This order has been cancelled</p>
-                    </div>
-                ) : (
+                {!isCancelled && (
                     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 mb-4">
                         <div className="flex items-center justify-between">
                             {workflowSteps.map((step, idx) => {
@@ -612,6 +623,15 @@ export default function AdminOrdersShow({ order, isCodOrder = false }) {
                             </div>
                         );
                     })()}
+
+                <div className="mt-4">
+                    <AfterSalesPanel
+                        order={order}
+                        afterSales={afterSales}
+                        permissions={permissions}
+                        currencyConfig={cc}
+                    />
+                </div>
             </div>
 
             {/* Full-size Image Preview Modal */}

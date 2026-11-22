@@ -15,6 +15,7 @@ class Order extends Model
     const PAYMENT_STATUS_PENDING = 'pending';
     const PAYMENT_STATUS_PAID = 'paid';
     const PAYMENT_STATUS_FAILED = 'failed';
+    const PAYMENT_STATUS_PARTIALLY_REFUNDED = 'partially_refunded';
     const PAYMENT_STATUS_REFUNDED = 'refunded';
 
     const ORDER_STATUS_PENDING = 'pending';
@@ -56,6 +57,7 @@ class Order extends Model
         'payment_status',
         'order_status',
         'stock_reduced',
+        'delivered_at',
         'payment_verified_at',
         'rejection_reason',
         'telegram_notified_at',
@@ -77,6 +79,7 @@ class Order extends Model
         'cod_fee' => 'decimal:2',
         'packaging_fee' => 'decimal:2',
         'stock_reduced' => 'boolean',
+        'delivered_at' => 'datetime',
         'payment_verified_at' => 'datetime',
         'payment_date' => 'date',
         'telegram_notified_at' => 'datetime',
@@ -153,6 +156,56 @@ class Order extends Model
     public function deliveryService()
     {
         return $this->belongsTo(DeliveryService::class, 'delivery_service_id');
+    }
+
+    public function cancellations()
+    {
+        return $this->hasMany(OrderCancellation::class);
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(OrderReturn::class);
+    }
+
+    public function refunds()
+    {
+        return $this->hasMany(OrderRefund::class);
+    }
+
+    public function activeCancellation()
+    {
+        return $this->hasOne(OrderCancellation::class)
+            ->whereIn('status', [OrderCancellation::STATUS_REQUESTED, OrderCancellation::STATUS_APPROVED]);
+    }
+
+    public function refundedAmount(): float
+    {
+        return (float) $this->refunds()
+            ->where('status', OrderRefund::STATUS_COMPLETED)
+            ->sum('amount');
+    }
+
+    public function refundablePaidAmount(): float
+    {
+        if ($this->payment_status !== self::PAYMENT_STATUS_PAID
+            && $this->payment_status !== self::PAYMENT_STATUS_PARTIALLY_REFUNDED) {
+            return 0.0;
+        }
+
+        $paid = (float) ($this->paid_amount ?? 0);
+        if ($paid <= 0) {
+            $paid = (float) $this->total_amount;
+        }
+
+        return max(0.0, round($paid - $this->refundedAmount(), 2));
+    }
+
+    public function hasRestoredReturnStock(): bool
+    {
+        return $this->returns()
+            ->whereHas('items', fn ($q) => $q->whereNotNull('stock_restored_at'))
+            ->exists();
     }
 
     public function canCancel(): bool

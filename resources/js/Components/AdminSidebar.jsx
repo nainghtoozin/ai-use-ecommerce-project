@@ -19,7 +19,7 @@ import {
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
     Truck, Database, AlertTriangle, RotateCcw,
-    MessageCircle, Mail,
+    MessageCircle, Mail, XCircle, Banknote,
 } from 'lucide-react';
 
 const SECTION_VIS_KEY = {
@@ -53,7 +53,7 @@ const iconMap = {
     ChevronDown, Navigation, Archive, Clock,
     Activity, Shield, UserPlus, ArrowUp,
     Truck, Database, AlertTriangle, RotateCcw,
-    MessageCircle, Mail,
+    MessageCircle, Mail, XCircle, Banknote,
 };
 
 function Icon({ name, className = '', ...props }) {
@@ -192,7 +192,10 @@ export default function AdminSidebar() {
                 title: 'Sales & Commerce',
                 items: [
                     ...(can('orders.view') && isVis('sales.orders') ? [{ label: t('navigation.orders'), href: '/admin/orders', icon: 'ShoppingCart' }] : []),
-                    ...(can('customers.view') && isVis('sales.customers') ? [{ label: t('navigation.customers'), href: '/admin/customers', icon: 'User' }] : []),
+                    ...(can('cancellations.view') ? [{ label: 'Cancellations', href: '/admin/cancellations', icon: 'XCircle' }] : []),
+                    ...(can('returns.view') ? [{ label: 'Returns', href: '/admin/returns', icon: 'RotateCcw' }] : []),
+                    ...(can('refunds.view') ? [{ label: 'Refunds', href: '/admin/refunds', icon: 'Banknote' }] : []),
+                    ...(can('customers.view') && isVis('sales.customers') ? [{ label: t('navigation.customers'), href: '/admin/customers', icon: 'Users' }] : []),
                     ...(can('payments.view') && isVis('sales.payment_methods') ? [{ label: t('navigation.payment_methods'), href: '/admin/payment-methods', icon: 'CreditCard' }] : []),
                     ...(can('coupons.view') && hasFeature('coupons') && isVis('marketing.coupons') ? [{ label: t('navigation.coupons'), href: '/admin/coupons', icon: 'Tags' }] : []),
                     ...(can('promotions.view') && hasFeature('promotions') && isVis('marketing.promotions') ? [{ label: t('navigation.promotions'), href: '/admin/promotions', icon: 'Megaphone' }] : []),
@@ -257,6 +260,8 @@ export default function AdminSidebar() {
                 title: t('navigation.settings'),
                 items: [
                     ...(can('settings.view') && isVis('settings.general') ? [{ label: t('navigation.general'), href: '/admin/settings', icon: 'Settings' }] : []),
+                    ...(can('cancellations.settings') ? [{ label: 'Cancellation Policy', href: '/admin/settings/cancellation-policy', icon: 'XCircle' }] : []),
+                    ...(can('returns.settings') ? [{ label: 'Return Policy', href: '/admin/settings/return-policy', icon: 'RotateCcw' }] : []),
                     { label: 'Security Settings', href: '/security', icon: 'Shield' },
                     ...(can('settings.notifications') && isVis('settings.notifications') ? [{ label: t('navigation.notifications'), href: '/admin/settings/notifications', icon: 'BellRing' }] : []),
                     ...(can('settings.telegram') && isVis('settings.telegram') ? [{ label: t('navigation.telegram'), href: '/admin/settings/telegram-integration', icon: 'Send' }] : []),

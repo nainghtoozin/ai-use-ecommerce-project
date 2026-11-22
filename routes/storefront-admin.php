@@ -7,6 +7,10 @@ use App\Http\Controllers\Admin\AdminBrandController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminOrderOverrideController;
+use App\Http\Controllers\Admin\AdminCancellationController;
+use App\Http\Controllers\Admin\AdminReturnController;
+use App\Http\Controllers\Admin\AdminRefundController;
+use App\Http\Controllers\Admin\AdminAfterSalesSettingsController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCouponController;
@@ -246,6 +250,36 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status')->whereNumber('order');
         Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment')->whereNumber('order');
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy')->whereNumber('order');
+
+        // After-sales: cancellations
+        Route::get('/cancellations', [AdminCancellationController::class, 'index'])->name('cancellations.index');
+        Route::post('/cancellations/{cancellation}/approve', [AdminCancellationController::class, 'approve'])->name('cancellations.approve')->whereNumber('cancellation');
+        Route::post('/cancellations/{cancellation}/reject', [AdminCancellationController::class, 'reject'])->name('cancellations.reject')->whereNumber('cancellation');
+
+        // After-sales: returns
+        Route::get('/returns', [AdminReturnController::class, 'index'])->name('returns.index');
+        Route::get('/returns/{return}', [AdminReturnController::class, 'show'])->name('returns.show')->whereNumber('return');
+        Route::post('/returns/{return}/approve', [AdminReturnController::class, 'approve'])->name('returns.approve')->whereNumber('return');
+        Route::post('/returns/{return}/reject', [AdminReturnController::class, 'reject'])->name('returns.reject')->whereNumber('return');
+        Route::post('/returns/{return}/receive', [AdminReturnController::class, 'receive'])->name('returns.receive')->whereNumber('return');
+        Route::post('/returns/{return}/in-transit', [AdminReturnController::class, 'markInTransit'])->name('returns.in-transit')->whereNumber('return');
+        Route::post('/returns/{return}/tracking', [AdminReturnController::class, 'updateTracking'])->name('returns.tracking')->whereNumber('return');
+        Route::post('/returns/{return}/inspect', [AdminReturnController::class, 'inspect'])->name('returns.inspect')->whereNumber('return');
+        Route::post('/returns/{return}/complete', [AdminReturnController::class, 'complete'])->name('returns.complete')->whereNumber('return');
+        Route::post('/returns/{return}/cancel', [AdminReturnController::class, 'cancel'])->name('returns.cancel')->whereNumber('return');
+
+        // After-sales: refunds
+        Route::get('/refunds', [AdminRefundController::class, 'index'])->name('refunds.index');
+        Route::post('/refunds', [AdminRefundController::class, 'store'])->name('refunds.store');
+        Route::post('/refunds/{refund}/process', [AdminRefundController::class, 'process'])->name('refunds.process')->whereNumber('refund');
+        Route::post('/refunds/{refund}/complete', [AdminRefundController::class, 'complete'])->name('refunds.complete')->whereNumber('refund');
+        Route::post('/refunds/{refund}/fail', [AdminRefundController::class, 'fail'])->name('refunds.fail')->whereNumber('refund');
+
+        // After-sales: policy settings
+        Route::get('/settings/cancellation-policy', [AdminAfterSalesSettingsController::class, 'editCancellation'])->name('settings.cancellation-policy');
+        Route::post('/settings/cancellation-policy', [AdminAfterSalesSettingsController::class, 'updateCancellation'])->name('settings.cancellation-policy.update');
+        Route::get('/settings/return-policy', [AdminAfterSalesSettingsController::class, 'editReturn'])->name('settings.return-policy');
+        Route::post('/settings/return-policy', [AdminAfterSalesSettingsController::class, 'updateReturn'])->name('settings.return-policy.update');
 
         // Notifications (admin)
         Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');

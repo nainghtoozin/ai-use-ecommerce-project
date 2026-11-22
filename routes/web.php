@@ -208,6 +208,10 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
         Route::get('/orders', [\App\Http\Controllers\StorefrontCustomerController::class, 'orders'])->name('orders');
         Route::get('/orders/{order}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showOrder'])->name('orders.show');
         Route::post('/orders/{order}/cancel', [\App\Http\Controllers\StorefrontCustomerController::class, 'cancelOrder'])->name('orders.cancel');
+        Route::get('/returns', [\App\Http\Controllers\StorefrontCustomerController::class, 'returns'])->name('returns.index');
+        Route::get('/returns/{return}', [\App\Http\Controllers\StorefrontCustomerController::class, 'showReturn'])->name('returns.show')->whereNumber('return');
+        Route::post('/orders/{order}/returns', [\App\Http\Controllers\StorefrontCustomerController::class, 'requestReturn'])->name('orders.returns.store');
+        Route::post('/returns/{return}/cancel', [\App\Http\Controllers\StorefrontCustomerController::class, 'cancelReturn'])->name('returns.cancel')->whereNumber('return');
         Route::post('/orders/{order}/upload-payment', [\App\Http\Controllers\StorefrontCustomerController::class, 'uploadPayment'])->name('orders.upload-payment');
         Route::get('/orders/{invoice_number}/invoice', [\App\Http\Controllers\StorefrontCustomerController::class, 'downloadInvoice'])->name('orders.invoice');
         Route::get('/addresses', [\App\Http\Controllers\StorefrontCustomerController::class, 'addresses'])->name('addresses');
@@ -537,6 +541,37 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/orders/{order}/override-status', [AdminOrderOverrideController::class, 'overrideOrderStatus'])->name('orders.override-status');
         Route::post('/orders/{order}/override-payment', [AdminOrderOverrideController::class, 'overridePaymentStatus'])->name('orders.override-payment');
         Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+
+        // After-sales: cancellations
+        Route::get('/cancellations', [\App\Http\Controllers\Admin\AdminCancellationController::class, 'index'])->name('cancellations.index');
+        Route::post('/cancellations/{cancellation}/approve', [\App\Http\Controllers\Admin\AdminCancellationController::class, 'approve'])->name('cancellations.approve');
+        Route::post('/cancellations/{cancellation}/reject', [\App\Http\Controllers\Admin\AdminCancellationController::class, 'reject'])->name('cancellations.reject');
+
+        // After-sales: returns
+        Route::get('/returns', [\App\Http\Controllers\Admin\AdminReturnController::class, 'index'])->name('returns.index');
+        Route::get('/returns/{return}', [\App\Http\Controllers\Admin\AdminReturnController::class, 'show'])->name('returns.show')->whereNumber('return');
+        Route::post('/returns/{return}/approve', [\App\Http\Controllers\Admin\AdminReturnController::class, 'approve'])->name('returns.approve');
+        Route::post('/returns/{return}/reject', [\App\Http\Controllers\Admin\AdminReturnController::class, 'reject'])->name('returns.reject');
+        Route::post('/returns/{return}/receive', [\App\Http\Controllers\Admin\AdminReturnController::class, 'receive'])->name('returns.receive');
+        Route::post('/returns/{return}/in-transit', [\App\Http\Controllers\Admin\AdminReturnController::class, 'markInTransit'])->name('returns.in-transit')->whereNumber('return');
+        Route::post('/returns/{return}/tracking', [\App\Http\Controllers\Admin\AdminReturnController::class, 'updateTracking'])->name('returns.tracking')->whereNumber('return');
+        Route::post('/returns/{return}/inspect', [\App\Http\Controllers\Admin\AdminReturnController::class, 'inspect'])->name('returns.inspect');
+        Route::post('/returns/{return}/complete', [\App\Http\Controllers\Admin\AdminReturnController::class, 'complete'])->name('returns.complete');
+        Route::post('/returns/{return}/cancel', [\App\Http\Controllers\Admin\AdminReturnController::class, 'cancel'])->name('returns.cancel');
+
+        // After-sales: refunds
+        Route::get('/refunds', [\App\Http\Controllers\Admin\AdminRefundController::class, 'index'])->name('refunds.index');
+        Route::post('/refunds', [\App\Http\Controllers\Admin\AdminRefundController::class, 'store'])->name('refunds.store');
+        Route::post('/refunds/{refund}/process', [\App\Http\Controllers\Admin\AdminRefundController::class, 'process'])->name('refunds.process');
+        Route::post('/refunds/{refund}/complete', [\App\Http\Controllers\Admin\AdminRefundController::class, 'complete'])->name('refunds.complete');
+        Route::post('/refunds/{refund}/fail', [\App\Http\Controllers\Admin\AdminRefundController::class, 'fail'])->name('refunds.fail');
+
+        // After-sales: policy settings
+        Route::get('/settings/cancellation-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'editCancellation'])->name('settings.cancellation-policy');
+        Route::post('/settings/cancellation-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'updateCancellation'])->name('settings.cancellation-policy.update');
+        Route::get('/settings/return-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'editReturn'])->name('settings.return-policy');
+        Route::post('/settings/return-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'updateReturn'])->name('settings.return-policy.update');
+
         Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');
 
         // Telegram Integration Settings

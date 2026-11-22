@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
@@ -18,6 +19,8 @@ const paymentStatusColors = {
     pending: 'bg-amber-50 text-amber-700 border border-amber-200',
     verified: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
     rejected: 'bg-red-50 text-red-700 border border-red-200',
+    partially_refunded: 'bg-purple-50 text-purple-700 border border-purple-200',
+    refunded: 'bg-purple-50 text-purple-700 border border-purple-200',
 };
 
 const timelineSteps = [
@@ -28,12 +31,60 @@ const timelineSteps = [
     { key: 'delivered', label: 'Delivered', icon: 'M5 13l4 4L19 7' },
 ];
 
+const CASE_STATUS_STYLES = {
+    requested: 'bg-amber-50 text-amber-700 border-amber-200',
+    approved: 'bg-blue-50 text-blue-700 border-blue-200',
+    rejected: 'bg-rose-50 text-rose-700 border-rose-200',
+    completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    awaiting_shipment: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    in_transit: 'bg-sky-50 text-sky-700 border-sky-200',
+    received: 'bg-teal-50 text-teal-700 border-teal-200',
+    inspection: 'bg-purple-50 text-purple-700 border-purple-200',
+    cancelled: 'bg-gray-100 text-gray-600 border-gray-200',
+    expired: 'bg-gray-100 text-gray-600 border-gray-200',
+    pending: 'bg-amber-50 text-amber-700 border-amber-200',
+    processing: 'bg-blue-50 text-blue-700 border-blue-200',
+    failed: 'bg-rose-50 text-rose-700 border-rose-200',
+};
+
 function getStatusIndex(status) {
     const idx = timelineSteps.findIndex(s => s.key === status);
     return idx >= 0 ? idx : -1;
 }
 
-export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = false }) {
+function CaseBadge({ status }) {
+    return (
+        <span className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${CASE_STATUS_STYLES[status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+            {(status || 'unknown').replace(/_/g, ' ')}
+        </span>
+    );
+}
+
+function formatDateTime(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function Modal({ title, onClose, children, footer, wide = false }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+            <div className={`w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'} max-h-[92vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl dark:bg-gray-900 sm:rounded-2xl`}>
+                <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+                    <button type="button" onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Close">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div className="mt-3">{children}</div>
+                {footer && <div className="mt-4 flex justify-end gap-2">{footer}</div>}
+            </div>
+        </div>
+    );
+}
+
+export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = false, afterSales = {} }) {
     const storeSlug = tenant.slug;
     const isCodOrder = isCodOrderProp || checkCodOrder(order);
     const codUnpaid = isCodUnpaid(order);
@@ -46,15 +97,101 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
         payment_proof: null,
     });
 
+    const cancellation = afterSales.cancellation || {};
+    const returnInfo = afterSales.return || {};
+    const cancellationCases = afterSales.cancellations || [];
+    const returnCases = afterSales.returns || [];
+    const refunds = afterSales.refunds || [];
+
+    const returnItems = useMemo(() => {
+        const items = returnInfo.items || {};
+        return Array.isArray(items) ? items : Object.values(items);
+    }, [returnInfo.items]);
+
+    const returnSettings = returnInfo.settings || {};
+    const returnReasons = returnSettings.reasons || [];
+    const cancellationReasons = cancellation.reasons || [];
+
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [cancelForm, setCancelForm] = useState({ reason_code: '', note: '' });
+    const [returnOpen, setReturnOpen] = useState(false);
+    const [returnForm, setReturnForm] = useState({ resolution: 'refund', reason_code: '', note: '', quantities: {}, evidence: [] });
+    const [submitting, setSubmitting] = useState(false);
+    const [dismissedFlash, setDismissedFlash] = useState({});
+
+    useEffect(() => {
+        setDismissedFlash({});
+    }, [order.id, flash.success, flash.error]);
+
     const cityLabel = order.city?.name || order.city;
     const townshipLabel = order.township?.name;
     const isCancelled = order.order_status === 'cancelled';
     const currentStepIdx = isCancelled ? -1 : getStatusIndex(order.order_status);
 
-    function handleCancel() {
-        if (confirm('Cancel this order?')) {
-            router.post(route('storefront.customer.orders.cancel', { store_slug: storeSlug, order: order.id }));
-        }
+    const hasAfterSales = cancellationCases.length > 0 || returnCases.length > 0 || refunds.length > 0;
+
+    const resolutionOptions = [
+        returnSettings.allow_refund !== false && { value: 'refund', label: 'Refund' },
+        returnSettings.allow_exchange && { value: 'exchange', label: 'Exchange' },
+        returnSettings.allow_replacement && { value: 'replacement', label: 'Replacement' },
+    ].filter(Boolean);
+
+    const estimatedRefund = useMemo(() => {
+        const lines = returnItems.filter((item) => Number(returnForm.quantities[item.order_item_id] || 0) > 0);
+        const goods = lines.reduce((sum, item) => sum + Number(item.price || 0) * Number(returnForm.quantities[item.order_item_id] || 0), 0);
+        const shipping = returnSettings.refund_shipping_fee ? Number(order.delivery_fee || 0) : 0;
+        return goods + shipping;
+    }, [returnForm.quantities, returnItems, returnSettings.refund_shipping_fee, order.delivery_fee]);
+
+    function openReturn() {
+        const quantities = {};
+        returnItems.forEach((item) => { if (item.available > 0) quantities[item.order_item_id] = item.available; });
+        setReturnForm({
+            resolution: resolutionOptions[0]?.value || 'refund',
+            reason_code: '',
+            note: '',
+            quantities,
+            evidence: [],
+        });
+        setReturnOpen(true);
+    }
+
+    function submitCancellation(event) {
+        event.preventDefault();
+        setSubmitting(true);
+        const reason = cancellationReasons.find((item) => item.code === cancelForm.reason_code);
+        router.post(route('storefront.customer.orders.cancel', { store_slug: storeSlug, order: order.id }), {
+            reason_code: cancelForm.reason_code || null,
+            reason_label: reason?.label || null,
+            note: cancelForm.note || null,
+        }, {
+            preserveScroll: true,
+            onFinish: () => setSubmitting(false),
+            onSuccess: () => setCancelOpen(false),
+        });
+    }
+
+    function submitReturn(event) {
+        event.preventDefault();
+        setSubmitting(true);
+        const reason = returnReasons.find((item) => item.code === returnForm.reason_code);
+        const items = Object.entries(returnForm.quantities)
+            .filter(([, quantity]) => Number(quantity) > 0)
+            .map(([orderItemId, quantity]) => ({ order_item_id: Number(orderItemId), quantity: Number(quantity) }));
+
+        router.post(route('storefront.customer.orders.returns.store', { store_slug: storeSlug, order: order.id }), {
+            resolution: returnForm.resolution,
+            reason_code: returnForm.reason_code || null,
+            reason_label: reason?.label || null,
+            note: returnForm.note || null,
+            items,
+            evidence: returnForm.evidence,
+        }, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => setSubmitting(false),
+            onSuccess: () => setReturnOpen(false),
+        });
     }
 
     function handleUploadPayment(e) {
@@ -91,11 +228,21 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
             <Head title={`${order.invoice_number} - ${storefront?.identity?.site_title || tenant.name}`} />
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-                {flash.success && (
-                    <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2.5 rounded-lg text-sm font-medium">{flash.success}</div>
+                {flash.success && !dismissedFlash.success && (
+                    <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2">
+                        <span>{flash.success}</span>
+                        <button type="button" onClick={() => setDismissedFlash((p) => ({ ...p, success: true }))} aria-label="Dismiss notification" className="text-emerald-700 hover:text-emerald-900 p-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 )}
-                {flash.error && (
-                    <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm font-medium">{flash.error}</div>
+                {flash.error && !dismissedFlash.error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2">
+                        <span>{flash.error}</span>
+                        <button type="button" onClick={() => setDismissedFlash((p) => ({ ...p, error: true }))} aria-label="Dismiss notification" className="text-red-700 hover:text-red-900 p-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 )}
 
                 {/* Compact header */}
@@ -123,10 +270,15 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                             </p>
                         </div>
                     </div>
-                    <a href={route('storefront.customer.orders.invoice', { store_slug: storeSlug, invoice_number: order.invoice_number })} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                        Print Invoice
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link href={route('storefront.customer.returns.index', { store_slug: storeSlug })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors">
+                            My returns
+                        </Link>
+                        <a href={route('storefront.customer.orders.invoice', { store_slug: storeSlug, invoice_number: order.invoice_number })} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            Print Invoice
+                        </a>
+                    </div>
                 </div>
 
                 {/* Compact progress timeline */}
@@ -137,7 +289,7 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                                 const isComplete = idx <= currentStepIdx;
                                 const isCurrent = idx === currentStepIdx;
                                 return (
-                                    <div key={step} className="flex-1 flex flex-col items-center relative">
+                                    <div key={step.key} className="flex-1 flex flex-col items-center relative">
                                         {idx > 0 && (
                                             <div className={`absolute top-3.5 right-1/2 w-full h-0.5 -translate-y-1/2 ${idx <= currentStepIdx ? 'bg-emerald-400' : 'bg-gray-200'}`} />
                                         )}
@@ -156,36 +308,31 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                     </div>
                 )}
 
-                {isCancelled && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 mb-4 flex items-center gap-2.5">
-                        <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        <p className="text-sm font-semibold text-red-700">This order has been cancelled</p>
-                    </div>
-                )}
+
 
                 <div className="space-y-4">
-                        {/* Items */}
-                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-                            <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Items</h2>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">{order.items?.length || 0} product{(order.items?.length || 0) === 1 ? '' : 's'}</span>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full">
-                                    <thead>
-                                            <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                                            <th className="text-left px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Product</th>
-                                            <th className="hidden md:table-cell text-right px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Original Price</th>
-                                            <th className="hidden sm:table-cell text-right px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Discount</th>
-                                            <th className="text-right px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Price</th>
-                                            <th className="text-right py-2 px-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Qty</th>
-                                            <th className="text-right py-2 px-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {order.items?.length ? order.items.map((item) => {
-                                            const p = itemPricing(item);
-                                            return (
+                    {/* Items */}
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+                        <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Items</h2>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{order.items?.length || 0} product{(order.items?.length || 0) === 1 ? '' : 's'}</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full">
+                                <thead>
+                                    <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                                        <th className="text-left px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Product</th>
+                                        <th className="hidden md:table-cell text-right px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Original Price</th>
+                                        <th className="hidden sm:table-cell text-right px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Discount</th>
+                                        <th className="text-right px-4 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Price</th>
+                                        <th className="text-right py-2 px-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Qty</th>
+                                        <th className="text-right py-2 px-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {order.items?.length ? order.items.map((item) => {
+                                        const p = itemPricing(item);
+                                        return (
                                             <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                                                 <td className="px-4 py-2.5">
                                                     <div className="flex items-center gap-2.5">
@@ -228,66 +375,90 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                                                 <td className="px-4 py-2.5 text-sm text-right text-gray-600 dark:text-gray-400">{item.quantity}</td>
                                                 <td className="px-4 py-2.5 text-sm text-right font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{formatCurrency(p.price * item.quantity, cc)}</td>
                                             </tr>
-                                            );
-                                        }) : (
-                                            <tr><td colSpan="6" className="py-5 text-center text-gray-500 dark:text-gray-400 text-sm">No items found.</td></tr>
-                                        )}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="border-t-2 border-gray-200 dark:border-gray-700">
-                                            <td colSpan="5" className="px-4 pt-2.5 pb-1 text-sm text-right text-gray-500 dark:text-gray-400">Subtotal</td>
-                                            <td className="px-4 pt-2.5 pb-1 text-sm text-right font-medium">{formatCurrency(order.subtotal || order.items_total, cc)}</td>
+                                        );
+                                    }) : (
+                                        <tr><td colSpan="6" className="py-5 text-center text-gray-500 dark:text-gray-400 text-sm">No items found.</td></tr>
+                                    )}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="border-t-2 border-gray-200 dark:border-gray-700">
+                                        <td colSpan="5" className="px-4 pt-2.5 pb-1 text-sm text-right text-gray-500 dark:text-gray-400">Subtotal</td>
+                                        <td className="px-4 pt-2.5 pb-1 text-sm text-right font-medium">{formatCurrency(order.subtotal || order.items_total, cc)}</td>
+                                    </tr>
+                                    {order.discount_amount > 0 && (
+                                        <tr>
+                                            <td colSpan="5" className="px-4 py-1 text-sm text-right text-emerald-600 dark:text-emerald-400">Coupon Discount</td>
+                                            <td className="px-4 py-1 text-sm text-right font-medium text-emerald-600 dark:text-emerald-400">-{formatCurrency(order.discount_amount, cc)}</td>
                                         </tr>
-                                        {order.discount_amount > 0 && (
-                                            <tr>
-                                                <td colSpan="5" className="px-4 py-1 text-sm text-right text-emerald-600 dark:text-emerald-400">Coupon Discount</td>
-                                                <td className="px-4 py-1 text-sm text-right font-medium text-emerald-600 dark:text-emerald-400">-{formatCurrency(order.discount_amount, cc)}</td>
-                                            </tr>
-                                        )}
-                                        {order.delivery_fee > 0 && (
-                                            <tr>
-                                                <td colSpan="5" className="px-4 py-1 text-sm text-right text-gray-500 dark:text-gray-400">Delivery Fee</td>
-                                                <td className="px-4 py-1 text-sm text-right font-medium">{formatCurrency(order.delivery_fee, cc)}</td>
-                                            </tr>
-                                        )}
-                                        {order.packaging_id && order.packaging_fee > 0 && (
-                                            <tr>
-                                                <td colSpan="5" className="px-4 py-1 text-sm text-right text-gray-500 dark:text-gray-400">Packaging</td>
-                                                <td className="px-4 py-1 text-sm text-right font-medium">{formatCurrency(order.packaging_fee, cc)}</td>
-                                            </tr>
-                                        )}
-                                        <tr className="border-t-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-950/60">
-                                            <td colSpan="5" className="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-gray-100 tracking-wide">TOTAL</td>
-                                            <td className="px-4 py-3 text-right text-lg font-extrabold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount, cc)}</td>
+                                    )}
+                                    {order.delivery_fee > 0 && (
+                                        <tr>
+                                            <td colSpan="5" className="px-4 py-1 text-sm text-right text-gray-500 dark:text-gray-400">Delivery Fee</td>
+                                            <td className="px-4 py-1 text-sm text-right font-medium">{formatCurrency(order.delivery_fee, cc)}</td>
                                         </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                                    )}
+                                    {order.packaging_id && order.packaging_fee > 0 && (
+                                        <tr>
+                                            <td colSpan="5" className="px-4 py-1 text-sm text-right text-gray-500 dark:text-gray-400">Packaging</td>
+                                            <td className="px-4 py-1 text-sm text-right font-medium">{formatCurrency(order.packaging_fee, cc)}</td>
+                                        </tr>
+                                    )}
+                                    <tr className="border-t-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-950/60">
+                                        <td colSpan="5" className="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-gray-100 tracking-wide">TOTAL</td>
+                                        <td className="px-4 py-3 text-right text-lg font-extrabold text-gray-900 dark:text-gray-100">{formatCurrency(order.total_amount, cc)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
+                    </div>
 
-                        {/* Upload Payment */}
-                        {order.payment_status === 'unpaid' && (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
-                                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Upload Payment Proof</h2>
-                                <form onSubmit={handleUploadPayment} encType="multipart/form-data" className="space-y-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Transaction ID</label>
-                                        <input type="text" value={data.transaction_id} onChange={(e) => setData('transaction_id', e.target.value)} className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Proof</label>
-                                        <input type="file" onChange={(e) => setData('payment_proof', e.target.files[0])} accept="image/*" required className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                                    </div>
-                                    <button type="submit" disabled={processing} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition-colors">
-                                        {processing ? 'Uploading...' : 'Submit Payment Proof'}
+                    {/* After-sales actions */}
+                    {(cancellation.allowed || returnInfo.allowed || cancellation.redirect_to_returns || cancellation.blocked_reason) && (
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
+                            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Need help with this order?</h2>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                {cancellation.allowed && (
+                                    <button type="button" onClick={() => setCancelOpen(true)} className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100">
+                                        Cancel order
                                     </button>
-                                </form>
+                                )}
+                                {returnInfo.allowed && (
+                                    <button type="button" onClick={openReturn} className="w-full rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+                                        Request a return
+                                    </button>
+                                )}
                             </div>
-                        )}
+                            {cancellation.blocked_reason && (
+                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{cancellation.blocked_reason}</p>
+                            )}
+                            {!returnInfo.allowed && returnInfo.reason && cancellation.redirect_to_returns && (
+                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{returnInfo.reason}</p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Upload Payment */}
+                    {order.payment_status === 'unpaid' && (
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
+                            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Upload Payment Proof</h2>
+                            <form onSubmit={handleUploadPayment} encType="multipart/form-data" className="space-y-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Transaction ID</label>
+                                    <input type="text" value={data.transaction_id} onChange={(e) => setData('transaction_id', e.target.value)} className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Proof</label>
+                                    <input type="file" onChange={(e) => setData('payment_proof', e.target.files[0])} accept="image/*" required className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                                </div>
+                                <button type="submit" disabled={processing} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition-colors">
+                                    {processing ? 'Uploading...' : 'Submit Payment Proof'}
+                                </button>
+                            </form>
+                        </div>
+                    )}
 
                     {/* Horizontal info grid: Payment | Delivery */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                        {/* Payment */}
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
                             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Payment</h2>
                             {isCodOrder ? (
@@ -328,7 +499,6 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                             )}
                         </div>
 
-                        {/* Delivery */}
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
                             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Delivery</h2>
                             <div className="space-y-1 text-sm">
@@ -344,16 +514,242 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    {order.can_cancel && (
-                        <button onClick={handleCancel} className="w-full sm:w-auto sm:px-6 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors shadow-sm">
-                            Cancel Order
-                        </button>
+                    {/* After-sales history */}
+                    {hasAfterSales && (
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
+                            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">After-sales</h2>
+
+                            {cancellationCases.length > 0 && (
+                                <div className="mt-3">
+                                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Cancellations</h3>
+                                    <ul className="mt-2 space-y-2">
+                                        {cancellationCases.map((item) => (
+                                            <li key={item.id} className="rounded-lg border border-gray-200 p-3 dark:border-gray-800">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="font-mono text-[11px] text-gray-500">{item.number}</span>
+                                                    <CaseBadge status={item.status} />
+                                                    <span className="text-[11px] uppercase tracking-wide text-gray-400">{item.mode?.replace(/_/g, ' ')}</span>
+                                                </div>
+                                                <p className="mt-1 text-sm text-gray-800 dark:text-gray-200">{item.reason || 'No reason provided'}</p>
+                                                {item.note && <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{item.note}</p>}
+                                                {item.rejection_reason && <p className="mt-1 text-xs text-rose-600">Declined: {item.rejection_reason}</p>}
+                                                {item.refund && (
+                                                    <p className="mt-1 text-xs text-purple-600 dark:text-purple-300">
+                                                        Refund {item.refund.number} · {formatCurrency(item.refund.amount, cc)} ({item.refund.status})
+                                                    </p>
+                                                )}
+                                                <p className="mt-1 text-[11px] text-gray-400">Requested {formatDateTime(item.requested_at)}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {returnCases.length > 0 && (
+                                <div className="mt-4">
+                                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Returns</h3>
+                                    <ul className="mt-2 space-y-2">
+                                        {returnCases.map((item) => (
+                                            <li key={item.id} className="rounded-lg border border-gray-200 p-3 dark:border-gray-800">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Link href={route('storefront.customer.returns.show', { store_slug: storeSlug, return: item.id })} className="font-mono text-[11px] text-blue-600 hover:underline dark:text-blue-400">
+                                                        {item.number}
+                                                    </Link>
+                                                    <CaseBadge status={item.status} />
+                                                    <span className="text-[11px] uppercase tracking-wide text-gray-400">{item.resolution}</span>
+                                                </div>
+                                                <p className="mt-1 text-sm text-gray-800 dark:text-gray-200">{item.reason || 'No reason provided'}</p>
+                                                {item.rejection_reason && <p className="mt-1 text-xs text-rose-600">Declined: {item.rejection_reason}</p>}
+                                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    {(item.items || []).length} line(s) · return shipping paid by {item.shipping_responsibility}
+                                                </p>
+                                                {item.refund && (
+                                                    <p className="mt-1 text-xs text-purple-600 dark:text-purple-300">
+                                                        Refund {item.refund.number} · {formatCurrency(item.refund.amount, cc)} ({item.refund.status})
+                                                    </p>
+                                                )}
+                                                <p className="mt-1 text-[11px] text-gray-400">Requested {formatDateTime(item.requested_at)}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {refunds.length > 0 && (
+                                <div className="mt-4">
+                                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Refunds</h3>
+                                    <ul className="mt-2 divide-y divide-gray-100 dark:divide-gray-800">
+                                        {refunds.map((refund) => (
+                                            <li key={refund.number} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                                                <div>
+                                                    <p className="font-mono text-[11px] text-gray-500">{refund.number}</p>
+                                                    <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{refund.method}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(refund.amount, cc)}</p>
+                                                    <p className="text-[11px] text-gray-500">{refund.status}{refund.processed_at ? ` · ${formatDateTime(refund.processed_at)}` : ''}</p>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>
+
+            {cancelOpen && (
+                <Modal
+                    title="Cancel this order"
+                    onClose={() => setCancelOpen(false)}
+                    footer={
+                        <>
+                            <button type="button" onClick={() => setCancelOpen(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200">Keep order</button>
+                            <button
+                                type="button"
+                                onClick={submitCancellation}
+                                disabled={submitting || (cancellation.require_reason && !cancelForm.reason_code) || (cancellation.require_note && !cancelForm.note.trim())}
+                                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+                            >
+                                {submitting ? 'Submitting…' : cancellation.mode === 'instant' ? 'Cancel order' : 'Submit request'}
+                            </button>
+                        </>
+                    }
+                >
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {cancellation.mode === 'instant'
+                            ? 'Your order will be cancelled immediately. Any eligible paid amount becomes a refund that the store will process manually.'
+                            : 'Your request will be reviewed by the store before the order is cancelled.'}
+                    </p>
+                    <label className="mt-4 block text-xs font-medium text-gray-600 dark:text-gray-300">Reason{cancellation.require_reason ? ' (required)' : ''}</label>
+                    <select
+                        value={cancelForm.reason_code}
+                        onChange={(event) => setCancelForm({ ...cancelForm, reason_code: event.target.value })}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                    >
+                        <option value="">Select a reason</option>
+                        {cancellationReasons.map((reason) => (
+                            <option key={reason.code} value={reason.code}>{reason.label}</option>
+                        ))}
+                    </select>
+                    <label className="mt-3 block text-xs font-medium text-gray-600 dark:text-gray-300">Additional details{cancellation.require_note ? ' (required)' : ''}</label>
+                    <textarea
+                        rows={3}
+                        value={cancelForm.note}
+                        onChange={(event) => setCancelForm({ ...cancelForm, note: event.target.value })}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                    />
+                </Modal>
+            )}
+
+            {returnOpen && (
+                <Modal
+                    title="Request a return"
+                    onClose={() => setReturnOpen(false)}
+                    wide
+                    footer={
+                        <>
+                            <button type="button" onClick={() => setReturnOpen(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200">Close</button>
+                            <button
+                                type="button"
+                                onClick={submitReturn}
+                                disabled={submitting}
+                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                            >
+                                {submitting ? 'Submitting…' : 'Submit return request'}
+                            </button>
+                        </>
+                    }
+                >
+                    <div className="space-y-3">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Return window: {returnSettings.return_window_days} day(s) after delivery
+                            {typeof returnInfo.days_remaining === 'number' ? ` — ${Math.max(0, returnInfo.days_remaining)} day(s) left` : ''}.
+                            {' '}Return shipping is paid by the {returnSettings.return_shipping_responsibility === 'merchant' ? 'store' : 'customer'}.
+                        </p>
+
+                        <div>
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Items to return</p>
+                            <div className="mt-1 space-y-2">
+                                {returnItems.map((item) => (
+                                    <div key={item.order_item_id} className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 dark:border-gray-800 ${item.available > 0 ? 'border-gray-200' : 'border-gray-100 opacity-60'}`}>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">{item.name}</p>
+                                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                                {item.variant ? `${item.variant} · ` : ''}Purchased {item.quantity} · Available {item.available}
+                                            </p>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={item.available}
+                                            disabled={item.available <= 0}
+                                            value={returnForm.quantities[item.order_item_id] ?? 0}
+                                            onChange={(event) => setReturnForm((current) => ({
+                                                ...current,
+                                                quantities: { ...current.quantities, [item.order_item_id]: Math.min(item.available, Math.max(0, Number(event.target.value))) },
+                                            }))}
+                                            className="w-16 rounded-lg border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {resolutionOptions.length > 1 && (
+                            <div>
+                                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Resolution</label>
+                                <select value={returnForm.resolution} onChange={(event) => setReturnForm({ ...returnForm, resolution: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+                                    {resolutionOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Reason{returnSettings.require_reason ? ' (required)' : ''}</label>
+                            <select value={returnForm.reason_code} onChange={(event) => setReturnForm({ ...returnForm, reason_code: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+                                <option value="">Select a reason</option>
+                                {returnReasons.map((reason) => (
+                                    <option key={reason.code} value={reason.code}>{reason.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Additional details{returnSettings.require_note ? ' (required)' : ''}</label>
+                            <textarea rows={3} value={returnForm.note} onChange={(event) => setReturnForm({ ...returnForm, note: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800" />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Evidence photos{returnSettings.require_evidence ? ' (required)' : ' (optional)'}</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(event) => setReturnForm({ ...returnForm, evidence: Array.from(event.target.files || []) })}
+                                className="mt-1 w-full text-xs text-gray-500 dark:text-gray-400"
+                            />
+                        </div>
+
+                        {returnSettings.instructions && (
+                            <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">{returnSettings.instructions}</p>
+                        )}
+
+                        {returnSettings.policy_text && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{returnSettings.policy_text}</p>
+                        )}
+
+                        {returnForm.resolution === 'refund' && estimatedRefund > 0 && (
+                            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                Estimated refundable amount: <strong>{formatCurrency(estimatedRefund, cc)}</strong> (subject to inspection)
+                            </p>
+                        )}
+                    </div>
+                </Modal>
+            )}
         </ShopLayout>
     );
 }
-
-

@@ -100,7 +100,7 @@ function CartToastItem({ toast, onClose }) {
                     )}
                 </span>
                 <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">{toast.title}</p>
-                <button onClick={handleClose} aria-label="Dismiss notification" className="flex-shrink-0 p-1.5 -m-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                <button type="button" onClick={handleClose} aria-label="Dismiss notification" className="flex-shrink-0 p-1.5 -m-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>

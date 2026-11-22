@@ -339,7 +339,7 @@ class ClientOrderController extends Controller
         return redirect()->back()->with('success', 'Payment proof uploaded successfully.');
     }
 
-    public function cancelOrder(string $id)
+    public function cancelOrder(Request $request, string $id)
     {
         $user = auth()->user();
         if ($user->tenant && $user->tenant->subscriptionExpired()) {
@@ -351,17 +351,32 @@ class ClientOrderController extends Controller
             ->with('user')
             ->findOrFail($id);
 
-        if (! $order->canCancel()) {
-            return redirect()->back()->with('error', 'You cannot cancel this order.');
+        $validated = $request->validate([
+            'reason_code' => 'nullable|string|max:50',
+            'reason_label' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            app(\App\Services\OrderCancellationService::class)->request(
+                $order,
+                $user,
+                \App\Models\OrderCancellation::ROLE_CUSTOMER,
+                [
+                    'reason_code' => $validated['reason_code'] ?? null,
+                    'reason_label' => $validated['reason_label'] ?? null,
+                    'note' => $validated['note'] ?? null,
+                ]
+            );
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
 
-        $oldStatus = $order->order_status;
-        $this->transitionService->transition($order, Order::ORDER_STATUS_CANCELLED);
+        $message = $order->fresh()?->order_status === Order::ORDER_STATUS_CANCELLED
+            ? 'Order cancelled. Stock has been restored.'
+            : 'Cancellation request submitted for merchant review.';
 
-        ProcessOrderStatusChange::dispatch($order, 'cancelled_by_customer', oldStatus: $oldStatus);
-
-        return redirect()->route('client.orders.index')
-            ->with('success', 'Order cancelled. Stock has been restored.');
+        return redirect()->route('client.orders.index')->with('success', $message);
     }
 
     public function confirmPayment(Request $request, string $id)

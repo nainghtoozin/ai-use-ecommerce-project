@@ -164,7 +164,9 @@ function Toast({ toast, onClose }) {
                 <p className="text-sm font-medium">{toast.message}</p>
             </div>
             <button
+                type="button"
                 onClick={handleClose}
+                aria-label="Dismiss notification"
                 className="text-white/80 hover:text-white transition-colors flex-shrink-0 p-0.5"
             >
                 <i className="bi bi-x-lg text-lg"></i>
