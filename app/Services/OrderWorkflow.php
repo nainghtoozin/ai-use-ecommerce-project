@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Tenant;
 
 class OrderWorkflow
 {
@@ -32,6 +33,25 @@ class OrderWorkflow
     public function canDeliverOrder(Order $order): bool
     {
         return $order->order_status === Order::ORDER_STATUS_SHIPPED;
+    }
+
+    public function workflowMode(): string
+    {
+        $tenant = Tenant::getCurrent();
+
+        $mode = is_array($tenant?->settings) ? ($tenant->settings['workflow_mode'] ?? 'standard') : 'standard';
+
+        return $mode === 'simplified' ? 'simplified' : 'standard';
+    }
+
+    public function isSimplified(): bool
+    {
+        return $this->workflowMode() === 'simplified';
+    }
+
+    public function canAcceptAndProcess(Order $order): bool
+    {
+        return $this->isSimplified() && $this->canConfirmOrder($order);
     }
 
     public function isCod(Order $order): bool

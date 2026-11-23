@@ -82,6 +82,7 @@ export default function StorefrontCheckoutV2({
   const [selectedPackaging, setSelectedPackaging] = useState(null);
   const [quote, setQuote] = useState(null);
   const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState(null);
   const quoteTimerRef = useRef(null);
 
   const quoteCityId = form.city_id || null;
@@ -102,9 +103,14 @@ export default function StorefrontCheckoutV2({
           packaging_id: quotePackagingId,
           payment_method_id: quotePaymentId,
         });
-        if (res.data) setQuote(res.data);
-      } catch {
-        /* keep previous quote; local derivations cover display */
+        if (res.data) { setQuote(res.data); setQuoteError(null); }
+      } catch (err) {
+        if (err?.response?.status === 419) {
+          setQuoteError('Your session has expired. Please refresh this page and try again.');
+          setQuote(null);
+        } else {
+          setQuoteError(err?.response?.data?.message || 'Unable to update checkout totals. Please try again.');
+        }
       } finally {
         setQuoting(false);
       }
@@ -595,7 +601,13 @@ export default function StorefrontCheckoutV2({
           </span>
         </div>
 
-        <button type="button" onClick={handleSubmit} disabled={!canPlaceOrder() || submitting}
+        {quoteError && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+            {quoteError}
+          </div>
+        )}
+
+        <button type="button" onClick={handleSubmit} disabled={!canPlaceOrder() || submitting || !!quoteError}
           className="w-full mt-4 py-3.5 bg-[var(--theme-color)] text-white text-sm font-bold rounded-xl shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {submitting && (
             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">

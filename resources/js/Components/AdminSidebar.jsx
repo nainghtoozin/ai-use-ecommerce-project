@@ -108,7 +108,7 @@ export default function AdminSidebar() {
     const can = (perm) => isSuperAdmin || isOwner || userPermissions?.includes(perm);
     const hasFeature = (key) => featureStatus?.[key]?.enabled !== false;
     const vis = menuVisibility || {};
-    const isVis = (key) => vis[key] !== false;
+    const isVis = (key) => vis[key] === true;
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(() => {
@@ -233,6 +233,7 @@ export default function AdminSidebar() {
             {
                 title: 'Business',
                 items: [
+                    ...(can('users.view') && isVis('staff.team') ? [{ label: 'Team', href: '/admin/team', icon: 'Users' }] : []),
                     ...(can('users.view') && isVis('staff.members') ? [{ label: t('navigation.members'), href: '/admin/users', icon: 'UserPlus' }] : []),
                     ...(can('roles.view') && isVis('staff.roles') ? [{ label: t('navigation.roles'), href: '/admin/roles', icon: 'ShieldCheck' }] : []),
                 ]
@@ -325,8 +326,7 @@ export default function AdminSidebar() {
     });
 
     const visibleSections = useMemo(() => menuSections.filter((section) => {
-        const visibilityKey = section.visibilityKey || SECTION_VIS_KEY[section.title];
-        return section.items.length > 0 && (!visibilityKey || isVis(visibilityKey));
+        return section.items.length > 0;
     }), [menuSections]);
 
     const merchant = !isSuperAdmin;

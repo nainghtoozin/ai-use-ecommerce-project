@@ -280,6 +280,8 @@ Route::prefix('store/{store_slug}/admin')
         Route::post('/settings/cancellation-policy', [AdminAfterSalesSettingsController::class, 'updateCancellation'])->name('settings.cancellation-policy.update');
         Route::get('/settings/return-policy', [AdminAfterSalesSettingsController::class, 'editReturn'])->name('settings.return-policy');
         Route::post('/settings/return-policy', [AdminAfterSalesSettingsController::class, 'updateReturn'])->name('settings.return-policy.update');
+Route::get('/settings/order-workflow', [AdminAfterSalesSettingsController::class, 'editWorkflow'])->name('settings.order-workflow');
+Route::post('/settings/order-workflow', [AdminAfterSalesSettingsController::class, 'updateWorkflow'])->name('settings.order-workflow.update');
 
         // Notifications (admin)
         Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');

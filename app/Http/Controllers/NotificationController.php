@@ -42,51 +42,99 @@ class NotificationController extends Controller
 
     public function page(Request $request): \Inertia\Response
     {
-        $perPage = 20;
+        $perPage = (int) $request->query('per_page', 10);
+        if (!in_array($perPage, [10, 20, 50], true)) {
+            $perPage = 10;
+        }
 
-        $notifications = $request->user()
-            ->notifications()
-            ->latest()
-            ->simplePaginate($perPage)
-            ->through(fn ($notification) => [
-                'id' => $notification->id,
-                'title' => $notification->data['title'] ?? 'Notification',
-                'message' => $notification->data['message'] ?? '',
-                'order_id' => $notification->data['order_id'] ?? null,
-                'action_url' => $notification->data['action_url'] ?? null,
-                'read_at' => $notification->read_at,
-                'created_at' => $notification->created_at?->toIso8601String(),
-                'created_at_human' => $notification->created_at?->diffForHumans(),
-            ]);
+        $status = $request->query('status', 'all');
+        $category = $request->query('category', 'all');
+
+        $query = $request->user()->notifications()->latest();
+
+        if ($status === 'unread') {
+            $query->whereNull('read_at');
+        } elseif ($status === 'read') {
+            $query->whereNotNull('read_at');
+        }
+
+        if ($category !== 'all') {
+            $query->where(function ($q) use ($category) {
+                foreach ($this->customerCategoryKeywords($category) as $keyword) {
+                    $q->orWhere('data->title', 'like', '%' . $keyword . '%');
+                }
+            });
+        }
+
+        $notifications = $query->paginate($perPage)->through(fn ($notification) => [
+            'id' => $notification->id,
+            'title' => $notification->data['title'] ?? 'Notification',
+            'message' => $notification->data['message'] ?? '',
+            'order_id' => $notification->data['order_id'] ?? null,
+            'action_url' => $notification->data['action_url'] ?? null,
+            'read_at' => $notification->read_at,
+            'created_at' => $notification->created_at?->toIso8601String(),
+            'created_at_human' => $notification->created_at?->diffForHumans(),
+            'category' => $this->customerCategoryFor($notification->data['title'] ?? ''),
+        ]);
 
         return Inertia::render('Notifications/Index', [
             'notifications' => $notifications,
             'unread_count' => $request->user()->unreadNotifications()->count(),
+            'filters' => [
+                'status' => $status,
+                'category' => $category,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
     public function adminPage(Request $request): \Inertia\Response
     {
-        $perPage = 20;
+        $perPage = (int) $request->query('per_page', 10);
+        if (!in_array($perPage, [10, 20, 50], true)) {
+            $perPage = 10;
+        }
 
-        $notifications = $request->user()
-            ->notifications()
-            ->latest()
-            ->simplePaginate($perPage)
-            ->through(fn ($notification) => [
-                'id' => $notification->id,
-                'title' => $notification->data['title'] ?? 'Notification',
-                'message' => $notification->data['message'] ?? '',
-                'order_id' => $notification->data['order_id'] ?? null,
-                'action_url' => $notification->data['action_url'] ?? null,
-                'read_at' => $notification->read_at,
-                'created_at' => $notification->created_at?->toIso8601String(),
-                'created_at_human' => $notification->created_at?->diffForHumans(),
-            ]);
+        $status = $request->query('status', 'all');
+        $category = $request->query('category', 'all');
+
+        $query = $request->user()->notifications()->latest();
+
+        if ($status === 'unread') {
+            $query->whereNull('read_at');
+        } elseif ($status === 'read') {
+            $query->whereNotNull('read_at');
+        }
+
+        if ($category !== 'all') {
+            $query->where(function ($q) use ($category) {
+                foreach ($this->adminCategoryKeywords($category) as $keyword) {
+                    $q->orWhere('data->title', 'like', '%' . $keyword . '%');
+                }
+            });
+        }
+
+        $notifications = $query->paginate($perPage)->through(fn ($notification) => [
+            'id' => $notification->id,
+            'title' => $notification->data['title'] ?? 'Notification',
+            'message' => $notification->data['message'] ?? '',
+            'order_id' => $notification->data['order_id'] ?? null,
+            'action_url' => $notification->data['action_url'] ?? null,
+            'read_at' => $notification->read_at,
+            'created_at' => $notification->created_at?->toIso8601String(),
+            'created_at_human' => $notification->created_at?->diffForHumans(),
+            'category' => $this->adminCategoryFor($notification->data['title'] ?? ''),
+        ]);
 
         return Inertia::render('Admin/Notifications/Index', [
             'notifications' => $notifications,
             'unread_count' => $request->user()->unreadNotifications()->count(),
+            'filters' => [
+                'status' => $status,
+                'category' => $category,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
@@ -113,7 +161,71 @@ class NotificationController extends Controller
     {
         $request->user()->unreadNotifications->markAsRead();
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true, 'unread_count' => 0]);
+    }
+
+    private function customerCategoryFor(string $title): string
+    {
+        $t = mb_strtolower($title);
+        if (str_contains($t, 'cancel') || str_contains($t, 'return') || str_contains($t, 'refund')) {
+            return 'cancellation_returns';
+        }
+        if (str_contains($t, 'account') || str_contains($t, 'security') || str_contains($t, 'password')) {
+            return 'account_security';
+        }
+        if (str_contains($t, 'promo') || str_contains($t, 'offer') || str_contains($t, 'campaign')) {
+            return 'promotions';
+        }
+        return 'order_updates';
+    }
+
+    private function customerCategoryKeywords(string $category): array
+    {
+        return match ($category) {
+            'order_updates' => ['Order', 'Payment'],
+            'cancellation_returns' => ['Cancel', 'Return', 'Refund'],
+            'account_security' => ['Account', 'Security', 'Password'],
+            'promotions' => ['Promo', 'Offer', 'Campaign'],
+            default => [],
+        };
+    }
+
+    private function adminCategoryFor(string $title): string
+    {
+        $t = mb_strtolower($title);
+        if (str_contains($t, 'new order')) {
+            return 'new_orders';
+        }
+        if (str_contains($t, 'payment')) {
+            return 'payment';
+        }
+        if (str_contains($t, 'cancel') || str_contains($t, 'return') || str_contains($t, 'refund')) {
+            return 'cancellation_returns';
+        }
+        if (str_contains($t, 'customer')) {
+            return 'customer_activity';
+        }
+        if (str_contains($t, 'stock') || str_contains($t, 'inventory')) {
+            return 'inventory';
+        }
+        if (str_contains($t, 'system') || str_contains($t, 'alert')) {
+            return 'system';
+        }
+        return 'order_updates';
+    }
+
+    private function adminCategoryKeywords(string $category): array
+    {
+        return match ($category) {
+            'new_orders' => ['New Order'],
+            'payment' => ['Payment'],
+            'order_updates' => ['Order', 'Shipped', 'Delivered', 'Processing', 'Confirmed'],
+            'cancellation_returns' => ['Cancel', 'Return', 'Refund'],
+            'customer_activity' => ['Customer', 'Registration'],
+            'inventory' => ['Stock', 'Inventory'],
+            'system' => ['System', 'Alert'],
+            default => [],
+        };
     }
 
     public function preferences(Request $request): JsonResponse

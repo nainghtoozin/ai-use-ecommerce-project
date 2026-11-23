@@ -21,6 +21,7 @@ return [
         'staff' => 'Team',
         'content' => 'Content',
         'storefront' => 'Storefront',
+        'delivery' => 'Delivery',
         'settings' => 'Settings',
     ],
 
@@ -35,6 +36,7 @@ return [
         'staff' => 'Team members, roles, and activity',
         'content' => 'FAQ and content management',
         'storefront' => 'Storefront design, homepage, navigation, media, and promotions',
+        'delivery' => 'Manage delivery services, packaging, and COD settings',
         'settings' => 'Website, notifications, and general settings',
     ],
 
@@ -83,5 +85,17 @@ return [
         'setup_guide' => 'Setup Guide',
         'general_settings' => 'General Settings',
         'menu_visibility' => 'Menu Visibility',
+        'cancellations' => 'Cancellations',
+        'returns' => 'Returns',
+        'refunds' => 'Refunds',
+        'delivery_services' => 'Delivery Services',
+        'delivery_packaging' => 'Packaging Options',
+        'delivery_cod_rules' => 'Cash on Delivery Rules',
+        'storefront_checkout' => 'Checkout',
+        'storefront_product_display' => 'Product Display',
+        'cancellation_policy' => 'Cancellation Policy',
+        'return_policy' => 'Return Policy',
+        'security_settings' => 'Security Settings',
+        'team' => 'Team',
     ],
 ];

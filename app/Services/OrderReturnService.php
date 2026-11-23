@@ -65,7 +65,12 @@ class OrderReturnService
             return $result;
         }
 
-        $deliveredAt = $order->delivered_at ?: $order->updated_at;
+        if (!$order->delivered_at) {
+            $result['reason'] = 'Delivery date is not recorded for this order; returns cannot be processed automatically. Contact the store.';
+            return $result;
+        }
+
+        $deliveredAt = $order->delivered_at;
         $result['delivered_at'] = $deliveredAt?->toIso8601String();
 
         if ($deliveredAt) {

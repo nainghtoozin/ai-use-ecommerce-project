@@ -65,6 +65,8 @@ class SuperAdminPlatformSettingController extends Controller
             'platform_currency_symbol' => 'required|string|max:10',
             'platform_currency_position' => 'required|in:before,after',
             'platform_decimal_places' => 'required|integer|min:0|max:4',
+            'notification_retention_enabled' => 'boolean',
+            'notification_retention_days' => 'required|integer|in:30,60,90,180,365',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'favicon' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024',
         ]);
@@ -88,6 +90,9 @@ class SuperAdminPlatformSettingController extends Controller
             'platform_currency_symbol' => $validated['platform_currency_symbol'],
             'platform_currency_position' => $validated['platform_currency_position'],
             'platform_decimal_places' => (int) $validated['platform_decimal_places'],
+            'notification_retention_days' => $request->boolean('notification_retention_enabled')
+                ? (int) $validated['notification_retention_days']
+                : 0,
         ];
 
         if ($request->hasFile('logo')) {

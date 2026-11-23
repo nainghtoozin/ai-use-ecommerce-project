@@ -93,6 +93,38 @@ class AdminAfterSalesSettingsController extends Controller
         return back()->with('success', 'Return policy saved.');
     }
 
+    public function editWorkflow()
+    {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $tenant = $this->tenant();
+
+        return Inertia::render('Admin/Settings/OrderWorkflow', [
+            'workflow_mode' => $tenant->settings['workflow_mode'] ?? 'standard',
+        ]);
+    }
+
+    public function updateWorkflow(Request $request)
+    {
+        if (!auth()->user()->can('orders.update-status')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $request->validate([
+            'workflow_mode' => 'required|in:standard,simplified',
+        ]);
+
+        $tenant = $this->tenant();
+        $settings = $tenant->settings ?: [];
+        $settings['workflow_mode'] = $request->workflow_mode;
+        $tenant->settings = $settings;
+        $tenant->save();
+
+        return back()->with('success', 'Order workflow saved.');
+    }
+
     private function tenant(): Tenant
     {
         $tenant = Tenant::getCurrent();

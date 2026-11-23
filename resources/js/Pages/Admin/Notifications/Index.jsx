@@ -22,7 +22,7 @@ function BellIcon() {
     );
 }
 
-export default function AdminNotificationsIndex({ notifications, unread_count }) {
+export default function AdminNotificationsIndex({ notifications, unread_count, filters = {} }) {
     const [filter, setFilter] = useState('all');
     const [readIds, setReadIds] = useState(new Set());
     const [markingAll, setMarkingAll] = useState(false);
@@ -126,28 +126,39 @@ export default function AdminNotificationsIndex({ notifications, unread_count })
                     )}
                 </div>
 
-                <div className="flex gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
-                    {tabs.map((tab) => (
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {['all', 'unread', 'read'].map((s) => (
                         <button
-                            key={tab.key}
-                            onClick={() => setFilter(tab.key)}
-                            disabled={tab.key === 'unread' && tab.count === 0}
-                            className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
-                                filter === tab.key
-                                    ? 'bg-white text-gray-900 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed'
-                            }`}
+                            key={s}
+                            onClick={() => router.get(window.location.pathname, { status: s, category: filters?.category || 'all', per_page: filters?.per_page || 10, page: 1 }, { preserveState: true, replace: true })}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${ (filters?.status || 'all') === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }`}
                         >
-                            {tab.label}
-                            {tab.count > 0 && (
-                                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                                    filter === tab.key ? 'bg-blue-50 text-blue-600' : 'bg-gray-200 text-gray-500'
-                                }`}>
-                                    {tab.count}
-                                </span>
-                            )}
+                            {s.charAt(0).toUpperCase() + s.slice(1)}
                         </button>
                     ))}
+                    <select
+                        value={filters?.category || 'all'}
+                        onChange={(e) => router.get(window.location.pathname, { status: filters?.status || 'all', category: e.target.value, per_page: filters?.per_page || 10, page: 1 }, { preserveState: true, replace: true })}
+                        className="h-9 pl-3 pr-8 text-sm border border-gray-200 rounded-lg bg-white appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-no-repeat bg-[right_0.5rem_center]"
+                    >
+                        <option value="all">All categories</option>
+                        <option value="new_orders">New Orders</option>
+                        <option value="payment">Payment Notifications</option>
+                        <option value="order_updates">Order Updates</option>
+                        <option value="cancellation_returns">Cancellation & Returns</option>
+                        <option value="customer_activity">Customer Activity</option>
+                        <option value="inventory">Inventory Alerts</option>
+                        <option value="system">System Alerts</option>
+                    </select>
+                    <select
+                        value={filters?.per_page || 10}
+                        onChange={(e) => router.get(window.location.pathname, { status: filters?.status || 'all', category: filters?.category || 'all', per_page: e.target.value, page: 1 }, { preserveState: true, replace: true })}
+                        className="h-9 pl-3 pr-8 text-sm border border-gray-200 rounded-lg bg-white appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-no-repeat bg-[right_0.5rem_center]"
+                    >
+                        <option value={10}>10 per page</option>
+                        <option value={20}>20 per page</option>
+                        <option value={50}>50 per page</option>
+                    </select>
                 </div>
 
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">

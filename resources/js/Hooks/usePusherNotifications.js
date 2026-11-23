@@ -204,7 +204,7 @@ export default function usePusherNotifications() {
 
     const markAsRead = useCallback(async (id) => {
         const notification = notifications.find((n) => n.id === id);
-        if (!notification) return;
+        if (!notification || notification.isRead) return;
         setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
         setUnreadCount((prev) => Math.max(0, prev - 1));
         if (notification.isPersisted) {

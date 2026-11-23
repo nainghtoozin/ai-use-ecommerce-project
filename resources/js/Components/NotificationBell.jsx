@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import usePusherNotifications from '@/Hooks/usePusherNotifications';
 import { timeAgo, groupNotificationsByDate } from '@/Utils/helpers';
 import { adminUrl } from '@/Utils/adminUrl';
@@ -15,9 +15,15 @@ function BellIcon({ hasUnread }) {
 }
 
 export default function NotificationBell({ isAdmin = false }) {
+    const AUTO_READ_MS = 5000;
     const { notifications, unreadCount, loaded, markAsRead, markAllAsRead, clearAll, navigateToNotification } = usePusherNotifications();
     const [open, setOpen] = useState(false);
+    const pageProps = usePage().props || {};
+    const storeSlug = pageProps?.tenant?.slug || null;
     const dropdownRef = useRef(null);
+    const itemRefs = useRef(new Map());
+    const timers = useRef(new Map());
+    const readInProgress = useRef(new Set());
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -31,7 +37,69 @@ export default function NotificationBell({ isAdmin = false }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [open]);
 
+    // Cancel pending timers when dropdown closes
+    useEffect(() => {
+        if (!open) {
+            timers.current.forEach((t) => clearTimeout(t));
+            timers.current.clear();
+        }
+    }, [open]);
+
+    // Tab visibility: pause timers when hidden
+    useEffect(() => {
+        const handler = () => {
+            if (document.hidden) {
+                timers.current.forEach((t) => clearTimeout(t));
+                timers.current.clear();
+            }
+        };
+        document.addEventListener('visibilitychange', handler);
+        return () => document.removeEventListener('visibilitychange', handler);
+    }, []);
+
+    // Auto-read after 5s of continuous visibility
+    useEffect(() => {
+        if (!open) return;
+        if (!('IntersectionObserver' in window)) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                const id = entry.target.dataset.notificationId;
+                if (!id) return;
+                const notification = notifications.find((n) => n.id === id);
+                if (!notification || notification.isRead) return;
+
+                if (entry.isIntersecting) {
+                    if (!timers.current.has(id)) {
+                        const timer = setTimeout(() => {
+                            if (readInProgress.current.has(id)) return;
+                            readInProgress.current.add(id);
+                            markAsRead(id).finally(() => readInProgress.current.delete(id));
+                            timers.current.delete(id);
+                        }, AUTO_READ_MS);
+                        timers.current.set(id, timer);
+                    }
+                } else {
+                    if (timers.current.has(id)) {
+                        clearTimeout(timers.current.get(id));
+                        timers.current.delete(id);
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+
+        itemRefs.current.forEach((el) => observer.observe(el));
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [open, notifications, markAsRead]);
+
     const handleClick = (notification) => {
+        if (timers.current.has(notification.id)) {
+            clearTimeout(timers.current.get(notification.id));
+            timers.current.delete(notification.id);
+        }
         if (!notification.isRead) markAsRead(notification.id);
         navigateToNotification(notification);
         setOpen(false);
@@ -113,6 +181,11 @@ export default function NotificationBell({ isAdmin = false }) {
                                         {items.map((notification) => (
                                             <div
                                                 key={notification.id}
+                                                data-notification-id={notification.id}
+                                                ref={(el) => {
+                                                    if (el) itemRefs.current.set(notification.id, el);
+                                                    else itemRefs.current.delete(notification.id);
+                                                }}
                                                 onClick={() => handleClick(notification)}
                                                 className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-gray-50 dark:bg-gray-950 active:bg-gray-100 ${
                                                     !notification.isRead ? 'bg-blue-50/40' : ''
@@ -156,7 +229,7 @@ export default function NotificationBell({ isAdmin = false }) {
 
                     <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/80 flex items-center justify-between">
                         <Link
-                            href={isAdmin ? adminUrl('/admin/notifications') : '/notifications'}
+                            href={isAdmin ? adminUrl('/admin/notifications') : (storeSlug ? `/store/${storeSlug}/notifications` : '/notifications')}
                             onClick={() => setOpen(false)}
                             className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
                         >

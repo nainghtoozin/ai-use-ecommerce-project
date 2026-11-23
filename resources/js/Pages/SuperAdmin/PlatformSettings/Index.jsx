@@ -22,6 +22,8 @@ export default function PlatformSettingsIndex({ settings }) {
     const [currencySymbol, setCurrencySymbol] = useState(settings.platform_currency_symbol || 'Ks');
     const [currencyPosition, setCurrencyPosition] = useState(settings.platform_currency_position || 'before');
     const [decimalPlaces, setDecimalPlaces] = useState(settings.platform_decimal_places ?? 0);
+    const [retentionEnabled, setRetentionEnabled] = useState((settings.notification_retention_days ?? 90) > 0);
+    const [retentionDays, setRetentionDays] = useState(settings.notification_retention_days > 0 ? settings.notification_retention_days : 90);
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
 
@@ -47,6 +49,8 @@ export default function PlatformSettingsIndex({ settings }) {
         formData.append('platform_currency_symbol', currencySymbol);
         formData.append('platform_currency_position', currencyPosition);
         formData.append('platform_decimal_places', decimalPlaces.toString());
+        formData.append('notification_retention_enabled', retentionEnabled ? '1' : '0');
+        formData.append('notification_retention_days', retentionDays.toString());
 
         if (logo instanceof File) {
             formData.append('logo', logo);
@@ -368,6 +372,26 @@ export default function PlatformSettingsIndex({ settings }) {
                                         </button>
                                     </label>
                                 </div>
+                            </div>
+
+                            {/* Notification Retention */}
+                            <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notification Retention</h3>
+                                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <input type="checkbox" checked={retentionEnabled} onChange={(e) => setRetentionEnabled(e.target.checked)} className="rounded" />
+                                    Automatic notification cleanup
+                                </label>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Retention Period</label>
+                                    <select value={retentionDays} onChange={(e) => setRetentionDays(Number(e.target.value))} disabled={!retentionEnabled} className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800">
+                                        <option value={30}>30 days</option>
+                                        <option value={60}>60 days</option>
+                                        <option value={90}>90 days</option>
+                                        <option value={180}>180 days</option>
+                                        <option value={365}>365 days</option>
+                                    </select>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Read notifications older than the selected retention period will be automatically deleted. Unread notifications are always preserved.</p>
                             </div>
 
                             {/* Submit */}

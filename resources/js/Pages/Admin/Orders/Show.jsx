@@ -7,7 +7,7 @@ import { usePermission } from '@/Hooks/usePermission';
 import AfterSalesPanel from '@/Components/Admin/AfterSalesPanel';
 import { isCodUnpaid, codPaymentStatusLabel, codPaymentMethodLabel } from '@/Utils/codDisplay';
 
-export default function AdminOrdersShow({ order, isCodOrder = false, afterSales = {}, permissions = {} }) {
+export default function AdminOrdersShow({ order, isCodOrder = false, afterSales = {}, permissions = {}, workflowMode = 'standard' }) {
     const { auth, flash: pageFlash, platform_setting, website_info } = usePage().props;
     const cc = getCurrencyConfig(platform_setting, website_info);
     const flash = pageFlash || {};
@@ -135,6 +135,15 @@ export default function AdminOrdersShow({ order, isCodOrder = false, afterSales 
 
     function renderNextActionButton() {
         if (!can('orders.update-status')) return null;
+
+        if (workflowMode === 'simplified' && order.can_confirm) {
+            return (
+                <button onClick={handleProcess}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+                    Accept & Process
+                </button>
+            );
+        }
 
         if (order.can_confirm) {
             return (

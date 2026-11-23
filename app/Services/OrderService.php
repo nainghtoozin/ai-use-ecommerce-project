@@ -734,6 +734,27 @@ class OrderService
         return $order->fresh();
     }
 
+    public function acceptAndProcess(Order $order): Order
+    {
+        return DB::transaction(function () use ($order) {
+            $locked = Order::withoutTenantScope()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            app(OrderWorkflow::class)->assertCanConfirmOrder($locked);
+
+            $this->updateOrderStatus($locked, Order::ORDER_STATUS_CONFIRMED);
+
+            $locked = $locked->fresh();
+            app(OrderWorkflow::class)->assertCanProcessOrder($locked);
+
+            $this->updateOrderStatus($locked, Order::ORDER_STATUS_PROCESSING);
+
+            return $locked->fresh();
+        });
+    }
+
     public function updatePaymentStatus(Order $order, string $status): Order
     {
         $order->update(['payment_status' => $status]);

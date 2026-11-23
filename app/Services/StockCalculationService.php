@@ -12,15 +12,43 @@ class StockCalculationService
 {
     public function forProduct(Product $product): float
     {
-        return (float) StockMovement::where('product_id', $product->id)
-            ->whereNull('product_variant_id')
-            ->sum('quantity');
+        $movements = StockMovement::where('product_id', $product->id)
+            ->whereNull('product_variant_id');
+
+        $sum = (float) $movements->sum('quantity');
+
+        // Legacy fallback: only when there are NO movement records at all.
+        // If movements exist, their sum (including zero/negative) is authoritative.
+        if (!$movements->exists() && (int) ($product->stock ?? 0) > 0) {
+            \Illuminate\Support\Facades\Log::info('StockCalculationService: legacy cached-stock fallback used for product', [
+                'product_id' => $product->id,
+                'cached_stock' => (int) $product->stock,
+            ]);
+
+            return (float) $product->stock;
+        }
+
+        return $sum;
     }
 
     public function forVariant(ProductVariant $variant): float
     {
-        return (float) StockMovement::where('product_variant_id', $variant->id)
-            ->sum('quantity');
+        $movements = StockMovement::where('product_variant_id', $variant->id);
+
+        $sum = (float) $movements->sum('quantity');
+
+        // Legacy fallback: only when there are NO movement records at all.
+        if (!$movements->exists() && (int) ($variant->stock ?? 0) > 0) {
+            \Illuminate\Support\Facades\Log::info('StockCalculationService: legacy cached-stock fallback used for variant', [
+                'variant_id' => $variant->id,
+                'product_id' => $variant->product_id,
+                'cached_stock' => (int) $variant->stock,
+            ]);
+
+            return (float) $variant->stock;
+        }
+
+        return $sum;
     }
 
     public function forProductWithLock(Product $product): float

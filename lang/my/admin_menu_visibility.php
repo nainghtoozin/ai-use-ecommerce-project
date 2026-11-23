@@ -21,6 +21,7 @@ return [
         'staff' => 'အဖွဲ့',
         'content' => 'အကြောင်းအရာ',
         'storefront' => 'Storefront',
+        'delivery' => 'ပို့ဆောင်ရေး',
         'settings' => 'စနစ်အပြင်အဆင်',
     ],
 
@@ -35,6 +36,7 @@ return [
         'staff' => 'အဖွဲ့ဝင်များ၊ အခန်းကဏ္ဍများနှင့် လုပ်ဆောင်မှုမှတ်တမ်း',
         'content' => 'FAQ နှင့် အကြောင်းအရာ စီမံခန့်ခွဲမှု',
         'storefront' => 'Storefront ဒီဇိုင်း၊ ပင်မစာမျက်နှာ၊ လမ်းညွှန်မှု၊ မီဒီယာနှင့် ပရိုမိုးရှင်းများ',
+        'delivery' => 'ပို့ဆောင်ရေး ဝန်ဆောင်မှုများ၊ ထုပ်ပိုးမှုနှင့် COD စည်းမျဉ်းများကို စီမံပါ',
         'settings' => 'ဝဘ်ဆိုဒ်၊ အသိပေးချက်များနှင့် အထွေထွေ စနစ်အပြင်အဆင်',
     ],
 
@@ -83,5 +85,17 @@ return [
         'setup_guide' => 'ဆက်တင်လမ်းညွှန်',
         'general_settings' => 'အထွေထွေ စနစ်အပြင်အဆင်',
         'menu_visibility' => 'Menu Visibility',
+        'cancellations' => 'အော်ဒါဖျက်သိမ်းမှုများ',
+        'returns' => 'ပစ္စည်းပြန်လည်ပို့ခြင်းများ',
+        'refunds' => 'ငွေပြန်အမ်းမှုများ',
+        'delivery_services' => 'ပို့ဆောင်ရေး ဝန်ဆောင်မှုများ',
+        'delivery_packaging' => 'ထုပ်ပိုးမှု အမျိုးအစားများ',
+        'delivery_cod_rules' => 'ပစ္စည်းရောက်မှ ငွေချေ စည်းမျဉ်းများ',
+        'storefront_checkout' => 'Checkout',
+        'storefront_product_display' => 'Product Display',
+        'cancellation_policy' => 'Cancellation Policy',
+        'return_policy' => 'Return Policy',
+        'security_settings' => 'Security Settings',
+        'team' => 'အဖွဲ့',
     ],
 ];

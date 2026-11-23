@@ -213,6 +213,7 @@ class Order extends Model
         return in_array($this->order_status, [
             self::ORDER_STATUS_PENDING,
             self::ORDER_STATUS_CONFIRMED,
+            self::ORDER_STATUS_PROCESSING,
         ]);
     }
 

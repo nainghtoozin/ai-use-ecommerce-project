@@ -14,7 +14,7 @@ Schedule::command('messages:cleanup')->daily();
 Schedule::command('activity-logs:cleanup')->dailyAt('03:00');
 
 // ── Database notifications retention ──
-Schedule::command('notifications:prune')->dailyAt('04:00');
+Schedule::command('notifications:prune')->dailyAt('04:00')->withoutOverlapping();
 
 // ── Team invitations ──
 Schedule::command('invitations:expire')->everyFifteenMinutes();

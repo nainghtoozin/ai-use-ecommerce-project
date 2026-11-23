@@ -149,6 +149,7 @@ class AdminOrderController extends Controller
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
             'isCodOrder' => $this->orderWorkflow->isCod($order),
+            'workflowMode' => $this->orderWorkflow->workflowMode(),
             'afterSales' => [
                 'cancellation' => $this->cancellationSummary($this->cancellationService->evaluate($order, OrderCancellation::ROLE_MERCHANT)),
                 'return' => $this->returnSummary(app(\App\Services\OrderReturnService::class)->eligibility($order)),
@@ -245,7 +246,14 @@ class AdminOrderController extends Controller
         }
 
         try {
-            $order = Order::with('user')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
+            $order = Order::with('user', 'paymentMethod')->when($this->tenantFilter(), fn($q, $tenantId) => $q->where('orders.tenant_id', $tenantId))->findOrFail($id);
+
+            if ($order->order_status === Order::ORDER_STATUS_PENDING && $this->orderWorkflow->isSimplified()) {
+                $this->orderService->acceptAndProcess($order);
+
+                return admin_redirect('admin.orders.show', $id)
+                    ->with('success', 'Order accepted and is now being processed.');
+            }
 
             $this->orderWorkflow->assertCanProcessOrder($order);
 

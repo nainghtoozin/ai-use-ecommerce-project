@@ -74,6 +74,17 @@ class OrderCancellationService
         }
 
         if ($isCustomer) {
+            if ($order->order_status === Order::ORDER_STATUS_SHIPPED) {
+                $result['blocked_reason'] = 'Cancellation is not available once an order is shipped.';
+                return $result;
+            }
+
+            if ($order->order_status === Order::ORDER_STATUS_DELIVERED) {
+                $result['redirect_to_returns'] = true;
+                $result['blocked_reason'] = 'Delivered orders can only be returned, not cancelled.';
+                return $result;
+            }
+
             $mode = $rules[$order->order_status] ?? CancellationSetting::MODE_NOT_ALLOWED;
 
             if ($mode === CancellationSetting::MODE_RETURN_ONLY) {
@@ -105,7 +116,12 @@ class OrderCancellationService
                 return $result;
             }
 
-            $mode = in_array($order->order_status, ['pending', 'confirmed', 'processing', 'shipped'], true)
+            if ($order->order_status === Order::ORDER_STATUS_SHIPPED) {
+                $result['blocked_reason'] = 'Shipped orders cannot be cancelled. Process a return instead.';
+                return $result;
+            }
+
+            $mode = in_array($order->order_status, ['pending', 'confirmed', 'processing'], true)
                 ? CancellationSetting::MODE_INSTANT
                 : CancellationSetting::MODE_NOT_ALLOWED;
         }
@@ -211,6 +227,12 @@ class OrderCancellationService
                 throw new \InvalidArgumentException('Only requested cancellations can be approved.');
             }
 
+            $order = Order::withoutTenantScope()->whereKey($locked->order_id)->lockForUpdate()->firstOrFail();
+
+            if (in_array($order->order_status, [Order::ORDER_STATUS_SHIPPED, Order::ORDER_STATUS_DELIVERED], true)) {
+                throw new \InvalidArgumentException('This order can no longer be cancelled because it has been shipped or delivered.');
+            }
+
             $locked->update([
                 'status' => OrderCancellation::STATUS_APPROVED,
                 'decision_by_type' => $actor?->getMorphClass(),
@@ -267,6 +289,10 @@ class OrderCancellationService
     private function finalize(OrderCancellation $cancellation, ?Model $actor, string $actorRole): OrderCancellation
     {
         $order = Order::withoutTenantScope()->whereKey($cancellation->order_id)->lockForUpdate()->firstOrFail();
+
+        if (in_array($order->order_status, [Order::ORDER_STATUS_SHIPPED, Order::ORDER_STATUS_DELIVERED], true)) {
+            throw new \InvalidArgumentException('This order can no longer be cancelled because it has been shipped or delivered.');
+        }
 
         $stockReducedBefore = (bool) $order->stock_reduced;
         $oldStatus = $order->order_status;

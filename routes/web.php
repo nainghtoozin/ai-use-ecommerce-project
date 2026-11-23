@@ -186,6 +186,7 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
 
     // Store-based cart and checkout
     Route::get('/cart', [\App\Http\Controllers\StorefrontCartController::class, 'index'])->name('cart');
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'page'])->name('notifications');
     Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.add');
     Route::patch('/cart/{id}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/clear', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
@@ -571,6 +572,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web,accounts', 'role:a
         Route::post('/settings/cancellation-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'updateCancellation'])->name('settings.cancellation-policy.update');
         Route::get('/settings/return-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'editReturn'])->name('settings.return-policy');
         Route::post('/settings/return-policy', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'updateReturn'])->name('settings.return-policy.update');
+Route::get('/settings/order-workflow', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'editWorkflow'])->name('settings.order-workflow');
+Route::post('/settings/order-workflow', [\App\Http\Controllers\Admin\AdminAfterSalesSettingsController::class, 'updateWorkflow'])->name('settings.order-workflow.update');
 
         Route::get('/notifications', [NotificationController::class, 'adminPage'])->name('notifications.admin');
 

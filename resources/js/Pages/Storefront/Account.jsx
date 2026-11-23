@@ -250,6 +250,11 @@ function DashboardSection({ tenant, customer, orderStats, recentOrders }) {
                     <div className="flex-1"><p className="text-sm font-medium text-gray-900 dark:text-white">Addresses</p><p className="text-xs text-gray-500 dark:text-gray-400">{customer.addresses_count} saved</p></div>
                     <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
                 </Link>
+                <Link href={storeSlug ? `/store/${storeSlug}/notifications` : '/notifications'} className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-md transition-shadow group">
+                    <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center"><Bell className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
+                    <div className="flex-1"><p className="text-sm font-medium text-gray-900 dark:text-white">Notifications</p><p className="text-xs text-gray-500 dark:text-gray-400">View all updates</p></div>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                </Link>
                 <Link href={route('storefront.index', { store_slug: storeSlug })} className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-md transition-shadow group">
                     <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center"><Home className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
                     <div className="flex-1"><p className="text-sm font-medium text-gray-900 dark:text-white">Back to Store</p><p className="text-xs text-gray-500 dark:text-gray-400">Continue shopping</p></div>
