@@ -35,12 +35,20 @@ export default function CartToast() {
                 if (toast.toastKey) {
                     const idx = prev.findIndex((t) => t.toastKey === toast.toastKey);
                     if (idx !== -1) {
+                        const existing = prev[idx];
+                        const added = toast.quantity || 1;
+                        const newCount = (existing.count || 1) + added;
                         const next = prev.slice();
-                        next[idx] = { ...toast, id: prev[idx].id };
+                        next[idx] = {
+                            ...existing,
+                            ...toast,
+                            id: Date.now() + Math.random(),
+                            count: newCount,
+                        };
                         return next;
                     }
                 }
-                return [...prev.slice(-2), toast];
+                return [...prev.slice(-2), { ...toast, count: toast.quantity || 1 }];
             });
         };
         window.addEventListener('cart-toast', handler);
@@ -50,7 +58,7 @@ export default function CartToast() {
     if (toasts.length === 0) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-[90] flex flex-col gap-2.5 sm:w-80">
+        <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-[90] flex flex-col gap-2.5 w-[calc(100%-24px)] sm:w-80 max-w-sm">
             <style>{`@keyframes cart-toast-check-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } } .cart-toast-check-pop { animation: cart-toast-check-pop 0.35s ease-out; } @media (prefers-reduced-motion: reduce) { .cart-toast-check-pop { animation: none; } }`}</style>
             {toasts.map((toast) => (
                 <CartToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
@@ -65,10 +73,11 @@ function CartToastItem({ toast, onClose }) {
 
     useEffect(() => {
         setIsVisible(true);
+        const dismissMs = isError ? 4500 : 2000;
         const dismissTimer = setTimeout(() => {
             setIsExiting(true);
             setTimeout(() => onClose(), 300);
-        }, 4000);
+        }, dismissMs);
         return () => clearTimeout(dismissTimer);
     }, [onClose]);
 
@@ -99,7 +108,9 @@ function CartToastItem({ toast, onClose }) {
                         <svg className="w-3.5 h-3.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                     )}
                 </span>
-                <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">{toast.title}</p>
+                <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {toast.count && toast.count > 1 ? `${toast.count} products added to your cart` : (toast.title || 'Added to Cart')}
+                </p>
                 <button type="button" onClick={handleClose} aria-label="Dismiss notification" className="flex-shrink-0 p-1.5 -m-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
