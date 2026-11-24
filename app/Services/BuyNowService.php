@@ -27,6 +27,7 @@ class BuyNowService
 
         $product = Product::where('tenant_id', $tenant->id)
             ->active()
+            ->select(['id', 'name', 'price', 'type', 'photo1', 'status'])
             ->find($productId);
 
         if (!$product) {
@@ -41,6 +42,7 @@ class BuyNowService
         if ($variantId) {
             $variant = ProductVariant::active()
                 ->where('product_id', $product->id)
+                ->select(['id', 'product_id', 'price', 'attributes', 'image', 'stock', 'status'])
                 ->find($variantId);
 
             if (!$variant) {

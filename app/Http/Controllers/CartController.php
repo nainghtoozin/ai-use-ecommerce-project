@@ -77,12 +77,6 @@ class CartController extends Controller
             ], 422);
         }
 
-        $flashPriceData = $this->flashSaleService->resolveEffectivePrice(
-            (int) $request->product_id,
-            $request->variant_id ? (int) $request->variant_id : null,
-            $basePrice
-        );
-
         if (isset($cart[$key])) {
             $cart[$key]['quantity'] = $existingQuantity + $requestedQuantity;
         } else {
@@ -100,7 +94,6 @@ class CartController extends Controller
         $count = array_sum(array_column($cart, 'quantity'));
         return response()->json([
             'count' => $count,
-            'flash_sale_applied' => $flashPriceData['is_flash_sale'],
         ]);
     }
 
