@@ -28,11 +28,13 @@ class DeliveryFeeService
                 ->where('is_active', true));
         }
 
-        if (!$query->exists()) {
+        $results = $query->get();
+
+        if ($results->isEmpty()) {
             return collect();
         }
 
-        return $query->get();
+        return $results;
     }
 
     public function getServicesWithPricing(?Township $township = null): Collection

@@ -84,6 +84,7 @@ export default function StorefrontCheckoutV2({
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState(null);
   const quoteTimerRef = useRef(null);
+  const quoteAbortRef = useRef(null);
 
   const quoteCityId = form.city_id || null;
   const quoteTownshipId = form.township_id || null;
@@ -94,6 +95,11 @@ export default function StorefrontCheckoutV2({
   const fetchQuote = useCallback(() => {
     if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current);
     quoteTimerRef.current = setTimeout(async () => {
+      if (quoteAbortRef.current) {
+        quoteAbortRef.current.abort();
+      }
+      const controller = new AbortController();
+      quoteAbortRef.current = controller;
       setQuoting(true);
       try {
         const res = await axios.post(`/store/${tenant.slug}/checkout/quote`, {
@@ -102,9 +108,12 @@ export default function StorefrontCheckoutV2({
           delivery_service_id: quoteServiceId,
           packaging_id: quotePackagingId,
           payment_method_id: quotePaymentId,
-        });
+        }, { signal: controller.signal });
         if (res.data) { setQuote(res.data); setQuoteError(null); }
       } catch (err) {
+        if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
         if (err?.response?.status === 419) {
           setQuoteError('Your session has expired. Please refresh this page and try again.');
           setQuote(null);
@@ -112,7 +121,9 @@ export default function StorefrontCheckoutV2({
           setQuoteError(err?.response?.data?.message || 'Unable to update checkout totals. Please try again.');
         }
       } finally {
-        setQuoting(false);
+        if (quoteAbortRef.current === controller) {
+          setQuoting(false);
+        }
       }
     }, 400);
   }, [tenant.slug, quoteCityId, quoteTownshipId, quoteServiceId, quotePackagingId, quotePaymentId]);
@@ -123,7 +134,10 @@ export default function StorefrontCheckoutV2({
   }, [fetchQuote]);
 
   useEffect(() => {
-    return () => { if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current); };
+    return () => {
+      if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current);
+      if (quoteAbortRef.current) quoteAbortRef.current.abort();
+    };
   }, []);
   const [screenshotPreview, setScreenshotPreview] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState('');

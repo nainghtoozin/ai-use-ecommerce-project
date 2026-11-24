@@ -376,6 +376,10 @@ class StorefrontCheckoutController extends Controller
                 ->where('idempotency_key', $idempotencyKey)
                 ->first();
             if ($existingOrder) {
+                session()->forget('cart');
+                session()->forget('applied_coupon');
+                session()->forget('applied_promotion');
+                session()->save();
                 return redirect()->route('storefront.customer.orders.show', [
                     'store_slug' => $tenant->slug,
                     'order' => $existingOrder->id,
@@ -404,6 +408,8 @@ class StorefrontCheckoutController extends Controller
         if (empty($cartItems)) {
             return back()->with('error', 'Cart is empty.');
         }
+
+        $orderedCartKeys = array_values(array_filter(array_column($cartItems, 'cart_key')));
 
         $items = [];
         foreach ($cartItems as $item) {
@@ -705,9 +711,18 @@ class StorefrontCheckoutController extends Controller
         if ($isBuyNow) {
             $this->buyNowService->clear();
         } else {
-            session()->forget('cart');
+            $currentCart = session()->get('cart', []);
+            foreach ($orderedCartKeys as $orderedKey) {
+                unset($currentCart[$orderedKey]);
+            }
+            if (empty($currentCart)) {
+                session()->forget('cart');
+            } else {
+                session()->put('cart', $currentCart);
+            }
             session()->forget('applied_coupon');
             session()->forget('applied_promotion');
+            session()->save();
         }
 
         return redirect()->route('storefront.customer.orders.show', [

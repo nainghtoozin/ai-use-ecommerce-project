@@ -321,6 +321,7 @@ class OrderController extends Controller
         session()->forget('cart');
         session()->forget('applied_coupon');
         session()->forget('applied_promotion');
+        session()->save();
 
         return redirect()->route('client.orders.show', $order->id)
             ->with('success', 'Order placed successfully!');

@@ -15,7 +15,7 @@ function BellIcon({ hasUnread }) {
 }
 
 export default function NotificationBell({ isAdmin = false }) {
-    const AUTO_READ_MS = 5000;
+    const AUTO_READ_MS = 30000;
     const { notifications, unreadCount, loaded, markAsRead, markAllAsRead, clearAll, navigateToNotification } = usePusherNotifications();
     const [open, setOpen] = useState(false);
     const pageProps = usePage().props || {};
@@ -24,6 +24,11 @@ export default function NotificationBell({ isAdmin = false }) {
     const itemRefs = useRef(new Map());
     const timers = useRef(new Map());
     const readInProgress = useRef(new Set());
+    const notificationsRef = useRef(notifications);
+    const markAsReadRef = useRef(markAsRead);
+
+    useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
+    useEffect(() => { markAsReadRef.current = markAsRead; }, [markAsRead]);
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -57,7 +62,7 @@ export default function NotificationBell({ isAdmin = false }) {
         return () => document.removeEventListener('visibilitychange', handler);
     }, []);
 
-    // Auto-read after 5s of continuous visibility
+    // Auto-read after 30s of continuous visibility
     useEffect(() => {
         if (!open) return;
         if (!('IntersectionObserver' in window)) return;
@@ -66,7 +71,8 @@ export default function NotificationBell({ isAdmin = false }) {
             entries.forEach((entry) => {
                 const id = entry.target.dataset.notificationId;
                 if (!id) return;
-                const notification = notifications.find((n) => n.id === id);
+                const list = notificationsRef.current || [];
+                const notification = list.find((n) => n.id === id);
                 if (!notification || notification.isRead) return;
 
                 if (entry.isIntersecting) {
@@ -74,7 +80,7 @@ export default function NotificationBell({ isAdmin = false }) {
                         const timer = setTimeout(() => {
                             if (readInProgress.current.has(id)) return;
                             readInProgress.current.add(id);
-                            markAsRead(id).finally(() => readInProgress.current.delete(id));
+                            (markAsReadRef.current || markAsRead)(id).finally(() => readInProgress.current.delete(id));
                             timers.current.delete(id);
                         }, AUTO_READ_MS);
                         timers.current.set(id, timer);
@@ -93,7 +99,14 @@ export default function NotificationBell({ isAdmin = false }) {
         return () => {
             observer.disconnect();
         };
-    }, [open, notifications, markAsRead]);
+    }, [open]);
+
+    // Re-observe newly added items while dropdown is open
+    useEffect(() => {
+        if (!open) return;
+        if (!('IntersectionObserver' in window)) return;
+        // no-op: items observed at open time; pusher additions handled on next open
+    }, [notifications, open]);
 
     const handleClick = (notification) => {
         if (timers.current.has(notification.id)) {

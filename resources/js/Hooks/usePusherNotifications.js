@@ -80,7 +80,7 @@ export default function usePusherNotifications() {
     const fetchNotifications = useCallback(async () => {
         if (!auth?.user) return;
         try {
-            const { data } = await axios.get('/notifications/fetch?per_page=50');
+            const { data } = await axios.get('/notifications/fetch?per_page=10');
             setUnreadCount(data.unread_count);
             setNotifications(
                 (data.notifications || []).map((n) =>
@@ -111,7 +111,7 @@ export default function usePusherNotifications() {
 
     const addNotification = useCallback((data) => {
         const notification = normalizeNotification({}, { isRead: false, isPersisted: false, ...data });
-        setNotifications((prev) => [notification, ...prev].slice(0, 50));
+        setNotifications((prev) => [notification, ...prev].slice(0, 10));
         setUnreadCount((prev) => prev + 1);
         console.debug('[Pusher] Notification added:', notification.title);
         if (preferences?.notification_sound) {

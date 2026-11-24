@@ -64,6 +64,12 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     const cartRef = useRef(cartItems);
     const subtotalRef = useRef(subtotal);
     const pendingOps = useRef({});
+    const quantityTimers = useRef({});
+    const latestDesiredQty = useRef({});
+    const inFlightQty = useRef({});
+    const pendingAfterFlight = useRef({});
+    const committedQty = useRef({});
+    const opCounter = useRef({});
     cartRef.current = cartItems;
     subtotalRef.current = subtotal;
 
@@ -75,6 +81,9 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     useEffect(() => {
         setCartItems(initialCartItems || []);
         setSubtotal(initialSubtotal || 0);
+        const map = {};
+        (initialCartItems || []).forEach((i) => { map[i.cart_key] = i.quantity; });
+        committedQty.current = map;
     }, [initialCartItems, initialSubtotal]);
 
     useEffect(() => {
@@ -82,6 +91,12 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
         setAppliedCoupon(initialCoupon || null);
         setTotalDiscount(initialDiscount || 0);
     }, [initialPromotion, initialCoupon, initialDiscount]);
+
+    useEffect(() => {
+        return () => {
+            Object.values(quantityTimers.current).forEach((t) => clearTimeout(t));
+        };
+    }, []);
 
     function syncCartState(data) {
         if (!data) return;
@@ -97,39 +112,104 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
 
     const finalTotal = Math.max(0, Number(subtotal) - Number(totalDiscount));
 
-    async function handleUpdateQuantity(cartKey, newQty) {
+    function scheduleQuantityUpdate(cartKey, newQty) {
         if (newQty < 1) newQty = 1;
-        const prevItems = cartRef.current;
-        const prevSubtotal = subtotalRef.current;
-        const item = prevItems.find(i => i.cart_key === cartKey);
-        if (!item) return;
+        latestDesiredQty.current[cartKey] = newQty;
 
-        const optimisticItems = prevItems.map(i =>
-            i.cart_key === cartKey ? { ...i, quantity: newQty } : i
-        );
-        const optimisticSubtotal = optimisticItems.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
-
-        const opId = Date.now() + Math.random();
-        pendingOps.current[cartKey] = opId;
-
-        setCartItems(optimisticItems);
-        setSubtotal(optimisticSubtotal);
-
-        const result = await updateQuantity(cartKey, newQty, {
-            message: `${item.name} quantity ${newQty > item.quantity ? 'increased' : 'decreased'} to ${newQty}.`,
+        setCartItems((prev) => {
+            const next = prev.map((i) =>
+                i.cart_key === cartKey ? { ...i, quantity: newQty } : i
+            );
+            const newSubtotal = next.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
+            setSubtotal(newSubtotal);
+            cartRef.current = next;
+            subtotalRef.current = newSubtotal;
+            return next;
         });
 
-        if (pendingOps.current[cartKey] !== opId) {
+        if (quantityTimers.current[cartKey]) {
+            clearTimeout(quantityTimers.current[cartKey]);
+        }
+        quantityTimers.current[cartKey] = setTimeout(() => {
+            flushQuantityUpdate(cartKey);
+        }, 350);
+    }
+
+    async function flushQuantityUpdate(cartKey) {
+        const desired = latestDesiredQty.current[cartKey];
+        if (desired === undefined) return;
+
+        if (inFlightQty.current[cartKey]) {
+            pendingAfterFlight.current[cartKey] = desired;
             return;
         }
 
-        if (result.error) {
-            setCartItems(prevItems);
-            setSubtotal(prevSubtotal);
+        inFlightQty.current[cartKey] = true;
+        const opId = (opCounter.current[cartKey] || 0) + 1;
+        opCounter.current[cartKey] = opId;
+
+        const item = cartRef.current.find((i) => i.cart_key === cartKey);
+
+        const result = await updateQuantity(cartKey, desired, {
+            message: item ? `${item.name} quantity updated to ${desired}.` : undefined,
+        });
+
+        inFlightQty.current[cartKey] = false;
+
+        if (opCounter.current[cartKey] !== opId) {
             return;
         }
 
-        syncCartState(result);
+        if (result && result.error) {
+            const committed = committedQty.current[cartKey] ?? item?.quantity ?? 1;
+            setCartItems((prev) => {
+                const next = prev.map((i) =>
+                    i.cart_key === cartKey ? { ...i, quantity: committed } : i
+                );
+                const newSubtotal = next.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
+                setSubtotal(newSubtotal);
+                cartRef.current = next;
+                subtotalRef.current = newSubtotal;
+                return next;
+            });
+            window.dispatchEvent(new CustomEvent('cart-toast', {
+                detail: { type: 'error', title: 'Update Failed', message: result.error, toastKey: `qty:${cartKey}` },
+            }));
+            return;
+        }
+
+        if (result) {
+            committedQty.current[cartKey] = result.quantity ?? desired;
+            setCartItems((prev) => {
+                const next = prev.map((i) =>
+                    i.cart_key === cartKey ? { ...i, quantity: result.quantity ?? desired } : i
+                );
+                cartRef.current = next;
+                return next;
+            });
+            if (result.subtotal !== undefined) {
+                setSubtotal(result.subtotal);
+                subtotalRef.current = result.subtotal;
+            }
+            if (result.count !== undefined) {
+                window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: result.count } }));
+            }
+            if ('appliedPromotion' in result) setAppliedPromotion(result.appliedPromotion || null);
+            if ('appliedCoupon' in result) setAppliedCoupon(result.appliedCoupon || null);
+            if (result.totalDiscount !== undefined) setTotalDiscount(result.totalDiscount);
+        }
+
+        const pending = pendingAfterFlight.current[cartKey];
+        if (pending !== undefined) {
+            delete pendingAfterFlight.current[cartKey];
+            latestDesiredQty.current[cartKey] = pending;
+            flushQuantityUpdate(cartKey);
+        }
+    }
+
+    async function handleUpdateQuantity(cartKey, newQty) {
+        if (newQty < 1) newQty = 1;
+        scheduleQuantityUpdate(cartKey, newQty);
     }
 
     function handleDraftChange(cartKey, value) {
@@ -177,6 +257,12 @@ export default function StorefrontCart({ tenant, cartItems: initialCartItems, su
     }
 
     async function handleRemoveItem(cartKey) {
+        if (quantityTimers.current[cartKey]) {
+            clearTimeout(quantityTimers.current[cartKey]);
+            delete quantityTimers.current[cartKey];
+        }
+        delete latestDesiredQty.current[cartKey];
+        delete pendingAfterFlight.current[cartKey];
         const prevItems = cartRef.current;
         const prevSubtotal = subtotalRef.current;
 

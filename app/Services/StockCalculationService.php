@@ -12,14 +12,17 @@ class StockCalculationService
 {
     public function forProduct(Product $product): float
     {
-        $movements = StockMovement::where('product_id', $product->id)
-            ->whereNull('product_variant_id');
+        $row = StockMovement::where('product_id', $product->id)
+            ->whereNull('product_variant_id')
+            ->selectRaw('COALESCE(SUM(quantity), 0) as total, COUNT(*) as cnt')
+            ->first();
 
-        $sum = (float) $movements->sum('quantity');
+        $sum = (float) ($row->total ?? 0);
+        $count = (int) ($row->cnt ?? 0);
 
         // Legacy fallback: only when there are NO movement records at all.
         // If movements exist, their sum (including zero/negative) is authoritative.
-        if (!$movements->exists() && (int) ($product->stock ?? 0) > 0) {
+        if ($count === 0 && (int) ($product->stock ?? 0) > 0) {
             \Illuminate\Support\Facades\Log::info('StockCalculationService: legacy cached-stock fallback used for product', [
                 'product_id' => $product->id,
                 'cached_stock' => (int) $product->stock,
@@ -33,12 +36,15 @@ class StockCalculationService
 
     public function forVariant(ProductVariant $variant): float
     {
-        $movements = StockMovement::where('product_variant_id', $variant->id);
+        $row = StockMovement::where('product_variant_id', $variant->id)
+            ->selectRaw('COALESCE(SUM(quantity), 0) as total, COUNT(*) as cnt')
+            ->first();
 
-        $sum = (float) $movements->sum('quantity');
+        $sum = (float) ($row->total ?? 0);
+        $count = (int) ($row->cnt ?? 0);
 
         // Legacy fallback: only when there are NO movement records at all.
-        if (!$movements->exists() && (int) ($variant->stock ?? 0) > 0) {
+        if ($count === 0 && (int) ($variant->stock ?? 0) > 0) {
             \Illuminate\Support\Facades\Log::info('StockCalculationService: legacy cached-stock fallback used for variant', [
                 'variant_id' => $variant->id,
                 'product_id' => $variant->product_id,

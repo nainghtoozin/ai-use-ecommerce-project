@@ -128,9 +128,28 @@ class CartController extends Controller
                 ], 422);
             }
 
-            $cart[$key]['quantity'] = $request->quantity;
+            $cart[$key]['quantity'] = (int) $request->quantity;
             session()->put('cart', $cart);
             session()->save();
+
+            $cartItems = $this->formatCartItems($cart);
+            $subtotal = (float) array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
+
+            $appliedPromotion = session('applied_promotion');
+            $appliedCoupon = session('applied_coupon');
+            $promotionDiscount = (float) ($appliedPromotion['discount'] ?? 0);
+            $couponDiscount = (float) ($appliedCoupon['discount'] ?? 0);
+
+            return response()->json([
+                'success' => true,
+                'cart_key' => $key,
+                'quantity' => (int) $request->quantity,
+                'count' => array_sum(array_column($cart, 'quantity')),
+                'subtotal' => $subtotal,
+                'appliedPromotion' => $appliedPromotion,
+                'appliedCoupon' => $appliedCoupon,
+                'totalDiscount' => $promotionDiscount + $couponDiscount,
+            ]);
         }
 
         return response()->json($this->fullCartState($cart));

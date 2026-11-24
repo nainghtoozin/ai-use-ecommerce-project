@@ -344,7 +344,7 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
-        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $products = Product::whereIn('id', $productIds)->select(['id', 'name', 'price', 'photo1'])->get()->keyBy('id');
 
         $items = [];
         $total = 0;
