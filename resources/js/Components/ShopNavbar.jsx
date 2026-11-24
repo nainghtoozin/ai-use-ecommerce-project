@@ -147,7 +147,7 @@ export default function ShopNavbar() {
 
                     <div className="flex items-center gap-1">
                         {storeSlug && storefront?.navigation?.show_search !== false && (
-                            <Link href={storeUrl('/products')} aria-label={labels.search_products || 'Search products'} className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors" title={labels.search_products || 'Search products'}>
+                            <Link href={storeUrl('/products')} aria-label={labels.search_products || 'Search products'} className="hidden md:inline-flex p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors" title={labels.search_products || 'Search products'}>
                                 <i className="bi bi-search text-lg"></i>
                             </Link>
                         )}
@@ -213,10 +213,6 @@ export default function ShopNavbar() {
                                                     <Link href={storeUrl('/customer/account')} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
                                                         <i className="bi bi-grid text-gray-400 dark:text-gray-500"></i>
                                                         {labels.my_account || 'My Account'}
-                                                    </Link>
-                                                    <Link href={storeUrl('/customer/orders')} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-950 transition-colors">
-                                                        <i className="bi bi-receipt text-gray-400 dark:text-gray-500"></i>
-                                                        {labels.my_orders || 'My Orders'}
                                                     </Link>
                                                      {storeSlug && auth?.user?.is_admin && (
                                                         <>

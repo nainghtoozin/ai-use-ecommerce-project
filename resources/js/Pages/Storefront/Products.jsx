@@ -3,6 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import FilterBar from '@/Components/FilterBar';
 import Sidebar from '@/Components/Sidebar';
+import MobileProductFilterSheet from '@/Components/MobileProductFilterSheet';
 import ProductGrid from '@/Components/ProductGrid';
 import BackToTopButton from '@/Components/BackToTopButton';
 import VariantSelectModal from '@/Components/VariantSelectModal';
@@ -21,6 +22,7 @@ export default function StoreProducts({ tenant, products, categories, brands, se
     const [inStock, setInStock] = useState(initFilters.in_stock || false);
     const [loading, setLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
     const [variableProduct, setVariableProduct] = useState(null);
 
     const debounceRef = useRef(null);
@@ -66,26 +68,23 @@ export default function StoreProducts({ tenant, products, categories, brands, se
 
     const handleQueryChange = useCallback((value) => {
         setQuery(value);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            applyFilters(value, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock);
-        }, 400);
-    }, [selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock, applyFilters]);
+    }, []);
+
+    const handlePriceApply = useCallback(() => {
+        applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock);
+    }, [query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock, applyFilters]);
 
     const handleCategoryChange = useCallback((categoryId) => {
         setSelectedCategory(categoryId);
-        applyFilters(query, categoryId, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock);
-    }, [query, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock, applyFilters]);
+    }, []);
 
     const handleBrandChange = useCallback((brandId) => {
         setSelectedBrand(brandId);
-        applyFilters(query, selectedCategory, brandId, selectedType, minPrice, maxPrice, sortBy, inStock);
-    }, [query, selectedCategory, selectedType, minPrice, maxPrice, sortBy, inStock, applyFilters]);
+    }, []);
 
     const handleTypeChange = useCallback((type) => {
         setSelectedType(type);
-        applyFilters(query, selectedCategory, selectedBrand, type, minPrice, maxPrice, sortBy, inStock);
-    }, [query, selectedCategory, selectedBrand, minPrice, maxPrice, sortBy, inStock, applyFilters]);
+    }, []);
 
     const handleMinPriceChange = useCallback((value) => {
         setMinPrice(value);
@@ -95,19 +94,24 @@ export default function StoreProducts({ tenant, products, categories, brands, se
         setMaxPrice(value);
     }, []);
 
-    const handlePriceApply = useCallback(() => {
-        applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock);
-    }, [query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock, applyFilters]);
-
     const handleSortChange = useCallback((sort) => {
         setSortBy(sort);
-        applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sort, inStock);
-    }, [query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, inStock, applyFilters]);
+    }, []);
 
     const handleInStockChange = useCallback((checked) => {
         setInStock(checked);
-        applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, checked);
-    }, [query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, applyFilters]);
+    }, []);
+
+    // Auto-apply filters (debounced)
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock);
+        }, 350);
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, [query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock, applyFilters]);
 
     const clearFilters = useCallback(() => {
         setQuery('');
@@ -147,6 +151,7 @@ export default function StoreProducts({ tenant, products, categories, brands, se
         <ShopLayout>
             <Head title={`Products - ${storefront?.identity?.site_title || tenant.name}`} />
 
+            <div className="hidden md:block">
             <FilterBar
                 query={query}
                 onQueryChange={handleQueryChange}
@@ -173,6 +178,19 @@ export default function StoreProducts({ tenant, products, categories, brands, se
                 onMaxPriceChange={handleMaxPriceChange}
                 onPriceApply={handlePriceApply}
             />
+            </div>
+
+            <div className="md:hidden px-4 pt-2 space-y-2">
+                <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search products, brands, SKU..."
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+                <button onClick={() => setMobileFilterOpen(true)} className="px-3 py-1.5 border rounded-lg text-sm">
+                    Filter {hasActiveFilters ? `(${[query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, inStock, sortBy !== 'recommended' ? sortBy : ''].filter(Boolean).length})` : ''}
+                </button>
+            </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex gap-8">
@@ -197,6 +215,29 @@ export default function StoreProducts({ tenant, products, categories, brands, se
                     </div>
                 </div>
             </div>
+
+            <MobileProductFilterSheet
+                open={mobileFilterOpen}
+                onClose={() => setMobileFilterOpen(false)}
+                categories={categories || []}
+                brands={brands || []}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedBrand={selectedBrand}
+                setSelectedBrand={setSelectedBrand}
+                selectedType={selectedType}
+                setSelectedType={setSelectedType}
+                minPrice={minPrice}
+                setMinPrice={setMinPrice}
+                maxPrice={maxPrice}
+                setMaxPrice={setMaxPrice}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                inStock={inStock}
+                setInStock={setInStock}
+                onApply={() => applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock)}
+                onReset={clearFilters}
+            />
 
             {variableProduct && (
                 <VariantSelectModal

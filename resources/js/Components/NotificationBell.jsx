@@ -120,7 +120,8 @@ export default function NotificationBell({ isAdmin = false }) {
 
     const grouped = groupNotificationsByDate(notifications);
 
-    const displayNotifications = notifications.slice(0, 10);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const displayNotifications = (isMobile ? notifications.slice(0, 3) : notifications.slice(0, 10));
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -143,7 +144,7 @@ export default function NotificationBell({ isAdmin = false }) {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-[22rem] sm:w-96 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 z-50 overflow-hidden origin-top-right">
+                <div className="absolute right-0 mt-2 w-[min(340px,calc(100vw-24px))] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 z-50 overflow-hidden max-h-[60vh]">
                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Notifications</h3>
@@ -251,20 +252,6 @@ export default function NotificationBell({ isAdmin = false }) {
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </Link>
-                        <div className="flex items-center gap-2">
-                            {notifications.length > 0 && (
-                                <button onClick={clearAll} className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors">
-                                    Clear all
-                                </button>
-                            )}
-                            <Link
-                                href={isAdmin ? adminUrl('/admin/orders') : '/orders'}
-                                onClick={() => setOpen(false)}
-                                className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
-                            >
-                                {isAdmin ? 'Manage orders' : 'My orders'}
-                            </Link>
-                        </div>
                     </div>
                 </div>
             )}

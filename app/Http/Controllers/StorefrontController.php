@@ -263,7 +263,7 @@ class StorefrontController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
-        $categories = Category::active()->orderBy('name')->get(['id', 'name', 'slug', 'image']);
+        $categories = Category::active()->orderBy('name')->get(['id', 'name', 'slug', 'image', 'parent_id']);
         $brands = Brand::active()->orderBy('name')->get(['id', 'name', 'slug', 'logo']);
 
         $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
@@ -437,7 +437,7 @@ class StorefrontController extends Controller
             ->orderBy('priority', 'desc')
             ->get();
 
-        $categories = Category::active()->orderBy('name')->get(['id', 'name', 'slug', 'image']);
+        $categories = Category::active()->orderBy('name')->get(['id', 'name', 'slug', 'image', 'parent_id']);
         $brands = Brand::active()->orderBy('name')->get(['id', 'name', 'slug', 'logo']);
 
         $websiteInfo = WebsiteInfo::firstWhere('tenant_id', $tenant->id);
