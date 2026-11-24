@@ -44,8 +44,8 @@ export function useCart() {
             window.dispatchEvent(new CustomEvent('cart-toast', { detail: {
                 type: 'success',
                 title: 'Added to Cart',
-                message: 'Added to Cart',
-                name: meta?.name || null,
+                message: null,
+                name: null,
                 variantName: meta?.variantName || null,
                 image: meta?.image || null,
                 quantity: quantity || 1,

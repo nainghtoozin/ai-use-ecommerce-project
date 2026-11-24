@@ -73,7 +73,7 @@ function CartToastItem({ toast, onClose }) {
 
     useEffect(() => {
         setIsVisible(true);
-        const dismissMs = isError ? 4500 : 2000;
+        const dismissMs = isError ? 4500 : 1000;
         const dismissTimer = setTimeout(() => {
             setIsExiting(true);
             setTimeout(() => onClose(), 300);
@@ -118,7 +118,7 @@ function CartToastItem({ toast, onClose }) {
             {toast.message && (
                 <p className="text-[13px] text-gray-600 dark:text-gray-300 mt-1.5 pl-[38px] leading-snug">{toast.message}</p>
             )}
-            {!isError && (toast.name || toast.image) && (
+            {!isError && toast.toastKey !== 'cart-add' && (toast.name || toast.image) && (
                 <div className="flex items-center gap-2.5 mt-2 pl-[38px]">
                     {toast.image && (
                         <img src={toast.image} alt="" aria-hidden="true" className="w-9 h-9 rounded-lg object-cover bg-gray-100 dark:bg-gray-800 flex-shrink-0" />

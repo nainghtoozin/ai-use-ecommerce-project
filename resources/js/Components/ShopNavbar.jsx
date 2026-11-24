@@ -28,6 +28,7 @@ export default function ShopNavbar() {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [cartCount, setCartCount] = useState(serverCart?.count || 0);
     const [cartBump, setCartBump] = useState(0);
+    const [cartIconAnimate, setCartIconAnimate] = useState(false);
     const [wishlistCount, setWishlistCount] = useState(props.wishlist_count || 0);
 
     const userMenuRef = useRef(null);
@@ -41,6 +42,8 @@ export default function ShopNavbar() {
         const handleCartUpdate = (e) => {
             setCartCount(e.detail.count);
             setCartBump((k) => k + 1);
+            setCartIconAnimate(true);
+            setTimeout(() => setCartIconAnimate(false), 300);
         };
         const handleWishlistUpdate = (e) => {
             setWishlistCount(e.detail.count);
@@ -168,7 +171,7 @@ export default function ShopNavbar() {
                                 className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                                 title={labels.cart || 'Shopping Cart'} aria-label={labels.cart || 'Shopping Cart'}
                             >
-                                <i className="bi bi-cart3 text-xl"></i>
+                                <i className={`bi bi-cart3 text-xl transition-transform duration-300 ${cartIconAnimate ? 'scale-125' : 'scale-100'}`}></i>
                                 {cartCount > 0 && (
                                     <span key={cartBump} className="cart-badge-pop absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
                                         {cartCount > 99 ? '99+' : cartCount}
@@ -328,7 +331,7 @@ export default function ShopNavbar() {
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
                                 >
-                                    <i className="bi bi-cart3"></i>
+                                    <i className={`bi bi-cart3 transition-transform duration-300 ${cartIconAnimate ? 'scale-125' : 'scale-100'}`}></i>
                                     Cart
                                     {cartCount > 0 && (
                                         <span key={cartBump} className="cart-badge-pop bg-red-500 text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">

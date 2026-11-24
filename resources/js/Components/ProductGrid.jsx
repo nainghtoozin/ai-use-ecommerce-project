@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { InfiniteScroll, usePage } from '@inertiajs/react';
 import ProductCard from '@/Components/ProductCard';
+import MobileProductCard from '@/Components/MobileProductCard';
 
 const SkeletonCard = () => (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden animate-pulse">
@@ -92,7 +93,18 @@ export default function ProductGrid({
                     </div>
                 )}
             >
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div className="md:hidden flex flex-col gap-3">
+                    {products.data.map((product) => (
+                        <MobileProductCard
+                            key={product.id}
+                            product={product}
+                            onAddToCart={handleAddToCart}
+                            onSelectVariant={onSelectVariant}
+                            addingId={addingId}
+                        />
+                    ))}
+                </div>
+                <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {products.data.map((product) => (
                         <ProductCard
                             key={product.id}
