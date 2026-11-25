@@ -124,6 +124,98 @@ function ProductCard({ product }) {
     );
 }
 
+function CompactProductCard({ product }) {
+    const { storefront, tenant } = usePage().props;
+    const cc = getCurrencyConfig(usePage().props.platform_setting, usePage().props.website_info);
+    const pd = useProductDisplay();
+    const { buyNow, buyingKey } = useBuyNow();
+    const labels = storefront?.content?.labels || {};
+    const price = safeNum(product.promotion_price ?? product.price);
+    const originalPrice = safeNum(product.promotion?.original_price ?? 0);
+    const hasDiscount = originalPrice > price && originalPrice > 0;
+    const discountPct = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+    const effectiveStock = safeNum(product.effective_stock ?? product.stock ?? 0);
+    const threshold = pd.stock.low_stock_threshold;
+    const showStockBlock = pd.stock.display_mode !== 'hidden';
+    const [imageError, setImageError] = useState(false);
+
+    const imageUrl = product.photo1_url && !imageError ? assetUrl(product.photo1_url) : null;
+
+    return (
+        <Link
+            href={`/store/${tenant?.slug || ''}/products/${product.id}`}
+            className="group shrink-0 w-[220px] flex items-stretch gap-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-2.5 transition-all hover:shadow-md hover:border-gray-200"
+        >
+            <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+                {imageUrl ? (
+                    <img src={imageUrl} alt={product.name} className="w-full h-full object-contain" onError={() => setImageError(true)} />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                    </div>
+                )}
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col">
+                {pd.product_info.show_category && (
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        {product.category?.name || 'Uncategorized'}
+                    </p>
+                )}
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{product.name}</h3>
+                <div className="mt-0.5">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className={`text-xs font-bold ${hasDiscount ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                            {formatCurrency(price, cc)}
+                        </span>
+                        {pd.pricing.show_original_price && hasDiscount && (
+                            <span className="text-[10px] text-gray-400 line-through">
+                                {formatCurrency(originalPrice, cc)}
+                            </span>
+                        )}
+                    </div>
+                    {pd.pricing.show_discount_percentage && hasDiscount && (
+                        <p className="text-[10px] font-medium text-green-600 dark:text-green-400 leading-tight">
+                            Save {discountPct}%
+                        </p>
+                    )}
+                </div>
+                {showStockBlock && (
+                    <div className="flex items-center mt-0.5">
+                        {effectiveStock <= 0 ? (
+                            pd.stock.show_out_of_stock ? <span className="text-[10px] text-red-500 font-medium">Out of Stock</span> : null
+                        ) : pd.stock.display_mode === 'quantity' ? (
+                            <span className={`text-[10px] font-medium ${effectiveStock <= threshold ? 'text-amber-500' : 'text-green-500'}`}>
+                                {effectiveStock <= threshold ? `Only ${formatUnits(effectiveStock, product)} left` : `${formatUnits(effectiveStock, product)} available`}
+                            </span>
+                        ) : effectiveStock <= threshold ? (
+                            pd.stock.display_mode === 'status_quantity' ? (
+                                <span className="text-[10px] text-amber-500 font-medium">Low Stock · {formatUnits(effectiveStock, product)}</span>
+                            ) : (
+                                <span className="text-[10px] text-amber-500 font-medium">Only {formatUnits(effectiveStock, product)} left</span>
+                            )
+                        ) : (
+                            <span className="text-[10px] text-green-500 font-medium">In Stock{pd.stock.display_mode === 'status_quantity' ? ` · ${formatUnits(effectiveStock, product)}` : ''}</span>
+                        )}
+                    </div>
+                )}
+                {pd.actions.show_buy_now && !product.is_variable && effectiveStock > 0 && (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); buyNow({ productId: product.id, quantity: 1 }); }}
+                        disabled={buyingKey === buyNowKey(product.id, null)}
+                        className="mt-auto w-full flex items-center justify-center gap-1.5 px-2 py-1.5 border text-[11px] font-semibold rounded-lg transition-colors disabled:opacity-50"
+                        style={{ borderColor: 'var(--theme-color, #3B82F6)', color: 'var(--theme-color, #3B82F6)' }}
+                    >
+                        {labels.buy_now || 'Buy Now'}
+                    </button>
+                )}
+            </div>
+        </Link>
+    );
+}
+
 export default function RelatedProducts({ products = [], title }) {
     if (!products || products.length === 0) {
         return null;
@@ -134,10 +226,17 @@ export default function RelatedProducts({ products = [], title }) {
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 {title || 'Related Products'}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            <div className="hidden lg:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                 ))}
+            </div>
+            <div className="lg:hidden">
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                    {products.map((product) => (
+                        <CompactProductCard key={product.id} product={product} />
+                    ))}
+                </div>
             </div>
         </section>
     );

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Zap } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
@@ -38,6 +38,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
     const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+    const touchStartX = useRef(null);
 
     const displayDescription = product.description || 'Detailed product information will be available soon.';
     const isLongDescription = product.description && product.description.length > 500;
@@ -50,7 +51,9 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
     const optionValues = detail?.option_values ?? {};
     const optionNames = detail?.option_names ?? {};
 
-    const images = [product.photo1_url, ...(product.gallery_images_url || product.gallery_images || [])].filter(Boolean);
+    const images = [product.photo1_url, product.photo2_url, ...(Array.isArray(product.gallery_images_url) ? product.gallery_images_url : (Array.isArray(product.gallery_images) ? product.gallery_images : []))]
+        .filter(Boolean)
+        .filter((img, idx, arr) => arr.indexOf(img) === idx);
 
     const selectedVariant = useMemo(() => {
         if (!isVariable || !variants.length || !optionKeys.length) return null;
@@ -156,6 +159,20 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
             return next;
         });
     }
+
+    const handleTouchStart = (event) => {
+        touchStartX.current = event.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (event) => {
+        if (touchStartX.current === null) return;
+        const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+        touchStartX.current = null;
+        if (Math.abs(deltaX) < 40) return;
+        const nextIndex = activeImage + (deltaX < 0 ? 1 : -1);
+        if (nextIndex < 0 || nextIndex >= images.length) return;
+        setActiveImage(nextIndex);
+    };
 
     const handleAddToCart = async () => {
         await addToCart(product.id, quantity, selectedVariant?.id || undefined, {
@@ -313,7 +330,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                 <meta name="twitter:image" content={assetUrl(product.seo_image || product.photo1_url)} />
             </Head>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 pb-24 lg:pb-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-5 pb-32 lg:pb-6">
                 <nav className="flex flex-wrap items-center text-xs text-gray-400 dark:text-gray-500 mb-3 sm:mb-4 gap-1">
                     <Link href={`/store/${tenant.slug}`} className="hover:text-indigo-600 font-medium transition-colors">{tenant.name}</Link>
                     <svg className="w-3 h-3 mx-0.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -329,15 +346,21 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                 <div className="grid grid-cols-1 lg:grid-cols-[42%_58%] gap-4 lg:gap-6">
                     {/* Image Section */}
                     <div>
-                        <div className="group relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 aspect-[4/5] max-h-[520px]">
+                        <div className="group relative bg-gray-50 dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 aspect-[4/5] max-h-[260px] lg:max-h-[520px] flex items-center justify-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                             {mainImage ? (
                                 <img
                                     src={assetUrl(mainImage)}
                                     alt={product.name}
+                                    loading="eager"
                                     className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
                                 />
                             ) : (
                                 <ProductImagePlaceholder className="h-full" />
+                            )}
+                            {images.length > 1 && (
+                                <span className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 text-white text-[11px] font-medium rounded-full pointer-events-none">
+                                    {activeImage + 1} / {images.length}
+                                </span>
                             )}
 
                             {pd.product_info.show_product_type && isCombo && (
@@ -368,7 +391,9 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                 {images.map((img, idx) => (
                                     <button
                                         key={idx}
+                                        type="button"
                                         onClick={() => setActiveImage(idx)}
+                                        aria-label={`View image ${idx + 1}`}
                                         className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 shrink-0 ${
                                             activeImage === idx
                                                 ? 'border-indigo-500 shadow-sm ring-1 ring-indigo-500/30'
@@ -378,6 +403,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                                         <img
                                             src={assetUrl(img)}
                                             alt=""
+                                            loading="lazy"
                                             className="w-full h-full object-cover"
                                             onError={(e) => { e.target.style.display = 'none'; }}
                                         />
@@ -553,7 +579,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                         )}
 
                         {/* Purchase Section */}
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 hidden lg:block">
                             {renderQuantityAndCart()}
                         </div>
 
@@ -602,7 +628,8 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
             )}
 
             {/* Mobile Sticky Bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800 px-4 py-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+            {(pd.actions.show_add_to_cart || pd.actions.show_buy_now) && (
+            <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 lg:hidden bg-white dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800 px-4 py-2.5 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 shrink-0">
                         <div className={`text-base font-bold ${isFlashSale ? 'text-orange-600' : (originalPrice > 0 && originalPrice > currentPrice ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100')}`}>
@@ -622,6 +649,7 @@ export default function StoreShow({ tenant, product, promotion, detail, relatedP
                     </div>
                 </div>
             </div>
+            )}
 
             {/* Related Products */}
             <RelatedProducts products={relatedProducts} title={labels.related_products || 'Related Products'} />

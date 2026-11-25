@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Zap, Banknote } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
+import { csrfHeaders } from '@/Utils/csrf';
 
 const SectionIcon = ({ complete, children }) => (
   <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${complete ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'}`}>
@@ -108,7 +109,7 @@ export default function StorefrontCheckoutV2({
           delivery_service_id: quoteServiceId,
           packaging_id: quotePackagingId,
           payment_method_id: quotePaymentId,
-        }, { signal: controller.signal });
+        }, { signal: controller.signal, headers: { ...csrfHeaders() } });
         if (res.data) { setQuote(res.data); setQuoteError(null); }
       } catch (err) {
         if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
