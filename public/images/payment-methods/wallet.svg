@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Generic mobile wallet placeholder">
+  <rect width="64" height="64" rx="12" fill="#EEF2FF"/>
+  <rect x="14" y="18" width="36" height="28" rx="6" fill="#C7D2FE" stroke="#4F46E5" stroke-width="2"/>
+  <rect x="14" y="24" width="36" height="5" fill="#4F46E5"/>
+  <circle cx="42" cy="38" r="4" fill="#4F46E5"/>
+  <text x="32" y="57" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#4338CA">DEMO</text>
+</svg>

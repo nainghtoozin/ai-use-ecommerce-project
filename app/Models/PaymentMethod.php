@@ -26,15 +26,18 @@ class PaymentMethod extends Model
         'currency',
         'qr_image',
         'is_active',
+        'is_demo',
+        'logo_path',
         'sort_order',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_demo' => 'boolean',
         'sort_order' => 'integer',
     ];
 
-    protected $appends = ['qr_image_url'];
+    protected $appends = ['qr_image_url', 'logo_url'];
 
     public function getQrImageUrlAttribute(): ?string
     {
@@ -43,6 +46,17 @@ class PaymentMethod extends Model
         }
 
         return ImageService::url($this->qr_image);
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (empty($this->logo_path)) {
+            return null;
+        }
+
+        return str_starts_with($this->logo_path, '/')
+            ? $this->logo_path
+            : ImageService::url($this->logo_path);
     }
 
     public function scopeActive($query)

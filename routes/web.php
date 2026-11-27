@@ -775,6 +775,10 @@ Route::post('/settings/order-workflow', [\App\Http\Controllers\Admin\AdminAfterS
         Route::resource('cod-rules', \App\Http\Controllers\Admin\AdminCodRuleController::class)->except(['show']);
         Route::post('cod-rules/{cod_rule}/toggle', [\App\Http\Controllers\Admin\AdminCodRuleController::class, 'toggle'])->name('cod-rules.toggle');
 
+        // Demo Configuration (temporary demo data importer)
+        Route::get('settings/demo-configuration', [\App\Http\Controllers\Admin\DemoConfigurationController::class, 'index'])->name('demo-configuration.index');
+        Route::post('settings/demo-configuration/import', [\App\Http\Controllers\Admin\DemoConfigurationController::class, 'import'])->name('demo-configuration.import');
+
         // ============================================================
         // USER MANAGEMENT ROUTES
         // ============================================================
@@ -878,6 +882,9 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['auth:web,accounts
     Route::put('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('tenants.update');
     Route::post('/tenants/{tenant}/toggle-status', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'toggleStatus'])->name('tenants.toggle-status');
     Route::delete('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('tenants.destroy');
+
+    Route::get('/demo-configuration', [\App\Http\Controllers\SuperAdmin\DemoConfigurationController::class, 'index'])->name('demo-configuration.index');
+    Route::post('/demo-configuration/import', [\App\Http\Controllers\SuperAdmin\DemoConfigurationController::class, 'import'])->name('demo-configuration.import');
 
     Route::get('/plans', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'index'])->name('plans.index');
     Route::get('/plans/create', [\App\Http\Controllers\SuperAdmin\PlanController::class, 'create'])->name('plans.create');

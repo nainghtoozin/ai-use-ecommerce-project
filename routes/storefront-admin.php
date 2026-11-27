@@ -579,5 +579,9 @@ Route::post('/settings/order-workflow', [AdminAfterSalesSettingsController::clas
         Route::resource('cod-rules', \App\Http\Controllers\Admin\AdminCodRuleController::class)->except(['show']);
         Route::post('cod-rules/{cod_rule}/toggle', [\App\Http\Controllers\Admin\AdminCodRuleController::class, 'toggle'])->name('cod-rules.toggle')->whereNumber('cod_rule');
 
+        // Demo Configuration (temporary demo data importer)
+        Route::get('settings/demo-configuration', [\App\Http\Controllers\Admin\DemoConfigurationController::class, 'index'])->name('demo-configuration.index');
+        Route::post('settings/demo-configuration/import', [\App\Http\Controllers\Admin\DemoConfigurationController::class, 'import'])->name('demo-configuration.import');
+
     }); // ← ends tenant.active group
 }); // ← ends storefront admin group

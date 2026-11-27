@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Zap, Banknote } from 'lucide-react';
 import ShopLayout from '@/Layouts/ShopLayout';
+import MobileCheckoutView from '@/Components/Storefront/MobileCheckoutView';
 import { formatCurrency, getCurrencyConfig } from '@/Utils/currency';
 import { csrfHeaders } from '@/Utils/csrf';
 
@@ -652,10 +653,29 @@ export default function StorefrontCheckoutV2({
     );
   }
 
+  const ctx = {
+    tenant, cartItems, subtotal, paymentMethods, cities, deliveryServices, packagingOptions,
+    auth, platform_setting, website_info, storefront, translations,
+    tr, labels, checkoutConfig, buttonLabels, cc,
+    form, formErrors, submitError, submitting,
+    townships, townshipsLoading, selectedDeliveryService, selectedPackaging, quote, quoting, quoteError,
+    localAppliedPromotion, localAppliedCoupon, localDiscount, couponCode, promoLoading, promoMessage, promoError,
+    screenshotPreview, selectedFileName, fileError, showAddressPicker, selectedAddress, addresses, profilePhone, defaultAddress,
+    updateField, selectAddress, fetchTownships, handleScreenshotFile, handleRemoveFile, applyCoupon, removeCoupon, handleSubmit,
+    setShowAddressPicker, setSelectedDeliveryService, setSelectedPackaging, setCouponCode, setForm, setFormErrors,
+    city, township, isOtherCity, isOtherTownship, isOtherLocation, selectedPayment, quotedService, visibleServices,
+    codAvailable, codUnavailableReason, deliveryFee, packagingFee, totalDiscount, total, totalItems,
+    isAddressValid, isDeliveryReady, isPaymentReady, canPlaceOrder,
+    primaryActionStyle: { backgroundColor: 'var(--theme-color, #3B82F6)', borderRadius: 'var(--storefront-radius-button, 0.5rem)' },
+  };
+
   return (
     <ShopLayout previewMode={previewMode}>
       <Head title="Checkout" />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="lg:hidden">
+        <MobileCheckoutView ctx={ctx} />
+      </div>
+      <div className="hidden lg:block max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

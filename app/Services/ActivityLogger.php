@@ -55,7 +55,7 @@ class ActivityLogger
         $productEvents = ['product_created', 'product_updated', 'product_deleted', 'product_bulk_deleted'];
         $inventoryEvents = ['stock_adjusted', 'stock_transferred', 'low_stock_alert'];
         $userEvents = ['user_created', 'user_updated', 'user_deleted', 'role_assigned', 'role_removed'];
-        $settingsEvents = ['settings_updated', 'website_updated', 'payment_method_updated'];
+        $settingsEvents = ['settings_updated', 'website_updated', 'payment_method_updated', 'demo_configuration_imported', 'demo_configuration_bulk_imported'];
         $billingEvents = ['subscription_created', 'subscription_renewed', 'subscription_expired', 'plan_changed', 'invoice_generated'];
 
         if (in_array($event, $authEvents) || $logName === 'auth') {

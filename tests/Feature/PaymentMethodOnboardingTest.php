@@ -115,28 +115,31 @@ class PaymentMethodOnboardingTest extends TestCase
     }
 
     /** @test */
-    public function bootstrap_creates_inactive_manual_placeholder(): void
+    public function bootstrap_creates_inactive_manual_placeholder_and_demo_configuration(): void
     {
         $tenant = $this->bootstrapTenant('fresh-one');
 
         $methods = PaymentMethod::withoutTenantScope()->where('tenant_id', $tenant->id)->get();
-        $this->assertEquals(1, $methods->count());
-        $this->assertEquals('Manual Payment', $methods->first()->name);
-        $this->assertEquals('manual', $methods->first()->type);
-        $this->assertFalse((bool) $methods->first()->is_active);
-        $this->assertNull($methods->first()->account_name);
-        $this->assertNull($methods->first()->account_number);
-        $this->assertNull($methods->first()->instructions);
-        $this->assertEquals(0, CodRule::withoutTenantScope()->where('tenant_id', $tenant->id)->count());
+        $manual = $methods->firstWhere('name', 'Manual Payment');
+
+        $this->assertNotNull($manual);
+        $this->assertEquals('manual', $manual->type);
+        $this->assertFalse((bool) $manual->is_active);
+        $this->assertNull($manual->account_name);
+        $this->assertNull($manual->account_number);
+        $this->assertNull($manual->instructions);
+
+        $this->assertEquals(4, $methods->where('is_demo', true)->count());
+        $this->assertEquals(1, CodRule::withoutTenantScope()->where('tenant_id', $tenant->id)->count());
     }
 
     /** @test */
-    public function bootstrap_creates_no_cash_cod_or_bank_transfer(): void
+    public function bootstrap_creates_no_cash_cod_or_bank_transfer_payment_rows(): void
     {
         $tenant = $this->bootstrapTenant('fresh-two');
 
         $types = PaymentMethod::withoutTenantScope()
-            ->where('tenant_id', $tenant->id)->pluck('type')->all();
+            ->where('tenant_id', $tenant->id)->pluck('type')->unique()->values()->all();
         $this->assertEquals(['manual'], $types);
     }
 
@@ -162,8 +165,9 @@ class PaymentMethodOnboardingTest extends TestCase
         ]);
 
         $methods = PaymentMethod::withoutTenantScope()->where('tenant_id', $tenant->id)->get();
-        $this->assertEquals(1, $methods->count());
-        $this->assertEquals('bank_transfer', $methods->first()->type);
+        $this->assertEquals(5, $methods->count());
+        $this->assertEquals(1, $methods->where('type', 'bank_transfer')->count());
+        $this->assertEquals(4, $methods->where('is_demo', true)->count());
     }
 
     /** @test */
@@ -217,7 +221,10 @@ class PaymentMethodOnboardingTest extends TestCase
     public function configure_placeholder_then_activate(): void
     {
         $tenant = $this->bootstrapTenant('fresh-configure');
-        $placeholder = PaymentMethod::withoutTenantScope()->where('tenant_id', $tenant->id)->first();
+        $placeholder = PaymentMethod::withoutTenantScope()
+            ->where('tenant_id', $tenant->id)
+            ->where('name', 'Manual Payment')
+            ->first();
         Tenant::setCurrent($tenant);
         $admin = $this->makeAdmin($tenant);
 
@@ -236,7 +243,7 @@ class PaymentMethodOnboardingTest extends TestCase
         $this->assertEquals('Shop Owner', $fresh->account_name);
         $this->assertEquals('09911122233', $fresh->account_number);
         $this->assertEquals('Pay to the account above and send the screenshot.', $fresh->instructions);
-        $this->assertEquals(1, PaymentMethod::withoutTenantScope()->where('tenant_id', $tenant->id)->count());
+        $this->assertEquals(5, PaymentMethod::withoutTenantScope()->where('tenant_id', $tenant->id)->count());
     }
 
     /** @test */

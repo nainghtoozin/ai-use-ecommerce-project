@@ -38,6 +38,8 @@ abstract class Controller
                 $diIndex++;
             } elseif (isset($positionalValues[$i])) {
                 $args[] = $positionalValues[$i];
+            } elseif ($param->hasType() && !$param->getType()->isBuiltin()) {
+                $args[] = app($param->getType()->getName());
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[] = $param->getDefaultValue();
             } elseif ($param->allowsNull()) {

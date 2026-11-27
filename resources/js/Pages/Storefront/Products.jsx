@@ -26,6 +26,7 @@ export default function StoreProducts({ tenant, products, categories, brands, se
     const [variableProduct, setVariableProduct] = useState(null);
 
     const debounceRef = useRef(null);
+    const hasMountedRef = useRef(false);
 
     useEffect(() => {
         setQuery(searchQuery || '');
@@ -102,8 +103,13 @@ export default function StoreProducts({ tenant, products, categories, brands, se
         setInStock(checked);
     }, []);
 
-    // Auto-apply filters (debounced)
+    // Auto-apply filters (debounced) — skip the initial mount so we don't
+    // issue a redundant request for data already loaded from the server.
     useEffect(() => {
+        if (!hasMountedRef.current) {
+            hasMountedRef.current = true;
+            return;
+        }
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
             applyFilters(query, selectedCategory, selectedBrand, selectedType, minPrice, maxPrice, sortBy, inStock);

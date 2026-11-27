@@ -190,6 +190,8 @@ class HandleInertiaRequests extends Middleware
                 'info'    => session('info'),
                 'feature_locked' => session('feature_locked'),
                 'customer_status' => session('customer_status'),
+                'demo_import_summary' => session('demo_import_summary'),
+                'demo_bulk_summary' => session('demo_bulk_summary'),
             ],
             'app' => [
                 'name' => $websiteSettings['site_name'] ?? config('app.name', 'My E-Commerce Store'),

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\OrderReturn;
 use App\Models\Tenant;
+use App\Services\CustomerOrderInvoicePdfService;
 use App\Services\AfterSalesHistoryService;
 use App\Services\AuthorizationService;
 use App\Services\ImageService;
@@ -814,7 +815,7 @@ class StorefrontCustomerController extends Controller
         ])->with('success', 'Payment proof uploaded successfully.');
     }
 
-    public function downloadInvoice(Request $request, $storeSlug, string $invoice_number)
+    public function downloadInvoice(Request $request, $storeSlug, string $invoice_number, CustomerOrderInvoicePdfService $invoicePdf)
     {
         $tenant = $this->ensureTenantAccess($request);
         $user = $request->user();
@@ -822,17 +823,11 @@ class StorefrontCustomerController extends Controller
         $order = Order::where('invoice_number', $invoice_number)
             ->where('user_id', $user->id)
             ->where('user_type', $user->getMorphClass())
+            ->where('tenant_id', $tenant->id)
             ->firstOrFail();
 
         $order->loadMissing(['items.product', 'items.variant', 'paymentMethod', 'city', 'township']);
 
-        $html = view('invoices.customer-order', [
-            'order' => $order,
-            'tenant' => $tenant,
-        ])->render();
-
-        return response($html)
-            ->header('Content-Type', 'text/html')
-            ->header('Content-Disposition', 'inline; filename="' . $order->invoice_number . '.html"');
+        return $invoicePdf->generate($order, $tenant, false);
     }
 }

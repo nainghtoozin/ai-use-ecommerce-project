@@ -117,7 +117,30 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
     const [returnOpen, setReturnOpen] = useState(false);
     const [returnForm, setReturnForm] = useState({ resolution: 'refund', reason_code: '', note: '', quantities: {}, evidence: [] });
     const [submitting, setSubmitting] = useState(false);
+    const [downloadingInvoice, setDownloadingInvoice] = useState(false);
     const [dismissedFlash, setDismissedFlash] = useState({});
+
+    async function downloadInvoice() {
+        if (downloadingInvoice) return;
+        setDownloadingInvoice(true);
+        try {
+            const res = await fetch(route('storefront.customer.orders.invoice', { store_slug: storeSlug, invoice_number: order.invoice_number }));
+            if (!res.ok) throw new Error('download failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-${order.invoice_number}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('Unable to download invoice. Please try again.');
+        } finally {
+            setDownloadingInvoice(false);
+        }
+    }
 
     useEffect(() => {
         setDismissedFlash({});
@@ -227,7 +250,7 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
         <ShopLayout>
             <Head title={`${order.invoice_number} - ${storefront?.identity?.site_title || tenant.name}`} />
 
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-24 md:pb-4">
                 {flash.success && !dismissedFlash.success && (
                     <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2">
                         <span>{flash.success}</span>
@@ -245,8 +268,43 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                     </div>
                 )}
 
-                {/* Compact header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                {/* Mobile header */}
+                <div className="md:hidden mb-3">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Link href={route('storefront.customer.orders', { store_slug: storeSlug })} className="inline-flex items-center justify-center w-9 h-9 shrink-0 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl hover:bg-gray-50 transition-colors" aria-label="Back to My Orders">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                        </Link>
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 font-mono truncate">Order #{order.invoice_number}</h1>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">{new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${orderStatusColors[order.order_status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
+                            {order.order_status}
+                        </span>
+                    </div>
+                    {/* Compact action bar */}
+                    <div className="flex gap-2">
+                        {(returnInfo.allowed || cancellation.redirect_to_returns) && (
+                            <Link href={route('storefront.customer.returns.index', { store_slug: storeSlug })} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors" aria-label="My Returns">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                                Returns
+                            </Link>
+                        )}
+                        <button type="button" onClick={downloadInvoice} disabled={downloadingInvoice} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors disabled:opacity-50" aria-label="Download Invoice">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            {downloadingInvoice ? 'Preparing…' : 'Invoice'}
+                        </button>
+                        {cancellation.allowed && (
+                            <button type="button" onClick={() => setCancelOpen(true)} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-colors" aria-label="Cancel order">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                Cancel
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Desktop header */}
+                <div className="hidden md:flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3 min-w-0">
                         <Link href={route('storefront.customer.orders', { store_slug: storeSlug })} className="inline-flex items-center justify-center w-8 h-8 shrink-0 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors" title="Back to orders">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -274,10 +332,10 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                         <Link href={route('storefront.customer.returns.index', { store_slug: storeSlug })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors">
                             My returns
                         </Link>
-                        <a href={route('storefront.customer.orders.invoice', { store_slug: storeSlug, invoice_number: order.invoice_number })} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors">
+                        <button type="button" onClick={downloadInvoice} disabled={downloadingInvoice} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                            Print Invoice
-                        </a>
+                            {downloadingInvoice ? 'Preparing…' : 'Download Invoice'}
+                        </button>
                     </div>
                 </div>
 
@@ -317,7 +375,35 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Items</h2>
                             <span className="text-xs text-gray-500 dark:text-gray-400">{order.items?.length || 0} product{(order.items?.length || 0) === 1 ? '' : 's'}</span>
                         </div>
-                        <div className="overflow-x-auto">
+                        {/* Mobile item cards */}
+                        <div className="md:hidden px-4 py-2 space-y-2">
+                            {order.items?.length ? order.items.map((item) => {
+                                const p = itemPricing(item);
+                                return (
+                                    <div key={item.id} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                                        {itemImage(item) ? (
+                                            <img src={itemImage(item)} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-800 shrink-0" />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.product?.name || `Product #${item.product_id}`}</p>
+                                            {itemVariant(item) && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{itemVariant(item)}</p>}
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.quantity} × {formatCurrency(p.price, cc)}</p>
+                                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(p.price * item.quantity, cc)}</p>
+                                        </div>
+                                    </div>
+                                );
+                            }) : (
+                                <p className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">No items found.</p>
+                            )}
+                        </div>
+                        {/* Desktop item table */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="min-w-full">
                                 <thead>
                                     <tr className="border-b-2 border-gray-200 dark:border-gray-700">
@@ -414,8 +500,7 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
 
                     {/* After-sales actions */}
                     {(cancellation.allowed || returnInfo.allowed || cancellation.redirect_to_returns || cancellation.blocked_reason) && (
-                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
-                            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Need help with this order?</h2>
+                        <div className="hidden md:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
                             <div className="mt-3 grid gap-2 sm:grid-cols-2">
                                 {cancellation.allowed && (
                                     <button type="button" onClick={() => setCancelOpen(true)} className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100">
@@ -458,7 +543,58 @@ export default function OrderShow({ tenant, order, isCodOrder: isCodOrderProp = 
                     )}
 
                     {/* Horizontal info grid: Payment | Delivery */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    {/* Mobile collapsible info sections */}
+                    <div className="md:hidden space-y-2">
+                        <details className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                                Payment
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </summary>
+                            <div className="px-4 pb-3 space-y-2 text-sm">
+                                {isCodOrder ? (
+                                    <>
+                                        <div className="flex justify-between"><span className="text-gray-500">Method</span><span className="font-semibold">{codPaymentMethodLabel(order)}</span></div>
+                                        <div className="flex justify-between"><span className="text-gray-500">Payment</span><span>{codUnpaid ? 'Due on Delivery' : 'Paid'}</span></div>
+                                        <div className="flex justify-between"><span className="text-gray-500">Amount {codUnpaid ? 'Due' : ''}</span><span className="font-bold">{formatCurrency(order.total_amount, cc)}</span></div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between"><span className="text-gray-500">Method</span><span className="font-semibold text-right">{order.payment_method?.name || order.paymentMethod?.name || 'N/A'}</span></div>
+                                        {order.paid_amount && <div className="flex justify-between"><span className="text-gray-500">Paid Amount</span><span className="font-bold text-emerald-600">{formatCurrency(order.paid_amount, cc)}</span></div>}
+                                        {order.transaction_id && <div className="flex justify-between gap-2"><span className="text-gray-500">Transaction ID</span><span className="font-mono text-right break-all">{order.transaction_id}</span></div>}
+                                    </>
+                                )}
+                            </div>
+                        </details>
+                        <details className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                                Delivery
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </summary>
+                            <div className="px-4 pb-3 text-sm space-y-1">
+                                <p className="font-semibold">{order.first_name} {order.last_name} · {order.phone}</p>
+                                <p className="text-gray-700 dark:text-gray-300">{order.address}</p>
+                                {(cityLabel || townshipLabel || order.postal_code) && (
+                                    <p className="text-gray-700 dark:text-gray-300">{[cityLabel, townshipLabel].filter(Boolean).join(', ')}{order.postal_code ? ` · ${order.postal_code}` : ''}</p>
+                                )}
+                            </div>
+                        </details>
+                        <details className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm" open>
+                            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                                Order Summary
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </summary>
+                            <div className="px-4 pb-3 space-y-1 text-sm">
+                                <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-medium">{formatCurrency(order.subtotal || order.items_total, cc)}</span></div>
+                                {order.discount_amount > 0 && <div className="flex justify-between text-emerald-600"><span>Coupon Discount</span><span>-{formatCurrency(order.discount_amount, cc)}</span></div>}
+                                {order.delivery_fee > 0 && <div className="flex justify-between"><span className="text-gray-500">Delivery Fee</span><span className="font-medium">{formatCurrency(order.delivery_fee, cc)}</span></div>}
+                                {order.packaging_id && order.packaging_fee > 0 && <div className="flex justify-between"><span className="text-gray-500">Packaging</span><span className="font-medium">{formatCurrency(order.packaging_fee, cc)}</span></div>}
+                                <div className="flex justify-between pt-1 border-t border-gray-200 dark:border-gray-700 font-bold"><span>Total</span><span className="text-lg">{formatCurrency(order.total_amount, cc)}</span></div>
+                            </div>
+                        </details>
+                    </div>
+                    {/* Desktop info grid */}
+                    <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
                             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Payment</h2>
                             {isCodOrder ? (

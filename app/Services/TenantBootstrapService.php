@@ -76,6 +76,7 @@ class TenantBootstrapService
                 $this->createDefaultWarehouse($tenant);
                 $this->seedDefaultFaqs($tenant);
                 $this->provisionLocations($tenant);
+                $this->importDemoConfiguration($tenant);
 
                 if (Schema::hasTable('storefronts')) {
                     app(StorefrontConfigurationResolver::class)->provision($tenant);
@@ -646,6 +647,25 @@ class TenantBootstrapService
         }
 
         app(\App\Services\MyanmarLocationImportService::class)->import($tenant);
+    }
+
+    /**
+     * Provision the demo store configuration for a newly created tenant.
+     *
+     * Never lets a demo-configuration failure break tenant registration; the
+     * import service already isolates per-record failures and logs them.
+     */
+    protected function importDemoConfiguration(Tenant $tenant): void
+    {
+        try {
+            app(TenantDemoConfigurationImportService::class)->importAll($tenant);
+        } catch (\Throwable $e) {
+            Log::warning('Demo configuration initialization failed for new tenant', [
+                'tenant_id' => $tenant->id,
+                'tenant_slug' => $tenant->slug,
+                'exception' => $e->getMessage(),
+            ]);
+        }
     }
 
     protected function seedDefaultFaqs(Tenant $tenant): void
