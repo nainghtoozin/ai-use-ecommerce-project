@@ -21,12 +21,14 @@ class Storefront
         $storeSlug = $request->route('store_slug');
 
         if (!$storeSlug) {
+            \Illuminate\Support\Facades\Log::info('Storefront: no store_slug');
             abort(404);
         }
 
         $tenant = $this->storeResolver->resolve($storeSlug);
 
         if (!$tenant) {
+            \Illuminate\Support\Facades\Log::info('Storefront: tenant not found', ['slug' => $storeSlug]);
             abort(404);
         }
 

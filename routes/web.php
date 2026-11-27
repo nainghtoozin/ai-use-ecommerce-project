@@ -221,6 +221,16 @@ Route::prefix('store/{store_slug}')->name('storefront.')->middleware(['storefron
         Route::delete('/addresses/{address}', [\App\Http\Controllers\StorefrontCustomerController::class, 'destroyAddress'])->name('addresses.destroy');
         Route::post('/addresses/{address}/default', [\App\Http\Controllers\StorefrontCustomerController::class, 'setDefaultAddress'])->name('addresses.default');
     });
+
+    // Store-based wishlist (tenant-scoped)
+    Route::middleware(['auth:web,accounts', 'tenant.access'])->group(function () {
+        Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+        Route::post('/wishlist/{product}', [WishlistController::class, 'store'])->name('wishlist.store')->whereNumber('product');
+        Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy')->whereNumber('product');
+        Route::post('/wishlist/move-to-cart/{product}', [WishlistController::class, 'moveToCart'])->name('wishlist.move-to-cart')->whereNumber('product');
+        Route::post('/wishlist/move-all-to-cart', [WishlistController::class, 'moveAllToCart'])->name('wishlist.move-all-to-cart');
+        Route::delete('/wishlist/clear', [WishlistController::class, 'clear'])->name('wishlist.clear');
+    });
 });
 
 // ============================================================

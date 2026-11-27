@@ -2,6 +2,17 @@ import { useState, useCallback } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { csrfHeaders, parseResponse } from '@/Utils/csrf';
 
+function currentStoreSlug() {
+    if (typeof window === 'undefined') return null;
+    const match = window.location.pathname.match(/^\/store\/([^/]+)\//);
+    return match ? match[1] : null;
+}
+
+function wishlistBase() {
+    const slug = currentStoreSlug();
+    return slug ? `/store/${slug}` : '';
+}
+
 export function useWishlist() {
     const { props } = usePage();
     const [processingId, setProcessingId] = useState(null);
@@ -13,7 +24,7 @@ export function useWishlist() {
 
         try {
             const method = isWishlisted ? 'DELETE' : 'POST';
-            const response = await fetch(`/wishlist/${productId}`, {
+            const response = await fetch(`${wishlistBase()}/wishlist/${productId}`, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,7 +57,7 @@ export function useWishlist() {
         setProcessingId(productId);
 
         try {
-            const response = await fetch(`/wishlist/${productId}`, {
+            const response = await fetch(`${wishlistBase()}/wishlist/${productId}`, {
                 method: 'DELETE',
                 headers: csrfHeaders(),
             });
@@ -76,7 +87,7 @@ export function useWishlist() {
         setProcessingId(productId);
 
         try {
-            const response = await fetch(`/wishlist/move-to-cart/${productId}`, {
+            const response = await fetch(`${wishlistBase()}/wishlist/move-to-cart/${productId}`, {
                 method: 'POST',
                 headers: csrfHeaders(),
             });
@@ -104,7 +115,7 @@ export function useWishlist() {
 
     const moveAllToCart = useCallback(async () => {
         try {
-            const response = await fetch('/wishlist/move-all-to-cart', {
+            const response = await fetch(`${wishlistBase()}/wishlist/move-all-to-cart`, {
                 method: 'POST',
                 headers: csrfHeaders(),
             });
@@ -130,7 +141,7 @@ export function useWishlist() {
 
     const clearWishlist = useCallback(async () => {
         try {
-            const response = await fetch('/wishlist/clear', {
+            const response = await fetch(`${wishlistBase()}/wishlist/clear`, {
                 method: 'DELETE',
                 headers: csrfHeaders(),
             });
@@ -154,8 +165,8 @@ export function useWishlist() {
         }
     }, []);
 
-    const navigateToWishlist = useCallback(() => {
-        router.get('/wishlist');
+const navigateToWishlist = useCallback(() => {
+        router.get(`${wishlistBase()}/wishlist` || '/wishlist');
     }, []);
 
     return {

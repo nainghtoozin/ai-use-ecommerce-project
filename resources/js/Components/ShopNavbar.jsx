@@ -153,7 +153,7 @@ export default function ShopNavbar() {
                         )}
                         {storeSlug && website_info?.enable_wishlist !== false && (
                             <Link
-                                href="/wishlist"
+                                href={storeSlug ? `/store/${storeSlug}/wishlist` : '/wishlist'}
                                 className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                                 title={labels.wishlist || 'Wishlist'} aria-label={labels.wishlist || 'Wishlist'}
                             >
@@ -315,7 +315,7 @@ export default function ShopNavbar() {
                             ))}
                             {storeSlug && website_info?.enable_wishlist !== false && (
                                 <Link
-                                    href="/wishlist"
+                                    href={storeSlug ? `/store/${storeSlug}/wishlist` : '/wishlist'}
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
                                 >

@@ -21,7 +21,7 @@ class WishlistController extends Controller
         }
 
         $wishlistItems = auth()->user()->wishlistItems()
-            ->with('product.category')
+            ->with(['product.category', 'product.variants' => fn($q) => $q->active()])
             ->latest()
             ->get();
 
@@ -57,8 +57,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function destroy(Product $product)
+    public function destroy(int $product)
     {
+        \Illuminate\Support\Facades\Log::info('DESTROY reached', ['id' => $product, 'tenant' => \App\Models\Tenant::getCurrent()?->id]);
         if (!$this->wishlistEnabled()) {
             return response()->json(['success' => false, 'message' => 'Wishlist feature is currently unavailable.'], 403);
         }
@@ -66,7 +67,7 @@ class WishlistController extends Controller
         $user = auth()->user();
 
         $user->wishlistItems()
-            ->where('product_id', $product->id)
+            ->where('product_id', $product)
             ->delete();
 
         return response()->json([
